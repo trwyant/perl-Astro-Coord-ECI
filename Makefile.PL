@@ -22,10 +22,12 @@ my @prereq;
 
 print <<eod;
 
-You have the option of installing the following executable:
+The following executable will be installed:
 
   satpass is a scriptable program to predict satellite passes
     over a given observer.
+
+If you do not want this, run Makefile.PL with the -n option.
 
 Unless you are running MSWin32 or VMS (which are special-cased),
 I will assume you're running some version of U*ix, and behave
@@ -44,7 +46,8 @@ if ($opt{n}) {
   else {
     foreach (@possible_exes) {
 	push @exe_files, $_
-	    if prompt ("Do you want to install $_?", 'n') =~ m/^y/i;
+##	    if prompt ("Do you want to install $_?", 'n') =~ m/^y/i
+	    ;
 	}
     }
 
