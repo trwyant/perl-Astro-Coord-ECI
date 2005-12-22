@@ -1,0 +1,29 @@
+Astro::NORAD::Orbit
+
+This module implements the NORAD orbital propagation models described
+in their "SPACETRACK REPORT NO. 3, Models for Propagation of NORAD
+Element Sets." In other words, it turns the two- or three-line
+element sets available from such places as http://www.space-track.org/
+or http://celestrak.com/ into predictions of where the relevant
+orbiting bodies will be. This module does NOT implement a complete
+satellite prediction system, just the NORAD models - that is, you get
+satellite positions in Cartesian coordinates, and it's up to you
+to figure out what to do with them.
+
+This module is installable by the usual incantation:
+
+    gunzip Astro-NORAD-Orbit-9.999.tar.gz
+    tar -xf Astro-SNORAD-Orbit-9.999.tar
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+You should substitute the appropriate program name for 'make', eg nmake
+(typically) under MSWin32, or mms or mmk under VMS.
+
+Of course, since it's pure Perl, you can just expand the kit and drop
+Orbit.pm into the Astro/NORAD directory (creating it if necessary) in
+the appropriate place in your @INC directories.
+
+Tom Wyant
