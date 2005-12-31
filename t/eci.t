@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/local/bin/perl
 
 use strict;
 use warnings;
@@ -9,8 +9,9 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 71}
+BEGIN {plan tests => 73}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
+use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
 Astro::Coord::ECI->set (debug => 0);
@@ -553,7 +554,40 @@ eod
     }
 
 
-#	Tests 59-60: Nutation in longitude and obliquity.
+#	Tests 59-60: Precession of equinoxes.
+#	Tests: precession.
+
+#	Based on Meeus' example 21.b.
+
+use constant LIGHTYEAR2KILOMETER => 9.4607e12;
+
+foreach ([41.054063, 49.227750, 36.64, PERL2000, 41.547214, 49.348483,
+		timegm (0, 0, 0, 13, 10, 2028) + .19 * 86400],
+	) {
+    my ($alpha0, $delta0, $rho, $t0, $alphae, $deltae, $time) = @$_;
+    my $eci = Astro::Coord::ECI->dynamical ($t0)->equatorial (
+	deg2rad ($alpha0), deg2rad ($delta0),
+	$rho *  LIGHTYEAR2KILOMETER);
+    my $utim = Astro::Coord::ECI->dynamical ($time)->universal;
+    my ($alpha, $delta) = $eci->precess ($utim)->equatorial ();
+    my $tolerance = 1e-6;
+    foreach (['right ascension' => $alpha, $alphae],
+	    [declination => $delta, $deltae],
+	    ) {
+	my ($what, $got, $expect) = @$_;
+	$got = rad2deg ($got);
+	$test++;
+	print <<eod;
+# Test $test: Precession of equinoxes
+#      Expected: $expect degrees $what
+#           Got: $got degrees $what
+#     Tolerance: $tolerance
+eod
+	ok (abs ($got - $expect) < $tolerance);
+	}
+    }
+
+#	Tests 61-62: Nutation in longitude and obliquity.
 #	Tests: nutation_in_longitude, nutation_in_obliquity (and
 #		jcent2000).
 
@@ -580,7 +614,7 @@ eod
 
 
 
-#	Test 61: Obliquity of the ecliptic.
+#	Test 63: Obliquity of the ecliptic.
 #	Tests: obliquity() (and nutation_in_obliquity() and
 #		jcent2000())
 
@@ -604,7 +638,7 @@ eod
     }
 
 
-#	Test 62 - 63: Right ascension/declination to ecliptic lat/lon
+#	Test 64 - 65: Right ascension/declination to ecliptic lat/lon
 #	Tests: ecliptic() (and obliquity())
 
 #	Based on Meeus' example 13.a, page 95.
@@ -641,7 +675,7 @@ eod
     }
 
 
-#	Test 64 - 65: Ecliptic lat/lon to right ascension/declination
+#	Test 66 - 67: Ecliptic lat/lon to right ascension/declination
 #	Tests: ecliptic() (and obliquity())
 
 #	Based on inverting the above test.
@@ -672,7 +706,7 @@ eod
 
 use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 
-#	Tests 66 - 68: Ecliptic lat/long to ECI
+#	Tests 68 - 70: Ecliptic lat/long to ECI
 #	Tests: equatorial() (and ecliptic())
 
 #	This test is based on Meeus' example 26.a.
@@ -701,7 +735,7 @@ eod
     }
 
 
-#	Test 69: Equation of time.
+#	Test 71: Equation of time.
 #	Tests: equation_of_time() (and obliquity()).
 
 #	This test is based on Meeus' example 28.b.
@@ -723,7 +757,7 @@ eod
     }
 
 
-#	Test 70: universal time to local mean time
+#	Test 72: universal time to local mean time
 #	Tests: local_mean_time()
 
 #	This test is based on http://www.statoids.com/tconcept.html
@@ -747,7 +781,7 @@ eod
     }
 
 
-#	Test 71: local mean time to universal time
+#	Test 73: local mean time to universal time
 #	Tests: local_mean_time()
 
 #	This test is the inverse of the previous one.

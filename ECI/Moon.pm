@@ -4,7 +4,7 @@ Astro::Coord::ECI::Moon - Compute the position of the Moon.
 
 =head1 SYNOPSIS
 
- my $sun = Astro::Coord::ECI::Moon->new ();
+ my $moon = Astro::Coord::ECI::Moon->new ();
  my $sta = Astro::Coord::ECI->
      universal (time ())->
      geodetic ($lat, $long, $alt);

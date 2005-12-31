@@ -10,14 +10,14 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 18}
+BEGIN {plan tests => 19}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
 my $test = 0;
 
 
-#	Tests 1 - 2: sun position in ecliptic latitude/longitude
+#	Tests 1 - 3: sun position in ecliptic latitude/longitude
 #	Tests: ::Sun->time_set() (and ecliptic())
 
 #	This test is based on Meeus' example 25.a.
@@ -27,15 +27,15 @@ my $test = 0;
 
 use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 
-foreach ([timegm (0, 0, 0, 13, 9, 1992), 199.90895, .99766],
+foreach ([timegm (0, 0, 0, 13, 9, 1992), 199.90895, .99766, 199.90988],
 	) {
-    my ($time, $explong, $exprho) = @$_;
+    my ($time, $explong, $exprho, $expgeo) = @$_;
     my $sun = Astro::Coord::ECI::Sun->dynamical ($time);
-    my ($lat, $long, $rho) = Astro::Coord::ECI::Sun->
-	dynamical ($time)->ecliptic ();
+    my ($lat, $long, $rho) = $sun->ecliptic ();
     my $tolerance = 1e-5;
     foreach ([longitude => $long, deg2rad ($explong)],
 	    [distance => $rho, $exprho * ASTRONOMICAL_UNIT],
+	    ['geometric longitude' => $sun->geometric_longitude(), deg2rad ($expgeo)],
 	    ) {
 	$test++;
 	my ($what, $got, $expect) = @$_;
@@ -53,7 +53,7 @@ eod
 
 
 
-#	Tests 3 - 14: Sunrise, noon, and sunset
+#	Tests 4 - 15: Sunrise, noon, and sunset
 #	Tests: next_meridian (), next_elevation ()
 
 #	This test is based on data for Washington, DC provided by the
@@ -112,7 +112,7 @@ eod
 	}
     }
 
-#	Tests 15 - 18: Equinoxes and Solstices for 2005
+#	Tests 16 - 19: Equinoxes and Solstices for 2005
 #	Tests: next_quarter()
 
 #	This test is based on Meeus' table 27.E on page 182. The

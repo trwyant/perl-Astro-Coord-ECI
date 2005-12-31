@@ -168,6 +168,25 @@ my $self = shift;
 ($self->ecliptic ())[1];
 }
 
+
+=item $long = $sun->geometric_longitude()
+
+This method returns the geometric longitude of the Sun in radians at
+the last time set.
+
+=cut
+
+sub geometric_longitude {
+my $self = shift;
+croak <<eod unless defined $self->{_sun_geometric_longitude};
+Error - You must set the time of the Sun object before the geometric
+        longitude can be returned.
+eod
+
+$self->{_sun_geometric_longitude};
+}
+
+
 =item ($time, $quarter) = $sun->next_quarter ($want);
 
 This method calculates the time of the next equinox or solstice
@@ -294,11 +313,9 @@ my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;	# Meeus (25.4)
 my $C  = ((SUN_C1_2 * $T + SUN_C1_1) * $T + SUN_C1_0) * sin ($M)
 	+ (SUN_C2_1 * $T + SUN_C2_0) * sin (2 * $M)
 	+ SUN_C3_0 * sin (3 * $M);
-my $O = $L0 + $C;
-#	+ SUN_LON_2000 * ($T * 100);	# J2000 correction Meeus p. 164
+my $O = $self->{_sun_geometric_longitude} = $L0 + $C;
 my $omega = _mod2pi (_deg2rad (125.04 - 1934.156 * $T));
 my $lamda = _mod2pi ($O - _deg2rad (0.00569 + 0.00478 * sin ($omega)));
-##?? my $lamda = $O + $self->nutation_in_longitude ($time);
 my $nu = $M + $C;
 my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
 	* ASTRONOMICAL_UNIT;

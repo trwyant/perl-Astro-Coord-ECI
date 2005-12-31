@@ -2025,7 +2025,6 @@ object's time is set.
 
 sub time_set {
 my $self = shift;
-$self->{_no_set} and do {delete $self->{_no_set}; return};
 my $model = $self->{model} or return;
 $self->$model ($self->universal);
 }
@@ -2829,7 +2828,6 @@ $_[2] *= (SGP_XKMPER / SGP_AE);		# z
 $_[3] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dx/dt
 $_[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dy/dt
 $_[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dz/dt
-$self->{_no_set} = 1;
 $self->universal (pop @_);
 $self->eci (@_);
 }

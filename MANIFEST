@@ -4,6 +4,7 @@ Makefile.PL
 MANIFEST
 ECI.pm
 ECI/Moon.pm
+ECI/Star.pm
 ECI/Sun.pm
 ECI/TLE.pm
 README
@@ -12,5 +13,6 @@ t/eci.t
 t/moon.t
 t/pod.t
 t/pod_coverage.t
+t/star.t
 t/sun.t
 t/tle.t

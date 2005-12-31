@@ -343,11 +343,8 @@ eod
 
 if (@_ == 1) {
     $self = $self->new () unless ref $self;
-    delete $self->{local_mean_time};
+    $self->universal ($_[0] - _dynamical_delta ($_[0]));
     $self->{dynamical} = $_[0];
-    $self->{universal} = $_[0] - _dynamical_delta ($_[0]);
-    $self->{_need_purge} = 1 if $self->{specified};
-    $self->can ('time_set') and $self->time_set ();
     }
   else {
     croak <<eod;
@@ -359,6 +356,13 @@ eod
 
 $self;
 }
+
+#	_dynamical_delta ($universal_time)
+
+#	calculates and returns the difference between the dynamical
+#	time and the universal time at the given universal time.
+#	Actually, we typically ignore whether we're passing dynamical
+#	or universal time, since the relation changes so slowly.
 
 sub _dynamical_delta {
 my $year = (gmtime $_[0])[5] + 1900;
@@ -1446,7 +1450,7 @@ $epsilon0 + $delta_epsilon + $self->obliquity_correction ($time);
 }
 
 
-=item $radians = $self->obliquity_correction ($time);
+=item $radians = $coord->obliquity_correction ($time);
 
 This method, in principal, calculates the correction to the obliquity
 at the given dynamical time. This particular incarnation of the method
@@ -1458,7 +1462,7 @@ can override it if necessary (e.g. Astro::Coord::ECI::Sun).
 sub obliquity_correction {0}
 
 
-=item $radians = $self->omega ($time);
+=item $radians = $coord->omega ($time);
 
 This method calculates the ecliptic longitude of the ascending node of
 the Moon's mean orbit. If time is omitted, it defaults to the current
@@ -1484,6 +1488,65 @@ my $T = $self->jcent2000 ($time);	# Meeus (22.1)
 
 my $omega = _mod2pi (_deg2rad ((($T / 450000 + .0020708) * $T -
 	1934.136261) * $T + 125.04452));
+}
+
+
+=item $coord = $coord->precess ($time);
+
+This method precesses the equatorial coordinates of the object to the
+given time. The starting time is assumed to be the original time
+setting of the object. The equatorial coordinates of the object are set
+to the results of the calculation, and the universal time of the object
+is set to the value of the $time argument. The object itself is
+returned.
+
+B<NOTE> that side effects of setting the time (i.e. in subclasses which
+define the time_set() method) B<will> take place as a result of calling
+this method.
+
+The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
+Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
+
+=cut
+
+sub precess {
+my $self = shift;
+my $time = shift;
+
+my $start = $self->dynamical;
+my $end = $time + _dynamical_delta ($time);
+
+my ($alpha0, $delta0, $rho0) = $self->equatorial ();
+
+my $T = $self->jcent2000 ($start);
+my $t = ($end - $start) / (36525 * SECSPERDAY);
+
+#	The following four assignments correspond to Meeus' (21.2).
+my $zterm = (- 0.000139 * $T + 1.39656) * $T + 2306.2181;
+my $zeta = _deg2rad ((((0.017998 * $t + (- 0.000344 * $T + 0.30188)) *
+	$t + $zterm) * $t) / 3600);
+my $z = _deg2rad ((((0.018203 * $t + (0.000066 * $T + 1.09468)) * $t +
+	$zterm) * $t) / 3600);
+my $theta = _deg2rad (((( - 0.041833 * $t - (0.000217 * $T + 0.42665))
+	* $t + (- 0.000217 * $T - 0.85330) * $T + 2004.3109) * $t) /
+	3600);
+
+#	The following assignments correspond to Meeus' (21.4).
+my $sindelta0 = sin ($delta0);
+my $cosdelta0 = cos ($delta0);
+my $sintheta = sin ($theta);
+my $costheta = cos ($theta);
+my $cosdelta0cosalpha0 = cos ($alpha0 + $zeta) * $cosdelta0;
+my $A = $cosdelta0 * sin ($alpha0 + $zeta);
+my $B = $costheta * $cosdelta0cosalpha0 - $sintheta * $sindelta0;
+my $C = $sintheta * $cosdelta0cosalpha0 + $costheta * $sindelta0;
+
+my $alpha = atan2 ($A , $B) + $z;
+my $delta = _asin ($C);
+
+$self->equatorial ($alpha, $delta, $rho0, $time);
+$self->{dynamical} = $end;
+$self;
 }
 
 
@@ -1777,7 +1840,11 @@ if (@_ == 1) {
     delete $self->{dynamical};
     $self->{universal} = shift;
     $self->{_need_purge} = 1 if $self->{specified};
-    $self->can ('time_set') and $self->time_set ();
+    $self->can ('time_set') && !$self->{_no_set} and do {
+	$self->{_no_set} = 1;
+	$self->time_set ();
+	delete $self->{_no_set};
+	};
     }
   else {
     croak <<eod;
