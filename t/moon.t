@@ -10,7 +10,7 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 5}
+BEGIN {plan tests => 7}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 use constant PI => atan2 (0, -1);
@@ -46,9 +46,9 @@ foreach ([timegm (0, 0, 0, 12, 3, 1992), -3.229126, 133.167265, 368409.7],
 	my ($what, $got, $expect) = @$_;
 	print <<eod;
 # Test $test: Ecliptic latitude/longitude and distance of the Moon
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
 #      Quantity: $what
 #      Expected: $expect
+#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
 #           Got: $got
 #     Tolerance: $tolerance
 eod
@@ -56,7 +56,7 @@ eod
 	}
     }
 
-#	Test 4: phase angle of the moon.
+#	Test 4: phase of the moon.
 #	Tests: phase ()
 
 #	This test is based on Meeus' example 49.a, but worked backward.
@@ -66,8 +66,8 @@ foreach ([timegm (42, 37, 3, 18, 1, 1977), 0],
     $test++;
     my ($time, $expect) = @$_;
     $expect = deg2rad ($expect);
-    my $tolerance = 1.e-4;	# A second's worth of radians.
     my $got = Astro::Coord::ECI::Moon->dynamical ($time)->phase;
+    my $tolerance = 1.e-4;	# A second's worth of radians.
     $expect += 2 * PI if $got - $expect >= PI;
     print <<eod;
 # Test $test: Phase of the moon at a given time
@@ -79,7 +79,35 @@ eod
     ok (abs ($got - $expect) < $tolerance);
     }
 
-#	Test 5: next_quarter
+#	Tests 5-6: Phase angle and illuminated fraction.
+
+#	This test is based on Meeus' example 48.a.
+
+foreach ([timegm (0, 0, 0, 12, 3, 1992), 180 - 69.0756, .6786],
+	) {
+    my ($time, $expph, $expil) = @$_;
+    $expph = deg2rad ($expph);
+    my ($phase, $illum) =
+	Astro::Coord::ECI::Moon->dynamical ($time)->phase ();
+    foreach ([phase => $phase, $expph, 3.e-3],
+	    [illumination => $illum, $expil, .01],
+	    ) {
+	my ($what, $got, $expect, $tolerance) = @$_;
+	$test++;
+	print <<eod;
+# Test $test: Phase and illumination
+#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
+#      Quantity: $what
+#      Expected: $expect
+#           Got: $got
+#     Tolerance: $tolerance
+eod
+	ok (abs ($got - $expect) < $tolerance);
+	}
+    }
+
+
+#	Test 7: next_quarter
 
 #	This test is based on Meeus' example 49.1, right way around.
 

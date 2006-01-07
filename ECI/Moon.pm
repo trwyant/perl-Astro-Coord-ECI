@@ -221,10 +221,13 @@ This method returns the siderial period of the Moon, per Appendix I
 sub period {2360591.5968}	# 27.321662 * 86400
 
 
-=item $phase = $moon->phase ($time);
+=item ($phase, $illum) = $moon->phase ($time);
 
-This method calculates the current phase of the moon, in radians.
-If the time is omitted, the current time of the $moon object is used.
+This method calculates the current phase of the moon in radians, and
+its illuminated fraction as a number from 0 to 1. If the time is
+omitted, the current time of the $moon object is used.
+
+If called in scalar context, you get the phase.
 
 This can be called as a class method, but if you do this the time
 must be specified.
@@ -236,8 +239,12 @@ new, first quarter, full, and last quarter are the moments when this
 difference is 0, 90, 180, and 270 degrees respectively.
 
 Not quite above reproach, this module simply defines the phase of the
-moon as the difference between these two quantities, even if it is not
-a multiple of 90 degrees.
+Moon as the difference between these two quantities, even if it is not
+a multiple of 90 degrees. This is different than the "phase angle" of
+the Moon, which Meeus defines as the elongation of the Earth from the
+Sun, as seen from the Moon. Because we take the "phase angle" as just
+pi - the phase (in radians), we introduce an error of about 0.3% in
+the illumination calculation.
 
 =cut
 
@@ -257,7 +264,8 @@ my $sun = Astro::Coord::ECI::Sun->universal ($self->universal);
 my (undef, $longs) = $sun->ecliptic ();
 my (undef, $longm) = $self->ecliptic ();
 
-_mod2pi ($longm - $longs);
+my $phase = _mod2pi ($longm - $longs);
+wantarray ? ($phase, (1 + cos ($self->PI - $phase)) / 2) : $phase;
 }
 
 
@@ -421,7 +429,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005 by Thomas R. Wyant, III
+Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it

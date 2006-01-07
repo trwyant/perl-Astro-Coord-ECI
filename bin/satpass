@@ -145,7 +145,7 @@ satpass $VERSION - Satellite pass predictor
 based on Astro::Coord::ECI @{[Astro::Coord::ECI->VERSION]}
 run by Perl $Config{version} under $Config{osname} $Config{osvers}
 
-Copyright 2005 by Thomas R. Wyant, III. All rights reserved.
+Copyright 2005,2006 by Thomas R. Wyant, III. All rights reserved.
 
 Enter 'help' for help. See the help for terms of use.
 
@@ -853,11 +853,12 @@ foreach my $body (@bodies) {
 Error - The phase() method is not supported by the
         $class class.
 eod
-    my $phase = rad2deg (Astro::Coord::ECI::Moon->phase ($time));
+    my ($phase, $illum) = Astro::Coord::ECI::Moon->phase ($time);
+    $phase = rad2deg ($phase);
     my $name;
     foreach (@table) {$_->[0] > $phase or next; $name = $_->[1]; last}
-    printf "%s $body phase %d degrees, %s\n",
-	strftime ($dtfmt, localtime $time), $phase, $name;
+    printf "%s $body phase %d deg, %s, %i%% illum.\n",
+	strftime ($dtfmt, localtime $time), $phase, $name, $illum * 100;
     }
 }
 }	# end of BEGIN block
