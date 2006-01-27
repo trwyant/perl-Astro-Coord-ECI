@@ -8,6 +8,7 @@ use vars qw{$VERSION};
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
+use Astro::Coord::ECI::Star;
 use Astro::Coord::ECI::TLE;
 
 use Config;
@@ -38,6 +39,10 @@ eod
 use constant TWOPI => 2 * atan2 (0, -1);
 
 my @bodies;
+my @sky = (
+    Astro::Coord::ECI::Sun->new (),
+    Astro::Coord::ECI::Moon->new (),
+    );
 
 my %parm = (
     appulse => 0,
@@ -58,10 +63,12 @@ my %parm = (
     );
 $parm{tz} = $ENV{TZ} if $ENV{TZ};
 
+my ($tz_init) = grep {m/^TZ=/} Date_Init ();
+
 my %macro;
 
 my %mutator = (
-    appulse => \&_set_unmodified,
+    appulse => \&_set_angle,
     date_format => \&_set_unmodified,
     debug => \&_set_unmodified,
     echo => \&_set_unmodified,
@@ -69,12 +76,13 @@ my %mutator = (
     exact_event => \&_set_unmodified,
     geometric => \&_set_unmodified,
     height => \&_set_unmodified,
-    horizon => \&_set_unmodified,
-    latitude => \&_set_unmodified,
+    horizon => \&_set_angle,
+    latitude => \&_set_angle,
     location => \&_set_unmodified,
     lit => \&_set_unmodified,
-    longitude => \&_set_unmodified,
+    longitude => \&_set_angle,
     model => \&_set_unmodified,
+    perltime => \&_set_perltime,
     prompt => \&_set_unmodified,
     time_format => \&_set_unmodified,
     timing => \&_set_unmodified,
@@ -235,12 +243,19 @@ print "\n";
 
 ########################################################################
 #
-#	almanac () - display almanac data for the specified body and day(s)
+#	almanac () - display almanac data for all bodies in @sky for
+#		the specified day(s)
 #
 
 sub almanac {
 
+=begin comment
+
 my @list = grep {$_} split '\W+', shift || 'Sun,Moon';
+
+=end comment
+
+=cut
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $almanac_start = _parse_time (shift || 'today midnight');
@@ -269,20 +284,15 @@ my %done;
 
 print _format_location ();
 
-foreach (@list) {
-    my $class = 'Astro::Coord::ECI::' . ucfirst lc $_;
-    next if $done{$class}++;
-
-    eval "require $class" or die <<eod;
-Error - $class does not exist, or is not installed.
+foreach my $body (@sky) {
+    $body->can ('almanac') or do {
+	warn <<eod;
+Warning - @{[ref $body]} does not support the almanac method.
 eod
-
-    $class->can ('almanac') or die <<eod;
-Error - $class does not support the almanac method.
-eod
-
-    my $body = $class->new (twilight => $parm{_twilight});
-
+	next;
+	};
+    $body->set (twilight => $parm{_twilight});
+##if ($body->isa ('Astro::Coord::ECI::Star')) {$body->set (debug => 1)}
     push @almanac, $body->almanac ($sta, $almanac_start, $almanac_end);
     }
 
@@ -326,6 +336,15 @@ sub clear {
 }
 
 
+sub dump {
+use Data::Dumper;
+local $Data::Dumper::Terse = 1;
+foreach my $body (@bodies, @sky) {
+    print "\n", $body->get ('name') || $body->get ('id'), ' = ' , Dumper ($body);
+    }
+}
+
+
 ########################################################################
 #
 #	geocode () - Get lat/long from rpc.geocoder.us
@@ -336,13 +355,14 @@ eval {require Soap::Lite} or die <<eod;
 Error - You need to install the Soap::Lite module if you wish to use
         the geocode command.
 eod
-my $loc = shift;
-my $rslt = SOAP::Lite->uri ('http://rpc.geocoder.us/Geo/Coder/US')
-	->proxy ('http://geocoder.us/service/soap')
-	->geocode ($loc)
-	->result or die <<eod;
+my $loc = shift || $parm{location};
+
+my $soap = _soapdish ('http://rpc.geocoder.us/Geo/Coder/US',
+	'http://geocoder.us/service/soap', '#');
+my $rslt = $soap->geocode ($loc)->result or die <<eod;
 Error - Failed to access geocoder.us.
 eod
+
 @$rslt or die <<eod;
 Error - Failed to parse address
         "@_".
@@ -354,9 +374,46 @@ eod
 foreach my $hash (@$rslt) {
     print "\n", $hash->format_multiline, "\n";
     }
-@$rslt == 1 and
+if (@$rslt == 1) {
     @parm{qw{location latitude longitude}} = ($rslt->[0]->format_line,
 	@{$rslt->[0]}{qw{lat long}});
+    print "\n";
+    show (qw{location latitude longitude});
+    height ();
+    }
+}
+
+
+########################################################################
+#
+#	height () - Fetch the height above sea level.
+#
+
+sub height {
+eval {require Soap::Lite} or die <<eod;
+Error - You need to install the Soap::Lite module if you wish to use
+        the height command.
+eod
+my $soap = _soapdish ('http://gisdata.usgs.net/XMLWebServices/',
+    'http://gisdata.usgs.net/XMLWebServices/TNM_Elevation_Service.asmx');
+my $method = SOAP::Data->name ('getElevation')->attr (
+    {xmlns => 'http://gisdata.usgs.net/XMLWebServices/'});
+my $rslt = $soap->call ($method =>
+	SOAP::Data->new (name => 'X_Value', type => 'string',  value => $parm{longitude}),
+	SOAP::Data->new (name => 'Y_Value', type => 'string', value => $parm{latitude}),
+	SOAP::Data->new (name => 'Source_Layer', type => 'string',  value => -1),
+	SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
+	SOAP::Data->new (name => 'Elevation_Only', type => 'string', value => 'true'),
+    )->result;
+if ($rslt && $rslt > -1e6) {
+    $parm{height} = sprintf '%.2f', $rslt;
+    show (qw{height});
+    }
+  else {
+    print <<eod;
+No height found for latitude $parm{latitude} longitude $parm{longitude}
+eod
+    }
 }
 
 
@@ -372,6 +429,7 @@ BEGIN {
     moon => 'Astro::Coord::ECI::Moon',
     sun => 'Astro::Coord::ECI::Sun',
     st => 'Astro::SpaceTrack',
+    star => 'Astro::Coord::ECI::Star',
     tle => 'Astro::Coord::ECI::TLE',
     );
 }
@@ -496,6 +554,11 @@ if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
 #
 #	pass () - Predict passes over the observer's location.
 #
+# >>>>	This needs to be modified to use the @sky list, rather than the
+# >>>>	predefined Sun and Moon objects. I need to decide whether it:
+# >>>>	- provides its own Sun object for visibility calculations
+# >>>>	- adds a Sun object to @sky if not present, and uses that
+# >>>>	- uses the Sun in @sky if there, but provides its own if not.
 
 sub pass {
 @bodies && $parm{height} && $parm{latitude} && $parm{longitude} or
@@ -671,14 +734,13 @@ foreach my $tle (@bodies) {
 
 
 #		Compute nearest approach to Sun and Moon
+# >>>>	This needs modification to use @sky.
 
 #		Note (fortuitous discovery) the ISS travels 1.175
 #		degrees per second at the zenith, so I need better
 #		than 1 second resolution to detect a transit.
 
-		foreach ($parm{appulse} ? qw{Sun Moon} : ()) {
-		    my $class = 'Astro::Coord::ECI::' . $_;
-		    my $body = $class->new ();
+		foreach my $body (@sky) {
 		    my $when = _pass_zero_in ($time[0][0], $time[1][0],
 			sub {$sta->angle ($body->universal ($_[0]),
 					$tle->universal ($_[0])) <
@@ -689,7 +751,8 @@ foreach my $tle (@bodies) {
 			$sta->angle ($body->universal ($when),
 				$tle->universal ($when)));
 		    next if $angle > $parm{appulse};
-		    push @time, [$when, sprintf '%.1f from %s', $angle, $_];
+		    push @time, [$when, sprintf '%.1f from %s', $angle,
+			$body->get ('name') || $body->get ('id')];
 		    }
 
 
@@ -829,7 +892,8 @@ $end;
 
 ########################################################################
 #
-#	phase () - Compute the phase of the Moon at the given time.
+#	phase () - Compute the phase of any relevant bodies in @sky at
+#		the given time.
 #
 
 BEGIN {	# Localize and initialize phase table.
@@ -843,51 +907,76 @@ my @table = (
     );
 
 sub phase {
-my @bodies = map {ucfirst} split '\W+', lc (shift @_ || 'Moon');
 my $time = defined $_[0] ? _parse_time (shift) : time ();
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
-foreach my $body (@bodies) {
-    my $class = "Astro::Coord::ECI::$body";
-    $class->can ('phase') or die <<eod;
-Error - The phase() method is not supported by the
-        $class class.
-eod
-    my ($phase, $illum) = Astro::Coord::ECI::Moon->phase ($time);
+foreach my $body (@sky) {
+    $body->can ('phase') or next;
+    my ($phase, $illum) = $body->phase ($time);
     $phase = rad2deg ($phase);
     my $name;
     foreach (@table) {$_->[0] > $phase or next; $name = $_->[1]; last}
-    printf "%s $body phase %d deg, %s, %i%% illum.\n",
+    printf "%s @{[$body->get ('name')]} phase %d deg, %s, %i%% illum.\n",
 	strftime ($dtfmt, localtime $time), $phase, $name, $illum * 100;
     }
 }
 }	# end of BEGIN block
 
+########################################################################
+#
+#	position () - Compute position of all bodies in observing list
+#		and sky at the given time.
+#
+
+sub position {
+my $time = defined $_[0] ? _parse_time (shift) : time ();
+my $dtfmt = "$parm{date_format} $parm{time_format}";
+
+
+#	Define the observing station.
+
+my $sta = Astro::Coord::ECI->new (
+	refraction => 1,
+	name => 'Station',
+	)
+    ->geodetic (
+	deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
+	$parm{height} / 1000);
+
+printf <<eod, strftime ($dtfmt, localtime $time);
+%s
+            name elev  azim  range     right asc decl
+eod
+
+foreach my $body (@bodies, @sky) {
+    my $name = $body->get ('name') || $body->get ('id') || 'body';
+    my ($az, $el, $rng) = $sta->azel ($body->universal ($time));
+    my ($ra, $dec) = $body->equatorial ();
+    printf "%16s %5.1f %5.1f @{[$rng > 1e6 ? '%10.3g' : '%10.1f'
+	]} %8s %5.1f\n", $name, rad2deg ($el),
+	rad2deg ($az), $rng, _rad2hms ($ra), rad2deg ($dec);
+    }
+
+}
 
 ########################################################################
 #
-#	quarters () - Compute the quarters of the Moon in the given
-#	time range.
+#	quarters () - Compute the quarters of any relevant bodies in
+#		@sky in the given time range.
 #
 
 sub quarters {
-my @bodies = map {ucfirst} split '\W+', lc (shift @_ || 'Moon,Sun');
 my $start = _parse_time ($_[0] || 'today midnight');
 my $end = _parse_time ($_[1] || '+30');
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
 my @data;
-foreach (@bodies) {
-    my $class = "Astro::Coord::ECI::$_";
-    my $body = $class->new (debug => $parm{debug})->
-	universal ($start) or die <<eod;
-Error - Can't instantiate an object for $_.
-eod
-    $body->can ('next_quarter') or die <<eod;
-Error - The next_quarter() method is not supported by the
-        $class class.
-eod
+
+foreach my $body (@sky) {
+    next unless $body->can ('next_quarter');
+    $body->universal ($start);
+
     while (1) {
 	my ($time, undef, $quarter) = $body->next_quarter;
 	last if $time > $end;
@@ -898,20 +987,6 @@ foreach (sort {$a->[0] <=> $b->[0]} @data) {
     my ($time, $quarter) = @$_;
     print strftime ($dtfmt, localtime $time), " $quarter\n";
     }
-
-=begin comment
-
-my $moon = Astro::Coord::ECI::Moon->new ()->universal ($start);
-
-while (1) {
-    my ($time, undef, $quarter) = $moon->next_quarter;
-    last if $time > $end;
-    print strftime ($dtfmt, localtime $time), " $quarter\n";
-    }
-
-=end comment
-
-=cut
 
 }
 
@@ -957,9 +1032,23 @@ eod
     }    
 }
 
+sub _set_angle {
+$parm{$_[0]} = _parse_angle ($_[1]);
+}
+
 sub _set_ellipsoid {
 Astro::Coord::ECI->set (ellipsoid => $_[1]);
 $parm{$_[0]} = $_[1];
+}
+
+sub _set_perltime {
+$parm{$_[0]} = $_[1];
+if ($_[1]) {
+    Date_Init ("TZ=GMT");
+    }
+  else {
+    Date_Init ($parm{tz} ? "TZ=$parm{tz}" : $tz_init);
+    }
 }
 
 sub _set_time {
@@ -971,23 +1060,25 @@ if (my $key = $twilight_abbr{lc $_[1]}) {
     $parm{$_[0]} = $key;
     $parm{_twilight} = $twilight_def{$key};
     }
-  elsif ($_[1] =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/) {
-    $parm{$_[0]} = $_[1];
-    $parm{_twilight} = - deg2rad (abs ($_[1]));
-    }
   else {
-    die <<eod;
-Error - The twilight setting must be 'civil', 'nautical', or
-        'astronomical', or a unique abbreviation thereof, or a number
-        of degrees the geometric center of the sun is below the
-        horizon.
-eod
+##  elsif ($_[1] =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/) {
+    $parm{$_[0]} = $_[1];
+    $parm{_twilight} = - deg2rad (abs (_parse_angle ($_[1])));
     }
+##  else {
+##    die <<eod;
+##Error - The twilight setting must be 'civil', 'nautical', or
+##        'astronomical', or a unique abbreviation thereof, or a number
+##        of degrees the geometric center of the sun is below the
+##        horizon.
+##eod
+##    }
 }
 
 sub _set_tz {
-$ENV{TZ} = $parm{$_[0]} = $_[1];
-Date_Init ("TZ=$_[1]");
+##$ENV{TZ} = $parm{$_[0]} = $_[1];
+$parm{$_[0]} = $_[1];
+Date_Init ("TZ=$_[1]") unless $parm{perltime};
 }
 
 sub _set_unmodified {$parm{$_[0]} = $_[1]}
@@ -1022,6 +1113,80 @@ sub _show_unmodified {
 defined $parm{$_[0]} ? $parm{$_[0]} : 'undef'
 }
 
+
+########################################################################
+#
+#	sky () - handle manipulation of the sky. What happens is based
+#		on the arguments as follows:
+#		none - list
+#		'add body' - add the named body, if it is not already
+#			there. If the body is not 'sun' or 'moon' it
+#			is assumed to be a star of the given name,
+#			and coordinates must be given.
+#		'clear' - clear
+#		'drop name ...' - drop the named bodies; the name match
+#			is by case-insensitive regular expression.
+#
+
+sub sky {
+my $verb = lc (shift @_ || '');
+if (!$verb) {
+    foreach my $body (@sky) {
+	if ($body->isa ('Astro::Coord::ECI::Star')) {
+	    my ($ra, $dec)  = $body->position ();
+	    printf "%10s  %8s  %7.3f\n", $body->get ('name'), _rad2hms ($ra), rad2deg ($dec);
+	    }
+	  else {
+	    printf "%10s\n", $body->get ('name');
+	    }
+	}
+    @sky or print "The sky is empty.\n";
+    }
+  elsif ($verb eq 'add') {
+    my $name = shift or die <<eod;
+Error - You did not specify what to add.
+eod
+    my $lcn = lc $name;
+    my $special = $lcn eq 'sun' || $lcn eq 'moon';
+    my $class = 'Astro::Coord::ECI::' .
+	($special ? ucfirst ($lcn) : 'Star');
+    foreach my $body (@sky) {
+	return if $body->isa ($class) &&
+		($special || $lcn eq lc $body->get ('name'));
+	}
+    my $body = $class->new (debug => $parm{debug});
+    unless ($special) {
+	$body->set (name => $name);
+	@_ >= 2 or die <<eod;
+Error - You must specify a name, a right ascencion (in either
+        hours:minutes:seconds or degrees) and a declination
+        (in either degreesDminutesMseconds or degrees, with
+        south declination negative). The distance in kilometers
+        is optional.
+eod
+	my $ra = deg2rad (_parse_angle (shift));
+	my $dec = deg2rad (_parse_angle (shift));
+	my $rng = shift;
+	$body->position ($ra, $dec, $rng);
+	}
+    push @sky, $body;
+    }
+  elsif ($verb eq 'clear') {
+    @sky = ();
+    }
+  elsif ($verb eq 'drop') {
+    @_ or die <<eod;
+Error - You must specify at least one name to drop.
+eod
+    my $match = qr{@{[join '|', map {quotemeta $_} @_]}}i;
+    @sky = grep {$_->get ('name') !~ m/$match/} @sky;
+    }
+  else {
+    die <<eod;
+Error - 'sky' subcommand '$verb' not known. See 'help'.
+eod
+    }
+}
 
 ########################################################################
 #
@@ -1118,6 +1283,29 @@ eod
 }
 
 
+#	$angle = _parse_angle ($string)
+
+#	Parses an angle in degrees, hours:minutes:seconds, or
+#	degreesDminutesMsecondsS and returns the angle in degrees.
+
+sub _parse_angle {
+my $angle = shift;
+if ($angle =~ m/:/) {
+    my ($h, $m, $s) = split ':', $angle;
+    $s ||= 0;
+    $m ||= 0;
+    $h ||= 0;
+    $m += $s / 60;
+    $h += $m / 60;
+    $angle = $h * 360 / 24;
+    }
+  elsif ($angle =~ m/^([+\-])?(\d*)d(\d*(?:\.\d*)?)(?:m(\d*(?:\.\d*)?)s?)?$/i) {
+    $angle = ((($4 || 0) / 60) + ($3 || 0)) / 60 + ($2 || 0);
+    $angle = -$angle if $1 eq '-';
+    }
+$angle;
+}
+
 #	$time = _parse_time ($string)
 
 #	Parses a time string in any known format. Strings with a
@@ -1139,9 +1327,55 @@ if ($time =~ m/^([\+\-])\s*(\d+)(?:\s+(\d+)(?::(\d+)(?::(\d+))?)?)?/) {
     $last_time_set = (UnixDate ($time, '%s') || die <<eod) + $date_manip_fudge;
 Error - Invalid time '$time'
 eod
+    $parm{perltime} and $last_time_set = timelocal gmtime $last_time_set;
+    $last_time_set;
     }
 }
 }	# End local symbol block.
+
+
+#	$string = _rad2hms ($angle)
+
+#	Converts the given angle in radians to hours, minutes, and
+#	seconds (of right ascension, presumably)
+
+sub _rad2hms {
+my $sec = shift (@_) / pi * 12;
+my $hr = floor ($sec);
+$sec = ($sec - $hr) * 60;
+my $min = floor ($sec);
+$sec = ($sec - $min) * 60;
+return sprintf '%2d:%02d:%02d', $hr, $min, $sec;
+}
+
+
+#	$soap_object = _soapdish ($uri, $proxy, $action)
+
+#	Manufacture a SOAP::Lite object for the given uri and proxy.
+#	We need this because SOAP::Lite has changed significantly since
+#	the 2002 version that is to this day (2006) bundled with
+#	ActivePerl.
+
+#	The action argument is the separater for building the
+#	SOAPAction header. It defaults to '' (suitable for .NET's
+#	delicate digestion). If you want to restore SOAP::Lite's
+#	original behaviour, specify '#'. Any other values are
+#	_NOT_ supported, and may result in a visit from unsympathetic
+#	men in snap-brim hats, dark glasses, and bad suits.
+
+sub _soapdish {
+my $conn = $_[2] || '';
+SOAP::Lite->can ('default_ns') ?
+    SOAP::Lite
+	->default_ns ($_[0])
+	->on_action (sub {join $conn, @_})
+	->proxy ($_[1]) :
+    SOAP::Lite
+	->envprefix ('soap')
+	->on_action (sub {join $conn, @_})
+	->uri ($_[0])
+	->proxy ($_[1]);
+}
 
 
 ########################################################################
@@ -1154,7 +1388,7 @@ eod
 
 package GeocoderResult;
 
-sub _format_city {"$_[0]{city} $_[0]{state} $_[0]{zip}"}
+sub _format_city {join ' ', map {$_[0]{$_} ? $_[0]{$_} : ()} qw {city state zip}}
 sub _format_list {(map {$_[0]->can ($_) ? $_[0]->$_ : ()}
 	qw {_format_loc _format_city})}
 sub format_line {join ' ', $_[0]->_format_list}
@@ -1199,11 +1433,8 @@ macros can be defined to issue frequently-used commands.
  
  [various front matter displayed]
  
- satpass> # Get observer's latitude and longitude from rpc.geocoder.us
+ satpass> # Get observer's latitude, longitude and height.
  satpass> geocode '1600 Pennsylvania Ave Washington DC'
- satpass> # Set observer's height above sea level in meters.
- satpass> # You're on your own for this.
- satpass> set height 15
  satpass> # Don't use SpaceTrack when a redistributor has the data.
  satpass> # If you don't set direct, you must have a SpaceTrack login.
  satpass> st set direct 1
@@ -1262,10 +1493,10 @@ The following commands are available:
 
 =over
 
-=item almanac bodies start_time end_time
+=item almanac start_time end_time
 
-This command displays almanac data for the given bodies ('sun', 'moon',
-or 'sun,moon'). You will get at least rise, meridian transit, and set.
+This command displays almanac data for the current background bodies
+(see L<sky|/item_sky>). You will get at least rise, meridian transit, and set.
 For the Sun you also get beginning and end of twilight, and local
 midnight. For the Moon you get quarter-phases. This is all done based
 on the current parameter settings (see L</PARAMETERS> below).
@@ -1307,12 +1538,14 @@ also cause this script to terminate.
 
 This command attempts to look up the given location (either street
 address or street intersection) at L<http://geocoder.us/>. The results
-of the lookup are displayed.
+of the lookup are displayed. If no location is specified, it looks up
+the value of the location parameter.
 
 If exactly one valid result is returned, the latitude and longitude
 of the observer are set to the returned values, and the name of
 the location of the observer is set to the canonical name of the
-location as returned by geocoder.us.
+location as returned by geocoder.us. Also, the height command is
+implicitly invoked to attempt to acquire the height above sea level.
 
 If the location contains whitespace, it must be quoted. Example:
 
@@ -1323,6 +1556,17 @@ use this command for commercial purposes.
 
 If you wish to use this command, you must install the Soap::Lite
 module.
+
+B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
+Bureau's TIGER database. They add their opinion that it tends to be
+buggy and not to cover rural areas well.
+
+=item height
+
+This command attempts to look up the height above sea level at the
+currently-set latitude and longitude in the U.S. Geological Survey's
+EROS database (L<http://gisdata.usgs.net/>). If the lookup succeeds,
+the height parameter is set to the result.
 
 =item help
 
@@ -1335,6 +1579,7 @@ the appropriate arguments, as follows:
  moon - Astro::Coord::ECI::Moon
  sun -- Astro::Coord::ECI::Sun
  st --- Astro::SpaceTrack
+ star - Astro::Coord::ECI::Star
  tle -- Astro::Coord::ECI::TLE
 
 =item list
@@ -1391,26 +1636,30 @@ Example:
 
  satpass> pass 'today noon' 'tomorrow noon'
 
-=item phase bodies time
+=item phase time
 
-This command gives the phase of the given bodies at the given time.
-The default body (and in fact the only legal body) is 'moon', and the
-default time is the time the command was issued. The display shows the
-time, the phase angle in degrees (0 being new, 90 being first quarter,
-and so on), and a description of the phase ('new', 'waxing crescent',
-'first quarter', 'waxing gibbous', 'full', 'waning gibbous', 'last
-quarter', or 'waning crescent'). The body is considered to be at
-quarter-phase if it is within 6.1 degrees (about 12 hours for the Moon)
-of 0, 90, 180, or 270 degrees. Otherwise you get waxing|waning
-crescent|gibbous.
+This command gives the phase of the relevant background bodies (see
+L<sky|/item_sky>) at the given time. At the moment, the only body
+that supports this is the Moon. The default time is the time the
+command was issued.
 
-The otherwise-superfluous body name is to provide upward compatibility
-in the event Venus or Mercury objects make their appearance.
+The display shows the time, the phase angle in degrees (0 being new, 90
+being first quarter, and so on), and a description of the phase ('new',
+'waxing crescent', 'first quarter', 'waxing gibbous', 'full', 'waning
+gibbous', 'last quarter', or 'waning crescent'). The body is considered
+to be at quarter-phase if it is within 6.1 degrees (about 12 hours for
+the Moon) of 0, 90, 180, or 270 degrees. Otherwise you get
+waxing|waning crescent|gibbous.
 
-=item quarters bodies start_time end_time
+=item position time
 
-This command gives the quarters of the given bodies ('sun', 'moon', or
-'sun,moon' between the two given times. This means quarter-phases for
+This position gives the positions of all objects in the observing list
+and in the sky at the given time, the default being the current time.
+
+=item quarters start_time end_time
+
+This command gives the quarters of such current background bodies (see
+L<sky|/item_sky>) as support this function. This means quarter-phases for
 the Moon, and equinoxes and solstices for the Sun. The Solar data may
 be off by as much as 15 minutes, because we're only calculating the
 position of the Sun to the nearest 0.01 degree.
@@ -1452,6 +1701,27 @@ given, it displays the complete list.
 
 The display format is in terms of the 'set' commands used to set
 the given values.
+
+=item sky ...
+
+This command manipulates the background objects (Sun, Moon, stars ...)
+that are used in the various calculations. If specified by itself
+it lists the current background objects. It also takes the following
+subcommands:
+
+add - adds the named background object, provided it is not already in
+the list. You must specify the name of the object (Sun, Moon, or star
+name). If you specify a star name, you must also specify its right
+ascension (in either hours:minutes:seconds) or degrees, and its
+declination in degrees (south is negative). You can also specify its
+distance in kilometers if you so desire, the default for a star being
+1 parsec.
+
+clear - clears the list of background objects.
+
+drop name ... - removes the objects with the given names from the
+background object list. The name matching is done using
+case-insensitive regular expressions.
 
 =item source file_name
 
@@ -1539,6 +1809,9 @@ to capture transits or near approaches.
 If this parameter is set to 0, no check for close approaches to the
 Sun or Moon will be made.
 
+See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
+is displayed in decimal degrees.
+
 The initial setting is 0.
 
 =item date_format
@@ -1604,6 +1877,9 @@ considered visible, in degrees. If the 'geometric' parameter is 0,
 the rise and set of the satellite are computed versus this setting
 also.
 
+See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
+is displayed in decimal degrees.
+
 The default is 20 degrees.
 
 =item latitude
@@ -1611,6 +1887,9 @@ The default is 20 degrees.
 This parameter specifies the latitude of the observer in degrees north.
 If your observing location is south of the Equator, specify a negative
 number.
+
+See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
+is displayed in decimal degrees.
 
 =item lit
 
@@ -1633,6 +1912,9 @@ This parameter specifies the longitude of the observer in degrees east.
 If your observing location is west of the Standard Meridian (as it
 would be if you live in North or South America), specify a negative
 number.
+
+See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
+is displayed in decimal degrees.
 
 =item model
 
@@ -1674,6 +1956,24 @@ model8 - Use either sgp8 or sdp8 as appropriate.
 
 The default is 'model'.
 
+=item perltime
+
+This parameter specifies the time zone mechanism for date input. If
+false (i.e. 0 or an empty string), Date::Manip does the conversion.
+If true (typically 1), Date::Manip is told that the time zone is GMT,
+and the time zone conversion is done by gmtime () and timelocal ().
+
+The problem this attempts to fix is that, in jurisdictions that do
+summer time, Date::Manip appears (to me, at least) to give the wrong
+time if the current time is not summer time but the time converted is.
+That is to say, with a time zone of EST5EDT, in January, 'jan 1 noon'
+converts to 5:00 PM GMT. But 'jul 1 noon'does also, and it seems to
+me that this should give 4:00 PM GMT.
+
+If you turn this setting on, 'jul 1 noon' comes out 4:00 PM GMT even
+if done in January. If you plan to provide times B<with zones> (e.g.
+'jul 1 noon edt'), you should turn this setting off.
+
 =item prompt
 
 This parameter specifies the string used to prompt for commands. The
@@ -1702,8 +2002,13 @@ information, a false (i.e. 0) value does not. The default is 0.
 
 This parameter specifies the number of degrees the sun must be below
 the horizon before it is considered dark. The words 'civil',
-'nautical', or 'astronomical' are also acceptable, specifying 6, 12, and
-18 degrees respectively. The default is 'civil'.
+'nautical', or 'astronomical' are also acceptable, as is any unique
+abbreviation of these words. They specify 6, 12, and 18 degrees
+respectively. The default is 'civil'.
+
+See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
+is displayed in decimal degrees, unless 'civil', 'nautical', or
+'astronomical' was specified.
 
 =item tz
 
@@ -1741,6 +2046,31 @@ sun.
 The default is true (i.e. 1).
 
 =back
+
+=head1 SPECIFYING ANGLES
+
+This script accepts angle input in the following formats:
+
+* Decimal degrees.
+
+* Hours, minutes, and seconds, specified as hours:minutes:seconds. You
+would typically only use this for right ascension. You may specify
+fractional seconds, or fractional minutes for that matter.
+
+* Degrees, minutes, and seconds, specified as degreesDminutesMsecondsS.
+The letters may be specified in either case, and trailing letters may
+be omitted. You may specify fractional seconds, or fractional minutes
+for that matter.
+
+Examples:
+
+ 23.4 specifies 23.4 degrees.
+ 1:22.3 specifies an hour and 22.3 minutes
+ 12d33m5 specifies 12 degrees 33 minutes 5 seconds
+
+Right ascension is always positive. Declination and latitude are
+positive for north, negative for south. Longitude is positive for
+east, negative for west.
 
 =head1 SPECIFYING TIMES
 
