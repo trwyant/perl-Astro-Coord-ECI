@@ -5,11 +5,10 @@ Astro::Coord::ECI::Star - Compute the position of a star.
 =head1 SYNOPSIS
 
  my $star = Astro::Coord::ECI::Star->star ();
- my $sta = Astro::Coord::ECI->
-     universal (time ())->
-     geodetic ($lat, $long, $alt);
- my ($time, $rise) = $sta->next_elevation ($moon);
- print "Moon @{[$rise ? 'rise' : 'set']} is ",
+ my $sta = Astro::Coord::ECI->new (name => 'Spica')->
+     position (3.51331869544372, -0.194802985206623);
+ my ($time, $rise) = $sta->next_elevation ($star);
+ print "Spica's @{[$rise ? 'rise' : 'set']} is ",
      scalar localtime $time;
 
 =head1 DESCRIPTION
@@ -67,15 +66,12 @@ angularvelocity attribute initialized to zero.
 
 =cut
 
-=begin comment
-
 sub new {
 my $class = shift;
 my $self = $class->SUPER::new (angularvelocity => 0,
     @_);
 }
 
-=end comment
 
 =item @almanac = $star->almanac ($location, $start, $end);
 
@@ -129,7 +125,7 @@ foreach (
     $obj->universal ($start);
     while (1) {
 	my ($time, $which) = $obj->$method (@$arg);
-	last if $time >= $end;
+	last unless $time && $time < $end;
 	push @almanac, [$time, $event, $which, $descr->[$which]]
 	    if $descr->[$which];
 	}
@@ -137,6 +133,8 @@ foreach (
 return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
+
+use constant NEVER_PASS_ELEV => 2 * __PACKAGE__->SECSPERDAY;
 
 =item $star = $star->position ($ra, $dec, $range, $mra, $mdc, $mrg, $time);
 
@@ -156,7 +154,8 @@ in time, omit the proper motion arguments completely and specify time
 as the fourth argument.
 
 If you call this as a class method, a new Astro::Coord::ECI::Star
-object will be constructed.
+object will be constructed. If you call it without arguments, the
+position of the star is returned.
 
 Note that this is B<not> simply a synonym for the equatorial() method.
 The equatorial() method returns the position of the star corrected for
@@ -167,9 +166,10 @@ position of the star in question.
 
 sub position {
 my $self = shift;
+return @{$self->{_star_position}} unless @_;
 my @args = @_;
 $args[2] ||= 30.8568e12;	# 1 parsec, per Meeus, Appendix I pg 407.
-@args < 5 and splice @args, 2, 0, 0, 0, 0;
+@args < 5 and splice @args, 3, 0, 0, 0, 0;
 $args[3] ||= 0;
 $args[4] ||= 0;
 $args[5] ||= 0;

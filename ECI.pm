@@ -1189,7 +1189,8 @@ positive, and false if the $elev argument is negative.
 The algorithm is successive approximation, and assumes that the
 body will be at its highest at meridian passage. It also assumes
 that if the body hasn't passed the given elevation in 183 days it
-never will.
+never will. In this case it returns undef in scalar context, or
+an empty list in list context.
 
 =cut
 
@@ -1217,10 +1218,10 @@ my $rise = ($self->azel ($body->universal ($begin), $upper))[1] < $angle || 0;
 
 my ($end, $above) = $self->next_meridian ($body, $rise);
 
+my $give_up = $body->NEVER_PASS_ELEV ();
+
 while ((($self->azel($body))[1] < 0 || 0) == $rise) {
-    croak <<eod if $end - $original > NEVER_PASS_ELEV;
-Error - The body never passes the given elevation.
-eod
+    return if $end - $original > $give_up;
     $begin = $end;
     ($end, $above) = $self->next_meridian ($body, $rise);
     }
@@ -1292,15 +1293,15 @@ Error - The next_meridian() method will not work for geosynchronous
 eod
 
 my $apparent = TWOPI / $denom;
-
 my $begin = $self->universal;
+my $delta = floor ($apparent / 16);
+my $end = $begin + $delta;
+
 my ($above, $opposite) =
     _mod2pi (($body->universal($begin)->geocentric)[1]
 	- ($self->universal($begin)->geocentric)[1]) >= PI ?
     (1 - $retro, PI) : ($retro, 0);
 
-my $delta = floor ($apparent / 16);
-my $end = $begin + $delta;
 ($begin, $end) = ($end, $end + $delta)
     while _mod2pi (($body->universal($end)->geocentric)[1] -
 	($self->universal($end)->geocentric)[1] + $opposite) < PI;
