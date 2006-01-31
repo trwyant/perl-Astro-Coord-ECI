@@ -12,8 +12,10 @@ use Astro::Coord::ECI::Star;
 use Astro::Coord::ECI::TLE;
 
 use Config;
+use Data::Dumper;
 use Date::Manip;
 use FileHandle;
+use Getopt::Long;
 use List::Util qw{max};
 use Math::Trig;
 use Pod::Usage;
@@ -23,6 +25,14 @@ use Text::Abbrev;
 use Text::ParseWords;
 use Time::Local;
 use UNIVERSAL qw{can};
+
+my ($soap_unavailable, $xml_parser_unavailable);
+BEGIN {
+    eval "use SOAP::Lite";
+    $soap_unavailable = $@;
+    eval "use XML::Parser";
+    $xml_parser_unavailable = $@;
+    }
 
 
 ########################################################################
@@ -46,6 +56,7 @@ my @sky = (
 
 my %parm = (
     appulse => 0,
+    autoheight => 1,
     date_format => '%a %d-%b-%Y',
     debug => 0,
     echo => 0,
@@ -69,6 +80,7 @@ my %macro;
 
 my %mutator = (
     appulse => \&_set_angle,
+    autoheight => \&_set_unmodified,
     date_format => \&_set_unmodified,
     debug => \&_set_unmodified,
     echo => \&_set_unmodified,
@@ -176,15 +188,18 @@ my @line;
 my $cntind = '';
 while (1) {
     my $buffer = @stack ? <$fh> :
-	$rl ? $rl->readline ("$cntind$parm{prompt} ") :
-	do {print "\n$cntind$parm{prompt} "; <$fh>};
+	-t STDIN ?
+	    $rl ? $rl->readline ("$cntind$parm{prompt} ") :
+		do {print "\n$cntind$parm{prompt} "; <$fh>} :
+	    <$fh>;
     defined $buffer or do {
 	last unless @stack;
 	$fh = pop @stack;
 	redo;
 	};
     chomp $buffer;
-    $parm{echo} && @stack and print "$cntind$parm{prompt} $buffer\n";
+    $parm{echo} && (@stack || !-t STDIN) and
+	print "$cntind$parm{prompt} $buffer\n";
     $buffer =~ s/^\s+//;
     $buffer =~ s/\s+$//;
     next unless $buffer;
@@ -223,7 +238,10 @@ Error - Failed to redirect output.
 eod
 	};
     if ($macro{$verb}) {
-	source (IO::String->new (join "\n", @{$macro{$verb}}));
+	my $cmd = join "\n", @{$macro{$verb}};
+	$cmd =~ s/\$(?:(\w+)|\{(\w+)(?:\:(.*?))\}|(.))/
+	    $4 ? $4 : _sub_arg ($1 || $2, $3 || '', \@args)/mgex;
+	source (IO::String->new ($cmd));
 	}
       elsif (can (__PACKAGE__, $verb)) {
 	no strict qw{refs};
@@ -351,17 +369,33 @@ foreach my $body (@bodies, @sky) {
 #
 
 sub geocode {
-eval {require Soap::Lite} or die <<eod;
-Error - You need to install the Soap::Lite module if you wish to use
+$soap_unavailable and die <<eod;
+Error - You need to install the SOAP::Lite module if you wish to use
         the geocode command.
 eod
-my $loc = shift || $parm{location};
+
+my %opt;
+local @ARGV = @_;
+GetOptions (\%opt, qw{all debug height}) or die <<eod;
+Error - The geocode command takes only the following options:
+  -all = get height using getAllElevations, not getElevation;
+  -debug = print retrieved data before parsing;
+  -height = invert the current autoheight setting for this command.
+These options are to be considered UNDOCUMENTED; they may
+change in future releases.
+eod
+
+my $set_loc = @ARGV;
+my $loc = shift @ARGV || $parm{location};
 
 my $soap = _soapdish ('http://rpc.geocoder.us/Geo/Coder/US',
 	'http://geocoder.us/service/soap', '#');
 my $rslt = $soap->geocode ($loc)->result or die <<eod;
 Error - Failed to access geocoder.us.
 eod
+
+local $Data::Dumper::Terse = 1;
+$opt{debug} and print "Result: ", Dumper ($rslt), "\n";
 
 @$rslt or die <<eod;
 Error - Failed to parse address
@@ -375,11 +409,12 @@ foreach my $hash (@$rslt) {
     print "\n", $hash->format_multiline, "\n";
     }
 if (@$rslt == 1) {
-    @parm{qw{location latitude longitude}} = ($rslt->[0]->format_line,
-	@{$rslt->[0]}{qw{lat long}});
+    $set_loc and $parm{location} = $rslt->[0]->format_line;
+    @parm{qw{latitude longitude}} = @{$rslt->[0]}{qw{lat long}};
     print "\n";
-    show (qw{location latitude longitude});
-    height ();
+    show (($set_loc ? 'location' : ()), qw{latitude longitude});
+    $opt{height} ? !$parm{autoheight} : $parm{autoheight} and
+	height (map {"-$_"} grep {$opt{$_}} qw{all debug});
     }
 }
 
@@ -390,22 +425,87 @@ if (@$rslt == 1) {
 #
 
 sub height {
-eval {require Soap::Lite} or die <<eod;
-Error - You need to install the Soap::Lite module if you wish to use
+$soap_unavailable and die <<eod;
+Error - You need to install the SOAP::Lite module if you wish to use
         the height command.
 eod
-my $soap = _soapdish ('http://gisdata.usgs.net/XMLWebServices/',
-    'http://gisdata.usgs.net/XMLWebServices/TNM_Elevation_Service.asmx');
-my $method = SOAP::Data->name ('getElevation')->attr (
-    {xmlns => 'http://gisdata.usgs.net/XMLWebServices/'});
-my $rslt = $soap->call ($method =>
-	SOAP::Data->new (name => 'X_Value', type => 'string',  value => $parm{longitude}),
-	SOAP::Data->new (name => 'Y_Value', type => 'string', value => $parm{latitude}),
+$xml_parser_unavailable and die <<eod;
+Error - You need to install the XML::Parser module if you wish to use
+        the height command.
+eod
+
+my %opt;
+
+local @ARGV = @_;
+GetOptions (\%opt, qw{all debug}) or die <<eod;
+Error - The height command takes only the following options:
+  -all = use getAllElevations, not getElevation;
+  -debug = print the retrieved data and parse results.
+These options are to be considered UNDOCUMENTED; they may
+change in future releases.
+eod
+
+my $set_pos = @ARGV;
+my $lat = @ARGV ? shift @ARGV : $parm{latitude};
+my $lon = @ARGV ? shift @ARGV : $parm{longitude};
+
+local $USGSElevationData::debug = 1 if $opt{debug};
+
+my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices/',
+    'http://gisdata.usgs.gov/XMLWebServices/TNM_Elevation_Service.asmx');
+
+my $rslt;
+my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
+if ($opt{all}) {
+    $rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
+		{xmlns => $xmlns}) =>
+	SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
+	SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
+	SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
+	)->result;
+    }
+  else {
+    $rslt = $soap->call (SOAP::Data->name ('getElevation')->attr (
+		{xmlns => $xmlns}) =>
+	SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
+	SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
 	SOAP::Data->new (name => 'Source_Layer', type => 'string',  value => -1),
 	SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
-	SOAP::Data->new (name => 'Elevation_Only', type => 'string', value => 'true'),
-    )->result;
-if ($rslt && $rslt > -1e6) {
+	SOAP::Data->new (name => 'Elevation_Only', type => 'string', value => 'false'),
+	)->result;
+    }
+
+if ($rslt) {
+
+   $opt{debug} and print 'Result: ', $rslt, "\n";
+
+    my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
+    my @endtag;
+    while ($rslt =~ m/(<\w+.*?>)/g) {
+	my $begintag = $1;
+	(my $endtag = $begintag) =~ s|<|</|;
+	$endtag =~ s/\s+.*/>/;
+	last if $rslt =~ m/$endtag/i;
+	unshift @endtag, $endtag;
+	}
+    if (my $endtag = join '', @endtag) {
+	$opt{debug} and
+	    print "Warning - Supplying missing end tag $endtag\n";
+	$rslt .= $endtag;
+	}
+    $rslt = $psr->parse ($rslt);
+    }
+  else {
+    $opt{debug} and print "No result from http://gisdata.usgs.gov/\n";
+    $rslt = undef;
+    }
+
+if (defined $rslt) {
+    if ($set_pos) {
+	$parm{latitude} = $lat;
+	$parm{longitude} = $lon;
+	show (qw{latitude longitude});
+	}
     $parm{height} = sprintf '%.2f', $rslt;
     show (qw{height});
     }
@@ -414,6 +514,7 @@ if ($rslt && $rslt > -1e6) {
 No height found for latitude $parm{latitude} longitude $parm{longitude}
 eod
     }
+
 }
 
 
@@ -734,7 +835,6 @@ foreach my $tle (@bodies) {
 
 
 #		Compute nearest approach to Sun and Moon
-# >>>>	This needs modification to use @sky.
 
 #		Note (fortuitous discovery) the ISS travels 1.175
 #		degrees per second at the zenith, so I need better
@@ -1061,22 +1161,21 @@ if (my $key = $twilight_abbr{lc $_[1]}) {
     $parm{_twilight} = $twilight_def{$key};
     }
   else {
-##  elsif ($_[1] =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/) {
+    my $angle = _parse_angle ($_[1]);
+    $angle =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ or
+	die <<eod;
+Error - The twilight setting must be 'civil', 'nautical', or
+        'astronomical', or a unique abbreviation thereof, or a number
+        of degrees the geometric center of the sun is below the
+        horizon.
+eod
     $parm{$_[0]} = $_[1];
-    $parm{_twilight} = - deg2rad (abs (_parse_angle ($_[1])));
+    $parm{_twilight} = - deg2rad (abs ($angle));
     }
-##  else {
-##    die <<eod;
-##Error - The twilight setting must be 'civil', 'nautical', or
-##        'astronomical', or a unique abbreviation thereof, or a number
-##        of degrees the geometric center of the sun is below the
-##        horizon.
-##eod
-##    }
 }
 
 sub _set_tz {
-##$ENV{TZ} = $parm{$_[0]} = $_[1];
+$ENV{TZ} = $parm{$_[0]} = $_[1];
 $parm{$_[0]} = $_[1];
 Date_Init ("TZ=$_[1]") unless $parm{perltime};
 }
@@ -1231,7 +1330,7 @@ if (!$rslt->is_success) {
     push @bodies, Astro::Coord::ECI::TLE->parse ($rslt->content);
     }
   else {
-    print $rslt->content, "\n";
+##    print $rslt->content, "\n";
     }
 }
 
@@ -1301,7 +1400,7 @@ if ($angle =~ m/:/) {
     }
   elsif ($angle =~ m/^([+\-])?(\d*)d(\d*(?:\.\d*)?)(?:m(\d*(?:\.\d*)?)s?)?$/i) {
     $angle = ((($4 || 0) / 60) + ($3 || 0)) / 60 + ($2 || 0);
-    $angle = -$angle if $1 eq '-';
+    $angle = -$angle if $1 && $1 eq '-';
     }
 $angle;
 }
@@ -1369,12 +1468,90 @@ SOAP::Lite->can ('default_ns') ?
     SOAP::Lite
 	->default_ns ($_[0])
 	->on_action (sub {join $conn, @_})
-	->proxy ($_[1]) :
+	->proxy ($_[1], timeout => 30) :
     SOAP::Lite
 	->envprefix ('soap')
 	->on_action (sub {join $conn, @_})
 	->uri ($_[0])
-	->proxy ($_[1]);
+	->proxy ($_[1], timeout => 30);
+}
+
+
+#	$value = _sub_arg ($spec, $default, \@args)
+
+#	This subroutine figures out what to substitute into a
+#	macro being expanded, given the thing being substituted,
+#	the default, and a list of the arguments provided.
+#
+#	If $spec is an unsigned integer, it returns the corresponding
+#	element of the @args list (numbered FROM 1) if that argument
+#	is defined, otherwise you get the default.
+#
+#	If $spec is the name of a parameter, you get that parameter's
+#	value.
+#
+#	If $spec is the name of an environment variable, you get that
+#	environment variable's value.
+#
+#	If all else fails, you get the default.
+
+sub _sub_arg {
+my ($name, $dflt, $args) = @_;
+if ($name !~ m/\D/) {
+    return $args->[$name - 1] if defined $args->[$name - 1];
+    }
+  else {
+    return $parm{$name} if exists $parm{$name};
+    return $ENV{$name} if exists $ENV{$name};
+    }
+defined $dflt ? $dflt : '';
+}
+
+
+########################################################################
+
+#	The parser code for the USGS data gets its own namespace
+#	to avoid conflicts with the main code.
+
+package USGSElevationData;
+
+use Scalar::Util qw{looks_like_number};
+
+our $debug;
+
+my @data;
+my $current = {};
+my $tag;
+my $text = '';
+my %interest;
+BEGIN {
+    %interest = (
+	data_source => sub {$current = {}},
+	data_id => sub {},
+	elevation => sub {push @data, $current
+		if looks_like_number ($_[1]) && $_[1] > -1e6},
+	units => sub {}
+	);
+    }
+
+sub EndDocument {
+@data ? $data[0]{elevation} : undef;
+}
+
+sub EndTag {
+my ($tag) = $_ =~ m|</(.*)>|;
+my $hdlr = $interest{lc $tag} or return;
+$debug and print "Debug EndTag -- <$tag>$text</$tag>\n";
+$hdlr->($tag, $text);
+$current->{lc $tag} = $text;
+}
+
+sub StartDocument {@data = ()}
+
+sub StartTag {}
+
+sub Text {
+$text = $_;
 }
 
 
@@ -1463,16 +1640,24 @@ requires registration.
 * Ability to acquire the observer's latitude and longitude from
 L<http://geocoder.us/>, given a street address or intersection name,
 and provided the user has an Internet connection and the relevant site
-is functional. This function may not be used for commercial purposes
-because of restrictions Geocoder.us places on the use of their data.
+is functional and has the data required. This function may not be used
+for commercial purposes because of restrictions Geocoder.us places on
+the use of their data.
+
+* Ability to acquire the observer's height above sea level from
+L<http://gisdata.usgs.gov/>, given the latitude and longitude
+of the observer, and provided the user has an internet connection
+and the relevant site is functional and has the data required.
 
 * Ability to produce solar and lunar almanac data (rise and set,
 meridian transit, and so forth).
 
 * The ability to define macros to perform frequently-used operations.
+These macros may take arguments, and make use of any L</PARAMETERS> or
+environment variables.
 
 * An initialization file in the user's home directory. The file is
-named satpass.ini under MacOS (meaning OS 9 - OS 10 is Darwin to Perl),
+named satpass.ini under MacOS (meaning OS 9 - OS X is Darwin to Perl),
 MSWin32 and VMS, and .satpass under any other operating system. Any
 command may be placed in the initialization file. It is a good place to
 set the observer's location and define any macros you want.
@@ -1487,7 +1672,8 @@ The command execution loop supports command continuation, which is
 specified by placing a trailing '\' on the line to be continued.
 
 It also supports a pseudo output redirection, by placing ">filename"
-or ">>filename" somewhere on the command line.
+(for a new file) or ">>filename" (to append to an existing file)
+somewhere on the command line. See the L<SYNOPSIS> for an example.
 
 The following commands are available:
 
@@ -1545,7 +1731,8 @@ If exactly one valid result is returned, the latitude and longitude
 of the observer are set to the returned values, and the name of
 the location of the observer is set to the canonical name of the
 location as returned by geocoder.us. Also, the height command is
-implicitly invoked to attempt to acquire the height above sea level.
+implicitly invoked to attempt to acquire the height above sea level
+provided the L<autoheight|/item_autoheight> parameter is true.
 
 If the location contains whitespace, it must be quoted. Example:
 
@@ -1554,19 +1741,32 @@ If the location contains whitespace, it must be quoted. Example:
 Because of restrictions on the use of the Geocode.us site, you may not
 use this command for commercial purposes.
 
-If you wish to use this command, you must install the Soap::Lite
+If you wish to use this command, you must install the SOAP::Lite
 module.
 
 B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
 Bureau's TIGER database. They add their opinion that it tends to be
 buggy and not to cover rural areas well.
 
-=item height
+=item height latitude longitude
 
 This command attempts to look up the height above sea level at the
-currently-set latitude and longitude in the U.S. Geological Survey's
-EROS database (L<http://gisdata.usgs.net/>). If the lookup succeeds,
+given latitude and longitude in the U.S. Geological Survey's EROS
+database (L<http://gisdata.usgs.gov/>). If the lookup succeeds,
+the latitude and longitude parameters are set to the arguments and
 the height parameter is set to the result.
+
+The latitude and longitude default to the current latitude and
+longitude parameters.
+
+If you wish to use this command, you must install the SOAP::Lite
+module.
+
+B<Caveat:> It is the author's experience that this resource is not
+always available. You should probably geocode your usual location
+and put its latitude, longitude and height in the initialization
+file. You can use macros to define alternate locations if you
+want.
 
 =item help
 
@@ -1620,6 +1820,38 @@ the currently-defined macros and their definitions. The quoting in
 the listing may not be identical to the quoting originally specified,
 but will be functionally equivalent, and specifically will look like
 the first example above.
+
+The macro functionality includes rudamentary interpolation of arguments
+and other values into the commands generated by the macro. The "magic"
+character is a dollar sign, which may be followed by the name of what
+is to be substituted. A number represents the corresponding macro
+argument (numbered from 1), and anything else represents the value of
+the named parameter (if it exists) or environment variable (if not).
+The name may be optionally enclosed in curly brackets.
+
+If the name of the thing substituted is enclosed in curly brackets, it
+may be optionally followed by a colon and a string to be defaulted into
+the command if needed.
+
+Macro interpolation is not affected by quotes. If you want a literal
+dollar sign in the expansion of your macro, double the dollar signs
+in the definition.
+
+For example:
+
+ macro ephemeris 'almanac "$1"'
+
+sets up "ephemeris" as a synonym for the 'almanac' command. The
+forward-looking user might want to set up
+
+ macro ephemeris 'almanac "${1:tomorrow midnight}"
+
+which is like the previous example except it defaults to 'tomorrow
+midnight', where the 'almanac' command defaults to 'today midnight'.
+
+Macros may be nested - that is, a macro may be defined in terms of
+other macros. There is no protection against the endless recursion
+that results if a macro invokes itself either directly or indirectly.
 
 =item pass start_time end_time increment
 
@@ -1813,6 +2045,15 @@ See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
 
 The initial setting is 0.
+
+=item autoheight
+
+This parameter determines whether the L<geocode|/item_geocode> command
+attempts to acquire the height of the location above sea level. It does
+this only if the parameter is true. You may wish to turn this off (i.e.
+set it to 0) if the USGS elevation service is being balky.
+
+The initial setting is 1.
 
 =item date_format
 
@@ -2126,10 +2367,10 @@ to run it just by specifying its name. Under VMS, the DCL$PATH logical
 name must include the directory into which the script was installed.
 
 There are no command qualifiers, but it is possible to pass commands
-on the command line. These commands are executed after the
-initialization file is executed. After the commands on the command
-line are executed, the user gets control unless one of the commands
-on the command line was 'exit'.
+on the command line, or to pipe or redirect them in. These commands
+are executed after the initialization file is executed. After the
+commands on the command line are executed, the user gets control
+unless one of the commands on the command line was 'exit'.
 
 For example, assuming the initialization file defines a macro named
 'usual' to load the usual observing list, you could do:
@@ -2141,13 +2382,33 @@ games with your shell's quoting rules. In the above example,
 MSWin32 and VMS users would be advised to interchange the single
 and double quotes.
 
+Should you wish to execute the above from a file, each command needs
+to go on its own line, thus:
+
+  usual
+  pass "today noon" +1
+  exit
+
+and the file is then invoked using either
+
+  $ satpass <commands
+
+(assuming 'commands' is the name of the file), or, under the same
+naming assumption,
+
+  $ satpass 'source commands'
+
+or
+
+  $ cat commands | satpass
+
 =head1 AUTHOR
 
 Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005 by Thomas R. Wyant, III
+Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This script is free software; you can use it, redistribute it
