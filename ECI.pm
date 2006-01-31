@@ -2333,8 +2333,9 @@ NORAD tracking algorithms indirectly provided a reference
 implementation for me to use during development.
 
 Jean Meeus, whose book "Astronomical Algorithms" (second edition)
-formed the basis for both this module and the B<Astro::Coord::ECI::Sun>
-module, and without whom it is impossible to get far in computational
+formed the basis for this module and the B<Astro::Coord::ECI::Sun>,
+B<Astro::Coord::ECI::Moon>, and B<Astro::Coord::ECI::Star> modules,
+and without whom it is impossible to get far in computational
 astronomy. Any algorithm not explicitly credited above is probably
 due to him.
 
@@ -2368,7 +2369,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005 by Thomas R. Wyant, III
+Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it
