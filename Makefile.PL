@@ -66,6 +66,11 @@ eod
 Optional module Soap::Lite is needed if you wish to use Geocoder.us to
 translate street addresses directly to latitudes and longitudes.
 eod
+	    ['XML::Parser' => 0, <<eod],
+Optional module XML::Parser is needed if you wish to use
+gisdata.usgs.gov to find the height above sea level at a given latitude
+and longitude.
+eod
 	    ) {
 	my ($module, $version, $info) = @$_;
 	my @mv = $version ? ($module, $version) : ($module);
@@ -116,6 +121,7 @@ my $vers = '';
 
 WriteMakefile (
 	NAME => 'Astro::Coord::ECI',
+	DISTNAME => 'Astro-satpass',
 	VERSION_FROM => 'ECI.pm',
 	PREREQ_PM => {
 			@prereq
@@ -126,26 +132,7 @@ WriteMakefile (
 	realclean => {FILES => join ' ', @clean_files},
 	$] >= 5.005 ? (
 		AUTHOR => 'Tom Wyant (wyant at cpan dot org)',
-		ABSTRACT => 'Compute satellite locations',
-		BINARY_LOCATION => "$Config{archname}$vers/Astro-Coord-ECI.tar.gz",
+		ABSTRACT => 'Compute satellite locations and visibility',
+		BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
 		) : (),
 	);
-
-sub check_module {
-my ($module, $version, $info) = @_;
-my @mv = $version ? ($module, $version) : ($module);
-eval "use @mv";
-return ($module, $version) unless $@;
-print $info, "\n";
-if ($opt{n}) {
-    print "Because you have asserted -n, optional module @mv will not be installed.\n\n";
-    return ();
-    }
-  elsif ($opt{y}) {
-    print "Because you have asserted -y, optional module @mv will be installed.\n\n";
-    return ($module, $version);
-    }
-  else {
-    }
-}
-
