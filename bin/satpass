@@ -163,7 +163,7 @@ print STDERR <<eod;
 
 satpass $VERSION - Satellite pass predictor
 based on Astro::Coord::ECI @{[Astro::Coord::ECI->VERSION]}
-run by Perl $Config{version} under $Config{osname} $Config{osvers}
+Perl $Config{version} on $Config{osname}
 
 Copyright 2005,2006 by Thomas R. Wyant, III. All rights reserved.
 
