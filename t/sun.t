@@ -104,7 +104,7 @@ foreach ([timegm (0, 0, 0, 20, 2, 2005), 53/60 + 38, -(2/60 + 77), -5,
 # Test $test: @{[ucfirst $what]} at latitude @{[sprintf '%.4f', $lat
 	]} degrees, longitude @{[sprintf '%.4f', $long]} degrees
 #          Date: $date
-#      Expected:  (Eastern Standard)
+#      Expected: @{[strftime TIMFMT, gmtime $expect]} (Eastern Standard)
 #           Got: @{[strftime TIMFMT, gmtime $got]} (Eastern Standard)
 #     Tolerance: $tolerance seconds
 eod
