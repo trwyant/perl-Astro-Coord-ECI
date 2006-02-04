@@ -61,10 +61,10 @@ my %static = (
     diameter => 1392000,
     );
 
-=item $sun = Astro::Coord::ECI::Sun->new ();
+=item $sun = Astro::Coord::ECI::Sun->new();
 
 This method instantiates an object to represent the coordinates of the
-Sun. This is a subclass of Astro::Coord::ECI, with the id and name
+Sun. This is a subclass of B<Astro::Coord::ECI>, with the id and name
 attributes set to 'Sun', and the diameter attribute set to 1392000 km
 per Jean Meeus' "Astronomical Algorithms", 2nd Edition, Appendix I,
 page 407.
@@ -81,7 +81,7 @@ my $self = $class->SUPER::new (%static, @_);
 }
 
 
-=item @almanac = $sun->almanac ($location, $start, $end);
+=item @almanac = $sun->almanac($location, $start, $end);
 
 This method produces almanac data for the Sun for the given location,
 between the given start and end times. The location is assumed to be
@@ -154,7 +154,7 @@ return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
 
-=item $longitude = $sun->ecliptic_longitude ();
+=item $longitude = $sun->ecliptic_longitude();
 
 This method returns the ecliptic longitude of the sun at its current
 time setting, in radians. It's really just a convenience method, since
@@ -187,13 +187,13 @@ $self->{_sun_geometric_longitude};
 }
 
 
-=item ($time, $quarter) = $sun->next_quarter ($want);
+=item ($time, $quarter, $desc) = $sun->next_quarter($want);
 
 This method calculates the time of the next equinox or solstice
 after the current time setting of the $sun object. The return is the
-time, and which equinox or solstice it is, as a number from 0 (vernal
-equinox) to 3 (winter solstice). If called in scalar context, you just
-get the time.
+time, which equinox or solstice it is as a number from 0 (vernal
+equinox) to 3 (winter solstice), and a string describing the equinox
+or solstice. If called in scalar context, you just get the time.
 
 The optional $want argument says which equinox or solstice you want.
 
@@ -201,7 +201,7 @@ As a side effect, the time of the $sun object ends up set to the
 returned time.
 
 The method of calculation is successive approximation, and actually
-returns the second b<after> the calculated equinox or solstice.
+returns the second B<after> the calculated equinox or solstice.
 
 Since we only calculate the Sun's position to the nearest 0.01 degree,
 the calculated solstice or equinox may be in error by as much as 15
@@ -239,7 +239,7 @@ wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal
 }
 
 
-=item $period = $sun->period ()
+=item $period = $sun->period()
 
 Although this method is attached to an object that represents the
 Sun, what it actually returns is the siderial period of the Earth,
@@ -253,7 +253,7 @@ sub period {31558149.7632}	# 365.256363 * 86400
 
 use constant OBLIQUITY_CORRECTION => _deg2rad (0.00256);
 
-=item $radians = $self->obliquity_correction ($omega);
+=item $radians = $self->obliquity_correction($omega);
 
 This method calculates the correction to the obliquity in terms of the
 given dynamical time.
@@ -262,6 +262,8 @@ Jean Meeus' "Astronomical Algorithms," 2nd Edition, page 165 states
 that for calculating the apparent position of the Sun we need to add
 0.00256 degrees * cos (omega) to the obliquity. This method overrides
 the base class' method to accomplish this.
+
+=cut
 
 sub obliquity_correction {cos ($_[0]->omega ($_[1]) * OBLIQUITY_CORRECTION)}
 
@@ -273,7 +275,7 @@ Sun at the object's currently-set universal time.  The velocity
 components are arbitrarily set to 0.
 
 Although there's no reason this method can't be called directly, it
-exists to take advantage of the hook in the Astro::Coord::ECI
+exists to take advantage of the hook in the B<Astro::Coord::ECI>
 object, to allow the position of the Sun to be computed when the
 object's time is set.
 
@@ -341,14 +343,8 @@ $self->ecliptic (0, $lamda, $R);
 
 =head1 ACKNOWLEDGEMENTS
 
-The author wishes to acknowledge the following individuals and
-organizations.
-
-Jean Meeus, whose book "Astronomical Algorithms" (second edition)
-formed the basis for this module.
-
-Dr. Meeus' publisher, Willman-Bell Inc (F<http://www.willbell.com/>),
-which kindly granted permission to use Dr. Meeus' work in this module.
+The author wishes to acknowledge Jean Meeus, whose book "Astronomical
+Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
 
@@ -369,11 +365,12 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005 by Thomas R. Wyant, III
+Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it
-and/or modify it under the same terms as Perl itself.
+and/or modify it under the same terms as Perl itself. Please see
+L<http://perldoc.perl.org/index-licence.html> for the current licenses.
 
 This software is provided without any warranty of any kind, express or
 implied. The author will not be liable for any damages of any sort

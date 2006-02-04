@@ -16,7 +16,7 @@ Astro::Coord::ECI::Star - Compute the position of a star.
 This module implements the position of a star (or any other object
 which can be regarded as fixed on the celestial sphere) as a function
 of time, as described in Jean Meeus' "Astronomical Algorithms," second
-edition. It is a subclass of Astro::Coord::ECI, with a position()
+edition. It is a subclass of B<Astro::Coord::ECI>, with a position()
 method to set the catalog position (and optionally proper motion as
 well), and the time_set() method overridden to compute the position
 of the star at the given time.
@@ -57,11 +57,11 @@ BEGIN {
 }
 
 
-=item $star = Astro::Coord::ECI::Star->new ();
+=item $star = Astro::Coord::ECI::Star->new();
 
 This method instantiates an object to represent the coordinates of a
 star, or some other object which may be regarded as fixed on the
-celestial sphere. This is a subclass of Astro::Coord::ECI, with the
+celestial sphere. This is a subclass of B<Astro::Coord::ECI>, with the
 angularvelocity attribute initialized to zero.
 
 =cut
@@ -73,7 +73,7 @@ my $self = $class->SUPER::new (angularvelocity => 0,
 }
 
 
-=item @almanac = $star->almanac ($location, $start, $end);
+=item @almanac = $star->almanac($location, $start, $end);
 
 This method produces almanac data for the star for the given location,
 between the given start and end times. The location is assumed to be
@@ -136,7 +136,7 @@ return sort {$a->[0] <=> $b->[0]} @almanac;
 
 use constant NEVER_PASS_ELEV => 2 * __PACKAGE__->SECSPERDAY;
 
-=item $star = $star->position ($ra, $dec, $range, $mra, $mdc, $mrg, $time);
+=item $star = $star->position($ra, $dec, $range, $mra, $mdc, $mrg, $time);
 
 This method sets the position and proper motion of the star in
 equatorial coordinates. Right ascension and declination are
@@ -180,14 +180,14 @@ $self->dynamical ($args[6]);
 $self;
 }
 
-=item $star->time_set ()
+=item $star->time_set()
 
 This method sets coordinates of the object to the coordinates of the
 star at the object's currently-set universal time. Proper motion is
 taken into account if this was specified.
 
 Although there's no reason this method can't be called directly, it
-exists to take advantage of the hook in the Astro::Coord::ECI
+exists to take advantage of the hook in the B<Astro::Coord::ECI>
 object, to allow the position of the Moon to be computed when the
 object's time is set.
 
@@ -258,14 +258,8 @@ $self->ecliptic ($beta, $lamda, $range);
 
 =head1 ACKNOWLEDGEMENTS
 
-The author wishes to acknowledge the following individuals and
-organizations.
-
-Jean Meeus, whose book "Astronomical Algorithms" (second edition)
-formed the basis for this module.
-
-Dr. Meeus' publisher, Willman-Bell Inc (F<http://www.willbell.com/>),
-which kindly granted permission to use Dr. Meeus' work in this module.
+The author wishes to acknowledge Jean Meeus, whose book "Astronomical
+Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
 
@@ -289,7 +283,8 @@ Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it
-and/or modify it under the same terms as Perl itself.
+and/or modify it under the same terms as Perl itself. Please see
+L<http://perldoc.perl.org/index-licence.html> for the current licenses.
 
 This software is provided without any warranty of any kind, express or
 implied. The author will not be liable for any damages of any sort

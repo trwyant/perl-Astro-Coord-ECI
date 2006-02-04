@@ -7,7 +7,7 @@ Astro::Coord::ECI::TLE - Compute satellite locations using NORAD orbit propagati
  my @sats = Astro::Coord::ECI::TLE->parse ($tle_data);
  my $now = time ();
  foreach my $tle (@sats) {
-     my @data = $tle->model ($now);
+     my @data = $tle->model ($now)->geodetic ();
      print $tle->get ('id'), "\t@data\n";
      }
 
@@ -15,7 +15,7 @@ The acquisition of the orbital elements represented by $tle_data
 in the above example is left as an exercise for the student.
 
 Hint: see F<http://www.space-track.org/>, F<http://celestrak.com/>,
-or Astro::SpaceTrack.
+or L<Astro::SpaceTrack>.
 
 =head1 DESCRIPTION
 
@@ -24,7 +24,7 @@ in their "SPACETRACK REPORT NO. 3, Models for Propagation of NORAD
 Element Sets." In other words, it turns the two- or three-line
 element sets available from such places as L<http://www.space-track.org/>
 or L<http://celestrak.com/> into predictions of where the relevant
-orbiting bodies will be. This module does NOT implement a complete
+orbiting bodies will be. This module does B<not> implement a complete
 satellite prediction system, just the NORAD models.
 
 The models implemented are:
@@ -50,8 +50,8 @@ appropriate inherited method to get the coordinates of the body in
 whatever coordinate system is convenient.
 
 It is also possible to run the desired model (as specified by the
-'model' attribute) simply by setting the time represented by the
-object.
+L<model|/item_model> attribute) simply by setting the time represented
+by the object.
 
 At the moment, the recommended model to use is either SGP4 or SDP4,
 depending on whether the orbital elements are for a near-earth or
@@ -68,11 +68,16 @@ in Perl.
 
 This class is a subclass of Astro::Coord::ECI. This means
 that the models do not return results directly. Instead, you call
-the relevant Astro::Coord::ECI method. For example, to
-find the latitude, longitude, and altitude of a body at a given time,
-you do
+the relevant Astro::Coord::ECI method to get the coordinates you want.
+For example, to find the latitude, longitude, and altitude of a body at
+a given time, you do
 
   my ($lat, $long, $alt) = $body->model ($time)->geodetic;
+
+Or, assuming the L<model|/item_model> attribue is set the way you want
+it, by
+
+  my ($lat, $long, $alt) = $body->geodetic ($time);
 
 This module is a computer-assisted translation of the FORTRAN reference
 implementation in "SPACETRACK REPORT NO. 3." That means, basically,
@@ -206,12 +211,13 @@ my %static = (
     model => 'model',
     );
 
-=item $tle = Astro::Coord::ECI::TLE->new (...)
+=item $tle = Astro::Coord::ECI::TLE->new()
 
 This method instantiates an object to represent a NORAD two- or
 three-line orbital element set. This is a subclass of
-Astro::Coord::ECI, with the semimajor and flattening attributes
-set to 0.
+B<Astro::Coord::ECI>.
+
+Any arguments get passed to the set() method.
 
 It is both anticipated and recommended that you use the parse()
 method instead of this method to create an object, since the models
@@ -226,14 +232,16 @@ $self;
 }
 
 
-=item $value = $tle->ds50 (time)
+=item $value = $tle->ds50($time)
 
 This method converts the time to days since 1950 Jan 0, 0 h GMT.
-The time defaults to the epoch of the data set.
+The time defaults to the epoch of the data set. This method does not
+affect the $tle object - it is exposed for convenience and for testing
+purposes.
 
 It can also be called as a "static" method, i.e. as
-Astro::Coord::ECI::TLE->ds50 (time), but in this case the time may not be
-defaulted, and no attempt has been made to make this a pretty error.
+Astro::Coord::ECI::TLE->ds50 ($time), but in this case the time may not
+be defaulted, and no attempt has been made to make this a pretty error.
 
 =cut
 
@@ -260,10 +268,10 @@ $rslt;
 }	# End local symbol block
 
 
-=item $value = $tle->get (attribute)
+=item $value = $tle->get('attribute')
 
 This method retrieves the value of the given attribute. See the
-set() and parse() method for attribute names.
+L</ATTRIBUTES> section for a description of the attributes.
 
 =cut
 
@@ -284,7 +292,7 @@ if (ref $self) {
 }
 
 
-=item $deep = $tle->is_deep ();
+=item $deep = $tle->is_deep();
 
 This method returns true if the object is in deep space - meaning that
 its period is at least 225 minutes (= 13500 seconds).
@@ -297,22 +305,22 @@ return ($_[0]{_isdeep} = $_[0]->period () >= 13500);
 }
 
 
-=item $tle = $tle->model ($time)
+=item $tle = $tle->model($time)
 
 This method calculates the position of the body described by the TLE
 object at the given time, using the preferred model. Currently this is
 either SGP4 for near-earth objects, and SDP4 for deep-space objects.
 
-The intent is that this method will use whatever model is current. If
-the current model changes, this will use the current model as soon as
-I:
+The intent is that this method will use whatever model is currently
+preferred. If the preferred model changes, this method will use the
+new preferred model as soon as I:
 
   - Find out about the change;
   - Can get the specifications for the new model;
   - Can find the time to code up the new model.
 
-The result is the original object reference. See the DESCRIPTION
-heading above for how to retrieve the coordinates you just calculated.
+You need to call one of the Astro::Coord::ECI methods (e.g. geodetic ()
+or equatorial ()) to retrieve the position you just calculated.
 
 =cut
 
@@ -327,8 +335,9 @@ object at the given time, using either the SGP4 or SDP4 model,
 whichever is appropriate. If the preferred model becomes S*P8,
 this method will still use S*P4.
 
-The result is the original object reference. See the DESCRIPTION
-heading above for how to retrieve the coordinates you just calculated.
+
+You need to call one of the Astro::Coord::ECI methods (e.g. geodetic ()
+or equatorial ()) to retrieve the position you just calculated.
 
 =cut
 
@@ -342,8 +351,8 @@ This method calculates the position of the body described by the TLE
 object at the given time, using either the SGP8 or SDP8 model,
 whichever is appropriate.
 
-The result is the original object reference. See the DESCRIPTION
-heading above for how to retrieve the coordinates you just calculated.
+You need to call one of the Astro::Coord::ECI methods (e.g. geodetic ()
+or equatorial ()) to retrieve the position you just calculated.
 
 =cut
 
@@ -351,42 +360,19 @@ sub model8 {
 return $_[0]->is_deep ? $_[0]->sdp8 ($_[1]) : $_[0]->sgp8 ($_[1]);
 }
 
-=item @elements = Astro::Coord::ECI::TLE->parse (data);
+=item @elements = Astro::Coord::ECI::TLE->parse (@data);
 
-This "method" parses a NASA two- or three-line element set, returning
-a list of Astro::Coord::ECI::TLE objects. The following attributes will (at least
-potentially) be filled in:
+This method parses a NORAD two- or three-line element set (or a
+mixture), returning a list of Astro::Coord::ECI::TLE objects. The
+L</ATTRIBUTES> section identifies those attributes which will be filled
+in by this method.
 
- name = name of body (three-line sets only).
- id = NORAD SATCAT catalog ID.
- classification = 'U' for 'unclassified'.
- international = international launch designator.
- epoch = epoch of data (converted to Perl time).
- firstderivative = first time derivative of mean
-   motion, in radians per minute squared.
- secondderivative = second time derivative of mean
-   motion, in radians per minute cubed.
- bstardrag = B* drag term, decoded into a number.
- ephemeristype = 0 in practice.
- elementnumber = element set number.
- inclination = orbital inclination in radians.
- rightascension = right ascension of ascending node
-   at epoch, in radians.
- eccentricity = orbital eccentricity, with implied
-   decimal point inserted.
- argumentofperigee = argument of perigee (angular
-   distance from ascending node to perigee) in
-   radians.
- meananomaly = mean orbital anomaly in radians.
- meanmotion = mean motion of body, in radians per
-   minute.
- revolutionsatepoch = number of revolutions since
-   launch, at the epoch.
- tle = the input data used to generate this object.
-   This is a read-only attribute.
- ds50 = the epoch, in days since 1950. This is a
-   read-only attribute; to modify it, set the
-   epoch.
+The input will be split into individual lines, and all blank lines and
+lines beginning with '#' will be eliminated. The remaining lines are
+assumed to represent two- or three-line element sets, in so-called
+external format. Internal format (denoted by a 'G' in column 79 of line
+1 of the set, not counting the common name if any) is not supported,
+and the presence of such data will result in an exception being thrown.
 
 =cut
 
@@ -488,24 +474,13 @@ return ($self->{_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
 
 =item $tle->set (attribute => value ...)
 
-This method sets the values of various attributes. This
-may cause models to be re-initialized. No big deal.
+This method sets the values of the various attributes. The changing of
+attributes actually used by the orbital models will cause the models to
+be reinitialized. This happens transparantly, and is no big deal. For
+a description of the attributes, see L</ATTRIBUTES>.
 
-Legal attributes relevant to orbit calculations are
-documented with the parse() method. In addition, the
-following attributes may be set:
-
- model => the name of the model to run when the time is
-   set, or a false value if no model is to be run. Legal
-   model names are model, model4, model8, sgp, sgp4,
-   sgp8, sdp4, or sdp8. The default is 'model'.
-
-The above attributes may be set statically (i.e. by
-Astro::Coord::ECI::TLE->set (...)), thereby specifying a default for
-subsequently-instantiated objects.
-
-Because this is a subclass of Astro::Coord::ECI, any
-attributes of that class can also be set.
+Because this is a subclass of Astro::Coord::ECI, any attributes of that
+class can also be set.
 
 =cut
 
@@ -542,13 +517,14 @@ $clear and do {
 }
 
 
-=item $tle = $tle->sgp ($time)
+=item $tle = $tle->sgp($time)
 
 This method calculates the position of the body described by the TLE
 object at the given time, using the SGP model.
 
-The result is the original object reference. See the DESCRIPTION
-heading above for how to retrieve the coordinates you just calculated.
+The result is the original object reference. You need to call one of
+the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
+retrieve the position you just calculated.
 
 "Spacetrack Report Number 3" (see "Acknowledgments") says that this
 model can be used for either near-earth or deep-space orbits, but the
@@ -763,7 +739,7 @@ goto &_convert_out;
 }
 
 
-=item $tle = $tle->sgp4 ($time)
+=item $tle = $tle->sgp4($time)
 
 This method calculates the position of the body described by the TLE
 object at the given time, using the SGP4 model.
@@ -1090,13 +1066,14 @@ goto &_convert_out;
 
 
 
-=item $tle = $tle->sdp4 ($time)
+=item $tle = $tle->sdp4($time)
 
 This method calculates the position of the body described by the TLE
 object at the given time, using the SDP4 model.
 
-The result is the original object reference. See the DESCRIPTION
-heading above for how to retrieve the coordinates you just calculated.
+The result is the original object reference. You need to call one of
+the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
+retrieve the position you just calculated.
 
 "Spacetrack Report Number 3" (see "Acknowledgments") says that this
 model can be used only for deep-space orbits.
@@ -1372,13 +1349,14 @@ goto &_convert_out;
 }
 
 
-=item $tle = $tle->sgp8 ($time)
+=item $tle = $tle->sgp8($time)
 
 This method calculates the position of the body described by the TLE
 object at the given time, using the SGP8 model.
 
-The result is the original object reference. See the DESCRIPTION
-heading above for how to retrieve the coordinates you just calculated.
+The result is the original object reference. You need to call one of
+the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
+retrieve the position you just calculated.
 
 "Spacetrack Report Number 3" (see "Acknowledgments") says that this
 model can be used only for near-earth orbits.
@@ -1741,13 +1719,14 @@ goto &_convert_out;
 }
 
 
-=item $tle = $tle->sdp8 ($time)
+=item $tle = $tle->sdp8($time)
 
 This method calculates the position of the body described by the TLE
 object at the given time, using the SDP8 model.
 
-The result is the original object reference. See the DESCRIPTION
-heading above for how to retrieve the coordinates you just calculated.
+The result is the original object reference. You need to call one of
+the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
+retrieve the position you just calculated.
 
 "Spacetrack Report Number 3" (see "Acknowledgments") says that this
 model can be used only for near-earth orbits.
@@ -1987,11 +1966,12 @@ goto &_convert_out;
 }
 
 
-=item $value = $tle->thetag (time);
+=item $value = $tle->thetag($time);
 
 This method returns the Greenwich hour angle of the mean equinox
 at the given time. The time defaults to the epoch of the given
-object.
+object. The object itself is unaffected - this method is exposed
+for convenience and for testing purposes.
 
 This method can also be called as a "static" method (i.e. as
 Astro::Coord::ECI::TLE->thetag (time)). In this case the time may NOT be
@@ -2010,13 +1990,13 @@ eod
 $rslt;
 }
 
-=item $self->time_set ();
+=item $self->time_set();
 
 This method sets the coordinate of the object to whatever is
-computed by the currently-specified model.
+computed by the model specified by the model attribute.
 
 Although there's no reason this method can't be called directly, it
-exists to take advantage of the hook in the Astro::Coord::ECI
+exists to take advantage of the hook in the B<Astro::Coord::ECI>
 object, to allow the position of the body to be computed when the
 object's time is set.
 
@@ -2848,6 +2828,135 @@ __END__
 
 =back
 
+=head2 ATTRIBUTES
+
+This class has the following public attributes. The description
+gives the data type. It may also give one of the following if
+applicable:
+
+parse - if the attribute is set by the parse() method;
+
+read-only - if the attribute is read-only;
+
+static - if the attribute may be set on the class.
+
+Note that the orbital elements provided by NORAD are tweaked for use by
+the models implemented by this class. If you plug them in to the
+same-named parameters of other models, your milage may vary
+significantly.
+
+=over
+
+=item argumentofperigee (numeric, parse)
+
+This attribute contains the argument of perigee (angular distance from
+ascending node to perigee) of the body's orbit, in radians.
+
+=item bstardrag (numeric, parse)
+
+This attribute contains the body's B* drag term, decoded into a number.
+
+=item classification (string, parse)
+
+This attribute contains the body's security classification. You should
+expect to see only the value 'U', for 'Unclassified.'
+
+=item ds50 (numeric, readonly, parse)
+
+This attribute contains the L<epoch|/item_epoch>, in days since 1950.
+Setting the L<epoch|/item_epoch> also modified this attribute.
+
+=item eccentricity (numeric, parse)
+
+This attribute contains the body's orbital eccentricity, with the
+implied decimal point inserted.
+
+=item elementnumber (numeric, parse)
+
+This attribue contains the element set number of the data set. In
+theory, this gets incremented every time a data set is issued.
+
+=item ephemeristype (numeric, parse)
+
+This attribute records a field in the data set which is supposed to
+specify which model to use with this data. In practice, it seems
+always to be zero.
+
+=item epoch (numeric, parse)
+
+This attribute contains the epoch of the orbital elements - that is,
+the 'as-of' date and time - as a Perl date. Setting this attribute
+also modifies the ds50 attribute.
+
+=item firstderivative (numeric, parse)
+
+This attribute contains the first time derivative of the body's mean
+motion, in radians per minute squared.
+
+=item id (numeric, parse)
+
+This attribute contains the body's NORAD SATCAT catalog ID.
+
+=item inclination (numeric, parse)
+
+This attribute contains the body's orbital inclination in radians.
+
+=item international (string, parse)
+
+This attribute contains the body's international launch designator.
+This consists of three parts: a two-digit number (with leading zero if
+needed) giving the last two digits of the launch year (in the range
+1957-2056); a three-digit number (with leading zeros if needed) giving
+the order of the launch within the year, and one to three letters
+designating the "part" of the launch, with payload(s) getting the
+first letters, and spent boosters, debris, etc getting the rest.
+
+=item meananomaly (numeric, parse)
+
+This attribute contains the body's mean orbital anomaly in radians.
+
+=item meanmotion (numeric, parse)
+
+This attribute contains mean motion of body, in radians per
+minute.
+
+=item model (string, static)
+
+This attribute contains the name of the model to be run (i.e. the name
+of the method to be called) when the time_set() method is called, or a
+false value if no model is to be run. Legal model names are: model,
+model4, model8, sgp, sgp4, sgp8, sdp4, and sdp8.
+
+The default is 'model'. Setting the value on the class changes the
+default.
+
+=item name (string, parse (three-line sets only))
+
+This attribute contains the common name of the body.
+
+=item revolutionsatepoch (numeric, parse)
+
+This attribute contains number of revolutions the body has made since
+launch, at the epoch.
+
+=item rightascension (numeric, parse)
+
+This attribute contains the right ascension of the ascending node
+of the body's orbit at the epoch, in radians.
+
+=item secondderivative (numeric, parse)
+
+This attribute contains the second time derivative of the body's mean
+motion, in radians per minute cubed.
+
+=item tle (string, readonly, parse)
+
+This attribute contains the input data used by the parse() method to
+generate this object.
+
+
+=back
+
 =head1 ACKNOWLEDGMENTS
 
 The author wishes to acknowledge the following individuals.
@@ -2883,11 +2992,12 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005 by Thomas R. Wyant, III
+Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it
-and/or modify it under the same terms as Perl itself.
+and/or modify it under the same terms as Perl itself. Please see
+L<http://perldoc.perl.org/index-licence.html> for the current licenses.
 
 This software is provided without any warranty of any kind, express or
 implied. The author will not be liable for any damages of any sort

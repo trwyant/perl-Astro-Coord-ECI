@@ -267,14 +267,6 @@ print "\n";
 
 sub almanac {
 
-=begin comment
-
-my @list = grep {$_} split '\W+', shift || 'Sun,Moon';
-
-=end comment
-
-=cut
-
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $almanac_start = _parse_time (shift || 'today midnight');
 my $almanac_end = _parse_time (shift || '+1');
@@ -1594,7 +1586,6 @@ sub _format_loc {join ' ',
 
 __END__
 
-
 =head1 NAME
 
 satpass - Predict satellite passes over an observer.
@@ -1635,26 +1626,31 @@ L<http://www.space-track.org/>, L<http://spaceflight.nasa.gov/>,
 or L<http://celestrak.com/> (or, indeed, any source supported by
 Astro::SpaceTrack), provided the user has an Internet connection
 and the relevant site is functional. The Space Track site also
-requires registration.
+requires registration. You will need to install B<Astro::SpaceTrack>
+to get this functionality.
 
 * Ability to acquire the observer's latitude and longitude from
 L<http://geocoder.us/>, given a street address or intersection name,
 and provided the user has an Internet connection and the relevant site
 is functional and has the data required. This function may not be used
 for commercial purposes because of restrictions Geocoder.us places on
-the use of their data.
+the use of their data. You will need to install B<SOAP::Lite> to get
+this functionality.
 
 * Ability to acquire the observer's height above sea level from
 L<http://gisdata.usgs.gov/>, given the latitude and longitude
 of the observer, and provided the user has an internet connection
-and the relevant site is functional and has the data required.
+and the relevant site is functional and has the data required. You will
+need to install B<SOAP::Lite>, and maybe B<XML::Parser>, to get this
+functionality.
 
 * Ability to produce solar and lunar almanac data (rise and set,
 meridian transit, and so forth).
 
 * The ability to define macros to perform frequently-used operations.
 These macros may take arguments, and make use of any L</PARAMETERS> or
-environment variables.
+environment variables. You will need to install B<IO::String> to get
+this functionality.
 
 * An initialization file in the user's home directory. The file is
 named satpass.ini under MacOS (meaning OS 9 - OS X is Darwin to Perl),
@@ -1673,7 +1669,7 @@ specified by placing a trailing '\' on the line to be continued.
 
 It also supports a pseudo output redirection, by placing ">filename"
 (for a new file) or ">>filename" (to append to an existing file)
-somewhere on the command line. See the L<SYNOPSIS> for an example.
+somewhere on the command line. See the L</SYNOPSIS> for an example.
 
 The following commands are available:
 
@@ -1682,19 +1678,16 @@ The following commands are available:
 =item almanac start_time end_time
 
 This command displays almanac data for the current background bodies
-(see L<sky|/item_sky>). You will get at least rise, meridian transit, and set.
-For the Sun you also get beginning and end of twilight, and local
-midnight. For the Moon you get quarter-phases. This is all done based
-on the current parameter settings (see L</PARAMETERS> below).
-
-If you specify a body more than once, duplicates will be ignored. You
-may use any punctuation to separate the names of the bodies; you may
-even use whitespace if you quote the argument.
+(see L<sky|/item_sky__2e_2e_2e>). You will get at least rise, meridian
+transit, and set. For the Sun you also get beginning and end of
+twilight, and local midnight. You also get equinoxes, and solstices,
+but they're only good to within about 15 minutes. For the Moon you get
+quarter-phases. This is all done based on the current parameter
+settings (see L</PARAMETERS> below).
 
 The output is in chronological order.
 
-The list of bodies defaults to 'Sun,Moon', the start_time to 'today
-midnight', and the end_time to '+1'.
+The start_time defaults to 'today midnight', and the end_time to '+1'.
 
 See L</SPECIFYING TIMES> below for how to specify times.
 
@@ -1725,7 +1718,7 @@ also cause this script to terminate.
 This command attempts to look up the given location (either street
 address or street intersection) at L<http://geocoder.us/>. The results
 of the lookup are displayed. If no location is specified, it looks up
-the value of the location parameter.
+the value of the L<location|/item_location> parameter.
 
 If exactly one valid result is returned, the latitude and longitude
 of the observer are set to the returned values, and the name of
@@ -1741,7 +1734,7 @@ If the location contains whitespace, it must be quoted. Example:
 Because of restrictions on the use of the Geocode.us site, you may not
 use this command for commercial purposes.
 
-If you wish to use this command, you must install the SOAP::Lite
+If you wish to use this command, you must install the B<SOAP::Lite>
 module.
 
 B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
@@ -1756,10 +1749,10 @@ database (L<http://gisdata.usgs.gov/>). If the lookup succeeds,
 the latitude and longitude parameters are set to the arguments and
 the height parameter is set to the result.
 
-The latitude and longitude default to the current latitude and
-longitude parameters.
+The latitude and longitude default to the current
+L<latitude|/item_latitude> and L<longitude|/item_longitude> parameters.
 
-If you wish to use this command, you must install the SOAP::Lite
+If you wish to use this command, you must install the B<SOAP::Lite>
 module.
 
 B<Caveat:> It is the author's experience that this resource is not
@@ -1844,7 +1837,7 @@ For example:
 sets up "ephemeris" as a synonym for the 'almanac' command. The
 forward-looking user might want to set up
 
- macro ephemeris 'almanac "${1:tomorrow midnight}"
+ macro ephemeris 'almanac "${1:tomorrow midnight}"'
 
 which is like the previous example except it defaults to 'tomorrow
 midnight', where the 'almanac' command defaults to 'today midnight'.
@@ -1852,6 +1845,10 @@ midnight', where the 'almanac' command defaults to 'today midnight'.
 Macros may be nested - that is, a macro may be defined in terms of
 other macros. There is no protection against the endless recursion
 that results if a macro invokes itself either directly or indirectly.
+
+Be aware that there is no syntax checking done when the macro is
+defined. You only find out if your macro definition is good by
+trying to execute it.
 
 =item pass start_time end_time increment
 
@@ -1871,8 +1868,8 @@ Example:
 =item phase time
 
 This command gives the phase of the relevant background bodies (see
-L<sky|/item_sky>) at the given time. At the moment, the only body
-that supports this is the Moon. The default time is the time the
+L<sky|/item_sky__2e_2e_2e>) at the given time. At the moment, the only
+body that supports this is the Moon. The default time is the time the
 command was issued.
 
 The display shows the time, the phase angle in degrees (0 being new, 90
@@ -1891,14 +1888,14 @@ and in the sky at the given time, the default being the current time.
 =item quarters start_time end_time
 
 This command gives the quarters of such current background bodies (see
-L<sky|/item_sky>) as support this function. This means quarter-phases for
-the Moon, and equinoxes and solstices for the Sun. The Solar data may
-be off by as much as 15 minutes, because we're only calculating the
-position of the Sun to the nearest 0.01 degree.
+L<sky|/item_sky__2e_2e_2e>) as support this function. This means
+quarter-phases for the Moon, and equinoxes and solstices for the Sun.
+The Solar data may be off by as much as 15 minutes, because we're only
+calculating the position of the Sun to the nearest 0.01 degree.
 
 See the L</SPECIFYING TIMES> topic below for how to specify times.
 
-The defaults are 'sun,moon', 'today noon' and '+30' (meaning 30 days after the
+The defaults are 'today noon' and '+30' (meaning 30 days after the
 most-recently-specified explicit time).
 
 =item select name_or_id ...
@@ -1944,10 +1941,10 @@ subcommands:
 add - adds the named background object, provided it is not already in
 the list. You must specify the name of the object (Sun, Moon, or star
 name). If you specify a star name, you must also specify its right
-ascension (in either hours:minutes:seconds) or degrees, and its
+ascension (in either hours:minutes:seconds or degrees), and its
 declination in degrees (south is negative). You can also specify its
 distance in kilometers if you so desire, the default for a star being
-1 parsec.
+1 parsec. See L</SPECIFYING ANGLES> for more on specifying angles.
 
 clear - clears the list of background objects.
 
@@ -2023,20 +2020,23 @@ general:
 Strings must be quoted if they contain blanks. Either kind of quotes
 will work, but back ticks will not.
 
-Angles are specified in degrees.
+Angles may be specified in a number of formats. See
+L</SPECIFYING ANGLES> for more detail.
 
-True or false settings are set to 1 for true, or 0 for false.
+Boolean (i.e. true/false) parameters are set by convention to 1 for
+true, or 0 for false. The evaluation rules are those of Perl itself:
+0, '', and the undefined value are false, and everything else is true.
 
 The parameters are:
 
 =over
 
-=item appulse
+=item appulse (numeric)
 
 This parameter specifies the maximum reportable angle between the
-orbiting body and the Sun or Moon. If the body passes closer than this,
-the closest point will appear as an event in the pass. The intent is
-to capture transits or near approaches.
+orbiting body and any of the background objects. If the body passes
+closer than this, the closest point will appear as an event in the
+pass. The intent is to capture transits or near approaches.
 
 If this parameter is set to 0, no check for close approaches to the
 Sun or Moon will be made.
@@ -2046,29 +2046,30 @@ is displayed in decimal degrees.
 
 The initial setting is 0.
 
-=item autoheight
+=item autoheight (boolean)
 
-This parameter determines whether the L<geocode|/item_geocode> command
-attempts to acquire the height of the location above sea level. It does
-this only if the parameter is true. You may wish to turn this off (i.e.
-set it to 0) if the USGS elevation service is being balky.
+This parameter determines whether the L<geocode|/item_geocode_location>
+command attempts to acquire the height of the location above sea level.
+It does this only if the parameter is true. You may wish to turn this
+off (i.e. set it to 0) if the USGS elevation service is being balky.
 
-The initial setting is 1.
+The default is 1 (i.e. true).
 
-=item date_format
+=item date_format (string)
 
 This parameter specifies the strftime(3) format used to display dates.
-You will need to quote the format if it contains spaces. The default is
-'%a %d-%b-%Y', which produces (e.g.) 'Mon 01-Jan-2001' for the first
-day of the current millennium. Documentation on the strftime(3)
-subroutine may be found at
+You will need to quote the format if it contains spaces. Documentation
+on the strftime(3) subroutine may be found at
 L<http://www.openbsd.org/cgi-bin/man.cgi?query=strftime&apropos=0&sektion=0&manpath=OpenBSD+Current&arch=i386&format=html>.
 
 The above is a long URL, and may be split across multiple lines. More
 than that, the formatter may have inserted a hyphen at the break, which
 needs to be taken out to make the URL good. I<Caveat user.>
 
-=item debug
+The default is '%a %d-%b-%Y', which produces (e.g.)
+'Mon 01-Jan-2001' for the first day of the current millennium. 
+
+=item debug (numeric)
 
 This parameter turns on debugging output. The only supported value
 is 0, which is the default. The author makes no representation of
@@ -2076,42 +2077,51 @@ what will happen if a non-zero value is set, not does he promise
 that the behaviour for a given non-zero value will not change from
 release to release.
 
-=item echo
+The default is 0.
+
+=item echo (boolean)
 
 This parameter causes commands that did not come from the keyboard to
-be echoed. Set it to a non-zero value to watch your scripts run. The
-default is 0.
+be echoed. Set it to a non-zero value to watch your scripts run.
 
-=item ellipsoid
+The default is 0.
+
+=item ellipsoid (string)
 
 This parameter specifies the name of the reference ellipsoid to be used
 to model the shape of the earth. Any reference ellipsoid supported by
-Astro::Coord::ECI may be used. The default is 'WGS84'. For details,
-see L<Astro::Coord::ECI>
+Astro::Coord::ECI may be used. For details,
+see L<Astro::Coord::ECI>.
 
-=item exact_event
+The default is 'WGS84'.
+
+=item exact_event (boolean)
 
 This parameter specifies whether visibility events (rise, set, max, 
 into or out of shadow, beginning or end of twilight) should be computed
 to the nearest second. If false, such events are reported to the step
-size specified when the 'pass' command was issued. The default is 1
-(i.e. true).
+size specified when the 'pass' command was issued.
 
-=item geometric
+The default is 1 (i.e. true).
+
+=item geometric (boolean)
 
 This parameter specifies whether satellite rise and set should be
 computed versus the geometric horizon or the effective horizon
 specified by the 'horizon' parameter. If true, the computation is
 versus the geometric horizon (elevation 0 degrees). If false, it
-is versus whatever the 'horizon' parameter specifies. The default
-is true (i.e. 1).
+is versus whatever the 'horizon' parameter specifies.
 
-=item height
+The default is 1 (i.e. true).
+
+=item height (numeric)
 
 This parameter specifies the height of the observer above mean sea
 level, in meters.
 
-=item horizon
+There is no default; you must specify a value.
+
+=item horizon (numeric)
 
 This parameter specifies the minimum elevation a body must attain to be
 considered visible, in degrees. If the 'geometric' parameter is 0,
@@ -2123,7 +2133,7 @@ is displayed in decimal degrees.
 
 The default is 20 degrees.
 
-=item latitude
+=item latitude (numeric)
 
 This parameter specifies the latitude of the observer in degrees north.
 If your observing location is south of the Equator, specify a negative
@@ -2132,22 +2142,27 @@ number.
 See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
 
-=item lit
+There is no default; you must specify a value.
+
+=item lit (boolean)
 
 This parameter specifies how to determine if a body is lit by the sun.
 If true (i.e. 1) it is considered to be lit if the upper limb of the
 sun is above the horizon, as seen from the body. If false (i.e. 0), the
 body is considered lit if the center of the sun is above the horizon.
 
-The default is true (i.e. 1).
+The default is 1 (i.e. true).
 
-=item location
+=item location (string)
 
 This parameter contains a text description of the observer's location.
 This is not used internally, but if it is not empty it will be
 displayed wherever the observer's latitude, longitude, and height are.
 
-=item longitude
+There is no default; the parameter is undefined unless you supply a
+value.
+
+=item longitude (numeric)
 
 This parameter specifies the longitude of the observer in degrees east.
 If your observing location is west of the Standard Meridian (as it
@@ -2157,7 +2172,9 @@ number.
 See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
 
-=item model
+There is no default; you must specify a value.
+
+=item model (string)
 
 This parameter specifies the model to be used to predict the satellite.
 There are different models for 'near-Earth' and 'deep-space' objects.
@@ -2197,12 +2214,12 @@ model8 - Use either sgp8 or sdp8 as appropriate.
 
 The default is 'model'.
 
-=item perltime
+=item perltime (boolean)
 
 This parameter specifies the time zone mechanism for date input. If
 false (i.e. 0 or an empty string), Date::Manip does the conversion.
 If true (typically 1), Date::Manip is told that the time zone is GMT,
-and the time zone conversion is done by gmtime () and timelocal ().
+and the time zone conversion is done by gmtime (timelocal ($time)).
 
 The problem this attempts to fix is that, in jurisdictions that do
 summer time, Date::Manip appears (to me, at least) to give the wrong
@@ -2212,15 +2229,22 @@ converts to 5:00 PM GMT. But 'jul 1 noon'does also, and it seems to
 me that this should give 4:00 PM GMT.
 
 If you turn this setting on, 'jul 1 noon' comes out 4:00 PM GMT even
-if done in January. If you plan to provide times B<with zones> (e.g.
+if done in January. If you plan to parse times B<with zones> (e.g.
 'jul 1 noon edt'), you should turn this setting off.
 
-=item prompt
+I confess to considering this a wart. If I figure out how to get
+behaviour I consider more straightforward out of Date::Manip, I will
+no-op this attribute and deprecate its use.
 
-This parameter specifies the string used to prompt for commands. The
-default is 'satpass>'.
+The default is 0 (i.e. false).
 
-=item time_format
+=item prompt (string)
+
+This parameter specifies the string used to prompt for commands.
+
+The default is 'satpass>'.
+
+=item time_format (string)
 
 This parameter specifies the strftime(3) format used to display times.
 You will need to quote the format if it contains spaces. The default is
@@ -2233,25 +2257,29 @@ The above is a long URL, and may be split across multiple lines. More
 than that, the formatter may have inserted a hyphen at the break, which
 needs to be taken out to make the URL good. I<Caveat user.>
 
-=item timing
+=item timing (boolean)
 
 This parameter specifies whether timing information should be displayed
 on pass computations. A true setting (i.e. 1) displays this
-information, a false (i.e. 0) value does not. The default is 0.
+information, a false (i.e. 0) value does not.
 
-=item twilight
+The default is 0 (i.e. false).
+
+=item twilight (string or numeric)
 
 This parameter specifies the number of degrees the sun must be below
 the horizon before it is considered dark. The words 'civil',
 'nautical', or 'astronomical' are also acceptable, as is any unique
 abbreviation of these words. They specify 6, 12, and 18 degrees
-respectively. The default is 'civil'.
+respectively.
 
 See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees, unless 'civil', 'nautical', or
 'astronomical' was specified.
 
-=item tz
+The default is 'civil'.
+
+=item tz (string)
 
 This parameter specifies the time zone for Date::Manip. You probably
 will not need it, unless running under MacOS (OS 9 is meant, not OS X)
@@ -2265,15 +2293,16 @@ L<Date::Manip> for more information.
 This parameter is not set at all by default, and will not appear
 in the 'show' output until it has been set.
 
-=item verbose
+=item verbose (boolean)
 
 This parameter specifies whether the 'pass' command should give the
 position of the satellite every step that it is above the horizon.
 If false, only rise, set, max, into or out of shadow, and the
-beginning or end of twilight are displayed. The default is false
-(i.e. 0).
+beginning or end of twilight are displayed.
 
-=item visible
+The default is 0 (i.e. false).
+
+=item visible (boolean)
 
 This parameter specifies whether the 'pass' command should report
 only visible passes (if true) or all passes (if false). A pass is
@@ -2284,7 +2313,7 @@ evening twilight or before the beginning of morning twilight for the
 observer (i.e. "it's dark"), but the satellite is illuminated by the
 sun.
 
-The default is true (i.e. 1).
+The default is 1 (i.e. true).
 
 =back
 
@@ -2398,7 +2427,7 @@ naming assumption,
 
   $ satpass 'source commands'
 
-or
+or (under some flavor of Unix)
 
   $ cat commands | satpass
 
@@ -2412,7 +2441,8 @@ Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This script is free software; you can use it, redistribute it
-and/or modify it under the same terms as Perl itself.
+and/or modify it under the same terms as Perl itself. Please see
+L<http://perldoc.perl.org/index-licence.html> for the current licenses.
 
 This software is provided without any warranty of any kind, express or
 implied. The author will not be liable for any damages of any sort

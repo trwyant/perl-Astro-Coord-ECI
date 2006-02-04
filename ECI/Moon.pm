@@ -16,7 +16,7 @@ Astro::Coord::ECI::Moon - Compute the position of the Moon.
 
 This module implements the position of the Moon as a function of time,
 as described in Jean Meeus' "Astronomical Algorithms," second edition.
-It is a subclass of Astro::Coord::ECI, with the id, name, and diameter
+It is a subclass of B<Astro::Coord::ECI>, with the id, name, and diameter
 attributes initialized appropriately, and the time_set() method
 overridden to compute the position of the Moon at the given time.
 
@@ -162,12 +162,13 @@ foreach (
 return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
-=item ($time, $quarter) = $moon->next_quarter ($want);
+=item ($time, $quarter, $desc) = $moon->next_quarter ($want);
 
 This method calculates the time of the next quarter-phase of the Moon
-after the current time setting of the $moon object. The return is the
-time, and which quarter-phase it is, as a number from 0 (new moon) to
-3 (last quarter). If called in scalar context, you just get the time.
+after the current time setting of the $moon object. The returns are the
+time, which quarter-phase it is as a number from 0 (new moon) to
+3 (last quarter), and a string describing the phase. If called in
+scalar context, you just get the time.
 
 The optional $want argument says which phase you want.
 
@@ -175,7 +176,7 @@ As a side effect, the time of the $moon object ends up set to the
 returned time.
 
 The method of calculation is successive approximation, and actually
-returns the second b<after> the quarter.
+returns the second B<after> the quarter.
 
 =cut
 
@@ -186,11 +187,9 @@ my $self = shift;
 my $quarter = (defined $_[0] ? shift :
     floor ($self->phase () / PIOVER2) + 1) % 4;
 my $begin;
-##?? floor ($self->phase () / PIOVER2) == $quarter and do {
 while (floor ($self->phase () / PIOVER2) == $quarter) {
     $begin = $self->dynamical;
     $self->dynamical ($begin + QUARTER_INC);	# Bump 6 days.
-##??    };
     }
 while (floor ($self->phase () / PIOVER2) != $quarter) {
     $begin = $self->dynamical;
@@ -277,7 +276,7 @@ components are arbitrarily set to 0, since Meeus' algorithm does not
 provide this information.
 
 Although there's no reason this method can't be called directly, it
-exists to take advantage of the hook in the Astro::Coord::ECI
+exists to take advantage of the hook in the B<Astro::Coord::ECI>
 object, to allow the position of the Moon to be computed when the
 object's time is set.
 
@@ -407,14 +406,8 @@ $self->ecliptic ($beta, $lamda, $delta);
 
 =head1 ACKNOWLEDGEMENTS
 
-The author wishes to acknowledge the following individuals and
-organizations.
-
-Jean Meeus, whose book "Astronomical Algorithms" (second edition)
-formed the basis for this module.
-
-Dr. Meeus' publisher, Willman-Bell Inc (F<http://www.willbell.com/>),
-which kindly granted permission to use Dr. Meeus' work in this module.
+The author wishes to acknowledge Jean Meeus, whose book "Astronomical
+Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
 
@@ -433,7 +426,8 @@ Copyright 2005, 2006 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it
-and/or modify it under the same terms as Perl itself.
+and/or modify it under the same terms as Perl itself. Please see
+L<http://perldoc.perl.org/index-licence.html> for the current licenses.
 
 This software is provided without any warranty of any kind, express or
 implied. The author will not be liable for any damages of any sort
