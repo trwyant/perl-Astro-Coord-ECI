@@ -251,21 +251,33 @@ per Appendix I (pg 408) of Jean Meeus' "Astronomical Algorithms,"
 sub period {31558149.7632}	# 365.256363 * 86400
 
 
-use constant OBLIQUITY_CORRECTION => _deg2rad (0.00256);
+##	Dr. Meeus' book seems to say that the following is needed for
+##	solar positions. But some of my answers with it are totally
+##	off the mark versus the times published by the U.S. Naval
+##	observatory for the given dates, whereas I'm always within
+##	30 seconds without the correction. I didn't discover this until
+##	doing the final revision of the docs, when I found I had
+##	omitted the '=cut' after the pod for the correction. So I'm
+##	commenting the whole thing out for the moment on pragmatic
+##	grounds (it never made sense to me to do this for only one
+##	body), and under the assumption that I misunderstood what
+##	Dr. Meeus was getting at.
 
-=item $radians = $self->obliquity_correction($omega);
+## =item $radians = $self->obliquity_correction($omega);
 
-This method calculates the correction to the obliquity in terms of the
-given dynamical time.
+## This method calculates the correction to the obliquity in terms of the
+## given dynamical time.
 
-Jean Meeus' "Astronomical Algorithms," 2nd Edition, page 165 states
-that for calculating the apparent position of the Sun we need to add
-0.00256 degrees * cos (omega) to the obliquity. This method overrides
-the base class' method to accomplish this.
+## Jean Meeus' "Astronomical Algorithms," 2nd Edition, page 165 states
+## that for calculating the apparent position of the Sun we need to add
+## 0.00256 degrees * cos (omega) to the obliquity. This method overrides
+## the base class' method to accomplish this.
 
-=cut
+## =cut
 
-sub obliquity_correction {cos ($_[0]->omega ($_[1]) * OBLIQUITY_CORRECTION)}
+## use constant OBLIQUITY_CORRECTION => _deg2rad (0.00256);
+
+## sub obliquity_correction {cos ($_[0]->omega ($_[1]) * OBLIQUITY_CORRECTION)}
 
 
 =item $sun->time_set ()
