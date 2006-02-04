@@ -71,6 +71,7 @@ my %parm = (
     timing => 0,
     verbose => 0,
     visible => 1,
+    webcmd => ''
     );
 $parm{tz} = $ENV{TZ} if $ENV{TZ};
 
@@ -107,6 +108,7 @@ my %mutator = (
 				# 1 = whenever above horizon
 				# 2 = anytime
     visible => \&_set_unmodified, # 1 = only if sun down & sat illuminated
+    webcmd => \&_set_unmodified,  # Command to spawn for web pages
     );
 
 my %accessor = (
@@ -527,27 +529,33 @@ BEGIN {
     );
 }
 sub help {
-my $arg = lc $_[0];
-my @ha;
-if (my $fn = $help_module{$arg}) {
-    $fn =~ s|::|/|g;
-    $fn .= '.pm';
-    $INC{$fn} or do {
-	eval "use $help_module{$arg}";
-	$@ and die <<eod;
+if ($parm{webcmd}) {
+    system (join ' ', $parm{webcmd},
+	"http://search.cpan.org/~wyant/Astro-satpass-$VERSION/");
+    }
+  else {
+    my $arg = lc $_[0];
+    my @ha;
+    if (my $fn = $help_module{$arg}) {
+	$fn =~ s|::|/|g;
+	$fn .= '.pm';
+	$INC{$fn} or do {
+	    eval "use $help_module{$arg}";
+	    $@ and die <<eod;
 Error - No help available on $help_module{$arg}.
         Module can not be loaded.
 eod
-	};
-    @ha = (-input => $INC{$fn});
-    }
+	    };
+	@ha = (-input => $INC{$fn});
+	}
 
-my $os_specific = "_help_$^O";
-if (__PACKAGE__->can ($os_specific)) {
-    __PACKAGE__->$os_specific ();
-    }
-  else {
-    pod2usage (-verbose => 2, -exitval => 'NOEXIT', @ha);
+    my $os_specific = "_help_$^O";
+    if (__PACKAGE__->can ($os_specific)) {
+	__PACKAGE__->$os_specific ();
+	}
+      else {
+	pod2usage (-verbose => 2, -exitval => 'NOEXIT', @ha);
+	}
     }
 }
 
@@ -1174,6 +1182,11 @@ Date_Init ("TZ=$_[1]") unless $parm{perltime};
 
 sub _set_unmodified {$parm{$_[0]} = $_[1]}
 
+sub _set_webcmd {
+$parm{$_[0]} = $_[1];
+$st && $st->VERSION >= 0.015 and $st->set (webcmd => $_[1]);
+}
+
 
 ########################################################################
 #
@@ -1308,7 +1321,9 @@ $st ||= do {
 Error - You need to install the Astro::SpaceTrack module version $versn
         or higher if you wish to use the st command.
 eod
-    Astro::SpaceTrack->new ();
+    my @args = (webcmd => $parm{webcmd})
+	if Astro::SpaceTrack->VERSION >= 0.015;
+    Astro::SpaceTrack->new (@args);
     };
 my $func = shift;
 $func !~ m/^_/ && $st->can ($func) or die <<eod;
@@ -1775,6 +1790,12 @@ the appropriate arguments, as follows:
  star - Astro::Coord::ECI::Star
  tle -- Astro::Coord::ECI::TLE
 
+The viewer is whatever is the default for your system.
+
+If you set the L<webcmd|/item_webcmd> parameter properly, this
+command will launch the L<http://search.cpan.org/> page for this
+package, and any arguments will be ignored.
+
 =item list
 
 This command displays the observing list. Each body's NORAD ID, name
@@ -1940,17 +1961,30 @@ subcommands:
 
 add - adds the named background object, provided it is not already in
 the list. You must specify the name of the object (Sun, Moon, or star
-name). If you specify a star name, you must also specify its right
-ascension (in either hours:minutes:seconds or degrees), and its
-declination in degrees (south is negative). You can also specify its
-distance in kilometers if you so desire, the default for a star being
-1 parsec. See L</SPECIFYING ANGLES> for more on specifying angles.
+name). 'Sun' and 'Moon' are not case-sensitive. If you specify a star
+name, you must also specify its right ascension and declination. You
+can also specify its distance in kilometers if you so desire, the
+default for a star being 1 parsec (too small, but we're not correcting
+for parallax anyway). See L</SPECIFYING ANGLES> for more on specifying
+angles.
 
 clear - clears the list of background objects.
 
 drop name ... - removes the objects with the given names from the
 background object list. The name matching is done using
 case-insensitive regular expressions.
+
+For example,
+
+ satpass> sky
+        Sun
+       Moon
+ satpass> sky drop moon
+ satpass> sky add Spica 13:25.193 -11d9.683m
+ satpass> sky
+        Sun
+      Spica  13:25:11  -11.161
+ satpass>
 
 =item source file_name
 
@@ -1959,8 +1993,9 @@ exhausted. This file may also contain source commands, with the nesting
 limit determined by how many files your system allows you to have open
 at one time.
 
-To be consistent with the bash shell, you can use "." as a synonym for
-source, but there must be a space between the source and the file name.
+To be consistent with the bash shell, you can use '.' as a synonym for
+source. If you do, there need not be a space between the '.' and the
+file name.
 
 The file name must be quoted if it contains whitespace.
 
@@ -2314,6 +2349,20 @@ observer (i.e. "it's dark"), but the satellite is illuminated by the
 sun.
 
 The default is 1 (i.e. true).
+
+=item webcmd (string)
+
+This parameter specifies the system command to spawn to display a
+web page. If not the empty string, the L<help|/item_help> command
+uses it to display the help for this package on
+L<http://search.cpan.org/>. Mac OS X users will find 'open' a useful
+setting, and Windows users will find 'start' useful.
+
+This functionality was added on speculation, since there is no good
+way to test it in the initial release of the package.
+
+The default is '' (i.e. the empty string), which leaves the
+functionality disabled.
 
 =back
 
