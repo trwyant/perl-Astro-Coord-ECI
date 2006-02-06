@@ -132,7 +132,7 @@ WriteMakefile (
 	realclean => {FILES => join ' ', @clean_files},
 	$] >= 5.005 ? (
 		AUTHOR => 'Tom Wyant (wyant at cpan dot org)',
-		ABSTRACT => 'Compute satellite locations and visibility',
+		ABSTRACT => 'Classes and app to compute satellite visibility',
 		BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
 		) : (),
 	);
