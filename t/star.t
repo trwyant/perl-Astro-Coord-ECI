@@ -23,7 +23,7 @@ use constant SECSPERYEAR => 365.25 * 86400;
 
 #	Tests 1 - 2: Position of star at given time.
 
-#	This test is based on Meeus' 21.b and 23.?
+#	This test is based on Meeus' 21.b and 23.a
 
 my $star = Astro::Coord::ECI::Star->new (name => 'Theta Persei')->
     position (
@@ -34,7 +34,7 @@ my $star = Astro::Coord::ECI::Star->new (name => 'Theta Persei')->
 	-.0895 / 3600 / 180 * pi / SECSPERYEAR,	# motion in decl - radians/sec
 	0,					# recession vel - km/sec
 	);
-my $time = timegm (0, 0, 0, 13, 10, 2028) + .19 * 86400;
+my $time = timegm (0, 0, 12, 13, 10, 2028) + .19 * 86400;
 my ($alpha, $delta) = $star->dynamical ($time)->equatorial ();
 
 my $tolerance = 2e-5;
