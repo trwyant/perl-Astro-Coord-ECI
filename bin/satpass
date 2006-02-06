@@ -1232,6 +1232,15 @@ defined $parm{$_[0]} ? $parm{$_[0]} : 'undef'
 #			is by case-insensitive regular expression.
 #
 
+# For proper motion, we need to convert arc seconds per year to degrees
+# per second.
+
+use constant SPY2DPS => 3600 * 365.24219 * 86400;
+
+# We also need the size of a parsec.
+
+use constant PARSEC => 30.8568e12;
+
 sub sky {
 my $verb = lc (shift @_ || '');
 if (!$verb) {
@@ -1265,13 +1274,16 @@ eod
 Error - You must specify a name, a right ascencion (in either
         hours:minutes:seconds or degrees) and a declination
         (in either degreesDminutesMseconds or degrees, with
-        south declination negative). The distance in kilometers
+        south declination negative). The distance in parsecs
         is optional.
 eod
 	my $ra = deg2rad (_parse_angle (shift));
 	my $dec = deg2rad (_parse_angle (shift));
-	my $rng = shift;
-	$body->position ($ra, $dec, $rng);
+	my $rng = @_ ? shift (@_) * PARSEC : PARSEC;
+	my $pmra = @_ ? deg2rad (shift (@_) / SPY2DPS) : 0;
+	my $pmdec = @_ ? deg2rad (shift (@_) / SPY2DPS) : 0;
+	my $pmrec = @_ ? shift : 0;
+	$body->position ($ra, $dec, $rng, $pmra, $pmdec, $pmrec);
 	}
     push @sky, $body;
     }
@@ -1961,12 +1973,16 @@ subcommands:
 
 add - adds the named background object, provided it is not already in
 the list. You must specify the name of the object (Sun, Moon, or star
-name). 'Sun' and 'Moon' are not case-sensitive. If you specify a star
-name, you must also specify its right ascension and declination. You
-can also specify its distance in kilometers if you so desire, the
-default for a star being 1 parsec (too small, but we're not correcting
-for parallax anyway). See L</SPECIFYING ANGLES> for more on specifying
-angles.
+name). 'Sun' and 'Moon' are not case-sensitive.
+
+If you specify a star name, you must also specify its right ascension
+and declination in J2000.0 coordinates. See L</SPECIFYING ANGLES> for
+more on specifying angles. You can also specify its distance in parsecs
+if you so desire, the default for a star being 1 parsec (too small, but
+we're not correcting for parallax anyway). You may also specify proper
+motion in right ascension and declination in seconds of arc per year,
+and velocity in recession in kilometers per second, the default for the
+latter three being zero.
 
 clear - clears the list of background objects.
 
