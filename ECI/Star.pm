@@ -64,6 +64,13 @@ star, or some other object which may be regarded as fixed on the
 celestial sphere. This is a subclass of B<Astro::Coord::ECI>, with the
 angularvelocity attribute initialized to zero.
 
+Truth in advertising: The positions produced by this model are about
+four arc seconds off Dr. Meeus' worked example for the position of
+Theta Persei for Dynamical time November 13.19, 2028. This seems
+excessive, but it's difficult to check intermediate results because
+this calculation goes through ecliptic coordinates, whereas Dr. Meeus'
+worked example is in equatorial coordinates.
+
 =cut
 
 sub new {
