@@ -1980,9 +1980,9 @@ and declination in J2000.0 coordinates. See L</SPECIFYING ANGLES> for
 more on specifying angles. You can also specify its distance in parsecs
 if you so desire, the default for a star being 1 parsec (too small, but
 we're not correcting for parallax anyway). You may also specify proper
-motion in right ascension and declination in seconds of arc per year,
-and velocity in recession in kilometers per second, the default for the
-latter three being zero.
+motion in right ascension (in seconds of right ascension per year),
+declination (in seconds of arc per year), and velocity in recession in
+(kilometers per second), the default for the latter three being zero.
 
 clear - clears the list of background objects.
 
