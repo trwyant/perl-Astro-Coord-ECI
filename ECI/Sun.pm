@@ -38,6 +38,7 @@ our $VERSION = 0.001;
 
 use base qw{Astro::Coord::ECI};
 
+use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
@@ -45,15 +46,6 @@ use POSIX qw{floor strftime};
 use UNIVERSAL qw{isa};
 
 use constant ASTRONOMICAL_UNIT => 149_597_870;	# Meeus, Appendix I, page 407.
-
-#	"Hand-import" non-oo utilities from the superclass.
-
-BEGIN {
-*_deg2rad = \&Astro::Coord::ECI::_deg2rad;
-*_mod2pi = \&Astro::Coord::ECI::_mod2pi;
-*PIOVER2 = \&Astro::Coord::ECI::PIOVER2;
-*_rad2deg = \&Astro::Coord::ECI::_rad2deg;
-}
 
 my %static = (
     id => 'Sun',
@@ -251,35 +243,6 @@ per Appendix I (pg 408) of Jean Meeus' "Astronomical Algorithms,"
 sub period {31558149.7632}	# 365.256363 * 86400
 
 
-##	Dr. Meeus' book seems to say that the following is needed for
-##	solar positions. But some of my answers with it are totally
-##	off the mark versus the times published by the U.S. Naval
-##	observatory for the given dates, whereas I'm always within
-##	30 seconds without the correction. I didn't discover this until
-##	doing the final revision of the docs, when I found I had
-##	omitted the '=cut' after the pod for the correction. So I'm
-##	commenting the whole thing out for the moment on pragmatic
-##	grounds (it never made sense to me to do this for only one
-##	body), and under the assumption that I misunderstood what
-##	Dr. Meeus was getting at.
-
-## =item $radians = $self->obliquity_correction($omega);
-
-## This method calculates the correction to the obliquity in terms of the
-## given dynamical time.
-
-## Jean Meeus' "Astronomical Algorithms," 2nd Edition, page 165 states
-## that for calculating the apparent position of the Sun we need to add
-## 0.00256 degrees * cos (omega) to the obliquity. This method overrides
-## the base class' method to accomplish this.
-
-## =cut
-
-## use constant OBLIQUITY_CORRECTION => _deg2rad (0.00256);
-
-## sub obliquity_correction {cos ($_[0]->omega ($_[1]) * OBLIQUITY_CORRECTION)}
-
-
 =item $sun->time_set ()
 
 This method sets coordinates of the object to the coordinates of the
@@ -302,13 +265,13 @@ Edition, Chapter 25, pages 163ff.
 #	penalize the user for the conversion every time.
 
 
-use constant SUN_C1_0 => _deg2rad (1.914602);
-use constant SUN_C1_1 => _deg2rad (-0.004817);
-use constant SUN_C1_2 => _deg2rad (-0.000014);
-use constant SUN_C2_0 => _deg2rad (0.019993);
-use constant SUN_C2_1 => _deg2rad (0.000101);
-use constant SUN_C3_0 => _deg2rad (0.000289);
-use constant SUN_LON_2000 => _deg2rad (- 0.01397);
+use constant SUN_C1_0 => deg2rad (1.914602);
+use constant SUN_C1_1 => deg2rad (-0.004817);
+use constant SUN_C1_2 => deg2rad (-0.000014);
+use constant SUN_C2_0 => deg2rad (0.019993);
+use constant SUN_C2_1 => deg2rad (0.000101);
+use constant SUN_C3_0 => deg2rad (0.000289);
+use constant SUN_LON_2000 => deg2rad (- 0.01397);
 
 sub time_set {
 my $self = shift;
@@ -318,18 +281,18 @@ my $time = $self->dynamical;
 
 #	The following algorithm is from Meeus, chapter 25, page, 163 ff.
 
-my $T = $self->jcent2000 ($time);				# Meeus (25.1)
-my $L0 = _mod2pi (_deg2rad ((.0003032 * $T + 36000.76983) * $T	# Meeus (25.2)
+my $T = jcent2000 ($time);				# Meeus (25.1)
+my $L0 = mod2pi (deg2rad ((.0003032 * $T + 36000.76983) * $T	# Meeus (25.2)
 	+ 280.46646));
-my $M = _mod2pi (_deg2rad (((-.0001537) * $T + 35999.05029)	# Meeus (25.3)
+my $M = mod2pi (deg2rad (((-.0001537) * $T + 35999.05029)	# Meeus (25.3)
 	* $T + 357.52911));
 my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;	# Meeus (25.4)
 my $C  = ((SUN_C1_2 * $T + SUN_C1_1) * $T + SUN_C1_0) * sin ($M)
 	+ (SUN_C2_1 * $T + SUN_C2_0) * sin (2 * $M)
 	+ SUN_C3_0 * sin (3 * $M);
 my $O = $self->{_sun_geometric_longitude} = $L0 + $C;
-my $omega = _mod2pi (_deg2rad (125.04 - 1934.156 * $T));
-my $lamda = _mod2pi ($O - _deg2rad (0.00569 + 0.00478 * sin ($omega)));
+my $omega = mod2pi (deg2rad (125.04 - 1934.156 * $T));
+my $lamda = mod2pi ($O - deg2rad (0.00569 + 0.00478 * sin ($omega)));
 my $nu = $M + $C;
 my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
 	* ASTRONOMICAL_UNIT;

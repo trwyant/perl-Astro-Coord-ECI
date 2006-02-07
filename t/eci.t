@@ -9,7 +9,7 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 73}
+BEGIN {plan tests => 59}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
@@ -81,116 +81,7 @@ eod
     }
 
 
-#	Tests 7 - 8: Perl time to Julian days since J2000.0
-#	Tests: jday2000()
-
-#	Based on the table on Meeus' page 62.
-
-foreach ([timegm (0, 0, 12, 1, 0, 2000), 0],
-	[timegm (0, 0, 0, 1, 0, 1999), -365.5],
-	) {
-    $test++;
-    my ($time, $expect) = @$_;
-    my $got = Astro::Coord::ECI->jday2000 ($time);
-    print <<eod;
-# Test $test: convert time to days since Julian 2000.0
-#     Universal: @{[strftime TIMFMT, gmtime $time]}
-#      Expected: $expect
-#           Got: $got
-eod
-    ok ($expect == $got);
-    }
-
-
-#	Tests 9 - 10: Perl time to Julian day
-#	Tests: julianday()
-
-#	Based on the table on Meeus' page 62.
-
-foreach ([timegm (0, 0, 12, 1, 0, 2000), 2451545.0],
-	[timegm (0, 0, 0, 1, 0, 1999), 2451179.5],
-	) {
-    $test++;
-    my ($time, $expect) = @$_;
-    my $got = Astro::Coord::ECI->julianday ($time);
-    print <<eod;
-# Test $test: convert time to Julian day
-#     Universal: @{[strftime TIMFMT, gmtime $time]}
-#      Expected: $expect
-#           Got: $got
-eod
-    ok ($expect == $got);
-    }
-
-
-#	Tests 11 - 12: Perl time to Julian centuries since J2000.0
-#	Tests: jcent2000()
-
-#	Based on Meeus' examples 12.a and 12.b.
-
-foreach ([timegm (0, 0, 0, 10, 3, 1987), -.127296372348, '%.12f'],
-	[timegm (0, 21, 19, 10, 3, 1987), -.12727430, '%.8f'],
-	) {
-    $test++;
-    my ($time, $expect, $tplt) = @$_;
-    my $got = Astro::Coord::ECI->jcent2000 ($time);
-    my $check = sprintf $tplt, $got;
-    print <<eod;
-# Test $test: convert time to Julian centuries since Julian 2000.0
-#     Universal: @{[strftime TIMFMT, gmtime $time]}
-#      Expected: $expect
-#           Got: $got
-eod
-    ok ($expect == $check);
-    }
-
-
-#	Tests 13 - 14: thetag
-#	Tests: thetag()
-
-#	Based on Meeus' examples 12a and 12b, pages 88 and 89.
-
-foreach ([timegm (0, 0, 0, 10, 3, 87), 3.450397161537],
-	[timegm (0, 21, 19, 10, 3, 87), 2.246899761682]) {
-
-    $test++;
-    my ($time, $expect) = @$_;
-    my $tolerance = 1e-6;
-    my $got = Astro::Coord::ECI->thetag ($time);
-    print <<eod;
-# Test $test: Hour angle of Greenwich (Thetag)
-#     Universal: @{[strftime TIMFMT, gmtime $time]}
-#      Expected: $expect
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-    ok (abs (($got - $expect) / $expect) < $tolerance);
-    }
-
-
-#	Test 15: theta0
-
-#	Based on Meeus' examples 12a and 12b, pages 88 and 89.
-#	Tests: theta0()
-
-foreach ([timegm (0, 21, 19, 10, 3, 87), 3.450397161537]) {
-
-    $test++;
-    my ($time, $expect) = @$_;
-    my $tolerance = 1e-6;
-    my $got = Astro::Coord::ECI->theta0 ($time);
-    print <<eod;
-# Test $test: Hour angle of Greenwich at 0 UT (Theta0)
-#     Universal: @{[strftime TIMFMT, gmtime $time]}
-#      Expected: $expect
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-    ok (abs (($got - $expect) / $expect) < $tolerance);
-    }
-
-
-#	Tests 16 - 18: ecef
+#	Tests 7 - 9: ecef
 #	Tests: ecef()
 
 #	All we do here is be sure we get back what we put in.
@@ -212,7 +103,7 @@ eod
     }
 
 
-#	Tests 19 - 22: geodetic -> geocentric
+#	Tests 10 - 13: geodetic -> geocentric
 #	Tests: geodetic()
 
 #	Meeus, page 82, example 11a
@@ -254,7 +145,7 @@ eod
     }
 
 
-#	Tests 23 - 28: geocentric -> geodetic
+#	Tests 14 - 19: geocentric -> geodetic
 #	Tests: geodetic()
 
 #	Borkowski
@@ -291,7 +182,7 @@ eod
     }
 
 
-#	Tests 29 - 34: geodetic -> Earth-Centered, Earth-Fixed
+#	Tests 20 - 25: geodetic -> Earth-Centered, Earth-Fixed
 #	Tests: geocentric() (and geodetic())
 
 #	Continuing the above example, but ecef coordinates. Book
@@ -332,7 +223,7 @@ eod
     }
 
 
-#	Tests 35 - 40: Earth-Centered, Earth-Fixed -> geodetic
+#	Tests 26 - 31: Earth-Centered, Earth-Fixed -> geodetic
 #	Tests: geocentric() (and geodetic())
 
 #	Continuing the above example, but ecef coordinates. We use
@@ -366,7 +257,7 @@ eod
     }
 
 
-#	Tests 41 - 46: geodetic -> eci
+#	Tests 32 - 37: geodetic -> eci
 #	Tests: eci() (and geodetic() and geocentric())
 
 #	Standard is from http://celestrak.com/columns/v02n03/ (Kelso)
@@ -396,7 +287,7 @@ eod
     }
 
 
-#	Tests 47 - 52: eci -> geodetic
+#	Tests 38 - 43: eci -> geodetic
 #	Tests: eci() (and geodetic() and geocentric())
 
 #	This is the reverse of the previous test.
@@ -433,7 +324,7 @@ eod
     }
 
 
-#	Tests 53 - 55: azel
+#	Tests 44 - 46: azel
 #	Tests: azel() (and geodetic(), geocentric(), and eci())
 
 #	Book solution from
@@ -485,7 +376,7 @@ eod
     }
 
 
-#	Test 56: atmospheric refraction.
+#	Test 47: atmospheric refraction.
 #	Tests: correct_for_refraction()
 
 #	Based on Meeus' Example 16.a.
@@ -507,7 +398,7 @@ eod
     }
 
 
-#	Test 57: Angle between two points as seen from a third.
+#	Test 48: Angle between two points as seen from a third.
 #	Tests: angle.
 
 foreach ([[0, 0, 0], [1, 0, 0], [0, 1, 0], 90],
@@ -530,31 +421,7 @@ eod
     }
 
 
-#	Test 58: Ecliptic longitude of ascending node of moon's mean
-#	orbit.
-#	Tests: omega (and jcent2000).
-
-#	Based on Meeus' example 22.a.
-
-foreach ([timegm (0, 0, 0, 10, 3, 1987), 11.2531],
-	) {
-    $test++;
-    my ($time, $expect) = @$_;
-    my $got = Astro::Coord::ECI->omega ($time);
-    $expect = deg2rad ($expect);
-    my $tolerance = 1.e-5;
-    print <<eod;
-# Test $test: Ecliptic longitude of Moon's mean ascending node
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#      Expected: $expect
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-    ok (abs (($got - $expect) / $expect) < $tolerance);
-    }
-
-
-#	Tests 59-60: Precession of equinoxes.
+#	Tests 49-50: Precession of equinoxes.
 #	Tests: precession.
 
 #	Based on Meeus' example 21.b.
@@ -587,58 +454,8 @@ eod
 	}
     }
 
-#	Tests 61-62: Nutation in longitude and obliquity.
-#	Tests: nutation_in_longitude, nutation_in_obliquity (and
-#		jcent2000).
 
-#	Based on Meeus' example 22.a.
-
-foreach ([longitude => timegm (0, 0, 0, 10, 3, 1987), -3.788/3600, .5/3600],
-	[obliquity => timegm (0, 0, 0, 10, 3, 1987), 9.443/3600, .1/3600],
-	) {
-    $test++;
-    my ($what, $time, $expect, $tolerance) = @$_;
-    my $method = "nutation_in_$what";
-    my $got = Astro::Coord::ECI->$method ($time);
-    $expect = deg2rad ($expect);
-    $tolerance = deg2rad ($tolerance);
-    print <<eod;
-# Test $test: Nutation in $what
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#      Expected: $expect
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-    ok (abs ($got - $expect) < $tolerance);
-    }
-
-
-
-#	Test 63: Obliquity of the ecliptic.
-#	Tests: obliquity() (and nutation_in_obliquity() and
-#		jcent2000())
-
-#	Based on Meeus' example 22.a.
-
-foreach ([timegm (0, 0, 0, 10, 3, 1987), (36.850 / 60 + 26) / 60 + 23],
-	) {
-    $test++;
-    my ($time, $expect) = @$_;
-    my $got = Astro::Coord::ECI->dynamical($time)->obliquity ();
-    $expect = deg2rad ($expect);
-    my $tolerance = 1e-6;
-    print <<eod;
-# Test $test: Obliquity of the ecliptic
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#      Expected: $expect
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-    ok (abs (($got - $expect) / $expect) < $tolerance);
-    }
-
-
-#	Test 64 - 65: Right ascension/declination to ecliptic lat/lon
+#	Test 51 - 52: Right ascension/declination to ecliptic lat/lon
 #	Tests: ecliptic() (and obliquity())
 
 #	Based on Meeus' example 13.a, page 95.
@@ -675,7 +492,7 @@ eod
     }
 
 
-#	Test 66 - 67: Ecliptic lat/lon to right ascension/declination
+#	Test 53 - 54: Ecliptic lat/lon to right ascension/declination
 #	Tests: ecliptic() (and obliquity())
 
 #	Based on inverting the above test.
@@ -706,7 +523,7 @@ eod
 
 use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 
-#	Tests 68 - 70: Ecliptic lat/long to ECI
+#	Tests 55 - 57: Ecliptic lat/long to ECI
 #	Tests: equatorial() (and ecliptic())
 
 #	This test is based on Meeus' example 26.a.
@@ -735,29 +552,7 @@ eod
     }
 
 
-#	Test 71: Equation of time.
-#	Tests: equation_of_time() (and obliquity()).
-
-#	This test is based on Meeus' example 28.b.
-
-foreach ([timegm (0, 0, 0, 13, 9, 1992), 13 * 60 + 42.7, .1],
-	) {
-    my ($time, $expect, $tolerance) = @$_;
-    my $got = Astro::Coord::ECI->dynamical ($time)->equation_of_time ();
-    $test++;
-    print <<eod;
-# Test $test: Equation of time
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#      Expected: $expect seconds
-#           Got: $got seconds
-#     Tolerance: $tolerance seconds
-eod
-    my $tplt = "%${tolerance}f";
-    ok (sprintf ($tplt, $expect) == sprintf ($tplt, $got));
-    }
-
-
-#	Test 72: universal time to local mean time
+#	Test 58: universal time to local mean time
 #	Tests: local_mean_time()
 
 #	This test is based on http://www.statoids.com/tconcept.html
@@ -781,7 +576,7 @@ eod
     }
 
 
-#	Test 73: local mean time to universal time
+#	Test 59: local mean time to universal time
 #	Tests: local_mean_time()
 
 #	This test is the inverse of the previous one.

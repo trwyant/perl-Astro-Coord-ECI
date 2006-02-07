@@ -7,8 +7,10 @@ ECI/Moon.pm
 ECI/Star.pm
 ECI/Sun.pm
 ECI/TLE.pm
+ECI/Utils.pm
 README
 README.MacOS
+t/basic.t
 t/eci.t
 t/moon.t
 t/pod.t

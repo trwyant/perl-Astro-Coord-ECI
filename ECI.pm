@@ -57,6 +57,7 @@ package Astro::Coord::ECI;
 
 our $VERSION = 0.001;
 
+use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
@@ -64,25 +65,7 @@ use Storable qw{dclone};
 use Time::Local;
 use UNIVERSAL qw{can isa};
 
-use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
-use constant PI => atan2 (0, -1);
-use constant PIOVER2 => PI / 2;
-use constant SECSPERDAY => 86400;
-use constant SOLAR_RADIUS => 1392000 / 2;	# Meeus, Appendix I, page 407.
-use constant TWOPI => PI * 2;
-
-###################
-#
-#	This internal routine gets defined up top so that it can appear
-#	in 'use constant' statements.
-#
-
-sub _deg2rad {$_[0] * PI / 180}
-
-#
-####################
-
-use constant MINUSONEDEGREE => _deg2rad (-1);
+use constant MINUSONEDEGREE => deg2rad (-1);
 
 my %mutator;	# Attribute mutators. We define these just after the
 		# set() method, for convenience.
@@ -94,7 +77,7 @@ my %static = (	# The geoid, etc. Geoid get set later.
     debug => 0,
     diameter => 0,
     refraction => 1,
-    twilight => _deg2rad (-6),
+    twilight => deg2rad (-6),
     );
 my %savatr;	# Attribs saved across "normal" operations. Set at end.
 my @kilatr =	# Attributes to purge when setting coordinates.
@@ -140,11 +123,11 @@ ref $B && UNIVERSAL::isa ($B, __PACKAGE__) &&
 Error - Both arguments must be @{[__PACKAGE__]} objects.
 eod
 
-my $a = _distsq ([$B->ecef], [$C->ecef]);
-my $b = _distsq ([$self->ecef], [$C->ecef]);
-my $c = _distsq ([$self->ecef], [$B->ecef]);
+my $a = distsq ([$B->ecef], [$C->ecef]);
+my $b = distsq ([$self->ecef], [$C->ecef]);
+my $c = distsq ([$self->ecef], [$B->ecef]);
 
-_acos (($b + $c - $a) / sqrt (4 * $b * $c));
+acos (($b + $c - $a) / sqrt (4 * $b * $c));
 }
 
 
@@ -192,7 +175,7 @@ my @delta;
 for (my $i = 0; $i < 6; $i++) {
     $delta[$i] = $obj[$i] - $base[$i];
     }
-my $theta = _mod2pi ($self->thetag ($time) + $lamda);
+my $theta = mod2pi (thetag ($time) + $lamda);
 my $sinlat = sin ($phi);
 my $sintheta = sin ($theta);
 my $coslat = cos ($phi);
@@ -201,11 +184,11 @@ my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
 my $ts = $sinlat * $rterm - $coslat * $delta[2];
 my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
 my $tz = $coslat * $rterm + $sinlat * $delta[2];
-my $azimuth = _mod2pi (atan2 ($te, - $ts));
+my $azimuth = mod2pi (atan2 ($te, - $ts));
 my $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
 	$delta[2] * $delta[2]);
 my $sinele = $tz / $range;
-my $elevation = _asin ($tz / $range);
+my $elevation = asin ($tz / $range);
 
 
 #	End of Kelso algorithm.
@@ -286,8 +269,8 @@ if ($elevation > MINUSONEDEGREE) {
 #	  the letter "Thorn." Similarly, the "ae" in "Saemund" is
 #	  supposed to be a ligature.
 
-    my $deg = _rad2deg ($elevation);
-    my $correction = 1.02 / _tan (_deg2rad ($deg + 10.3/($deg + 5.11))) +
+    my $deg = rad2deg ($elevation);
+    my $correction = 1.02 / tan (deg2rad ($deg + 10.3/($deg + 5.11))) +
 	.0019279;
     $self->get ('debug') and print <<eod;
 Debug correct_for_refraction
@@ -299,7 +282,7 @@ eod
 #	documentation, we do not correct the elevation unless the
 #	correction would place the body above the horizon.
 
-    $correction = _deg2rad ($correction / 60);
+    $correction = deg2rad ($correction / 60);
     $elevation += $correction if $correction + $elevation >= 0;
     }
 $elevation;
@@ -322,8 +305,8 @@ my $self = shift;
 my ($psi, $lamda, $h) = $self->geodetic;
 my ($psiprime, undef, $rho) = $self->geocentric;
 my $angle = $h >= 0 ?
-    - _acos (($rho - $h) / $rho) :
-    _acos ($rho / ($rho - $h));
+    - acos (($rho - $h) / $rho) :
+    acos ($rho / ($rho - $h));
 }
 
 
@@ -496,7 +479,7 @@ $self = $self->_check_coord (eci => \@_);
 
 unless (@_) {
     return @{$self->{eci}} if $self->{eci};
-    my $thetag = $self->thetag ($self->universal);
+    my $thetag = thetag ($self->universal);
     my @data = $self->ecef;
     $self->{debug} and print <<eod;
 Debug eci - thetag = $thetag
@@ -520,7 +503,7 @@ eod
 @_ == 3 and push @_, 0, 0, 0;
 
 if (@_ == 6) {
-    my $thetag = $self->thetag ($self->universal);
+    my $thetag = thetag ($self->universal);
     my @ecef = @_;
     $ecef[3] -= $ecef[1] * $self->{angularvelocity};
     $ecef[4] += $ecef[0] * $self->{angularvelocity};
@@ -581,16 +564,16 @@ unless (@_) {
     return @{$self->{ecliptic}} if $self->{ecliptic};
     my ($alpha, $delta, $rho) = $self->equatorial ();
 
-    my $epsilon = $self->obliquity ();
+    my $epsilon = obliquity ($self->dynamical);
     my $sinalpha = sin ($alpha);
     my $cosdelta = cos ($delta);
     my $sindelta = sin ($delta);
     my $cosepsilon = cos ($epsilon);
     my $sinepsilon = sin ($epsilon);
 
-    my $lamda = _mod2pi (atan2 ($sinalpha * $cosepsilon +	# Meeus (13.1), pg 93.
+    my $lamda = mod2pi (atan2 ($sinalpha * $cosepsilon +	# Meeus (13.1), pg 93.
 	$sindelta / $cosdelta * $sinepsilon, cos ($alpha)));
-    my $beta = _asin ($sindelta * $cosepsilon -		# Meeus (13.2), pg 93.
+    my $beta = asin ($sindelta * $cosepsilon -		# Meeus (13.2), pg 93.
 	$cosdelta * $sinepsilon * $sinalpha);
 
     return @{$self->{ecliptic} = [$beta, $lamda, $rho]};
@@ -600,23 +583,23 @@ if (@_ == 3) {
     ref $self or $self = $self->new ();
     my ($beta, $lamda, $rho) = @_;
 
-    $lamda = _mod2pi ($lamda);
-    my $epsilon = $self->obliquity ();
+    $lamda = mod2pi ($lamda);
+    my $epsilon = obliquity ($self->dynamical);
     my $sinlamda = sin ($lamda);
     my $cosepsilon = cos ($epsilon);
     my $sinepsilon = sin ($epsilon);
     my $cosbeta = cos ($beta);
     my $sinbeta = sin ($beta);
-    my $alpha = _mod2pi (atan2 ($sinlamda * $cosepsilon -	# Meeus (13.3), pg 93
+    my $alpha = mod2pi (atan2 ($sinlamda * $cosepsilon -	# Meeus (13.3), pg 93
 	$sinbeta / $cosbeta * $sinepsilon, cos ($lamda)));
-    my $delta = _asin ($sinbeta * $cosepsilon +		# Meeus (13.4), pg 93.
+    my $delta = asin ($sinbeta * $cosepsilon +		# Meeus (13.4), pg 93.
 	$cosbeta * $sinepsilon * $sinlamda);
     $self->{debug} and print <<eod;
 Debug ecliptic -
     beta = $beta (ecliptic latitude, radians)
-         = @{[_rad2deg ($beta)]} (ecliptic latitude, degrees)
+         = @{[rad2deg ($beta)]} (ecliptic latitude, degrees)
     lamda = $lamda (ecliptic longitude, radians)
-         = @{[_rad2deg ($lamda)]} (ecliptic longitude, degrees)
+         = @{[rad2deg ($lamda)]} (ecliptic longitude, degrees)
     rho = $rho (range, kilometers)
     epsilon = $epsilon (obliquity of ecliptic, radians)
     alpha = $alpha (right ascension, radians)
@@ -635,53 +618,6 @@ Error - The ecliptic() method must be called with either zero or one
 eod
     }
 $self;
-}
-
-
-
-=item $seconds = $coord->equation_of_time ($time);
-
-This method returns the equation of time at the given universal time.
-The time is optional, defaulting to the time given. If a time is
-specified, the object's universal time is set to the given time.
-
-This method can also be called as a class method, in which case an
-Astro::Coord::ECI object is instantiated, used for the calculations,
-and then discarded.
-
-The algorithm is from W. S. Smart's "Text-Book on Spherical Astronomy",
-as reported in Jean Meeus' "Astronomical Algorithms", 2nd Edition,
-Chapter 28, page 185.
-
-=cut
-
-sub equation_of_time {
-my $self = shift;
-
-$self = $self->_check_coord (equation_of_time => \@_);
-
-my $epsilon = $self->obliquity ();
-my $y = _tan ($epsilon / 2);
-$y *= $y;
-
-my $time = $self->dynamical;
-
-
-#	The following algorithm is from Meeus, chapter 25, page, 163 ff.
-
-my $T = $self->jcent2000 ($time);				# Meeus (25.1)
-my $L0 = _mod2pi (_deg2rad ((.0003032 * $T + 36000.76983) * $T	# Meeus (25.2)
-	+ 280.46646));
-my $M = _mod2pi (_deg2rad (((-.0001537) * $T + 35999.05029)	# Meeus (25.3)
-	* $T + 357.52911));
-my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;	# Meeus (25.4)
-
-my $E = $y * sin (2 * $L0) - 2 * $e * sin ($M) +
-    4 * $e * $y * sin ($M) * cos (2 * $L0) -
-    $y * $y * .5 * sin (4 * $L0) -
-    1.25 * $e * $e * sin (2 * $M);				# Meeus (28.3)
-
-$E * SECSPERDAY / TWOPI;	# The formula gives radians.
 }
 
 
@@ -943,7 +879,7 @@ unless (@_) {
 		(3 * $P);
       } : do {
 	my $p = - $P;
-	sqrt (cos (_acos ($Q /			# Borkowski (14b)
+	sqrt (cos (acos ($Q /			# Borkowski (14b)
 	    sqrt ($p * $p * $p)) / 3) * $p) * 2;
 	};
     my $G = (sqrt ($E * $E + $v)		# Borkowski (13)
@@ -1014,7 +950,7 @@ if (@_ == 3) {
 #	The following algorithm appears on page 82 of the second
 #	edition of Jean Meeus' "Astronomical Algorithms."
 
-    my $u = atan2 ($bovera * _tan ($phi), 1);
+    my $u = atan2 ($bovera * tan ($phi), 1);
     my $rhosinlatprime = $bovera * sin ($u) +
 	$h / $self->{semimajor} * sin ($phi);
     my $rhocoslatprime = cos ($u) +
@@ -1082,61 +1018,6 @@ eod
     push @rslt, $self->{$name};
     }
 return wantarray ? @rslt : $rslt[0];
-}
-
-
-=item $century = $coord->jcent2000 ($time);
-
-Several of the algorithms in Jean Meeus' "Astronomical Algorithms"
-are expressed in terms of the number of Julian centuries from epoch
-J2000.0 (e.g equations 12.1, 22.1). This method simply encapsulates
-that calculation, and is exposed for convenience and for testing
-purposes. It does not affect the $coord object in any way.
-
-This method can be called as a class method.
-
-=cut
-
-sub jcent2000 {
-$_[0]->jday2000 ($_[1]) / 36525;
-}
-
-
-=item $jd = $coord->jday2000 ($time);
-
-This method converts a Perl date to the number of Julian days
-(and fractions thereof) since Julian 2000.0. This quantity is used
-in a number of the algorithms in Jean Meeus' "Astronomical
-Algorithms". The method is exposed for convenience and for
-testing purposes, and does not affect the $coord object in any way.
-
-This method may be called as a class method.
-
-The computation makes use of information from Jean Meeus' "Astronomical
-Algorithms", 2nd Edition, Chapter 7, page 62.
-
-=cut
-
-sub jday2000 {
-($_[1] - PERL2000) / SECSPERDAY			#   Meeus p. 62
-}
-
-
-=item $jd = $coord->julianday ($time);
-
-This method converts a Perl date to a Julian day number. It is
-exposed for convenience and for testing purposes, and does not
-affect the object in any way.
-
-This method may be called as a class method.
-
-The computation makes use of information from Jean Meeus' "Astronomical
-Algorithms", 2nd Edition, Chapter 7, page 62.
-
-=cut
-
-sub julianday {
-$_[0]->jday2000($_[1]) + 2_451_545.0	#   Meeus p. 62
 }
 
 
@@ -1335,19 +1216,19 @@ my $delta = floor ($apparent / 16);
 my $end = $begin + $delta;
 
 my ($above, $opposite) =
-    _mod2pi (($body->universal($begin)->geocentric)[1]
+    mod2pi (($body->universal($begin)->geocentric)[1]
 	- ($self->universal($begin)->geocentric)[1]) >= PI ?
     (1 - $retro, PI) : ($retro, 0);
 
 ($begin, $end) = ($end, $end + $delta)
-    while _mod2pi (($body->universal($end)->geocentric)[1] -
+    while mod2pi (($body->universal($end)->geocentric)[1] -
 	($self->universal($end)->geocentric)[1] + $opposite) < PI;
 
 if (defined $want && $want != $above) {
     $above = $want;
     $opposite = $opposite ? 0 : PI;
     ($begin, $end) = ($end, $end + $delta)
-	while _mod2pi (($body->universal($end)->geocentric)[1] -
+	while mod2pi (($body->universal($end)->geocentric)[1] -
 	    ($self->universal($end)->geocentric)[1] + $opposite) < PI;
     }
 
@@ -1356,182 +1237,13 @@ while ($end - $begin > 1) {
     my $long = ($body->universal($mid)->geocentric)[1];
     my $merid = ($self->universal($mid)->geocentric)[1];
     ($begin, $end) =
-	_mod2pi ($long - $merid + $opposite) < PI ?
+	mod2pi ($long - $merid + $opposite) < PI ?
 	($mid, $end) : ($begin, $mid);
     }
 
 $body->universal ($end);
 $self->universal ($end);
 wantarray ? ($end, $above) : $end;
-}
-
-
-=item $delta_psi = $coord->nutation_in_longitude ($time)
-
-This method calculates the nutation in longitude (delta psi) for the
-given B<dynamical> time. If time is omitted, it defaults to the current
-B<dynamical> time setting of the object. The method is exposed for
-convenience and for testing purposes, and does not affect the $coord
-object in any way.
-
-This method can be called as a class method if the time is specified.
-
-The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
-Edition, Chapter 22, pages 143ff. Meeus states that it is good to
-0.5 seconds of arc.
-
-=cut
-
-sub nutation_in_longitude {
-my $self = shift;
-
-ref $self || $_[0] or croak <<eod;
-Error - You may not call nutation_in_longitude as a class method
-        without specifying a time.
-eod
-
-my $time = shift || $self->dynamical ();
-my $T = $self->jcent2000 ($time);	# Meeus (22.1)
-
-my $omega = _mod2pi (_deg2rad ((($T / 450000 + .0020708) * $T -
-	1934.136261) * $T + 125.04452));
-
-my $L = _mod2pi (_deg2rad (36000.7698 * $T + 280.4665));
-my $Lprime = _mod2pi (_deg2rad (481267.8813 * $T + 218.3165));
-my $delta_psi = _deg2rad ((-17.20 * sin ($omega) - 1.32 * sin (2 * $L)
-	- 0.23 * sin (2 * $Lprime) + 0.21 * sin (2 * $omega))/3600);
-
-$delta_psi;
-}
-
-
-=item $delta_epsilon = $coord->nutation_in_obliquity ($time)
-
-This method calculates the nutation in obliquity (delta epsilon) for
-the given B<dynamical> time. If time is omitted, it defaults to the
-current B<dynamical> time setting of the object. The method is exposed
-for convenience and for testing purposes, and does not affect the
-$coord object in any way.
-
-This method can be called as a class method if the time is specified.
-
-The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
-Edition, Chapter 22, pages 143ff. Meeus states that it is good to
-0.1 seconds of arc.
-
-=cut
-
-sub nutation_in_obliquity {
-my $self = shift;
-
-ref $self || $_[0] or croak <<eod;
-Error - You may not call nutation_in_obliquity as a class method
-        without specifying a time.
-eod
-
-my $time = shift || $self->dynamical ();
-my $T = $self->jcent2000 ($time);	# Meeus (22.1)
-
-my $omega = _mod2pi (_deg2rad ((($T / 450000 + .0020708) * $T -
-	1934.136261) * $T + 125.04452));
-
-my $L = _mod2pi (_deg2rad (36000.7698 * $T + 280.4665));
-my $Lprime = _mod2pi (_deg2rad (481267.8813 * $T + 218.3165));
-my $delta_epsilon = _deg2rad ((9.20 * cos ($omega) + 0.57 * cos (2 * $L) +
-	0.10 * cos (2 * $Lprime) - 0.09 * cos (2 * $omega))/3600);
-
-$delta_epsilon;
-}
-
-
-=item $epsilon = $coord->obliquity ($time)
-
-This method calculates the obliquity of the ecliptic in radians. The
-time argument is optional. If specified, the universal time of the
-$coord object is set to this time, and the obliquity of the ecliptic
-at the corresponding dynamical time is calculated. If not specified,
-the current time setting of the object (converted to dynamical if
-needed) is used.
-
-The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
-Edition, Chapter 22, pages 143ff. The conversion from universal to
-dynamical time comes from chapter 10, equation 10.2  on page 78.
-
-This method can also be called as a class method provided a time
-is specified.
-
-=cut
-
-use constant E0BASE => (21.446 / 60 + 26) / 60 + 23;
-
-sub obliquity {
-my $self = shift;
-$self = $self->_check_coord (obliquity => \@_);
-
-@_ and croak <<eod;
-Error - The obliquity() method may not be called with more than
-        one argument.
-eod
-
-my $time = $self->dynamical;
-
-my $T = $self->jcent2000 ($time);	# Meeus (22.1)
-
-my $delta_epsilon = $self->nutation_in_obliquity ($time);
-
-my $epsilon0 = _deg2rad (((0.001813 * $T - 0.00059) * $T - 46.8150)
-	* $T / 3600 + E0BASE);
-$self->get ('debug') and print <<eod;
-Debug obliquity at @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]} dynamical
-    T  = $T
-    delta epsilon = @{[_rad2deg ($delta_epsilon) * 3600]} seconds of arc
-    epsilon0 = @{[_rad2dms ($epsilon0)]}
-    epsilon = @{[_rad2dms ($epsilon0 + $delta_epsilon)]}
-eod
-$epsilon0 + $delta_epsilon + $self->obliquity_correction ($time);
-}
-
-
-=item $radians = $coord->obliquity_correction ($time);
-
-This method, in principal, calculates the correction to the obliquity
-at the given dynamical time. This particular incarnation of the method
-returns zero. The method's reason for existence is so that a subclass
-can override it if necessary (e.g. Astro::Coord::ECI::Sun).
-
-=cut
-
-sub obliquity_correction {0}
-
-
-=item $radians = $coord->omega ($time);
-
-This method calculates the ecliptic longitude of the ascending node of
-the Moon's mean orbit at the given B<dynamical> time. If time is
-omitted, it defaults to the current B<dynamical> time setting of the
-object. The method is exposed for convenience and for testing purposes,
-and does not affect the $coord object in any way.
-
-This method can be called as a class method if the time is specified.
-
-The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
-Edition, Chapter 22, pages 143ff.
-
-=cut
-
-sub omega {
-my $self = shift;
-
-ref $self || $_[0] or croak <<eod;
-Error - You may not call omega as a class method without specifying a
-        time.
-eod
-
-my $time = shift || $self->dynamical ();
-my $T = $self->jcent2000 ($time);	# Meeus (22.1)
-
-my $omega = _mod2pi (_deg2rad ((($T / 450000 + .0020708) * $T -
-	1934.136261) * $T + 125.04452));
 }
 
 
@@ -1562,16 +1274,16 @@ my $end = $time + _dynamical_delta ($time);
 
 my ($alpha0, $delta0, $rho0) = $self->equatorial ();
 
-my $T = $self->jcent2000 ($start);
+my $T = jcent2000 ($start);
 my $t = ($end - $start) / (36525 * SECSPERDAY);
 
 #	The following four assignments correspond to Meeus' (21.2).
 my $zterm = (- 0.000139 * $T + 1.39656) * $T + 2306.2181;
-my $zeta = _deg2rad ((((0.017998 * $t + (- 0.000344 * $T + 0.30188)) *
+my $zeta = deg2rad ((((0.017998 * $t + (- 0.000344 * $T + 0.30188)) *
 	$t + $zterm) * $t) / 3600);
-my $z = _deg2rad ((((0.018203 * $t + (0.000066 * $T + 1.09468)) * $t +
+my $z = deg2rad ((((0.018203 * $t + (0.000066 * $T + 1.09468)) * $t +
 	$zterm) * $t) / 3600);
-my $theta = _deg2rad (((( - 0.041833 * $t - (0.000217 * $T + 0.42665))
+my $theta = deg2rad (((( - 0.041833 * $t - (0.000217 * $T + 0.42665))
 	* $t + (- 0.000217 * $T - 0.85330) * $T + 2004.3109) * $t) /
 	3600);
 
@@ -1586,7 +1298,7 @@ my $B = $costheta * $cosdelta0cosalpha0 - $sintheta * $sindelta0;
 my $C = $sintheta * $cosdelta0cosalpha0 + $costheta * $sindelta0;
 
 my $alpha = atan2 ($A , $B) + $z;
-my $delta = _asin ($C);
+my $delta = asin ($C);
 
 $self->equatorial ($alpha, $delta, $rho0, $time);
 $self->{dynamical} = $end;
@@ -1821,46 +1533,6 @@ SET_ACTION_NONE;
 }
 
 
-=item $value = $coord->theta0 ($time);
-
-This method returns the Greenwich hour angle of the mean equinox at 0
-hours universal on the day whose time is given (i.e. the argument is
-a standard Perl time). The method is exposed for convenience and for
-testing purposes, and does not affect the $coord object in any way.
-
-This method can also be called as a class method.
-
-=cut
-
-sub theta0 {
-$_[0]->thetag (timegm (0, 0, 0, (gmtime $_[1])[3 .. 5]));
-}
-
-
-=item $value = $coord->thetag ($time);
-
-This method returns the Greenwich hour angle of the mean equinox at the
-given time. The method is exposed for convenience and for testing
-purposes, and does not affect the $coord object in any way.
-
-This method can also be called as a class method.
-
-The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
-Edition, equation 12.4, page 88.
-
-=cut
-
-
-#	Meeus, pg 88, equation 12.4, converted to radians and Perl dates.
-
-sub thetag {
-my $T = $_[0]->jcent2000 ($_[1]);
-_mod2pi (4.89496121273579 + 6.30038809898496 *
-	$_[0]->jday2000 ($_[1]))
-	+ (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
-}
-
-
 =item $coord->universal ($time)
 
 This method sets the time represented by the object, in universal time
@@ -1916,20 +1588,6 @@ $self;
 #
 
 
-#	$angle = _acos ($value)
-
-#	Compute the arc whose cosine is the given value.
-
-sub _acos {atan2 (sqrt (1 - $_[0] * $_[0]), $_[0])}
-
-
-#	$angle = _asin ($value)
-
-#	Compute the arc whose sine is the given value.
-
-sub _asin {atan2 ($_[0], sqrt (1 - $_[0] * $_[0]))}
-
-
 #	$coord->_check_coord (method => \@_)
 
 #	This is designed to be called "up front" for any of the methods
@@ -1982,36 +1640,6 @@ $self;
 }
 
 
-#	$value = _deg2rad ($angle);
-
-#	Convert degrees to radians.
-
-#	This is defined at the top so it can appear in 'use constant'
-#	statements.
-
-
-#	$value = _distsq (\@coord1, \@coord2)
-
-#	Calculate the square of the distance between the two sets of
-#	coordinates. We don't calculate the distance directly, because
-#	of cases (e.g. the law of cosines calculation in the angle()
-#	method) where we just have to square the result again.
-
-sub _distsq {
-ref $_[0] eq 'ARRAY' && ref $_[1] eq 'ARRAY' && @{$_[0]} == @{$_[1]} or
-    die "Programming error - Both arguments to _distance must be ",
-    "references to lists of the same length.";
-
-my $sum = 0;
-my $size = @{$_[0]};
-for (my $inx = 0; $inx < $size; $inx++) {
-    my $delta = $_[0][$inx] - $_[1][$inx];
-    $sum += $delta * $delta;
-    }
-$sum
-}
-
-
 #	$value = _local_mean_delta ($coord)
 
 #	Calculate the delta from universal to civil time for the object.
@@ -2023,56 +1651,19 @@ return ($_[0]->geodetic ())[1] * SECSPERDAY / TWOPI;
 }
 
 
-#	$theta = _mod2pi ($theta);
-
-#	Reduce the given angle to be in the range 0 <= $theta < 2 * pi
-
-sub _mod2pi {
-$_[0] - floor ($_[0] / TWOPI) * TWOPI;
-}
-
-
-#	$value = _rad2deg ($angle)
-
-#	Converts radians to degrees.
-
-sub _rad2deg {$_[0] / PI * 180}
-
-
 #	$string = _rad2dms ($angle)
 
 #	Convert radians to degrees, minutes, and seconds of arc.
 #	Used for debugging.
 
 sub _rad2dms {
-my $angle = _rad2deg (shift);
+my $angle = rad2deg (shift);
 my $deg = floor ($angle);
 $angle = ($angle - $deg) * 60;
 my $min = floor ($angle);
 $angle = ($angle - $min) * 60;
 "$deg degrees $min minutes $angle seconds of arc";
 }
-
-
-#	($xprime, $yprime) = _rotate ($theta, $x, $y)
-
-#	Rotate coordinates in the Cartesian plane.
-#	The arguments are the angle and the coordinates, and
-#	the rotated coordinates 
-
-sub _rotate {
-my ($theta, $x, $y) = @_;
-my $costh = cos ($theta);
-my $sinth = sin ($theta);
-($x * $costh - $y * $sinth, $x * $sinth + $y * $costh);
-}
-
-
-#	$val = _tan ($angle)
-
-#	Compute the tangent of the angle.
-
-sub _tan {sin ($_[0]) / cos ($_[0])}
 
 
 #######################################################################

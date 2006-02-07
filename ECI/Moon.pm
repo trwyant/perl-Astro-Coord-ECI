@@ -38,20 +38,13 @@ our $VERSION = 0.001;
 use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Sun;	# Need for phase of moon calc.
+use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
 ##use Time::Local;
 use UNIVERSAL qw{isa};
 
-
-#	"Hand-import" non-oo utilities from the superclass.
-
-BEGIN {
-*_deg2rad = \&Astro::Coord::ECI::_deg2rad;
-*_mod2pi = \&Astro::Coord::ECI::_mod2pi;
-*PIOVER2 = \&Astro::Coord::ECI::PIOVER2;
-}
 
 #	Load the periodic terms from the table.
 
@@ -263,7 +256,7 @@ my $sun = Astro::Coord::ECI::Sun->universal ($self->universal);
 my (undef, $longs) = $sun->ecliptic ();
 my (undef, $longm) = $self->ecliptic ();
 
-my $phase = _mod2pi ($longm - $longs);
+my $phase = mod2pi ($longm - $longs);
 wantarray ? ($phase, (1 + cos ($self->PI - $phase)) / 2) : $phase;
 }
 
@@ -297,37 +290,37 @@ my $self = shift;
 
 my $time = $self->dynamical;
 
-my $T = $self->jcent2000 ($time);			# Meeus (22.1)
+my $T = jcent2000 ($time);			# Meeus (22.1)
 
 #	Moon's mean longitude.
 
-my $Lprime = _mod2pi (_deg2rad (			# Meeus (47.1)
+my $Lprime = mod2pi (deg2rad (			# Meeus (47.1)
     (((- ($T / 65_194_000) +
     1 / 538_841) * $T - 0.0015786) * $T +
     481267.88123421) * $T + 218.3164477));
 
 #	Moon's mean elongation.
 
-my $D = _mod2pi (_deg2rad (((($T / 113_065_000 +	# Meeus (47.2)
+my $D = mod2pi (deg2rad (((($T / 113_065_000 +	# Meeus (47.2)
     1 / 545_868) * $T - 0.0018819) * $T +
     445267.1114034) * $T + 297.8501921));
 
 #	Sun's mean anomaly.
 
-my $M = _mod2pi (_deg2rad ((($T / 24_490_000 -		# Meeus (47.3)
+my $M = mod2pi (deg2rad ((($T / 24_490_000 -		# Meeus (47.3)
     0.000_1536) * $T + 35999.050_2909) * $T +
     357.5291092));
 
 #	Moon's mean anomaly.
 
-my $Mprime = _mod2pi (_deg2rad ((((- $T / 14_712_000 +	# Meeus (47.4)
+my $Mprime = mod2pi (deg2rad ((((- $T / 14_712_000 +	# Meeus (47.4)
     1 / 69_699) * $T + 0.008_7414) * $T +
     477198.867_5055) * $T + 134.963_3964));
 
 #	Moon's argument of latitude (mean distance
 #	from ascending node).
 
-my $F = _mod2pi (_deg2rad (((($T / 863_310_000 -	# Meeus (47.5)
+my $F = mod2pi (deg2rad (((($T / 863_310_000 -	# Meeus (47.5)
     1 / 3_526_000) * $T - 0.003_6539) * $T +
     483202.017_5233) * $T + 93.272_0950));
 
@@ -338,9 +331,9 @@ my @efac = (1, $E, $E * $E);
 
 #	Compute "further arguments".
 
-my $A1 = _mod2pi (_deg2rad (131.849 * $T + 119.75));	# Venus
-my $A2 = _mod2pi (_deg2rad (479264.290 * $T + 53.09));	# Jupiter
-my $A3 = _mod2pi (_deg2rad (481266.484 * $T + 313.45));	# undocumented
+my $A1 = mod2pi (deg2rad (131.849 * $T + 119.75));	# Venus
+my $A2 = mod2pi (deg2rad (479264.290 * $T + 53.09));	# Jupiter
+my $A3 = mod2pi (deg2rad (481266.484 * $T + 313.45));	# undocumented
 
 #	Compute periodic terms for longitude (sigma l) and
 #	distance (sigma r).
@@ -387,13 +380,13 @@ $sigmab += - 2235 * sin ($Lprime) + 382 * sin ($A3) +
 
 #	Coordinates of Moon (finally!)
 
-my $lamda = _deg2rad ($sigmal / 1_000_000) + $Lprime;
-my $beta = _deg2rad ($sigmab / 1_000_000);
+my $lamda = deg2rad ($sigmal / 1_000_000) + $Lprime;
+my $beta = deg2rad ($sigmab / 1_000_000);
 my $delta = $sigmar / 1000 + 385_000.56;
 
 #	Correct longitude for nutation (from Chapter 22, pg 144).
 
-$lamda += $self->nutation_in_longitude ($time);
+$lamda += nutation_in_longitude ($time);
 
 
 $self->ecliptic ($beta, $lamda, $delta);

@@ -39,22 +39,12 @@ our $VERSION = 0.001;
 use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Sun;	# Need for abberation calc.
+use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
 ##use Time::Local;
 use UNIVERSAL qw{isa};
-
-
-#	"Hand-import" non-oo utilities from the superclass.
-
-BEGIN {
-*_deg2rad = \&Astro::Coord::ECI::_deg2rad;
-*_mod2pi = \&Astro::Coord::ECI::_mod2pi;
-*_rad2deg = \&Astro::Coord::ECI::_rad2deg;
-*PERL2000 = \&Astro::Coord::ECI::PERL2000;
-*PIOVER2 = \&Astro::Coord::ECI::PIOVER2;
-}
 
 
 =item $star = Astro::Coord::ECI::Star->new();
@@ -175,7 +165,7 @@ sub position {
 my $self = shift;
 return @{$self->{_star_position}} unless @_;
 my @args = @_;
-$args[2] ||= 30.8568e12;	# 1 parsec, per Meeus, Appendix I pg 407.
+$args[2] ||= PARSEC;
 @args < 5 and splice @args, 3, 0, 0, 0, 0;
 $args[3] ||= 0;
 $args[4] ||= 0;
@@ -203,7 +193,7 @@ Edition, Chapter 23, pages 149ff.
 
 =cut
 
-use constant CONSTANT_OF_ABERRATION => _deg2rad (20.49552 / 3600);
+use constant CONSTANT_OF_ABERRATION => deg2rad (20.49552 / 3600);
 
 sub time_set {
 my $self = shift;
@@ -234,15 +224,15 @@ $self->precess ($time);
 #	Get ecliptic coordinates, and correct for nutation.
 
 my ($beta, $lamda) = $self->ecliptic ();
-my $delta_psi = $self->nutation_in_longitude ();
+my $delta_psi = nutation_in_longitude ($self->dynamical);
 $lamda += $delta_psi;
 
 
 #	Calculate and add in the abberation terms (Meeus 23.2);
 
-my $T = $self->jcent2000 ($time);			# Meeus (22.1)
+my $T = jcent2000 ($time);			# Meeus (22.1)
 my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;	# Meeus (25.4)
-my $pi = _deg2rad ((0.00046 * $T + 1.71946) * $T + 102.93735);
+my $pi = deg2rad ((0.00046 * $T + 1.71946) * $T + 102.93735);
 my $sun = $self->{_star_sun} ||= Astro::Coord::ECI::Sun->new ();
 $sun->universal ($time);
 

@@ -10,6 +10,7 @@ use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Star;
 use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::Utils qw{:all};
 
 use Config;
 use Data::Dumper;
@@ -17,7 +18,7 @@ use Date::Manip;
 use FileHandle;
 use Getopt::Long;
 use List::Util qw{max};
-use Math::Trig;
+###use Math::Trig;
 use Pod::Usage;
 use POSIX qw{floor strftime};
 use Term::ReadLine;
@@ -45,8 +46,6 @@ $VERSION = '0.001';
 use constant LINFMT => <<eod;
 %s %5.1f %5.1f %-2s %7.1f %8.4f %9.4f %7.1f %-4s %s
 eod
-
-use constant TWOPI => 2 * atan2 (0, -1);
 
 my @bodies;
 my @sky = (
@@ -1458,7 +1457,7 @@ eod
 #	seconds (of right ascension, presumably)
 
 sub _rad2hms {
-my $sec = shift (@_) / pi * 12;
+my $sec = shift (@_) / PI * 12;
 my $hr = floor ($sec);
 $sec = ($sec - $hr) * 60;
 my $min = floor ($sec);
@@ -1981,8 +1980,8 @@ more on specifying angles. You can also specify its distance in parsecs
 if you so desire, the default for a star being 1 parsec (too small, but
 we're not correcting for parallax anyway). You may also specify proper
 motion in right ascension (in seconds of right ascension per year),
-declination (in seconds of arc per year), and velocity in recession in
-(kilometers per second), the default for the latter three being zero.
+declination (in seconds of arc per year), and velocity in recession (in
+kilometers per second), the default for the latter three being zero.
 
 clear - clears the list of background objects.
 

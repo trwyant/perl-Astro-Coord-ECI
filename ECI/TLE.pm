@@ -105,6 +105,7 @@ our $VERSION = 0.001;
 
 use base qw{Astro::Coord::ECI};
 
+use Astro::Coord::ECI::Utils qw{thetag};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor};
@@ -1966,29 +1967,29 @@ goto &_convert_out;
 }
 
 
-=item $value = $tle->thetag($time);
+##=item $value = $tle->thetag($time);
 
-This method returns the Greenwich hour angle of the mean equinox
-at the given time. The time defaults to the epoch of the given
-object. The object itself is unaffected - this method is exposed
-for convenience and for testing purposes.
+##This method returns the Greenwich hour angle of the mean equinox
+##at the given time. The time defaults to the epoch of the given
+##object. The object itself is unaffected - this method is exposed
+##for convenience and for testing purposes.
 
-This method can also be called as a "static" method (i.e. as
-Astro::Coord::ECI::TLE->thetag (time)). In this case the time may NOT be
-defaulted, and no effort has been made to make the error pretty.
+##This method can also be called as a "static" method (i.e. as
+##Astro::Coord::ECI::TLE->thetag (time)). In this case the time may NOT be
+##defaulted, and no effort has been made to make the error pretty.
 
-=cut
+##=cut
 
-sub thetag {
-my $self = shift;
-my $rslt = _fmod2p (1.72944494 + 6.3003880987 * (@_ ?
-	$self->ds50 ($_[0]) :
-	($self->{ds50} ||= $self->ds50 ())));
-ref $self && $self->{debug} and print <<eod;
-Debug thetag (@{[@_ ? $_[0] : $self->{epoch}]}) = $rslt
-eod
-$rslt;
-}
+##sub thetag {
+##my $self = shift;
+##my $rslt = _fmod2p (1.72944494 + 6.3003880987 * (@_ ?
+##	$self->ds50 ($_[0]) :
+##	($self->{ds50} ||= $self->ds50 ())));
+##ref $self && $self->{debug} and print <<eod;
+##Debug thetag (@{[@_ ? $_[0] : $self->{epoch}]}) = $rslt
+##eod
+##$rslt;
+##}
 
 =item $self->time_set();
 
@@ -2053,7 +2054,8 @@ sub _dpinit {
 my ($self, $eqsq, $siniq, $cosiq, $rteqsq, $a0, $cosq2, $sinomo,
 	$cosomo, $bsq, $xlldot, $omgdt, $xnodot, $xnodp) = @_;
 
-my $thgr = $self->thetag ($self->{epoch});
+##my $thgr = $self->thetag ($self->{epoch});
+my $thgr = thetag ($self->{epoch});
 my $eq  =  $self->{eccentricity};
 my $xnq  =  $xnodp;
 my $aqnv  =  1 / $a0;
