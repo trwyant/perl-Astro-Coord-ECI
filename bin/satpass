@@ -53,6 +53,8 @@ my @sky = (
     Astro::Coord::ECI::Moon->new (),
     );
 
+my %opt;
+
 my %parm = (
     appulse => 0,
     autoheight => 1,
@@ -160,7 +162,20 @@ my %alias = (
     quit => 'exit',
     );
 
-print STDERR <<eod;
+GetOptions (\%opt, qw{filter}) or die <<eod;
+
+Predict satellite visibility.
+
+usage: perl @{[basename $0]} [options] [command ...]
+
+where the only option is
+
+  -filter
+    Asserting this option supresses extraneous output, making satpass
+    behave more like a Unix filter.
+eod
+
+$opt{filter} or print <<eod;
 
 satpass $VERSION - Satellite pass predictor
 based on Astro::Coord::ECI @{[Astro::Coord::ECI->VERSION]}
@@ -2459,11 +2474,19 @@ Assuming this script is installed as an executable, you should be able
 to run it just by specifying its name. Under VMS, the DCL$PATH logical
 name must include the directory into which the script was installed.
 
-There are no command qualifiers, but it is possible to pass commands
-on the command line, or to pipe or redirect them in. These commands
-are executed after the initialization file is executed. After the
-commands on the command line are executed, the user gets control
-unless one of the commands on the command line was 'exit'.
+The only command qualifier is
+
+ -filter
+
+which supresses extraneous output to make satpass behave more like a
+Unix filter. The only thing supressed at the moment is the banner text.
+
+It is also possible to pass commands on the command line, or to pipe or
+redirect them in. The execution order is
+
+ 1. The initialization file;
+ 2. Commands on the command line;
+ 3. Commands from standard input.
 
 For example, assuming the initialization file defines a macro named
 'usual' to load the usual observing list, you could do:
@@ -2494,6 +2517,10 @@ naming assumption,
 or (under some flavor of Unix)
 
   $ cat commands | satpass
+
+or even
+
+  $ satpass `cat commands`
 
 =head1 AUTHOR
 
