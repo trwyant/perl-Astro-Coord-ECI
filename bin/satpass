@@ -232,7 +232,8 @@ while (1) {
     my @args = map {m/^>/ ? do {$redout = $_; ()} :
 	$redout =~ m/^>+$/ ? do {$redout .= $_; ()} :
 	$_} parse_line ('\s+', 0, $buffer);
-    $redout =~ s/^(>+)~/$1 . $^O eq 'VMS' ? 'sys$login' : $ENV{HOME} || $ENV{LOGDIR}/e;
+    $redout =~ s/^(>+)~/$1 . (
+	$^O eq 'VMS' ? 'sys$login' : $ENV{HOME} || $ENV{LOGDIR})/e;
     my $verb = lc shift @args;
     $verb = $alias{$verb} if $alias{$verb};
     $verb eq 'exit' and last;
@@ -245,7 +246,7 @@ eod
     my $stdout;
     $redout and do {
 	my $fh = FileHandle->new ($redout) or do {warn <<eod; next};
-Error - Failed to open $redout
+Error - Failed to open '$redout'
         $!
 eod
 	$stdout = select ($fh) or die <<eod;
