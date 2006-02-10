@@ -27,8 +27,14 @@ use Text::ParseWords;
 use Time::Local;
 use UNIVERSAL qw{can};
 
-my ($soap_unavailable, $xml_parser_unavailable);
+my ($clipboard_unavailable, $soap_unavailable,
+	$xml_parser_unavailable);
+my $mswin32 = $^O eq 'MSWin32';
+my $clipboard_package;
 BEGIN {
+    $clipboard_package = $mswin32 ? "Win32::Clipboard" : "Clipboard";
+    eval "use $clipboard_package";
+    $clipboard_unavailable = $@;
     eval "use SOAP::Lite";
     $soap_unavailable = $@;
     eval "use XML::Parser";
@@ -53,7 +59,9 @@ my @sky = (
     Astro::Coord::ECI::Moon->new (),
     );
 
-my %opt;
+my %opt;	# Options passed when we were invoked.
+my %cmdopt;	# Options for individual satpass commands.
+my %cmdlgl;	# Legal options for a given command.
 
 my %parm = (
     appulse => 0,
@@ -154,7 +162,8 @@ my $date_manip_fudge =
 
 my $rl = Term::ReadLine->new ('Predict satellite passes');
 my $fh = *STDIN;
-my @stack;
+my @stdin;
+my @stdout;
 my %alias = (
     '!' => 'system',
     '.' => 'source',
@@ -162,18 +171,29 @@ my %alias = (
     quit => 'exit',
     );
 
-GetOptions (\%opt, qw{filter}) or die <<eod;
+GetOptions (\%opt, qw{clipboard filter}) or die <<eod;
 
 Predict satellite visibility.
 
 usage: perl @{[basename $0]} [options] [command ...]
 
-where the only option is
+where the legal options are
+
+  -clipboard
+    Asserting this option causes all output to stdout to be captured
+    and placed on the system clipboard. Command-line output redirection
+    is ignored. You must have the $clipboard_package module installed
+    if you assert this option.
 
   -filter
     Asserting this option supresses extraneous output, making satpass
     behave more like a Unix filter.
+
 eod
+
+$opt{clipboard} and select (IO::Clipboard->new ());
+
+Getopt::Long::Configure (qw{pass_through});	# Need because of relative time format.
 
 $opt{filter} or print <<eod;
 
@@ -193,28 +213,26 @@ eod
 #	Main program loop.
 #
 
-@ARGV and do {
-    require IO::String;
-    source (IO::String->new (join "\n", @ARGV));
-    };
+@ARGV and source (_memio ('<', \(join "\n", @ARGV)));
 
 $inifil && -e $inifil and source ($inifil);
 
 my @line;
 my $cntind = '';
 while (1) {
-    my $buffer = @stack ? <$fh> :
+    my $buffer = @stdin ? <$fh> :
 	-t STDIN ?
 	    $rl ? $rl->readline ("$cntind$parm{prompt} ") :
 		do {print "\n$cntind$parm{prompt} "; <$fh>} :
 	    <$fh>;
     defined $buffer or do {
-	last unless @stack;
-	$fh = pop @stack;
+	last unless @stdin;
+	$fh = pop @stdin;
+	@stdout and select (pop @stdout);
 	redo;
 	};
     chomp $buffer;
-    $parm{echo} && (@stack || !-t STDIN) and
+    $parm{echo} && (@stdin || !-t STDIN) and
 	print "$cntind$parm{prompt} $buffer\n";
     $buffer =~ s/^\s+//;
     $buffer =~ s/\s+$//;
@@ -243,8 +261,26 @@ Error - Verb '$verb' not recognized.
 eod
 	next;
 	};
+    %cmdopt = ();
     my $stdout;
-    $redout and do {
+    {	# Local symbol block
+	local @ARGV = @args;
+	GetOptions (\%cmdopt, qw{clipboard debug}, @{$cmdlgl{$verb} ||= []});
+	@args = @ARGV;
+	}
+##    $cmdopt{clipboard} = 0
+##	if $opt{clipboard} || UNIVERSAL::isa (select (), 'IO::Clipboard');
+    push @stdout, select ();
+    if ($cmdopt{clipboard}) {
+	$redout = '';
+	my $fh = eval {IO::Clipboard->new ()};
+	$@ and do {warn $@; next;};
+	$stdout = select ($fh) or die <<eod;
+Error - Failed to redirect output.
+        $!
+eod
+	}
+      elsif ($redout) {
 	my $fh = FileHandle->new ($redout) or do {warn <<eod; next};
 Error - Failed to open '$redout'
         $!
@@ -253,12 +289,12 @@ eod
 Error - Failed to redirect output.
         $!
 eod
-	};
+	}
     if ($macro{$verb}) {
 	my $cmd = join "\n", @{$macro{$verb}};
 	$cmd =~ s/\$(?:(\w+)|\{(\w+)(?:\:(.*?))\}|(.))/
 	    $4 ? $4 : _sub_arg ($1 || $2, $3 || '', \@args)/mgex;
-	source (IO::String->new ($cmd));
+	source (_memio  ('<', \$cmd));
 	}
       elsif (can (__PACKAGE__, $verb)) {
 	no strict qw{refs};
@@ -271,7 +307,7 @@ eod
 Error - Verb '$verb' not recognized.
 eod
 	}
-    $stdout and select ($stdout)->close;
+    @stdout and select (pop @stdout);
     }
 print "\n";
 
@@ -377,21 +413,14 @@ foreach my $body (@bodies, @sky) {
 #	geocode () - Get lat/long from rpc.geocoder.us
 #
 
+BEGIN {
+$cmdlgl{geocode} = [qw{all height}];
+}
+
 sub geocode {
 $soap_unavailable and die <<eod;
 Error - You need to install the SOAP::Lite module if you wish to use
         the geocode command.
-eod
-
-my %opt;
-local @ARGV = @_;
-GetOptions (\%opt, qw{all debug height}) or die <<eod;
-Error - The geocode command takes only the following options:
-  -all = get height using getAllElevations, not getElevation;
-  -debug = print retrieved data before parsing;
-  -height = invert the current autoheight setting for this command.
-These options are to be considered UNDOCUMENTED; they may
-change in future releases.
 eod
 
 my $set_loc = @ARGV;
@@ -404,7 +433,7 @@ Error - Failed to access geocoder.us.
 eod
 
 local $Data::Dumper::Terse = 1;
-$opt{debug} and print "Result: ", Dumper ($rslt), "\n";
+$cmdopt{debug} and print "Result: ", Dumper ($rslt), "\n";
 
 @$rslt or die <<eod;
 Error - Failed to parse address
@@ -422,8 +451,8 @@ if (@$rslt == 1) {
     @parm{qw{latitude longitude}} = @{$rslt->[0]}{qw{lat long}};
     print "\n";
     show (($set_loc ? 'location' : ()), qw{latitude longitude});
-    $opt{height} ? !$parm{autoheight} : $parm{autoheight} and
-	height (map {"-$_"} grep {$opt{$_}} qw{all debug});
+    $cmdopt{height} ? !$parm{autoheight} : $parm{autoheight} and
+	height (map {"-$_"} grep {$cmdopt{$_}} qw{all debug});
     }
 }
 
@@ -432,6 +461,10 @@ if (@$rslt == 1) {
 #
 #	height () - Fetch the height above sea level.
 #
+
+BEGIN {
+$cmdlgl{height} = [qw{all}];
+}
 
 sub height {
 $soap_unavailable and die <<eod;
@@ -443,29 +476,18 @@ Error - You need to install the XML::Parser module if you wish to use
         the height command.
 eod
 
-my %opt;
-
-local @ARGV = @_;
-GetOptions (\%opt, qw{all debug}) or die <<eod;
-Error - The height command takes only the following options:
-  -all = use getAllElevations, not getElevation;
-  -debug = print the retrieved data and parse results.
-These options are to be considered UNDOCUMENTED; they may
-change in future releases.
-eod
-
 my $set_pos = @ARGV;
 my $lat = @ARGV ? shift @ARGV : $parm{latitude};
 my $lon = @ARGV ? shift @ARGV : $parm{longitude};
 
-local $USGSElevationData::debug = 1 if $opt{debug};
+local $USGSElevationData::debug = 1 if $cmdopt{debug};
 
 my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices/',
     'http://gisdata.usgs.gov/XMLWebServices/TNM_Elevation_Service.asmx');
 
 my $rslt;
 my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
-if ($opt{all}) {
+if ($cmdopt{all}) {
     $rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
 		{xmlns => $xmlns}) =>
 	SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
@@ -486,7 +508,7 @@ if ($opt{all}) {
 
 if ($rslt) {
 
-   $opt{debug} and print 'Result: ', $rslt, "\n";
+   $cmdopt{debug} and print 'Result: ', $rslt, "\n";
 
     my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
     my @endtag;
@@ -498,14 +520,14 @@ if ($rslt) {
 	unshift @endtag, $endtag;
 	}
     if (my $endtag = join '', @endtag) {
-	$opt{debug} and
+	$cmdopt{debug} and
 	    print "Warning - Supplying missing end tag $endtag\n";
 	$rslt .= $endtag;
 	}
     $rslt = $psr->parse ($rslt);
     }
   else {
-    $opt{debug} and print "No result from http://gisdata.usgs.gov/\n";
+    $cmdopt{debug} and print "No result from http://gisdata.usgs.gov/\n";
     $rslt = undef;
     }
 
@@ -1108,11 +1130,11 @@ foreach (sort {$a->[0] <=> $b->[0]} @data) {
 
 ########################################################################
 #
-#	select () - throw out the observing list except for the
+#	choose () - throw out the observing list except for the
 #		    specified bodies
 #
 
-sub select {
+sub choose {
 my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_} @_;
 my @keep;
 foreach my $tle (@bodies) {
@@ -1330,7 +1352,8 @@ my $hdl = ref $fn ? $fn : FileHandle->new ("<$fn") || die <<eod;
 Error - Can not open $fn for input.
         $!
 eod
-push @stack, $fh;
+push @stdin, $fh;
+push @stdout, select ();
 $fh = $hdl;
 }
 
@@ -1415,6 +1438,24 @@ Location: Latitude %.4f, longitude %.4f, height %.0f m
 eod
 }
 
+
+#	$handle = _memio ($access, \$memory)
+
+#	Generates a handle to do I/O to the $memory string. The $access
+#	parameter specifies the access (typically ">" or "<").
+
+BEGIN {
+# a comment to keep a parenthesis-matching editor happy: [
+*_memio = $] >= 5.008 ?
+    sub {my $hdl; open ($hdl, $_[0], $_[1]) || die <<eod; $hdl} :
+Failed to open @_
+    $!
+eod
+    do {
+	require IO::String;
+	sub {IO::String->new ($_[1])}
+	}
+}
 
 #	$angle = _parse_angle ($string)
 
@@ -1544,6 +1585,56 @@ defined $dflt ? $dflt : '';
 
 ########################################################################
 
+package IO::Clipboard;
+
+use Carp;
+use Symbol;
+
+my $clip;
+my $err = "Can not open handle to clipboard.";
+
+BEGIN {
+# For the benefit of parenthesis-matching editor: [
+our @ISA = $] >= 5.008 ? () : qw{IO::String};
+*_clipout = $^O eq 'MSWin32' ?
+    do {
+	eval "use Win32::Clipboard";
+	$@ ? (*_memio = sub {croak "$err Win32::Clipboard not available"}) :
+	    sub {(my $s = $_[0]) =~ s/\n/\r\n/g;
+		Win32::Clipboard->new ()->Set ($s)}
+	} :
+    do {
+	eval "use Clipboard";
+	$@ ? (*_memio = sub {croak "$err Clipboard not available"}) :
+	    sub {Clipboard->copy ($_[0])}
+	};
+# For the benefit of parenthesis-matching editor: [
+*_memio = $] >= 5.008 ?
+    sub {my $fh = gensym; open ($fh, $_[0], $_[1]); $fh} :
+    do {
+	eval "use IO::String";
+        $@ ? sub {croak "$err IO::String not available"} :
+	    sub {new IO::String ($_[1])};
+	};
+}
+
+sub new {
+$clip ||= do {my $class = shift;
+    my $data = '';
+    my $fh = _memio ('>', \$data);
+    *$fh->{__PACKAGE__}{data} = \$data;
+    bless $fh, $class;
+    };
+}
+
+sub DESTROY {
+my $self = shift;
+my $data = *$self->{__PACKAGE__}{data};
+_clipout ($$data);
+}
+
+########################################################################
+
 #	The parser code for the USGS data gets its own namespace
 #	to avoid conflicts with the main code.
 
@@ -1651,7 +1742,7 @@ macros can be defined to issue frequently-used commands.
  satpass> # Get the top 100 (or so) visible satellites from Celestrak.
  satpass> st celestrak visual
  satpass> # Keep only the HST and the ISS by NORAD ID number
- satpass> select 20580 25544
+ satpass> choose 20580 25544
  satpass> # Predict for a week, with output to visual.txt
  satpass pass 'today noon' +7 >visual.txt
  satpass> # We're done
@@ -1663,7 +1754,7 @@ The B<satpass> script provides satellite visibility predictions, given
 the position of the observer and the NORAD element sets for the desired
 satellites. It also provides the following bells and whistles:
 
-* Ability to acquire the NORAD element sets directly from
+* The ability to acquire the NORAD element sets directly from
 L<http://www.space-track.org/>, L<http://spaceflight.nasa.gov/>,
 or L<http://celestrak.com/> (or, indeed, any source supported by
 Astro::SpaceTrack), provided the user has an Internet connection
@@ -1671,7 +1762,7 @@ and the relevant site is functional. The Space Track site also
 requires registration. You will need to install B<Astro::SpaceTrack>
 to get this functionality.
 
-* Ability to acquire the observer's latitude and longitude from
+* The ability to acquire the observer's latitude and longitude from
 L<http://geocoder.us/>, given a street address or intersection name,
 and provided the user has an Internet connection and the relevant site
 is functional and has the data required. This function may not be used
@@ -1679,20 +1770,20 @@ for commercial purposes because of restrictions Geocoder.us places on
 the use of their data. You will need to install B<SOAP::Lite> to get
 this functionality.
 
-* Ability to acquire the observer's height above sea level from
+* The ability to acquire the observer's height above sea level from
 L<http://gisdata.usgs.gov/>, given the latitude and longitude
 of the observer, and provided the user has an internet connection
 and the relevant site is functional and has the data required. You will
 need to install B<SOAP::Lite>, and maybe B<XML::Parser>, to get this
 functionality.
 
-* Ability to produce solar and lunar almanac data (rise and set,
+* The ability to produce solar and lunar almanac data (rise and set,
 meridian transit, and so forth).
 
 * The ability to define macros to perform frequently-used operations.
 These macros may take arguments, and make use of any L</PARAMETERS> or
 environment variables. You will need to install B<IO::String> to get
-this functionality.
+this functionality unless you are running Perl 5.8 or above.
 
 * An initialization file in the user's home directory. The file is
 named satpass.ini under MacOS (meaning OS 9 - OS X is Darwin to Perl),
@@ -1712,6 +1803,20 @@ specified by placing a trailing '\' on the line to be continued.
 It also supports a pseudo output redirection, by placing ">filename"
 (for a new file) or ">>filename" (to append to an existing file)
 somewhere on the command line. See the L</SYNOPSIS> for an example.
+
+In addition, any command can place text on the clipboard if the
+-clipboard qualifier is specified. This qualifier will be ignored
+if -clipboard is already in effect. This functionality requires the
+availability of the Win32::Clipboard module under MSWin32, or the
+Clipboard module under any other operating system. If the required
+module is not available, the command containing it will be ignored
+with a warning.
+
+The clipboard functionality is implemented as a singleton object,
+so that if you redirect output away from the clipboard and then
+back to it, both sets of clipboard data are considered to be the
+same data stream, and both end up on the clipboard, without the
+intervening data.
 
 The following commands are available:
 
@@ -1740,6 +1845,23 @@ no directory is specified and the user's home directory can be
 determined. This change affects this script, and any processes invoked
 by it, but B<not> the invoking process. In plainer English, it does not
 affect the directory in which you find yourself after exiting satpass.
+
+=item choose name_or_id ...
+
+This command retains only the objects named on the command in the
+observing list, eliminating all others. It is intended for reducing
+a downloaded catalog to managable size. Either names, NORAD ID numbers,
+or a mixture may be given. Numeric items are matched against the NORAD
+IDs of the items in the observing list; non-numeric items are made into
+case-insensitive regular expressions and matched against the names of
+the items if any.
+
+For example:
+
+ satpass> # Get the Celestrak "top 100" list.
+ satpass> st celestrak
+ satpass> # Keep only the HST and the ISS
+ satpass> choose hst iss
 
 =item clear
 
@@ -1946,23 +2068,6 @@ See the L</SPECIFYING TIMES> topic below for how to specify times.
 The defaults are 'today noon' and '+30' (meaning 30 days after the
 most-recently-specified explicit time).
 
-=item select name_or_id ...
-
-This command retains only the objects named on the command in the
-observing list, eliminating all others. It is intended for reducing
-a downloaded catalog to managable size. Either names, NORAD ID numbers,
-or a mixture may be given. Numeric items are matched against the NORAD
-IDs of the items in the observing list; non-numeric items are made into
-case-insensitive regular expressions and matched against the names of
-the items if any.
-
-For example:
-
- satpass> # Get the Celestrak "top 100" list.
- satpass> st celestrak
- satpass> # Keep only the HST and the ISS
- satpass> select hst iss
-
 =item set name value ...
 
 This command sets operating parameters. See L</PARAMETERS> below for
@@ -2064,7 +2169,7 @@ Track login:
  satpass> # Get the "top 100" or so.
  satpass> st celestrak visual
  satpass> # Only keep the ones we want.
- satpass> select 20580 25544
+ satpass> choose 20580 25544
 
 =item system command
 
@@ -2475,12 +2580,26 @@ Assuming this script is installed as an executable, you should be able
 to run it just by specifying its name. Under VMS, the DCL$PATH logical
 name must include the directory into which the script was installed.
 
-The only command qualifier is
+The only command qualifiers are
 
- -filter
+=over
+
+=item -clipboard
+
+which causes all output to go to the clipboard. Use of this qualifier
+requires module Win32::Clipboard under MSWin32, or Clipboard under any
+other operating system. This script will die if the requisite module is
+not available.
+
+=item -filter
 
 which supresses extraneous output to make satpass behave more like a
 Unix filter. The only thing supressed at the moment is the banner text.
+
+=back
+
+These qualifiers can be abbreviated, as long as the abbreviation is
+unique.
 
 It is also possible to pass commands on the command line, or to pipe or
 redirect them in. The execution order is
