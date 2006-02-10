@@ -268,8 +268,6 @@ eod
 	GetOptions (\%cmdopt, qw{clipboard debug}, @{$cmdlgl{$verb} ||= []});
 	@args = @ARGV;
 	}
-##    $cmdopt{clipboard} = 0
-##	if $opt{clipboard} || UNIVERSAL::isa (select (), 'IO::Clipboard');
     push @stdout, select ();
     if ($cmdopt{clipboard}) {
 	$redout = '';
@@ -1810,7 +1808,9 @@ if -clipboard is already in effect. This functionality requires the
 availability of the Win32::Clipboard module under MSWin32, or the
 Clipboard module under any other operating system. If the required
 module is not available, the command containing it will be ignored
-with a warning.
+with a warning. The -clipboard qualifier can be abbreviated. Currently,
+the minimum abbreviation is "-c", but this may change if other
+conflicting qualifiers are added.
 
 The clipboard functionality is implemented as a singleton object,
 so that if you redirect output away from the clipboard and then
