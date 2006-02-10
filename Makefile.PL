@@ -51,6 +51,7 @@ if ($opt{n}) {
 	}
     }
 
+my $clipmod = $^O eq 'MSWin32' ? 'Win32::Clipboard' : 'Clipboard';
 if (@exe_files) {
     push @prereq, 'Date::Manip' => 0;
     foreach (['Astro::SpaceTrack' => 0.011, <<eod],
@@ -58,9 +59,15 @@ Optional module Astro::SpaceTrack version 0.011 or higher is needed if
 you wish to retrieve orbital elements directly from Space Track or
 Celestrak into the executable.
 eod
-	    ['IO::String' => 0, <<eod],
+	    [$clipmod => 0, <<eod],
+Optional module $clipmod is needed if you wish to redirect output
+to the clipboard.
+eod
+	    (	# Comment to keep parenthesis-matching editor happy: [
+	    $] >= 5.008 ? () : ['IO::String' => 0, <<eod]),
 Optional module IO::String is needed if you wish to pass commands to
-the executable on its command line or to write macros.
+the executable on its command line or to write macros under a version
+of Perl earlier than 5.8.
 eod
 	    ['Soap::Lite' => 0, <<eod],
 Optional module Soap::Lite is needed if you wish to use Geocoder.us to
