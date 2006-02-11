@@ -117,7 +117,7 @@ my %mutator = (
 				# 1 = whenever above horizon
 				# 2 = anytime
     visible => \&_set_unmodified, # 1 = only if sun down & sat illuminated
-    webcmd => \&_set_unmodified,  # Command to spawn for web pages
+    webcmd => \&_set_webcmd,	# Command to spawn for web pages
     );
 
 my %accessor = (
@@ -1371,9 +1371,10 @@ Error - You need to install the Astro::SpaceTrack module version $versn
 eod
     my @args = (webcmd => $parm{webcmd})
 	if Astro::SpaceTrack->VERSION >= 0.015;
+    push @args, filter => 1 if Astro::SpaceTrack->VERSION >= 0.014;
     Astro::SpaceTrack->new (@args);
     };
-my $func = shift;
+my $func = lc shift;
 $func !~ m/^_/ && $st->can ($func) or die <<eod;
 Error - Unknown Astro::SpaceTrack method $func.
 eod
@@ -1384,8 +1385,8 @@ if (!$rslt->is_success) {
   elsif (($st->content_type || '') eq 'orbit') {
     push @bodies, Astro::Coord::ECI::TLE->parse ($rslt->content);
     }
-  else {
-##    print $rslt->content, "\n";
+  elsif ($func eq 'help') {
+    $parm{webcmd} or print $rslt->content, "\n";
     }
 }
 
