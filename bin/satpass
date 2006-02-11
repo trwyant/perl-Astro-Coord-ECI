@@ -1385,7 +1385,7 @@ if (!$rslt->is_success) {
   elsif (($st->content_type || '') eq 'orbit') {
     push @bodies, Astro::Coord::ECI::TLE->parse ($rslt->content);
     }
-  elsif ($func eq 'help') {
+  elsif ($func eq 'help' || $func eq 'get') {
     $parm{webcmd} or print $rslt->content, "\n";
     }
 }
