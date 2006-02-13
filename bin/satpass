@@ -28,10 +28,15 @@ use Time::Local;
 use UNIVERSAL qw{can};
 
 my ($clipboard_unavailable, $soap_unavailable,
-	$xml_parser_unavailable);
+	$spacetrack_unavailable, $xml_parser_unavailable);
 my $mswin32 = $^O eq 'MSWin32';
 my $clipboard_package;
 BEGIN {
+    eval "use Astro::SpaceTrack";
+    $spacetrack_unavailable = <<eod if $@ || Astro::SpaceTrack->VERSION < 0.011;
+Error - You need to install the Astro::SpaceTrack module version 0.011
+        or higher if you wish to use the st command.
+eod
     $clipboard_package = $mswin32 ? "Win32::Clipboard" : "Clipboard";
     eval "use $clipboard_package";
     $clipboard_unavailable = $@;
@@ -63,6 +68,7 @@ my %opt;	# Options passed when we were invoked.
 my %cmdopt;	# Options for individual satpass commands.
 my %cmdlgl;	# Legal options for a given command.
 
+my %exported;	# True if the parameter is exported.
 my %parm = (
     appulse => 0,
     autoheight => 1,
@@ -163,6 +169,7 @@ my $date_manip_fudge =
 my $rl = Term::ReadLine->new ('Predict satellite passes');
 my $fh = *STDIN;
 my @stdin;
+my @argstk;
 my @stdout;
 my %alias = (
     '!' => 'system',
@@ -201,7 +208,7 @@ satpass $VERSION - Satellite pass predictor
 based on Astro::Coord::ECI @{[Astro::Coord::ECI->VERSION]}
 Perl $Config{version} on $Config{osname}
 
-Copyright 2005,2006 by Thomas R. Wyant, III. All rights reserved.
+Copyright 2005, 2006 by Thomas R. Wyant, III. All rights reserved.
 
 Enter 'help' for help. See the help for terms of use.
 
@@ -220,61 +227,124 @@ $inifil && -e $inifil and source ($inifil);
 my @line;
 my $cntind = '';
 while (1) {
+
+#	Get the next command, wherever it comes from.
+
     my $buffer = @stdin ? <$fh> :
 	-t STDIN ?
 	    $rl ? $rl->readline ("$cntind$parm{prompt} ") :
 		do {print "\n$cntind$parm{prompt} "; <$fh>} :
 	    <$fh>;
+
+#	If it was end-of-file, pop one level off the stack of input
+#	files. If it's empty, we exit the execution loop. Otherwise
+#	we select the proper STDOUT and redo the loop.
+
     defined $buffer or do {
 	last unless @stdin;
 	$fh = pop @stdin;
 	@stdout and select (pop @stdout);
 	redo;
 	};
+
+#	Canonicalize the input buffer.
+
     chomp $buffer;
     $parm{echo} && (@stdin || !-t STDIN) and
 	print "$cntind$parm{prompt} $buffer\n";
     $buffer =~ s/^\s+//;
     $buffer =~ s/\s+$//;
+
+#	If the input is empty or a comment, redo the loop.
+
     next unless $buffer;
     next if $buffer =~ m/^#/;
+
+#	If we're a continuation line, save it in the line
+#	buffer and redo the loop.
+
     $buffer =~ s/\\$// and do {
 	push @line, $buffer; $cntind = '_'; next};
-    my $redout = '';
+
+#	Prepend all saved continuations (if any) to the line.
+
     @line and do {
 	$buffer = join ' ', @line, $buffer;
 	@line = ();
 	$cntind = '';
 	};
+
+#	Interpolate positional parameters. This is not done if we
+#	have the 'macro' command, because in that case we want to
+#	defer the expansion until the macro is expanded.
+
+    eval {$buffer =~ s/\$(?:(\w+)|\{(\w+)(?:\:(.*?))\}|(.))/
+	    $4 ? $4 : _sub_arg ($1 || $2, $3 || '',
+	    $argstk[scalar @stdin] || [])/mgex
+	    unless $buffer =~ m/^\s*macro\b/};
+    $@ and do {
+	warn $@;
+	$fh = pop @stdin;
+	@stdout and select (pop @stdout);
+	redo;
+	};
+
+#	Help the parser deal with things like '.' and '!'
+
     $buffer =~ s/^(\W+)/$1 /;
+
+#	Parse the line, pulling off output redirection as we go.
+
+    my $redout = '';
     my @args = map {m/^>/ ? do {$redout = $_; ()} :
 	$redout =~ m/^>+$/ ? do {$redout .= $_; ()} :
 	$_} parse_line ('\s+', 0, $buffer);
+
+#	Do pseudo tilde expansion. DOES VMS NEED '/sys$login'?
+
     $redout =~ s/^(>+)~/$1 . (
 	$^O eq 'VMS' ? 'sys$login' : $ENV{HOME} || $ENV{LOGDIR})/e;
+
+#	Pull the verb off the parsed arguments, and replace it with its
+#	canonical name if needed.
+
     my $verb = lc shift @args;
     $verb = $alias{$verb} if $alias{$verb};
+
+#	Special-case 'exit' to drop out of the input loop.
+
     $verb eq 'exit' and last;
-    $verb =~ m/^_/ and do {
+
+#	Arbitrarily disallow syntactically invalid commands.
+
+    $verb =~ m/^_/ || $verb =~ m/\W/ and do {
 	warn <<eod;
 Error - Verb '$verb' not recognized.
 eod
 	next;
 	};
+
+#	Parse any command options present. Note that GetOptions is
+#	configured to pass any unrecognized options because otherwise
+#	our relative time format would confuse it.
+
     %cmdopt = ();
-    my $stdout;
     {	# Local symbol block
 	local @ARGV = @args;
 	GetOptions (\%cmdopt, qw{clipboard debug}, @{$cmdlgl{$verb} ||= []});
 	@args = @ARGV;
 	}
+    $cmdopt{_redirection} = $cmdopt{clipboard} ? '-clipboard' : $redout;
+
+#	Preserve our current output, and redirect as and if specified.
+
     push @stdout, select ();
     if ($cmdopt{clipboard}) {
 	$redout = '';
 	my $fh = eval {IO::Clipboard->new ()};
 	$@ and do {warn $@; next;};
-	$stdout = select ($fh) or die <<eod;
-Error - Failed to redirect output.
+	select ($fh) or die <<eod;
+Error - Failed to redirect output to clipboard.
         $!
 eod
 	}
@@ -283,30 +353,47 @@ eod
 Error - Failed to open '$redout'
         $!
 eod
-	$stdout = select ($fh) or die <<eod;
-Error - Failed to redirect output.
+	select ($fh) or die <<eod;
+Error - Failed to redirect output to $redout.
         $!
 eod
 	}
+
+#	If our command is a macro, build an input stream from it, and
+#	pass the results to the source() command.
+
     if ($macro{$verb}) {
 	my $cmd = join "\n", @{$macro{$verb}};
-	$cmd =~ s/\$(?:(\w+)|\{(\w+)(?:\:(.*?))\}|(.))/
-	    $4 ? $4 : _sub_arg ($1 || $2, $3 || '', \@args)/mgex;
-	source (_memio  ('<', \$cmd));
+	source (_memio  ('<', \$cmd), @args);
 	}
+
+#	Else, if there exists a subroutine named after the command,
+#	call it, fielding any exceptions thrown and turning them into
+#	warnings.
+
       elsif (can (__PACKAGE__, $verb)) {
 	no strict qw{refs};
 	eval {&$verb (@args)};
 	use strict qw{refs};
 	$@ and warn $@;
 	}
+
+#	Else, complain about the unrecognized verb.
+
       else {
     warn <<eod;
 Error - Verb '$verb' not recognized.
 eod
 	}
+
+#	End of command dispatching. Re-establish the old output.
+
     @stdout and select (pop @stdout);
     }
+
+#	End of the input loop. Print a newline just in case we
+#	terminated on eof.
+
 print "\n";
 
 
@@ -328,6 +415,8 @@ Error - Can not calculate almanac data without setting height,
 	latitude, and longitude.
 eod
 
+#	Build an object representing our ground location.
+
 my $sta = Astro::Coord::ECI->new (
 	refraction => 1,
 	name => 'Station',
@@ -343,7 +432,14 @@ my $id = $parm{twilight} =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ 
 my @almanac;
 my %done;
 
+
+#	Display our location.
+
 print _format_location ();
+
+#	Iterate through the background bodies, accumulating data or
+#	complaining about the lack of an almanac() method as
+#	appropriate.
 
 foreach my $body (@sky) {
     $body->can ('almanac') or do {
@@ -353,9 +449,10 @@ eod
 	next;
 	};
     $body->set (twilight => $parm{_twilight});
-##if ($body->isa ('Astro::Coord::ECI::Star')) {$body->set (debug => 1)}
     push @almanac, $body->almanac ($sta, $almanac_start, $almanac_end);
     }
+
+#	Sort the almanac data by date, and display the results.
 
 my $last = '';
 foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
@@ -418,6 +515,11 @@ sub clear {
 }
 
 
+########################################################################
+#
+#	dump ()  - ***UNDOCUMENTED*** Dump all known objects.
+#
+
 sub dump {
 use Data::Dumper;
 local $Data::Dumper::Terse = 1;
@@ -429,12 +531,39 @@ foreach my $body (@bodies, @sky) {
 
 ########################################################################
 #
+#	export () - Create environment vars from params or data.
+#
+
+sub export {
+my $name = shift;
+if ($mutator{$name}) {
+    @_ and set ($name, shift);
+    $ENV{$name} = $parm{$name};
+    $exported{$name} = 1;
+    }
+  else {
+    @_ or die <<eod;
+You must specify a value since you are not exporting a parameter.
+eod
+    $ENV{$name} = shift;
+    }
+}
+
+
+########################################################################
+#
 #	geocode () - Get lat/long from rpc.geocoder.us
 #
+
+#	In addition to the global options, the geocode verb takes -all
+#	(for the benefit of height() if called) and -height (to negate
+#	the autoheight setting)
 
 BEGIN {
 $cmdlgl{geocode} = [qw{all height}];
 }
+
+#	Here is the subroutine proper.
 
 sub geocode {
 $soap_unavailable and die <<eod;
@@ -445,8 +574,15 @@ eod
 my $set_loc = @ARGV;
 my $loc = shift @ARGV || $parm{location};
 
+#	Manufacture a SOAP::Lite object appropriate to the version of
+#	SOAP::Lite we have installed.
+
 my $soap = _soapdish ('http://rpc.geocoder.us/Geo/Coder/US',
 	'http://geocoder.us/service/soap', '#');
+
+#	Query rpc.geocoder.us, and strain out various errors we might
+#	get back.
+
 my $rslt = $soap->geocode ($loc)->result or die <<eod;
 Error - Failed to access geocoder.us.
 eod
@@ -462,9 +598,16 @@ $rslt->[0]{lat} or die <<eod;
 Error - Failed to find address
         "@_".
 eod
+
+#	Display our results.
+
 foreach my $hash (@$rslt) {
     print "\n", $hash->format_multiline, "\n";
     }
+
+#	If we got exactly one result back, set our latitude and
+#	longitude, and query for height if desired.
+
 if (@$rslt == 1) {
     $set_loc and $parm{location} = $rslt->[0]->format_line;
     @parm{qw{latitude longitude}} = @{$rslt->[0]}{qw{lat long}};
@@ -481,9 +624,15 @@ if (@$rslt == 1) {
 #	height () - Fetch the height above sea level.
 #
 
+#	In addition to the usual command qualifiers, height takes -all,
+#	which means to return the results from all datasets. The
+#	first valid result is accepted.
+
 BEGIN {
 $cmdlgl{height} = [qw{all}];
 }
+
+#	Here is the height() subroutine itself.
 
 sub height {
 $soap_unavailable and die <<eod;
@@ -501,8 +650,14 @@ my $lon = @ARGV ? shift @ARGV : $parm{longitude};
 
 local $USGSElevationData::debug = 1 if $cmdopt{debug};
 
+#	Manufacture a SOAP::Lite object appropriate to the installed
+#	version of SOAP::Lite.
+
 my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices/',
     'http://gisdata.usgs.gov/XMLWebServices/TNM_Elevation_Service.asmx');
+
+#	Query the USGS for the data. This is not straightforward
+#	because they're using .NET.
 
 my $rslt;
 my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
@@ -525,11 +680,17 @@ if ($cmdopt{all}) {
 	)->result;
     }
 
+#	Parse our result. This is not straightforward either, because
+#	they decided to encode the result in XML, but they omit one or
+#	two end tags, depending on the function called. Because
+#	XML::Parser is standards-compliant, it blows up on this, so
+#	we have to examine the result and fix it up _before_ calling
+#	XML::Parser.
+
 if ($rslt) {
 
    $cmdopt{debug} and print 'Result: ', $rslt, "\n";
 
-    my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
     my @endtag;
     while ($rslt =~ m/(<\w+.*?>)/g) {
 	my $begintag = $1;
@@ -543,12 +704,18 @@ if ($rslt) {
 	    print "Warning - Supplying missing end tag $endtag\n";
 	$rslt .= $endtag;
 	}
+    my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
     $rslt = $psr->parse ($rslt);
     }
   else {
     $cmdopt{debug} and print "No result from http://gisdata.usgs.gov/\n";
     $rslt = undef;
     }
+
+#	If, after all the above shenannigans, we have a result, set
+#	the height (and latitude and longitude if not defaulted), and
+#	display whatever we set. The USGS returns a ridiculous
+#	precision, so we round to the nearest centimeter.
 
 if (defined $rslt) {
     if ($set_pos) {
@@ -687,7 +854,7 @@ available.
 eod
 my $name = shift or do {
     foreach my $name (sort keys %macro) {
-	print "macro $name ", join (" \\\n", map {
+	print "macro $name ", join (" \\\n    ", map {
 		my $x = $_;
 		$x =~ s/([\\'])/\\$1/g || $x =~ m/\s/ ? qq{'$x'} : $x # '
 		} @{$macro{$name}}), "\n";
@@ -712,11 +879,6 @@ if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
 #
 #	pass () - Predict passes over the observer's location.
 #
-# >>>>	This needs to be modified to use the @sky list, rather than the
-# >>>>	predefined Sun and Moon objects. I need to decide whether it:
-# >>>>	- provides its own Sun object for visibility calculations
-# >>>>	- adds a Sun object to @sky if not present, and uses that
-# >>>>	- uses the Sun in @sky if there, but provides its own if not.
 
 sub pass {
 @bodies && $parm{height} && $parm{latitude} && $parm{longitude} or
@@ -803,7 +965,6 @@ foreach my $tle (@bodies) {
 #	If the current sun event has occurred, handle it and calculate the next one.
 
 	if ($time >= $suntim) {
-#	    We may want to print the sun event if desired.
 	    ($suntim, $rise) =
 		$sta->universal ($suntim)->next_elevation ($sun, $parm{_twilight});
 	    }
@@ -1054,7 +1215,6 @@ $end;
 #
 
 BEGIN {	# Localize and initialize phase table.
-
 my @table = (
     [6.1 => 'new'], [83.9 => 'waxing crescent'],
     [96.1 => 'first quarter'], [173.9 => 'waxing gibbous'],
@@ -1064,7 +1224,7 @@ my @table = (
     );
 
 sub phase {
-my $time = defined $_[0] ? _parse_time (shift) : time ();
+my $time = $_[0] ? _parse_time (shift) : time ();
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
 foreach my $body (@sky) {
@@ -1086,7 +1246,7 @@ foreach my $body (@sky) {
 #
 
 sub position {
-my $time = defined $_[0] ? _parse_time (shift) : time ();
+my $time = $_[0] ? _parse_time (shift) : time ();
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
 
@@ -1100,8 +1260,11 @@ my $sta = Astro::Coord::ECI->new (
 	deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
 	$parm{height} / 1000);
 
-printf <<eod, strftime ($dtfmt, localtime $time);
-%s
+
+#	Print a header.
+
+printf <<eod, _format_location (), strftime ($dtfmt, localtime $time);
+%s%s
             name elev  azim  range     right asc decl
 eod
 
@@ -1130,6 +1293,11 @@ my $dtfmt = "$parm{date_format} $parm{time_format}";
 
 my @data;
 
+#	Iterate over any background objects, accumulating all
+#	quarter-phases of each until we get one after the
+#	end time. We silently ignore bodies that do not support
+#	the next_quarter() method.
+
 foreach my $body (@sky) {
     next unless $body->can ('next_quarter');
     $body->universal ($start);
@@ -1140,6 +1308,9 @@ foreach my $body (@sky) {
 	push @data, [$time, $quarter];
 	}
     }
+
+#	Sort and display the quarter-phase information.
+
 foreach (sort {$a->[0] <=> $b->[0]} @data) {
     my ($time, $quarter) = @$_;
     print strftime ($dtfmt, localtime $time), " $quarter\n";
@@ -1159,6 +1330,7 @@ while (@_) {
     my $value = shift;
     if ($mutator{$name}) {
 	$mutator{$name}->($name, $value);
+	$exported{$name} and $ENV{$name} = $parm{$name};
 	}
       else {
 	die <<eod;
@@ -1185,10 +1357,6 @@ if ($_[1]) {
   else {
     Date_Init ($parm{tz} ? "TZ=$parm{tz}" : $tz_init);
     }
-}
-
-sub _set_time {
-$parm{$_[0]} = _parse_time ($_[1]);
 }
 
 sub _set_twilight {
@@ -1273,12 +1441,11 @@ defined $parm{$_[0]} ? $parm{$_[0]} : 'undef'
 
 use constant SPY2DPS => 3600 * 365.24219 * 86400;
 
-# We also need the size of a parsec.
-
-use constant PARSEC => 30.8568e12;
-
 sub sky {
 my $verb = lc (shift @_ || '');
+
+#	If no subcommand given, display the background bodies.
+
 if (!$verb) {
     foreach my $body (@sky) {
 	if ($body->isa ('Astro::Coord::ECI::Star')) {
@@ -1291,6 +1458,13 @@ if (!$verb) {
 	}
     @sky or print "The sky is empty.\n";
     }
+
+#	If the subcommand is 'add', add the given body. Stars are a
+#	special case, since we can have more than one, and we need to
+#	specify position. No matter what we're adding we check for
+#	duplicates first and silently no-op the request if one is
+#	found.
+
   elsif ($verb eq 'add') {
     my $name = shift or die <<eod;
 Error - You did not specify what to add.
@@ -1323,9 +1497,17 @@ eod
 	}
     push @sky, $body;
     }
+
+#	If the subcommand is 'clear', we empty the background.
+
   elsif ($verb eq 'clear') {
     @sky = ();
     }
+
+#	If the subcommand is 'drop', we iterate over the background,
+#	dropping any bodies whose name matches any of the given
+#	names.
+
   elsif ($verb eq 'drop') {
     @_ or die <<eod;
 Error - You must specify at least one name to drop.
@@ -1353,6 +1535,7 @@ Error - Can not open $fn for input.
 eod
 push @stdin, $fh;
 push @stdout, select ();
+$argstk[scalar @stdin] = [@_];
 $fh = $hdl;
 }
 
@@ -1363,13 +1546,8 @@ $fh = $hdl;
 #
 
 sub st {
-my $versn = 0.011;
+die $spacetrack_unavailable if $spacetrack_unavailable;
 $st ||= do {
-    eval {require Astro::SpaceTrack} &&
-	Astro::SpaceTrack->VERSION >= $versn or die <<eod;
-Error - You need to install the Astro::SpaceTrack module version $versn
-        or higher if you wish to use the st command.
-eod
     my @args = (webcmd => $parm{webcmd})
 	if Astro::SpaceTrack->VERSION >= 0.015;
     push @args, filter => 1 if Astro::SpaceTrack->VERSION >= 0.014;
@@ -1400,7 +1578,7 @@ if (!$rslt->is_success) {
 sub system {
 my $cmd = "@_";
 $^O eq 'MSWin32' || $^O eq 'VMS' and $cmd =~ tr/'"/"'/;
-print `$cmd`;
+-t select() ? CORE::system ($cmd) : print `$cmd`;
 }
 
 
@@ -1572,14 +1750,54 @@ SOAP::Lite->can ('default_ns') ?
 
 sub _sub_arg {
 my ($name, $dflt, $args) = @_;
-if ($name !~ m/\D/) {
-    return $args->[$name - 1] if defined $args->[$name - 1];
-    }
-  else {
-    return $parm{$name} if exists $parm{$name};
+$dflt = '' unless defined $dflt;
+my $ctrl = $dflt =~ s/^(\W)// ? $1 : '-';
+
+=begin comment
+
+if ($name =~ m/\D/) {
+    return $parm{$name} if exists $mutator{$name};
     return $ENV{$name} if exists $ENV{$name};
     }
-defined $dflt ? $dflt : '';
+  else {
+    return $args->[$name - 1] if defined $args->[$name - 1];
+    }
+
+=end comment
+
+=cut
+
+my $val = $name !~ m/\D/ ? $args->[$name - 1] :
+    exists $mutator{$name} ? $parm{$name} : $ENV{$name};
+if ($ctrl eq '+') {
+    return defined $val ? $dflt : '';
+    }
+  elsif (defined $val) {
+    return $val;
+    }
+  elsif ($ctrl eq '-') {
+    return $dflt;
+    }
+  elsif ($ctrl eq '=') {
+    if ($name !~ m/\D/) {
+	$args->[$name - 1] = $dflt;
+	return $dflt;
+	}
+      elsif (exists $mutator{$name}) {
+	set ($name, $dflt);
+	return $parm{$name};
+	}
+      else {
+	$ENV{$name} = $dflt;
+	return $dflt;
+	}
+    }
+  elsif ($ctrl eq '?') {
+    die "$dflt\n";
+    }
+  else {
+    die "Unrecognized substitution control character '$ctrl'\n";
+    }
 }
 
 
@@ -1804,6 +2022,8 @@ list, and predict satellite passes.
 The command execution loop supports command continuation, which is
 specified by placing a trailing '\' on the line to be continued.
 
+=for comment ' help syntax-highlighting editor that does not understand POD
+
 It also supports a pseudo output redirection, by placing ">filename"
 (for a new file) or ">>filename" (to append to an existing file)
 somewhere on the command line. See the L</SYNOPSIS> for an example.
@@ -1824,6 +2044,58 @@ back to it, both sets of clipboard data are considered to be the
 same data stream, and both end up on the clipboard, without the
 intervening data.
 
+The command loop also supports rudamentary interpolation of arguments
+and other values into commands. The "magic" character is a dollar sign,
+which may be followed by the name of what is to be substituted. A
+number represents the corresponding macro or source argument (numbered
+from 1), and anything else represents the value of the named parameter
+(if it exists) or environment variable (if not). The name may be
+optionally enclosed in curly brackets.
+
+If the name of the thing substituted is enclosed in curly brackets, it
+may be optionally followed by a colon and a string to be defaulted into
+the command if needed. The following bash-like syntax is also
+supported:
+
+${arg:-default} is the same as ${arg:default}.
+
+${arg:=default} not only supplies the default, but sets the value of
+the argument to the specified default. Unlike bash, this works for
+B<any> argument.
+
+${arg:?message} causes the given message to be displayed if the
+argument was not supplied, and the command not to be processed. If this
+happens when expanding a macro or executing a source file, the entire
+macro or file is abandoned.
+
+${arg:+substitute} causes the substitute value to be used provided the
+argument is defined. If the argument is not defined, you get an empty
+string.
+
+Interpolation is not affected by quotes. If you want a literal dollar
+sign in the expansion of your macro, double the dollar signs in the
+definition. It is probably a good idea to put quotes around
+an interpolation in case the interpolated value contains spaces.
+
+For example:
+
+ macro ephemeris 'almanac "$1"'
+
+sets up "ephemeris" as a synonym for the 'almanac' command. The
+forward-looking user might want to set up
+
+ macro ephemeris 'almanac "${1:tomorrow midnight}"'
+
+which is like the previous example except it defaults to 'tomorrow
+midnight', where the 'almanac' command defaults to 'today midnight'.
+
+As a slightly less trivial example,
+
+ macro ephemeris 'almanac "${1:=tomorrow midnight}"' 'quarters "$1"'
+
+which causes the quarters command to see 'tomorrow midnight' if no
+arguments were given when the macro is expanded.
+
 The following commands are available:
 
 =over
@@ -1834,7 +2106,7 @@ This command displays almanac data for the current background bodies
 (see L<sky|/item_sky__2e_2e_2e>). You will get at least rise, meridian
 transit, and set. For the Sun you also get beginning and end of
 twilight, and local midnight. You also get equinoxes, and solstices,
-but they're only good to within about 15 minutes. For the Moon you get
+but they are only good to within about 15 minutes. For the Moon you get
 quarter-phases. This is all done based on the current parameter
 settings (see L</PARAMETERS> below).
 
@@ -1851,6 +2123,8 @@ no directory is specified and the user's home directory can be
 determined. This change affects this script, and any processes invoked
 by it, but B<not> the invoking process. In plainer English, it does not
 affect the directory in which you find yourself after exiting satpass.
+
+=for comment ' help syntax-highlighting editor that does not understand POD
 
 =item choose name_or_id ...
 
@@ -1873,6 +2147,16 @@ For example:
 
 This command clears the observing list. It is not an error to issue it
 with the list already clear.
+
+=item export name value
+
+This command exports the given value to an environment variable. This
+value will be available to spawned commands, but will not persist after
+we exit.
+
+If the name is the name of a parameter, the value is optional, but if
+supplied will be used to set the parameter. The environment variable
+is set from the value of the parameter, and will track changes in it.
 
 =item exit
 
@@ -1911,6 +2195,8 @@ B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
 Bureau's TIGER database. They add their opinion that it tends to be
 buggy and not to cover rural areas well.
 
+=for comment ' help syntax-highlighting editor that does not understand POD
+
 =item height latitude longitude
 
 This command attempts to look up the height above sea level at the
@@ -1918,6 +2204,8 @@ given latitude and longitude in the U.S. Geological Survey's EROS
 database (L<http://gisdata.usgs.gov/>). If the lookup succeeds,
 the latitude and longitude parameters are set to the arguments and
 the height parameter is set to the result.
+
+=for comment ' help syntax-highlighting editor that does not understand POD
 
 The latitude and longitude default to the current
 L<latitude|/item_latitude> and L<longitude|/item_longitude> parameters.
@@ -1930,6 +2218,8 @@ always available. You should probably geocode your usual location
 and put its latitude, longitude and height in the initialization
 file. You can use macros to define alternate locations if you
 want.
+
+=for comment ' help syntax-highlighting editor that does not understand POD
 
 =item help
 
@@ -1956,6 +2246,8 @@ package, and any arguments will be ignored.
 This command displays the observing list. Each body's NORAD ID, name
 (if available), dataset epoch, and orbital period are displayed. If
 the observing list is empty, you get a message to that effect.
+
+=for comment ' help syntax-highlighting editor that does not understand POD
 
 =item load file ...
 
@@ -1989,34 +2281,6 @@ the currently-defined macros and their definitions. The quoting in
 the listing may not be identical to the quoting originally specified,
 but will be functionally equivalent, and specifically will look like
 the first example above.
-
-The macro functionality includes rudamentary interpolation of arguments
-and other values into the commands generated by the macro. The "magic"
-character is a dollar sign, which may be followed by the name of what
-is to be substituted. A number represents the corresponding macro
-argument (numbered from 1), and anything else represents the value of
-the named parameter (if it exists) or environment variable (if not).
-The name may be optionally enclosed in curly brackets.
-
-If the name of the thing substituted is enclosed in curly brackets, it
-may be optionally followed by a colon and a string to be defaulted into
-the command if needed.
-
-Macro interpolation is not affected by quotes. If you want a literal
-dollar sign in the expansion of your macro, double the dollar signs
-in the definition.
-
-For example:
-
- macro ephemeris 'almanac "$1"'
-
-sets up "ephemeris" as a synonym for the 'almanac' command. The
-forward-looking user might want to set up
-
- macro ephemeris 'almanac "${1:tomorrow midnight}"'
-
-which is like the previous example except it defaults to 'tomorrow
-midnight', where the 'almanac' command defaults to 'today midnight'.
 
 Macros may be nested - that is, a macro may be defined in terms of
 other macros. There is no protection against the endless recursion
@@ -2066,7 +2330,7 @@ and in the sky at the given time, the default being the current time.
 This command gives the quarters of such current background bodies (see
 L<sky|/item_sky__2e_2e_2e>) as support this function. This means
 quarter-phases for the Moon, and equinoxes and solstices for the Sun.
-The Solar data may be off by as much as 15 minutes, because we're only
+The Solar data may be off by as much as 15 minutes, because we are only
 calculating the position of the Sun to the nearest 0.01 degree.
 
 See the L</SPECIFYING TIMES> topic below for how to specify times.
@@ -2105,7 +2369,7 @@ If you specify a star name, you must also specify its right ascension
 and declination in J2000.0 coordinates. See L</SPECIFYING ANGLES> for
 more on specifying angles. You can also specify its distance in parsecs
 if you so desire, the default for a star being 1 parsec (too small, but
-we're not correcting for parallax anyway). You may also specify proper
+we are not correcting for parallax anyway). You may also specify proper
 motion in right ascension (in seconds of right ascension per year),
 declination (in seconds of arc per year), and velocity in recession (in
 kilometers per second), the default for the latter three being zero.
@@ -2180,7 +2444,11 @@ Track login:
 =item system command
 
 This command passes its arguments to the system as a command. The
-results of the command are printed, unless redirected to a file.
+results are displayed unless redirected.
+
+Technically, what happens is that if the current output is a tty,
+the command is executed using the core system command; otherwise
+its output is captured with backticks and printed.
 
 =item tle
 
@@ -2335,6 +2603,8 @@ The default is 1 (i.e. true).
 This parameter contains a text description of the observer's location.
 This is not used internally, but if it is not empty it will be
 displayed wherever the observer's latitude, longitude, and height are.
+
+=for comment ' help syntax-highlighting editor that does not understand POD
 
 There is no default; the parameter is undefined unless you supply a
 value.
