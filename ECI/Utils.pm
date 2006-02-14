@@ -21,6 +21,7 @@ all of them.
 
 The following constants are exportable:
 
+ AU = number of kilometers in an astronomical unit
  LIGHTYEAR = number of kilometers in a light year
  PARSEC = number of kilometers in a parsec
  PERL2000 = January 1 2000, 12 noon universal, in Perl time
@@ -51,7 +52,7 @@ use UNIVERSAL qw{can isa};
 
 our @EXPORT;
 our @EXPORT_OK = qw{
-	LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI
+	AU LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI
 	acos asin deg2rad distsq equation_of_time jcent2000 jday2000
 	julianday mod2pi nutation_in_longitude nutation_in_obliquity
 	obliquity omega rad2deg tan theta0 thetag};
@@ -68,6 +69,7 @@ our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
     );
 
+use constant AU => 149597870;		# 1 astronomical unit, per Meeus, Appendix I pg 407.
 use constant LIGHTYEAR => 9.4607e12;	# 1 light-year, per Meeus, Appendix I pg 407.
 use constant PARSEC => 30.8568e12;	# 1 parsec, per Meeus, Appendix I pg 407.
 use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
