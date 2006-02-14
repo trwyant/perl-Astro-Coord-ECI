@@ -250,8 +250,6 @@ while (1) {
 #	Canonicalize the input buffer.
 
     chomp $buffer;
-    $parm{echo} && (@stdin || !-t STDIN) and
-	print "$cntind$parm{prompt} $buffer\n";
     $buffer =~ s/^\s+//;
     $buffer =~ s/\s+$//;
 
@@ -292,6 +290,11 @@ while (1) {
 #	Help the parser deal with things like '.' and '!'
 
     $buffer =~ s/^(\W+)/$1 /;
+
+#	Echo the line, if this is selected.
+
+    $parm{echo} && (@stdin || !-t STDIN) and
+	print "$cntind$parm{prompt} $buffer\n";
 
 #	Parse the line, pulling off output redirection as we go.
 
@@ -409,6 +412,9 @@ my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $almanac_start = _parse_time (shift || 'today midnight');
 my $almanac_end = _parse_time (shift || '+1');
 
+$almanac_start >= $almanac_end and die <<eod;
+Error - End time must be after start time.
+eod
 $parm{height} && $parm{latitude} && $parm{longitude} or
     die <<eod;
 Error - Can not calculate almanac data without setting height,
@@ -571,8 +577,8 @@ Error - You need to install the SOAP::Lite module if you wish to use
         the geocode command.
 eod
 
-my $set_loc = @ARGV;
-my $loc = shift @ARGV || $parm{location};
+my $set_loc = @_;
+my $loc = shift @_ || $parm{location};
 
 #	Manufacture a SOAP::Lite object appropriate to the version of
 #	SOAP::Lite we have installed.
@@ -614,7 +620,7 @@ if (@$rslt == 1) {
     print "\n";
     show (($set_loc ? 'location' : ()), qw{latitude longitude});
     $cmdopt{height} ? !$parm{autoheight} : $parm{autoheight} and
-	height (map {"-$_"} grep {$cmdopt{$_}} qw{all debug});
+	height ();
     }
 }
 
@@ -644,10 +650,13 @@ Error - You need to install the XML::Parser module if you wish to use
         the height command.
 eod
 
-my $set_pos = @ARGV;
-my $lat = @ARGV ? shift @ARGV : $parm{latitude};
-my $lon = @ARGV ? shift @ARGV : $parm{longitude};
+my $set_pos = @_;
+my $lat = @_ ? shift @_ : $parm{latitude};
+my $lon = @_ ? shift @_ : $parm{longitude};
 
+$cmdopt{debug} and warn <<eod;
+Debug - Getting elevation for latitude $lat, longitude $lon
+eod
 local $USGSElevationData::debug = 1 if $cmdopt{debug};
 
 #	Manufacture a SOAP::Lite object appropriate to the installed
@@ -881,14 +890,6 @@ if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
 #
 
 sub pass {
-@bodies && $parm{height} && $parm{latitude} && $parm{longitude} or
-    die <<eod;
-Error - Can not calculate satellite pass without setting height,
-        latitude, longitude, and at least one body.
-eod
-
-print _format_location ();
-
 
 #	Initialize.
 
@@ -896,6 +897,14 @@ my @lighting = qw{Shdw Lit Day};
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $pass_start = _parse_time (shift || 'today noon');
 my $pass_end = _parse_time (shift || '+7');
+$pass_start >= $pass_end and die <<eod;
+Error - End time must be after start time.
+eod
+@bodies && $parm{height} && $parm{latitude} && $parm{longitude} or
+    die <<eod;
+Error - Can not calculate satellite pass without setting height,
+        latitude, longitude, and at least one body.
+eod
 my $pass_step = shift || 60;
 my $timlen = max (
     length (strftime ($parm{time_format}, 59, 59, 23, 31, 11, 2000)),
@@ -928,11 +937,13 @@ my $horizon = deg2rad ($parm{horizon});
 my $effective_horizon = $parm{geometric} ? 0 : $horizon;
 my $daytrlr = $parm{verbose} > 1 ? "\n" : "\n\n";
 
-
 #	We need the sun at some point.
 
 my $sun = Astro::Coord::ECI::Sun->new ();
 
+#	Print the header
+
+print _format_location ();
 
 #	Foreach body to be modelled
 
