@@ -18,9 +18,9 @@ use Date::Manip;
 use FileHandle;
 use Getopt::Long;
 use List::Util qw{max};
-###use Math::Trig;
 use Pod::Usage;
 use POSIX qw{floor strftime};
+use Scalar::Util qw{looks_like_number};
 use Term::ReadLine;
 use Text::Abbrev;
 use Text::ParseWords;
@@ -58,6 +58,10 @@ use constant LINFMT => <<eod;
 %s %5.1f %5.1f %-2s %7.1f %8.4f %9.4f %7.1f %-4s %s
 eod
 
+use constant BGFMT => <<eod;
+%s %5.1f %5.1f %-2s         %8.4f %9.4f              %s
+eod
+
 my @bodies;
 my @sky = (
     Astro::Coord::ECI::Sun->new (),
@@ -72,6 +76,7 @@ my %exported;	# True if the parameter is exported.
 my %parm = (
     appulse => 0,
     autoheight => 1,
+    background => 1,
     date_format => '%a %d-%b-%Y',
     debug => 0,
     echo => 0,
@@ -97,6 +102,7 @@ my %macro;
 my %mutator = (
     appulse => \&_set_angle,
     autoheight => \&_set_unmodified,
+    background => \&_set_unmodified,
     date_format => \&_set_unmodified,
     debug => \&_set_unmodified,
     echo => \&_set_unmodified,
@@ -166,7 +172,7 @@ my $st;	# Astro::SpaceTrack object, if needed.
 my $date_manip_fudge = 
     $^O eq 'MacOS' ? timegm (0, 0, 0, 1, 0, 1970) : 0;
 
-my $rl = Term::ReadLine->new ('Predict satellite passes');
+my $rl = Term::ReadLine->new ('Predict satellite passes') if -t STDIN;
 my $fh = *STDIN;
 my @stdin;
 my @argstk;
@@ -303,10 +309,10 @@ while (1) {
 	$redout =~ m/^>+$/ ? do {$redout .= $_; ()} :
 	$_} parse_line ('\s+', 0, $buffer);
 
-#	Do pseudo tilde expansion. DOES VMS NEED '/sys$login'?
+#	Do pseudo tilde expansion.
 
-    $redout =~ s/^(>+)~/$1 . (
-	$^O eq 'VMS' ? 'sys$login' : $ENV{HOME} || $ENV{LOGDIR})/e;
+    $redout =~ s%^(>+)~%$1 . (
+	$^O eq 'VMS' ? '/sys$login' : $ENV{HOME} || $ENV{LOGDIR})%e;
 
 #	Pull the verb off the parsed arguments, and replace it with its
 #	canonical name if needed.
@@ -762,7 +768,7 @@ BEGIN {
 }
 sub help {
 if ($parm{webcmd}) {
-    system (join ' ', $parm{webcmd},
+    CORE::system (join ' ', $parm{webcmd},
 	"http://search.cpan.org/~wyant/Astro-satpass-$VERSION/");
     }
   else {
@@ -1063,7 +1069,7 @@ foreach my $tle (@bodies) {
 		    }
 
 
-#		Compute nearest approach to Sun and Moon
+#		Compute nearest approach to background bodies
 
 #		Note (fortuitous discovery) the ISS travels 1.175
 #		degrees per second at the zenith, so I need better
@@ -1080,8 +1086,8 @@ foreach my $tle (@bodies) {
 			$sta->angle ($body->universal ($when),
 				$tle->universal ($when)));
 		    next if $angle > $parm{appulse};
-		    push @time, [$when, sprintf '%.1f from %s', $angle,
-			$body->get ('name') || $body->get ('id')];
+		    push @time, [$when, sprintf ('%.1f from %s', $angle,
+			$body->get ('name') || $body->get ('id')), $body];
 		    }
 
 
@@ -1143,6 +1149,7 @@ foreach my $tle (@bodies) {
 
 	    if ($hdrdone++) {print "\n"} else {printf $header, $id, $name};
 	    foreach my $pt (@data) {
+		my $body = pop @$pt if ref $pt->[scalar @$pt - 1];
 		my $temp = strftime $parm{date_format}, localtime $pt->[0];
 		print "$temp\n" if $temp ne $day;
 		$day = $temp;
@@ -1152,6 +1159,17 @@ foreach my $tle (@bodies) {
 		    $pt->[3],
 		    rad2deg ($pt->[4]), rad2deg ($pt->[5]), $pt->[6],
 		    $lighting[$pt->[7]], $pt->[8] || '';
+		if ($body && $parm{background}) {
+		    my $time = $pt->[0];
+		    my ($azm, $elev, $rng) = $sta->azel ($body->universal ($time));
+		    my ($lat, $long, $alt) = $body->geodetic;
+##		    push @data, [$time, $elev, $azm, $rng, $lat, $long, $alt, $illum, @event];
+		    printf BGFMT, strftime ($parm{time_format}, localtime $time),
+			rad2deg ($elev), rad2deg ($azm),
+			$bearing[floor ($azm / TWOPI * @bearing + .5) % @bearing],
+			rad2deg ($lat), rad2deg ($long),
+			$body->get ('name') || $body->get ('id') || '';
+		    }
 		}
 
 
@@ -1500,8 +1518,12 @@ Error - You must specify a name, a right ascencion (in either
 eod
 	my $ra = deg2rad (_parse_angle (shift));
 	my $dec = deg2rad (_parse_angle (shift));
-	my $rng = @_ ? shift (@_) * PARSEC : PARSEC;
-	my $pmra = @_ ? deg2rad (shift (@_) / SPY2DPS) : 0;
+	my $rng = @_ ? _parse_distance (shift @_, '1pc') : PARSEC;
+	my $pmra = @_ ? do {
+	    my $angle = shift;
+	    $angle =~ s/s$//i or $angle *= 24 / 360 / cos ($ra);
+	    deg2rad ($angle / SPY2DPS);
+	    } : 0;
 	my $pmdec = @_ ? deg2rad (shift (@_) / SPY2DPS) : 0;
 	my $pmrec = @_ ? shift : 0;
 	$body->position ($ra, $dec, $rng, $pmra, $pmdec, $pmrec);
@@ -1669,6 +1691,34 @@ if ($angle =~ m/:/) {
 $angle;
 }
 
+#	$distance = _parse_distance ($string, $units)
+
+#	Strips 'm', 'km', 'au', 'ly', or 'pc' from the end of $string,
+#	the default being $units. Converts to km.
+
+BEGIN {
+my %units = (
+    m => .001,
+    km => 1,
+    au => AU,
+    ly => LIGHTYEAR,
+    pc => PARSEC,
+    );
+
+sub _parse_distance {
+my ($string, $dfdist) = @_;
+my $dfunits = $dfdist =~ s/([[:alpha:]]+)$// ? $1 : 'km';
+my $units = lc ($string =~ s/([[:alpha:]]+)$// ? $1 : $dfunits);
+$units{$units} or die <<eod;
+Error - Units of '$units' are unknown.
+eod
+looks_like_number ($string) or die <<eod;
+Error - '$string' is not a number.
+eod
+$string * $units{$units};
+}
+}	# end of BEGIN block
+
 #	$time = _parse_time ($string)
 
 #	Parses a time string in any known format. Strings with a
@@ -1763,21 +1813,6 @@ sub _sub_arg {
 my ($name, $dflt, $args) = @_;
 $dflt = '' unless defined $dflt;
 my $ctrl = $dflt =~ s/^(\W)// ? $1 : '-';
-
-=begin comment
-
-if ($name =~ m/\D/) {
-    return $parm{$name} if exists $mutator{$name};
-    return $ENV{$name} if exists $ENV{$name};
-    }
-  else {
-    return $args->[$name - 1] if defined $args->[$name - 1];
-    }
-
-=end comment
-
-=cut
-
 my $val = $name !~ m/\D/ ? $args->[$name - 1] :
     exists $mutator{$name} ? $parm{$name} : $ENV{$name};
 if ($ctrl eq '+') {
@@ -2378,12 +2413,22 @@ name). 'Sun' and 'Moon' are not case-sensitive.
 
 If you specify a star name, you must also specify its right ascension
 and declination in J2000.0 coordinates. See L</SPECIFYING ANGLES> for
-more on specifying angles. You can also specify its distance in parsecs
-if you so desire, the default for a star being 1 parsec (too small, but
-we are not correcting for parallax anyway). You may also specify proper
-motion in right ascension (in seconds of right ascension per year),
-declination (in seconds of arc per year), and velocity in recession (in
-kilometers per second), the default for the latter three being zero.
+more on specifying angles. You can also specify:
+
+* Distance, followed by units 'm', 'km', 'au', 'ly', or 'pc', the
+default being 'pc' (parsecs). For example, '4.2ly' represents 4.2
+light-years. The default distance is 1 parsec, which is too small,
+but we are not correcting for stellar parallax anyway.
+
+* Proper motion in right ascension, in seconds of arc per year, or
+seconds of right ascension per year if 's' is appended. The default is
+0.
+
+* Proper motion in declination, in seconds of arc per year. The default
+is 0.
+
+* Proper motion in recession, in kilometers per second. The default is
+0.
 
 clear - clears the list of background objects.
 
@@ -2508,6 +2553,14 @@ This parameter determines whether the L<geocode|/item_geocode_location>
 command attempts to acquire the height of the location above sea level.
 It does this only if the parameter is true. You may wish to turn this
 off (i.e. set it to 0) if the USGS elevation service is being balky.
+
+The default is 1 (i.e. true).
+
+=item background (boolean)
+
+This parameter determines whether the location of the background body
+is displayed when the L<appulse|/item_appulse> logic detects an
+appulse.
 
 The default is 1 (i.e. true).
 
@@ -2928,6 +2981,15 @@ or (under some flavor of Unix)
 or even
 
   $ satpass `cat commands`
+
+=head1 BUGS
+
+Bugs can be reported to the author by mail, or through
+L<http://rt.cpan.org/>.
+
+The VMS- and MSWin32-specific code to find the initialization file and
+do tilde expansion is untested, since I do not currently have access to
+those systems.
 
 =head1 AUTHOR
 
