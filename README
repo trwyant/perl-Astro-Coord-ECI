@@ -1,19 +1,20 @@
-Astro-Coord-ECI
+Astro-satpass
 
-This package implements the NORAD orbital propagation models described
-in their "SPACETRACK REPORT NO. 3, Models for Propagation of NORAD
-Element Sets," plus various support classes.  In other words, it turns
-the two- or three-line element sets available from such places as
-http://www.space-track.org/ or http://celestrak.com/ into predictions
-of where the relevant orbiting bodies will be.
+This package contains classes needed to predict satellite visibility,
+and a demonstration application (satpass) that makes use of these
+classes. The classes themselves are:
 
-The package also includes a script, "satpass", which uses the classes
-to implement a satellite visibility prediction system.
+Astro::Coord::ECI - superclass (coordinate transforms)
+Astro::Coord::ECI::Moon - Predict location of the Moon.
+Astro::Coord::ECI::Star - Predict location of a star.
+Astro::Coord::ECI::Sun - Predict location of the Sun.
+Astro::Coord::ECI::TLE - Predict location of a satellite.
+Astro::Coord::ECI::Utils - Constants and utility subroutines.
 
 This package is installable by the usual incantation:
 
-    gunzip Astro-Coord-ECI-9.999.tar.gz
-    tar -xf Astro-Coord-ECI-9.999.tar
+    gunzip Astro-satpass-9.999.tar.gz
+    tar -xf Astro-satpass-9.999.tar
     perl Makefile.PL
     make
     make test

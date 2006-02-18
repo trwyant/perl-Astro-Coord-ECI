@@ -9,7 +9,7 @@ Expander.
 What you need to do is to obtain and expand the following
 distributions from CPAN:
 
-Astro-Coord-ECI
+Astro-satpass
 Astro-SpaceTrack
 DateManip
 IO-String
@@ -43,10 +43,10 @@ eod
     }
 
 
-Then go through the expanded directories and delete any files
-except the contents of the 'bin' folder, and files that end
-in '.pm'. Drop the .pm files onto your droplet. It will save
-the converted file over the original. 
+Then go through the expanded directories and delete any files except
+the contents of the 'bin' folder, and files that end in '.pm'. Drop the
+.pm files onto your droplet. It will save the converted file over the
+original. 
 
 Once you have done this, open folder 'MacPerl f' (or wherever
 your MacPerl is). Find the site_perl folder and open it. Create
@@ -57,7 +57,7 @@ with it into the 'Coord' folder. Drag Manip.pm into the 'Date'
 folder. Drag String.pm into the 'IO' folder.
 
 Now find the satpass script in the bin folder of the
-Astro-Coord-ECI distribution. Run it through your droplet, and
+Astro-satpass distribution. Run it through your droplet, and
 save the output to some convenient location. Then, open the
 script in MacPerl. MacPerl will complain about it being too
 big to edit, and invite you to save it. Save it as an
@@ -87,4 +87,4 @@ The satpass script's 'help' function doesn't work under MacPerl.
 This is because it tries to parse the POD out of the script, but
 when MacPerl converts the script to an executable, the POD gets
 lost. You can find the docs by hunting up the package at
-http://search.cpan.org/
+http://search.cpan.org/~wyant/
