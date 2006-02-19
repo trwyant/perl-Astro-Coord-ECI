@@ -52,7 +52,7 @@ eod
 #	Initialization
 #
 
-$VERSION = '0.001';
+$VERSION = '0.002';
 
 use constant LINFMT => <<eod;
 %s %5.1f %5.1f %-2s %7.1f %8.4f %9.4f %7.1f %-4s %s
@@ -1855,26 +1855,26 @@ use Carp;
 use Scalar::Util qw{weaken};
 use Symbol;
 
-my $clip;
-my $err = "Can not open handle to clipboard.";
+my ($clip, $clipout, $memio);
 
 BEGIN {
 # For the benefit of parenthesis-matching editor: [
 our @ISA = $] >= 5.008 ? () : qw{IO::String};
-*_clipout = $^O eq 'MSWin32' ?
+my $err = "Can not open handle to clipboard.";
+$clipout = $^O eq 'MSWin32' ?
     do {
 	eval "use Win32::Clipboard";
-	$@ ? (*_memio = sub {croak "$err Win32::Clipboard not available"}) :
+	$@ ? ($memio = sub {croak "$err Win32::Clipboard not available"}) :
 	    sub {(my $s = $_[0]) =~ s/\n/\r\n/g;
 		Win32::Clipboard->new ()->Set ($s)}
 	} :
     do {
 	eval "use Clipboard";
-	$@ ? (*_memio = sub {croak "$err Clipboard not available"}) :
+	$@ ? ($memio = sub {croak "$err Clipboard not available"}) :
 	    sub {Clipboard->copy ($_[0])}
 	};
 # For the benefit of parenthesis-matching editor: [
-*_memio = $] >= 5.008 ?
+$memio ||= $] >= 5.008 ?
     sub {my $fh = gensym; open ($fh, $_[0], $_[1]); $fh} :
     do {
 	eval "use IO::String";
@@ -1887,7 +1887,7 @@ sub new {
 return $clip if $clip;
 my $class = shift;
 my $data = '';
-my $clip = _memio ('>', \$data);
+my $clip = $memio->('>', \$data);
 *$clip->{__PACKAGE__}{data} = \$data;
 bless $clip, $class;
 my $self = $clip;
@@ -1898,7 +1898,7 @@ $self;
 sub DESTROY {
 my $self = shift;
 my $data = *$self->{__PACKAGE__}{data};
-_clipout ($$data);
+$clipout->($$data);
 }
 
 ########################################################################
