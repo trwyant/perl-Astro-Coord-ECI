@@ -69,8 +69,8 @@ Optional module IO::String is needed if you wish to pass commands to
 the executable on its command line or to write macros under a version
 of Perl earlier than 5.8.
 eod
-	    ['Soap::Lite' => 0, <<eod],
-Optional module Soap::Lite is needed if you wish to use Geocoder.us to
+	    ['SOAP::Lite' => 0, <<eod],
+Optional module SOAP::Lite is needed if you wish to use Geocoder.us to
 translate street addresses directly to latitudes and longitudes.
 eod
 	    ['XML::Parser' => 0, <<eod],
