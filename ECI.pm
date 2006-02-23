@@ -55,7 +55,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = 0.001;
+our $VERSION = '0.002';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1348,6 +1348,11 @@ The following reference ellipsoids are known to the class initially:
    semimajor => 6378.14 km, flattening => 1 / 298.257.
    Source: Jean Meeus' "Astronomical Algorithms", 2nd Edition
 
+ NAD83 - North American Datum, 1983.
+    semimajor => 6378.137 km, flattening => 1/298.257.
+    Source:  http://biology.usgs.gov/fgdc.metadata/version2/spref/horiz/geodet/faq.htm
+    (NAD83 uses the GRS80 ellipsoid)
+
  sphere - Just in case you were wondering how much difference it
    makes (a max of 11 minutes 32.73 seconds of arc, per Jean
    Meeus).
@@ -1366,6 +1371,8 @@ Reference ellipsoid names are case-sensitive.
 The default model is WGS84.
 
 =cut
+
+# help for editor that does not understand POD '
 
 # Wish I had:
 # Maling, D.H., 1989, Measurements from Maps: Principles and methods of cartometry, Pergamon Press, Oxford, England.
@@ -1393,6 +1400,10 @@ The default model is WGS84.
 	},
     IAU76 => {		# Meeus, p. 82.
 	semimajor => 6378.14,
+	flattening => 1/298.257,
+	},
+    NAD83 => {		# http://biology.usgs.gov/fgdc.metadata/version2/spref/horiz/geodet/faq.htm
+	semimajor => 6378.137,		# km
 	flattening => 1/298.257,
 	},
     sphere => {		# Defined by me for grins, with semimajor from GRS80.
