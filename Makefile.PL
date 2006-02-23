@@ -13,7 +13,7 @@ getopts ('ny', \%opt) or die <<eod;
 The only legal options are
   -n = answer all questions 'no'.
   -y = answer all questions 'yes'.
-You may not assert both of these at once - it's too confusing.
+You may not assert both of these at once - it is too confusing.
 eod
 
 my @exe_files;
@@ -30,7 +30,7 @@ The following executable will be installed:
 If you do not want this, run Makefile.PL with the -n option.
 
 Unless you are running MSWin32 or VMS (which are special-cased),
-I will assume you're running some version of U*ix, and behave
+I will assume you are running some version of U*ix, and behave
 accordingly.
 
 eod
@@ -51,11 +51,19 @@ if ($opt{n}) {
 	}
     }
 
-my $clipmod = $^O eq 'MSWin32' ? 'Win32::Clipboard' : 'Clipboard';
+my $clipmod = $^O eq 'MSWin32' ? 'Win32::Clipboard' :
+    $^O eq 'darwin' ? '' : 'Clipboard';
+
+=for comment keep parentheses-matching editor (that does not understand POD) happy: [
+
+=cut
+
+my $stringmod = $] >= 5.008 ? '' : 'IO::String';
+
 if (@exe_files) {
     push @prereq, 'Date::Manip' => 0;
-    foreach (['Astro::SpaceTrack' => 0.011, <<eod],
-Optional module Astro::SpaceTrack version 0.011 or higher is needed if
+    foreach (['Astro::SpaceTrack' => 0.016, <<eod],
+Optional module Astro::SpaceTrack version 0.016 or higher is needed if
 you wish to retrieve orbital elements directly from Space Track or
 Celestrak into the executable.
 eod
@@ -63,8 +71,7 @@ eod
 Optional module $clipmod is needed if you wish to redirect output
 to the clipboard.
 eod
-	    (	# Comment to keep parenthesis-matching editor happy: [
-	    $] >= 5.008 ? () : ['IO::String' => 0, <<eod]),
+	    [$stringmod => 0, <<eod],
 Optional module IO::String is needed if you wish to pass commands to
 the executable on its command line or to write macros under a version
 of Perl earlier than 5.8.
@@ -80,6 +87,7 @@ and longitude.
 eod
 	    ) {
 	my ($module, $version, $info) = @$_;
+	next unless $module;
 	my @mv = $version ? ($module, $version) : ($module);
 	eval "use @mv";
 	$@ or do {push @prereq, $module, $version; next};
