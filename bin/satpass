@@ -295,7 +295,8 @@ while (1) {
 
 #	Help the parser deal with things like '.' and '!'
 
-    $buffer =~ s/^(\W+)/$1 /;
+    $buffer =~ s/^(\W)\s*/$1 /;
+    $buffer =~ s/\s+$//;
 
 #	Echo the line, if this is selected.
 
@@ -1580,25 +1581,22 @@ $fh = $hdl;
 
 sub st {
 die $spacetrack_unavailable if $spacetrack_unavailable;
-$st ||= do {
-    my @args = (webcmd => $parm{webcmd})
-	if Astro::SpaceTrack->VERSION >= 0.015;
-    push @args, filter => 1 if Astro::SpaceTrack->VERSION >= 0.014;
-    Astro::SpaceTrack->new (@args);
-    };
+$st ||= 
+    Astro::SpaceTrack->new (webcmd => $parm{webcmd}, filter => 1);
 my $func = lc shift;
 $func !~ m/^_/ && $st->can ($func) or die <<eod;
 Error - Unknown Astro::SpaceTrack method $func.
 eod
 my $rslt = $st->$func (@_);
+my $content = $st->content_type || '';
 if (!$rslt->is_success) {
     warn $rslt->status_line;
     }
-  elsif (($st->content_type || '') eq 'orbit') {
+  elsif ($content eq 'orbit') {
     push @bodies, Astro::Coord::ECI::TLE->parse ($rslt->content);
     }
-  elsif ($func eq 'help' || $func eq 'get') {
-    $parm{webcmd} or print $rslt->content, "\n";
+  elsif ($content) {
+    print $rslt->content, "\n";
     }
 }
 
@@ -1609,7 +1607,11 @@ if (!$rslt->is_success) {
 #
 
 sub system {
-my $cmd = "@_";
+my $cmd = @_ ? "@_" : $ENV{SHELL} || ($^O eq 'MSWin32' ? 'cmd' :
+    die <<eod);
+Error - No command passed, the SHELL environment variable was not
+        defined, and no system-specific default was available.
+eod
 $^O eq 'MSWin32' || $^O eq 'VMS' and $cmd =~ tr/'"/"'/;
 -t select() ? CORE::system ($cmd) : print `$cmd`;
 }
@@ -1818,7 +1820,7 @@ my $val = $name !~ m/\D/ ? $args->[$name - 1] :
 if ($ctrl eq '+') {
     return defined $val ? $dflt : '';
     }
-  elsif (defined $val) {
+  elsif ($val || looks_like_number $val) {
     return $val;
     }
   elsif ($ctrl eq '-') {
@@ -1867,6 +1869,13 @@ $clipout = $^O eq 'MSWin32' ?
 	$@ ? ($memio = sub {croak "$err Win32::Clipboard not available"}) :
 	    sub {(my $s = $_[0]) =~ s/\n/\r\n/g;
 		Win32::Clipboard->new ()->Set ($s)}
+	} : $^O eq 'darwin' ?
+    sub {my $hdl;
+	my $pid = open ($hdl, '|pbcopy') or die <<eod;
+Error - Unable to open pipe to pbcopy.
+        $!
+eod
+	print $hdl $_[0]
 	} :
     do {
 	eval "use Clipboard";
@@ -2099,11 +2108,11 @@ from 1), and anything else represents the value of the named parameter
 optionally enclosed in curly brackets.
 
 If the name of the thing substituted is enclosed in curly brackets, it
-may be optionally followed by a colon and a string to be defaulted into
-the command if needed. The following bash-like syntax is also
-supported:
+may be optionally followed by other specifications, as follows:
 
-${arg:-default} is the same as ${arg:default}.
+${arg:-default} substitutes in the default if the argument is undef or
+the empty string. If the argument is 0, the default will B<not> be
+substituted in.
 
 ${arg:=default} not only supplies the default, but sets the value of
 the argument to the specified default. Unlike bash, this works for
@@ -2117,6 +2126,9 @@ macro or file is abandoned.
 ${arg:+substitute} causes the substitute value to be used provided the
 argument is defined. If the argument is not defined, you get an empty
 string.
+
+${arg:default} is the same as ${arg:-default}, but the first character
+of the default B<must> be alphanumeric.
 
 Interpolation is not affected by quotes. If you want a literal dollar
 sign in the expansion of your macro, double the dollar signs in the
@@ -2506,6 +2518,11 @@ Technically, what happens is that if the current output is a tty,
 the command is executed using the core system command; otherwise
 its output is captured with backticks and printed.
 
+If the command is omitted, the value of environment variable SHELL
+is used as the command, with the intent of dropping you into the
+given shell. If environment variable SHELL is not defined and you
+are running under MSWin32, value 'cmd' is used as the command.
+
 =item tle
 
 This command displays the original two- or three- line element data
@@ -2591,7 +2608,9 @@ The default is 0.
 =item echo (boolean)
 
 This parameter causes commands that did not come from the keyboard to
-be echoed. Set it to a non-zero value to watch your scripts run.
+be echoed. Set it to a non-zero value to watch your scripts run, or to
+debug your macros, since the echo takes place B<after> parameter
+substitution has occurred.
 
 The default is 0.
 
