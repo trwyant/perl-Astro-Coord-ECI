@@ -27,7 +27,7 @@ use Text::ParseWords;
 use Time::Local;
 use UNIVERSAL qw{can};
 
-my ($clipboard_unavailable, $soap_unavailable,
+my ($clipboard_unavailable, $simbad_unavailable, $soap_unavailable,
 	$spacetrack_unavailable, $xml_parser_unavailable);
 my $mswin32 = $^O eq 'MSWin32';
 my $clipboard_package;
@@ -40,6 +40,8 @@ eod
     $clipboard_package = $mswin32 ? "Win32::Clipboard" : "Clipboard";
     eval "use $clipboard_package";
     $clipboard_unavailable = $@;
+    eval "use Astro::SIMBAD::Query";
+    $simbad_unavailable = $@;
     eval "use SOAP::Lite";
     $soap_unavailable = $@;
     eval "use XML::Parser";
@@ -1464,6 +1466,9 @@ defined $parm{$_[0]} ? $parm{$_[0]} : 'undef'
 #		'clear' - clear
 #		'drop name ...' - drop the named bodies; the name match
 #			is by case-insensitive regular expression.
+#		'lookup name' - Look up the star name in the SIMBAD
+#			catalog, and add it as a background body if
+#			found.
 #
 
 # For proper motion, we need to convert arc seconds per year to degrees
@@ -1549,6 +1554,26 @@ eod
     my $match = qr{@{[join '|', map {quotemeta $_} @_]}}i;
     @sky = grep {$_->get ('name') !~ m/$match/} @sky;
     }
+
+#	If the subcommand is 'lookup', we take the next argument to
+#	be the name of the star to look up, and try to look it up
+#	on line. If we find it, we add it to the background.
+
+  elsif ($verb eq 'lookup') {
+    my $name = $_[0];
+    my $lcn = lc $_[0];
+    foreach my $body (@sky) {
+	return if $body->isa ('Astro::Coord::ECI::Star') &&
+		$lcn eq lc $body->get ('name');
+	}
+    my ($ra, $dec, $rng, $pmra, $pmdec, $pmrec) = _simbad ($name);
+    my $body = Astro::Coord::ECI::Star->new (name => $name);
+    $body->position (
+	deg2rad (_parse_angle ($ra)),
+	deg2rad (_parse_angle ($dec)),
+	$rng, $pmra, $pmdec, $pmrec);
+    push @sky, $body;
+    }
   else {
     die <<eod;
 Error - 'sky' subcommand '$verb' not known. See 'help'.
@@ -1579,6 +1604,13 @@ $fh = $hdl;
 #	st () - pass commands to Astro::SpaceTrack
 #
 
+#	In addition to the usual command qualifiers, st takes -verbose,
+#	which means to display all data fetched..
+
+BEGIN {
+$cmdlgl{st} = [qw{verbose}];
+}
+
 sub st {
 die $spacetrack_unavailable if $spacetrack_unavailable;
 $st ||= 
@@ -1594,8 +1626,9 @@ if (!$rslt->is_success) {
     }
   elsif ($content eq 'orbit') {
     push @bodies, Astro::Coord::ECI::TLE->parse ($rslt->content);
+    $cmdopt{verbose} and print $rslt->content, "\n";
     }
-  elsif ($content) {
+  elsif ($content || $cmdopt{verbose}) {
     print $rslt->content, "\n";
     }
 }
@@ -1761,6 +1794,49 @@ $sec = ($sec - $hr) * 60;
 my $min = floor ($sec);
 $sec = ($sec - $min) * 60;
 return sprintf '%2d:%02d:%02d', $hr, $min, $sec;
+}
+
+
+#	@coordinates = _simbad ($query)
+
+#	Look up the given star in the SIMBAD catalog. This assumes
+#	SIMBAD 3, and SIMBAD 4 is already late and is known to affect
+#	this functionality, which is essentially a page scraper. They
+#	promise something like SOAP for this functionality. We'll see.
+
+#	We die on any error.
+
+
+sub _simbad {
+die <<eod if $simbad_unavailable;
+Error - Astro::SIMBAD::Query is not installed.
+eod
+my $query = shift;
+my $qo = Astro::SIMBAD::Query->new (Target => $query, Error => 0,
+    Frame => 'FK5', Epoch => 2000, Equinox => 2000);
+my $rslt = $qo->querydb ();
+
+die <<eod unless $rslt->sizeof;
+Error - Can not find $query
+eod
+die <<eod if $rslt->sizeof > 1;
+Error - More than one match found
+eod
+
+my ($obj) = $rslt->objects;
+my ($ra, $dec, $rng, $pm, $vrec) = map {$obj->$_} qw{ra dec plx pm radial};
+foreach ($ra, $dec) {s/^\s+//; s/\s+$//; s/\s+/ /g; s/\s+0+\.0$//;}
+$ra =~ s/\s/:/g;
+$dec =~ s/\s/d/;
+$dec =~ s/\s/m/;
+$dec =~ s/\s/s/;
+$rng = $rng ? 1000 / $rng : 10000;
+my ($pmra, $pmdec) = map {$_ ? $_ / 1000 : 0} @$pm;
+$pmra ||= 0;
+$pmdec ||= 0;
+$vrec ||= 0;
+my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec);
+wantarray ? @temp : join ' ', @temp;
 }
 
 
@@ -2054,6 +2130,9 @@ and the relevant site is functional and has the data required. You will
 need to install B<SOAP::Lite>, and maybe B<XML::Parser>, to get this
 functionality.
 
+* The ability to look up star positions in the SIMBAD catalog. You will
+need to install B<Astro::SIMBAD> to get this functionality.
+
 * The ability to produce solar and lunar almanac data (rise and set,
 meridian transit, and so forth).
 
@@ -2238,6 +2317,10 @@ the location of the observer is set to the canonical name of the
 location as returned by geocoder.us. Also, the height command is
 implicitly invoked to attempt to acquire the height above sea level
 provided the L<autoheight|/autoheight> parameter is true.
+
+In addition to the usual qualifiers, this command supports the -height
+qualifier, which reverses the action of the L<autoheight|/autoheight>
+parameter for the command on which it is specified.
 
 If the location contains whitespace, it must be quoted. Example:
 
@@ -2460,6 +2543,22 @@ For example,
       Spica  13:25:11  -11.161
  satpass>
 
+lookup - Looks up the given object in the SIMBAD online name resolver.
+If the named object is found, it is added to the list of background
+objects.
+
+For example,
+
+ satpass> sky lookup 'Theta orionis'
+
+B<The 'lookup' function should be considered experimental.> SIMBAD 4
+was scheduled to be out January 2006, and (according to its
+announcement at L<http://simbad.u-strasbg.fr/simbad4.htx>) B<will
+probably break this function.> If this function gets broken, it may be
+upgraded, replaced with a more expeditious data source, or retracted
+completely; the author makes no promises of which, or of timing.
+B<Caveat user.>
+
 =item source file_name
 
 This command takes commands from the given file, reading it until it is
@@ -2485,6 +2584,12 @@ What comes after the 'st' is a legal command to the
 B<Astro::SpaceTrack> package. If a command returns orbital elements,
 those elements will be added to the observing list. You can use
 'st help' to get brief help, or see L<Astro::SpaceTrack>.
+
+In addition to the usual qualifiers, you can specify -verbose to cause
+the content of the response to be displayed in cases where it
+normally would not be (e.g. cases where the content is "OK", or where
+it  would normally simply be digested by this application (e.g. orbital
+elements)).
 
 You must install B<Astro::SpaceTrack> version 0.011 or higher to use
 this command.
