@@ -61,8 +61,14 @@ my $clipmod = $^O eq 'MSWin32' ? 'Win32::Clipboard' :
 my $stringmod = $] >= 5.008 ? '' : 'IO::String';
 
 if (@exe_files) {
-    push @prereq, 'Date::Manip' => 0;
-    foreach (['Astro::SpaceTrack' => 0.016, <<eod],
+    push @prereq, 'Date::Manip' => 1.14;
+    foreach (['Astro::SIMBAD::Query' => 0, <<eod],
+Optional module Astro::SIMBAD::Query is needed if you wish to retrieve
+star positions directly from the SIMBAD catalog via the 'sky lookup'
+command. This functionality is experimental, and is expected to break
+when SIMBAD goes to version 4.
+eod
+	    ['Astro::SpaceTrack' => 0.016, <<eod],
 Optional module Astro::SpaceTrack version 0.016 or higher is needed if
 you wish to retrieve orbital elements directly from Space Track or
 Celestrak into the executable.
@@ -72,7 +78,7 @@ Optional module $clipmod is needed if you wish to redirect output
 to the clipboard.
 eod
 	    [$stringmod => 0, <<eod],
-Optional module IO::String is needed if you wish to pass commands to
+Optional module $stringmod is needed if you wish to pass commands to
 the executable on its command line or to write macros under a version
 of Perl earlier than 5.8.
 eod
