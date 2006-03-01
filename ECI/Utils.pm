@@ -4,9 +4,9 @@ Astro::Coord::ECI::Utils - Utility routines for astronomical calculations
 
 =head1 SYNOPSIS
 
- my $loc = Astro::Coord::ECI->geodetic ($lat, $lon, $elev);
- my $sun = Astro::Coord::ECI::Sun->new ()->universal (time ());
- my ($azimuth, $elevation, $range) = $loc->azel ($sun);
+ use Astro::Coord::ECI::Utils qw{:all};
+ my $now = time ();
+ print "The current Julian day is ", julianday ($now);
 
 =head1 DESCRIPTION
 
@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = 0.001;
+our $VERSION = 0.002;
 
 use Carp;
 use Data::Dumper;
@@ -112,7 +112,7 @@ sub deg2rad {$_[0] * PI / 180}
 =item $value = distsq (\@coord1, \@coord2)
 
 This subroutine calculates the square of the distance between the two
-sets of Cartesian coordinates. We don't take the square root here
+sets of Cartesian coordinates. We do not take the square root here
 because of cases (e.g. the law of cosines) where we would just have
 to square the result again.
 
@@ -178,6 +178,8 @@ are expressed in terms of the number of Julian centuries from epoch
 J2000.0 (e.g equations 12.1, 22.1). This subroutine encapsulates
 that calculation.
 
+=for comment help our editor, which does not understand POD '
+
 =cut
 
 sub jcent2000 {
@@ -209,10 +211,24 @@ This subroutine converts a Perl date to a Julian day number.
 The computation makes use of information from Jean Meeus' "Astronomical
 Algorithms", 2nd Edition, Chapter 7, page 62.
 
+=for comment help our editor, which does not understand POD '
+
 =cut
 
 sub julianday {
 jday2000($_[0]) + 2_451_545.0	#   Meeus p. 62
+}
+
+
+=item $theta = mod2pi ($theta)
+
+This subrouting reduces the given angle in radians to the range 0 <=
+$theta < TWOPI.
+
+=cut
+
+sub mod2pi {
+$_[0] - floor ($_[0] / TWOPI) * TWOPI;
 }
 
 
@@ -224,6 +240,8 @@ the given B<dynamical> time.
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 0.5 seconds of arc.
+
+=for comment help our editor, which does not understand POD '
 
 =cut
 
@@ -253,6 +271,8 @@ The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 0.1 seconds of arc.
 
+=for comment help our editor, which does not understand POD '
+
 =cut
 
 sub nutation_in_obliquity {
@@ -280,6 +300,8 @@ the given B<dynamical> time.
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. The conversion from universal to
 dynamical time comes from chapter 10, equation 10.2  on page 78.
+
+=for comment help our editor, which does not understand POD '
 
 =cut
 
@@ -374,6 +396,8 @@ the given time.
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, equation 12.4, page 88.
 
+=for comment help our editor, which does not understand POD '
+
 =cut
 
 
@@ -384,18 +408,6 @@ my $T = jcent2000 ($_[0]);
 mod2pi (4.89496121273579 + 6.30038809898496 *
 	jday2000 ($_[0]))
 	+ (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
-}
-
-
-=item $theta = mod2pi ($theta)
-
-This subrouting reduces the given angle in radians to the range 0 <=
-$theta < TWOPI.
-
-=cut
-
-sub mod2pi {
-$_[0] - floor ($_[0] / TWOPI) * TWOPI;
 }
 
 =back
