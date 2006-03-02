@@ -27,7 +27,8 @@ use Text::ParseWords;
 use Time::Local;
 use UNIVERSAL qw{can};
 
-my ($clipboard_unavailable, $simbad_unavailable, $soap_unavailable,
+my ($clipboard_unavailable, $io_string_unavailable,
+	$simbad_unavailable, $soap_unavailable,
 	$spacetrack_unavailable, $xml_parser_unavailable);
 my $mswin32 = $^O eq 'MSWin32';
 my $clipboard_package;
@@ -39,7 +40,7 @@ Error - You need to install the Astro::SpaceTrack module version 0.011
 eod
     $clipboard_package = $mswin32 ? "Win32::Clipboard" : "Clipboard";
     eval "use $clipboard_package";
-    $clipboard_unavailable = $@;
+    $clipboard_unavailable = $@ unless $^O eq 'darwin';
     eval "use Astro::SIMBAD::Query";
     $simbad_unavailable = $@;
     eval "use SOAP::Lite";
@@ -89,6 +90,7 @@ my %parm = (
     lit => 1,
     model => 'model',
     prompt => 'satpass>',
+    simbad_url => 'simbad.harvard.edu',
     time_format => '%H:%M:%S',
     timing => 0,
     verbose => 0,
@@ -120,6 +122,7 @@ my %mutator = (
     model => \&_set_unmodified,
     perltime => \&_set_perltime,
     prompt => \&_set_unmodified,
+    simbad_url => \&_set_unmodified,
     time_format => \&_set_unmodified,
     timing => \&_set_unmodified,
     twilight => \&_set_twilight,  # 'civil', 'nautical', 'astronomical'
@@ -607,11 +610,11 @@ $cmdopt{debug} and print "Result: ", Dumper ($rslt), "\n";
 
 @$rslt or die <<eod;
 Error - Failed to parse address
-        "@_".
+        "$loc".
 eod
 $rslt->[0]{lat} or die <<eod;
 Error - Failed to find address
-        "@_".
+        "$loc".
 eod
 
 #	Display our results.
@@ -866,16 +869,14 @@ eod
 #
 
 sub macro {
-eval {require IO::String} or die <<eod;
-Error - You can not use the macro facility unless IO::String is
-available.
+$io_string_unavailable and die <<eod;
+Error - You can not use the macro facility unless you are running at
+        at least Perl 5.8, or IO::String is available.
 eod
 my $name = shift or do {
     foreach my $name (sort keys %macro) {
 	print "macro $name ", join (" \\\n    ", map {
-		my $x = $_;
-		$x =~ s/([\\'])/\\$1/g || $x =~ m/\s/ ? qq{'$x'} : $x # '
-		} @{$macro{$name}}), "\n";
+		_quoter ($_)} @{$macro{$name}}), "\n";
 
 	}
     return;
@@ -1166,7 +1167,6 @@ foreach my $tle (@bodies) {
 		    my $time = $pt->[0];
 		    my ($azm, $elev, $rng) = $sta->azel ($body->universal ($time));
 		    my ($lat, $long, $alt) = $body->geodetic;
-##		    push @data, [$time, $elev, $azm, $rng, $lat, $long, $alt, $illum, @event];
 		    printf BGFMT, strftime ($parm{time_format}, localtime $time),
 			rad2deg ($elev), rad2deg ($azm),
 			$bearing[floor ($azm / TWOPI * @bearing + .5) % @bearing],
@@ -1436,9 +1436,7 @@ foreach my $name (@_) {
 Error - '$name' is not a valid setting.
 eod
     exists $parm{$name} or next;
-    my $val = $accessor{$name}->($name);
-    $val =~ m/[\s']/ and
-	$val =~ s|([\\'])|\\$1|g || $val =~ m/\s/ and $val = "'$val'";
+    my $val = _quoter ($accessor{$name}->($name));
     print "set $name $val\n";
     }
 }
@@ -1484,11 +1482,16 @@ my $verb = lc (shift @_ || '');
 if (!$verb) {
     foreach my $body (@sky) {
 	if ($body->isa ('Astro::Coord::ECI::Star')) {
-	    my ($ra, $dec)  = $body->position ();
-	    printf "%10s  %8s  %7.3f\n", $body->get ('name'), _rad2hms ($ra), rad2deg ($dec);
+	    my ($ra, $dec, $rng, $pmra, $pmdec, $vr)  = $body->position ();
+	    $rng /= PARSEC;
+	    $pmra = rad2deg ($pmra / 24 * 360 * cos ($ra)) * SPY2DPS;
+	    $pmdec = rad2deg ($pmdec) * SPY2DPS;
+	    printf "sky add %s %s %7.3f %.2f %.4f %.5f %s\n",
+		_quoter ($body->get ('name')), _rad2hms ($ra),
+		rad2deg ($dec), $rng, $pmra, $pmdec, $vr;
 	    }
 	  else {
-	    printf "%10s\n", $body->get ('name');
+	    print "sky add ", _quoter ($body->get ('name')), "\n";
 	    }
 	}
     @sky or print "The sky is empty.\n";
@@ -1524,7 +1527,7 @@ Error - You must specify a name, a right ascencion (in either
 eod
 	my $ra = deg2rad (_parse_angle (shift));
 	my $dec = deg2rad (_parse_angle (shift));
-	my $rng = @_ ? _parse_distance (shift @_, '1pc') : PARSEC;
+	my $rng = @_ ? _parse_distance (shift @_, '1pc') : 10000 * PARSEC;
 	my $pmra = @_ ? do {
 	    my $angle = shift;
 	    $angle =~ s/s$//i or $angle *= 24 / 360 / cos ($ra);
@@ -1567,11 +1570,14 @@ eod
 		$lcn eq lc $body->get ('name');
 	}
     my ($ra, $dec, $rng, $pmra, $pmdec, $pmrec) = _simbad ($name);
+    $rng = sprintf '%.2f', $rng;
+    print "sky add ", _quoter ($name),
+	" $ra $dec $rng $pmra $pmdec $pmrec\n";
+    $ra = deg2rad (_parse_angle ($ra));
     my $body = Astro::Coord::ECI::Star->new (name => $name);
-    $body->position (
-	deg2rad (_parse_angle ($ra)),
-	deg2rad (_parse_angle ($dec)),
-	$rng, $pmra, $pmdec, $pmrec);
+    $body->position ($ra, deg2rad (_parse_angle ($dec)),
+	$rng * PARSEC, deg2rad ($pmra * 24 / 360 / cos ($ra) / SPY2DPS),
+	deg2rad ($pmdec / SPY2DPS), $pmrec);
     push @sky, $body;
     }
   else {
@@ -1691,15 +1697,21 @@ eod
 #	parameter specifies the access (typically ">" or "<").
 
 BEGIN {
-# a comment to keep a parenthesis-matching editor happy: [
+
+=for comment keep a parenthesis-matching editor happy: [
+
+=cut
+
 *_memio = $] >= 5.008 ?
     sub {my $hdl; open ($hdl, $_[0], $_[1]) || die <<eod; $hdl} :
 Failed to open @_
     $!
 eod
     do {
-	require IO::String;
-	sub {IO::String->new ($_[1])}
+	eval "use IO::String";
+	$io_string_unavailable = "Error - IO::String unavailable.\n" if @_;
+	$@ ? sub {die $io_string_unavailable} :
+	    sub {IO::String->new ($_[1])}
 	}
 }
 
@@ -1782,6 +1794,17 @@ eod
 }	# End local symbol block.
 
 
+#	$quoted = _quoter ($string)
+
+#	Quotes and escapes the input string if and as necessary for parser.
+
+sub _quoter {
+my $string = shift;
+return $string unless $string =~ m/[\s'"]/;
+$string =~ s/([\\'])/\\$1/g;
+return "'$string'";
+}
+
 #	$string = _rad2hms ($angle)
 
 #	Converts the given angle in radians to hours, minutes, and
@@ -1793,7 +1816,10 @@ my $hr = floor ($sec);
 $sec = ($sec - $hr) * 60;
 my $min = floor ($sec);
 $sec = ($sec - $min) * 60;
-return sprintf '%2d:%02d:%02d', $hr, $min, $sec;
+my $rslt = sprintf '%2d:%02d:%02f', $hr, $min, $sec;
+$rslt =~ s/0+$//;
+$rslt =~ s/\.$//;
+$rslt;
 }
 
 
@@ -1806,15 +1832,18 @@ return sprintf '%2d:%02d:%02d', $hr, $min, $sec;
 
 #	We die on any error.
 
-
 sub _simbad {
 die <<eod if $simbad_unavailable;
 Error - Astro::SIMBAD::Query is not installed.
 eod
 my $query = shift;
 my $qo = Astro::SIMBAD::Query->new (Target => $query, Error => 0,
-    Frame => 'FK5', Epoch => 2000, Equinox => 2000);
-my $rslt = $qo->querydb ();
+    Frame => 'FK5', Epoch => 2000, Equinox => 2000, URL => $parm{simbad_url});
+my $rslt = eval {$qo->querydb ()};
+die <<eod if $@;
+Error - No entry found for $query, or
+        $parm{simbad_url} unreachable.
+eod
 
 die <<eod unless $rslt->sizeof;
 Error - Can not find $query
@@ -1825,6 +1854,9 @@ eod
 
 my ($obj) = $rslt->objects;
 my ($ra, $dec, $rng, $pm, $vrec) = map {$obj->$_} qw{ra dec plx pm radial};
+defined $ra && $ra =~ m/\S/ or die <<eod;
+Error - No position available for $query
+eod
 foreach ($ra, $dec) {s/^\s+//; s/\s+$//; s/\s+/ /g; s/\s+0+\.0$//;}
 $ra =~ s/\s/:/g;
 $dec =~ s/\s/d/;
@@ -1835,7 +1867,7 @@ my ($pmra, $pmdec) = map {$_ ? $_ / 1000 : 0} @$pm;
 $pmra ||= 0;
 $pmdec ||= 0;
 $vrec ||= 0;
-my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec);
+my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec + 0);
 wantarray ? @temp : join ' ', @temp;
 }
 
@@ -2147,6 +2179,8 @@ MSWin32 and VMS, and .satpass under any other operating system. Any
 command may be placed in the initialization file. It is a good place to
 set the observer's location and define any macros you want.
 
+=for comment help editor that does not understand POD '
+
 =head1 COMMANDS
 
 A number of commands are available to set operational parameters,
@@ -2261,8 +2295,6 @@ determined. This change affects this script, and any processes invoked
 by it, but B<not> the invoking process. In plainer English, it does not
 affect the directory in which you find yourself after exiting satpass.
 
-=for comment ' help syntax-highlighting editor that does not understand POD
-
 =item choose name_or_id ...
 
 This command retains only the objects named on the command in the
@@ -2333,8 +2365,8 @@ If you wish to use this command, you must install the B<SOAP::Lite>
 module.
 
 B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
-Bureau's TIGER database. They add their opinion that it tends to be
-buggy and not to cover rural areas well.
+Bureau's TIGER/LineE<reg> database. They add their opinion that it tends to
+be buggy and not to cover rural areas well.
 
 =for comment ' help syntax-highlighting editor that does not understand POD
 
@@ -2342,7 +2374,7 @@ buggy and not to cover rural areas well.
 
 This command attempts to look up the height above sea level at the
 given latitude and longitude in the U.S. Geological Survey's EROS
-database (L<http://gisdata.usgs.gov/>). If the lookup succeeds,
+Web Services (L<http://gisdata.usgs.gov/>). If the lookup succeeds,
 the latitude and longitude parameters are set to the arguments and
 the height parameter is set to the result.
 
@@ -2499,8 +2531,10 @@ the given values.
 
 This command manipulates the background objects (Sun, Moon, stars ...)
 that are used in the various calculations. If specified by itself
-it lists the current background objects. It also takes the following
-subcommands:
+it lists the current background objects. B<Note that, beginning with
+version 0.002, this list is formatted as 'sky add' commands.>
+
+The 'sky' command also takes the following subcommands:
 
 add - adds the named background object, provided it is not already in
 the list. You must specify the name of the object (Sun, Moon, or star
@@ -2512,8 +2546,9 @@ more on specifying angles. You can also specify:
 
 * Distance, followed by units 'm', 'km', 'au', 'ly', or 'pc', the
 default being 'pc' (parsecs). For example, '4.2ly' represents 4.2
-light-years. The default distance is 1 parsec, which is too small,
-but we are not correcting for stellar parallax anyway.
+light-years. B<Beginning with version 0.002, the default distance is
+10000 parsecs.> This is probably too big, but we are not correcting
+for stellar parallax anyway.
 
 * Proper motion in right ascension, in seconds of arc per year, or
 seconds of right ascension per year if 's' is appended. The default is
@@ -2539,17 +2574,20 @@ For example,
  satpass> sky drop moon
  satpass> sky add Spica 13:25.193 -11d9.683m
  satpass> sky
-        Sun
-      Spica  13:25:11  -11.161
+ sky add Sun
+ sky add Spica 13:25:11.58 -11.161 10000.00 0.0000 0.00000 0
  satpass>
 
-lookup - Looks up the given object in the SIMBAD online name resolver.
-If the named object is found, it is added to the list of background
-objects.
+lookup - Looks up the given object in the SIMBAD catalog, using
+the L<simbad_url|/simbad_url> parameter to determine which copy
+of the catalog is used. If the named object is found, it is
+added to the list of background objects. Range defaults to 10000
+parsecs, and the proper motions to 0.
 
 For example,
 
- satpass> sky lookup 'Theta orionis'
+ satpass> sky lookup 'Theta Orionis'
+ sky add 'Theta Orionis' 05:35.3 -05d24 10000.00 0 0 0
 
 B<The 'lookup' function should be considered experimental.> SIMBAD 4
 was scheduled to be out January 2006, and (according to its
@@ -2792,8 +2830,6 @@ This parameter contains a text description of the observer's location.
 This is not used internally, but if it is not empty it will be
 displayed wherever the observer's latitude, longitude, and height are.
 
-=for comment ' help syntax-highlighting editor that does not understand POD
-
 There is no default; the parameter is undefined unless you supply a
 value.
 
@@ -2878,6 +2914,21 @@ The default is 0 (i.e. false).
 This parameter specifies the string used to prompt for commands.
 
 The default is 'satpass>'.
+
+=item simbad_url (string)
+
+This parameter does not, strictly speaking, specify a URL, but does
+specify the server to use to perform SIMBAD lookups (see the 'lookup'
+subcommand of the L<sky|/sky> command). Currently-legal values are
+'simbad.u-strasbg.fr' (the original site) and 'simbad.harvard.edu'
+(Harvard University's mirror).
+
+The default is 'simbad.harvard.edu'.
+
+B<Please note that the command this parameter supports is
+experimental,> and see the warnings on that command. Changes in the
+command may result in this parameter becoming deprecated and/or
+no-oped.
 
 =item time_format (string)
 
@@ -3131,3 +3182,5 @@ L<http://perldoc.perl.org/index-licence.html> for the current licenses.
 This software is provided without any warranty of any kind, express or
 implied. The author will not be liable for any damages of any sort
 relating in any way to this software.
+
+TIGER/LineE<reg> is a registered trademark of the U.S. Census Bureau.
