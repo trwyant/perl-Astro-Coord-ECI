@@ -1,2 +1,15 @@
  0.001 T. R. Wyant
   Initial release
+ 0.002 T. R. Wyant
+  bin/satpass -
+    Behave better when no Clipboard module.
+    Do not use Clipboard module under darwin.
+    Require Astro::SpaceTrack 0.016 (if any).
+    Default star distance now 10000 parsecs (was 1 parsec).
+    Add 'sky lookup', using Astro::SIMBAD::Query.
+    Modified 'sky' listing format to look like 'sky add' commands.
+  Astro::Coord::ECI -
+    Add NAD83 ellipsoid.
+  Astro::Coord::ECI::Utils -
+    Corrected documentation.
+
