@@ -21,7 +21,9 @@ This package is installable by the usual incantation:
     make install
 
 You should substitute the appropriate program name for 'make', eg nmake
-(typically) under MSWin32, or mms or mmk under VMS.
+(typically) under MSWin32, or mms or mmk under VMS. See
+ftp://ftp.microsoft.com/Softlib/MSLFILES/nmake15.exe for a copy of
+nmake for MSWin32 if you need it.
 
 Of course, since it's pure Perl, you can just expand the kit and drop
 the .pm files into the Astro/Coord/ECI directory (creating it if
