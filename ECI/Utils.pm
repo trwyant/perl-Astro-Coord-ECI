@@ -41,11 +41,11 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = 0.002;
+our $VERSION = 0.003;
+our @ISA = qw{Exporter};
 
 use Carp;
 use Data::Dumper;
-use Exporter qw{import};
 use POSIX qw{floor};
 use Time::Local;
 use UNIVERSAL qw{can isa};

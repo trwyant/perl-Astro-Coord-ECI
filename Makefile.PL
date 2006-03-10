@@ -51,9 +51,6 @@ if ($opt{n}) {
 	}
     }
 
-my $clipmod = $^O eq 'MSWin32' ? 'Win32::Clipboard' :
-    $^O eq 'darwin' ? '' : 'Clipboard';
-
 =for comment keep parentheses-matching editor (that does not understand POD) happy: [
 
 =cut
@@ -72,10 +69,6 @@ eod
 Optional module Astro::SpaceTrack version 0.016 or higher is needed if
 you wish to retrieve orbital elements directly from Space Track or
 Celestrak into the executable.
-eod
-	    [$clipmod => 0, <<eod],
-Optional module $clipmod is needed if you wish to redirect output
-to the clipboard.
 eod
 	    [$stringmod => 0, <<eod],
 Optional module $stringmod is needed if you wish to pass commands to

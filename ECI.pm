@@ -55,7 +55,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -143,7 +143,7 @@ If the optional 'upper' argument is true, the calculation will be of
 the upper limb of the object, using the 'angularradius' attribute of
 the $coord2 object.
 
-If the L<refraction|/item_refraction> attribute of the $coord object is
+If the L<refraction|/refraction> attribute of the $coord object is
 true, the elevation will be corrected for atmospheric refraction using
 the correct_for_refraction() method.
 
@@ -229,7 +229,7 @@ not have a corresponding algorithm for refraction through magma.
 
 This method can also be called as a class method. It is really only
 exposed for testing purposes (hence the cumbersome name). The azel()
-method calls it for you if the L<refraction|/item_refraction> attribute
+method calls it for you if the L<refraction|/refraction> attribute
 is true.
 
 The algorithm for atmospheric refraction comes from Thorfinn

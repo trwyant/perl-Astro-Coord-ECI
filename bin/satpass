@@ -15,6 +15,7 @@ use Astro::Coord::ECI::Utils qw{:all};
 use Config;
 use Data::Dumper;
 use Date::Manip;
+use File::Basename;
 use FileHandle;
 use Getopt::Long;
 use List::Util qw{max};
@@ -30,17 +31,12 @@ use UNIVERSAL qw{can};
 my ($clipboard_unavailable, $io_string_unavailable,
 	$simbad_unavailable, $soap_unavailable,
 	$spacetrack_unavailable, $xml_parser_unavailable);
-my $mswin32 = $^O eq 'MSWin32';
-my $clipboard_package;
 BEGIN {
     eval "use Astro::SpaceTrack";
-    $spacetrack_unavailable = <<eod if $@ || Astro::SpaceTrack->VERSION < 0.011;
-Error - You need to install the Astro::SpaceTrack module version 0.011
+    $spacetrack_unavailable = <<eod if $@ || Astro::SpaceTrack->VERSION < 0.016;
+Error - You need to install the Astro::SpaceTrack module version 0.016
         or higher if you wish to use the st command.
 eod
-    $clipboard_package = $mswin32 ? "Win32::Clipboard" : "Clipboard";
-    eval "use $clipboard_package";
-    $clipboard_unavailable = $@ unless $^O eq 'darwin';
     eval "use Astro::SIMBAD::Query";
     $simbad_unavailable = $@;
     eval "use SOAP::Lite";
@@ -48,6 +44,7 @@ eod
     eval "use XML::Parser";
     $xml_parser_unavailable = $@;
     }
+$clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 
 
 ########################################################################
@@ -55,7 +52,7 @@ eod
 #	Initialization
 #
 
-$VERSION = '0.002';
+$VERSION = '0.003';
 
 use constant LINFMT => <<eod;
 %s %5.1f %5.1f %-2s %7.1f %8.4f %9.4f %7.1f %-4s %s
@@ -74,6 +71,16 @@ my @sky = (
 my %opt;	# Options passed when we were invoked.
 my %cmdopt;	# Options for individual satpass commands.
 my %cmdlgl;	# Legal options for a given command.
+my %status;	# Status (by NORAD ID) where applicable.
+            # Each NORAD ID gets a hash ref including:
+            # {type} => 'iridium' (only valid type)
+            # {status} => false if OK, otherwise text.
+            # {name} => body name (from status query)
+            # {id} => NORAD ID of body (= key).
+            # {comment} => from status query
+my %types;	# Maintained in parallel with %status. Key
+            # is type, value is reference to list of
+            # status hashes for that type, as above.
 
 my %exported;	# True if the parameter is exported.
 my %parm = (
@@ -166,8 +173,6 @@ eod
 
 sub _format_location;	# Predeclare, so I don't need explicit STDOUT.
 
-my $st;	# Astro::SpaceTrack object, if needed.
-
 #	The problem we're solving with the following is that
 #	Date::Manip assumes an epoch of midnight January 1 1970, but
 #	MacPerl takes the Mac OS 9 epoch of January 1 1904, local.
@@ -200,13 +205,13 @@ where the legal options are
   -clipboard
     Asserting this option causes all output to stdout to be captured
     and placed on the system clipboard. Command-line output redirection
-    is ignored. You must have the $clipboard_package module installed
-    if you assert this option.
+    is ignored. 
 
   -filter
     Asserting this option supresses extraneous output, making satpass
     behave more like a Unix filter.
 
+$clipboard_unavailable
 eod
 
 $opt{clipboard} and select (IO::Clipboard->new ());
@@ -1420,7 +1425,8 @@ sub _set_unmodified {$parm{$_[0]} = $_[1]}
 
 sub _set_webcmd {
 $parm{$_[0]} = $_[1];
-$st && $st->VERSION >= 0.015 and $st->set (webcmd => $_[1]);
+my $st = _get_spacetrack (1);	# Get only if already instantiated.
+$st and $st->set (webcmd => $_[1]);
 }
 
 
@@ -1618,24 +1624,56 @@ $cmdlgl{st} = [qw{verbose}];
 }
 
 sub st {
-die $spacetrack_unavailable if $spacetrack_unavailable;
-$st ||= 
-    Astro::SpaceTrack->new (webcmd => $parm{webcmd}, filter => 1);
-my $func = lc shift;
+my $st = _get_spacetrack ();
+my $func = lc shift or die <<eod;
+Error - No Astro::SpaceTrack method specified.
+eod
 $func !~ m/^_/ && $st->can ($func) or die <<eod;
 Error - Unknown Astro::SpaceTrack method $func.
 eod
 my $rslt = $st->$func (@_);
 my $content = $st->content_type || '';
 if (!$rslt->is_success) {
-    warn $rslt->status_line;
+    die $rslt->status_line;
     }
   elsif ($content eq 'orbit') {
     push @bodies, Astro::Coord::ECI::TLE->parse ($rslt->content);
     $cmdopt{verbose} and print $rslt->content, "\n";
     }
+  elsif ($content eq 'iridium-status') {
+    __PACKAGE__->_iridium_status ($rslt->content);
+    $cmdopt{verbose} and print $rslt->content, "\n";
+    }
   elsif ($content || $cmdopt{verbose}) {
     print $rslt->content, "\n";
+    }
+}
+
+
+########################################################################
+#
+#	status () - Show satellite status, fetching if necessary.
+#
+
+BEGIN {
+$cmdlgl{status} = [qw{reload}];
+}
+
+sub status {
+@_ or @_ = qw{iridium};
+foreach my $type (sort map {lc $_} @_) {
+    $cmdopt{reload} and delete $types{$type};
+    unless ($types{$type}) {
+	my $method = "_${type}_status";
+	die <<eod unless __PACKAGE__->can ($method);
+Error - Satellite type $type is unknown.
+eod
+	__PACKAGE__->$method ();
+	}
+    print ucfirst $type, "\n";
+    foreach my $body (@{$types{$type}}) {
+	print '    ', $body->{text}, "\n";
+	}
     }
 }
 
@@ -1688,6 +1726,69 @@ eod
 	<<eod, map {$parm{$_}} qw{latitude longitude height});
 Location: Latitude %.4f, longitude %.4f, height %.0f m
 eod
+}
+
+
+#	$st = _get_spacetrack ($conditional)
+
+#	Gets the Astro::SpaceTrack object, instantiating it if
+#	necesary. If the $conditional argument is true, the object
+#	is returned if it has already been instantiated, otherwise
+#	undef is returned.
+
+{	# Local symbol block.
+
+my $st;
+
+sub _get_spacetrack {
+$_[0] and return $st;
+die $spacetrack_unavailable if $spacetrack_unavailable;
+$st ||= 
+    Astro::SpaceTrack->new (webcmd => $parm{webcmd}, filter => 1);
+}
+}	# End local symbol block.
+
+
+#	__PACKAGE__->_iridium_status ($text)
+
+#	Parses the given text and updates the status of all Iridium
+#	satellites. If no argument specified, the status is retrieved
+#	using Astro::SpaceTrack->iridium_status ().
+
+#	We use the OO calling convention for convenience in dispatch.
+
+sub _iridium_status {
+shift;
+unless (@_) {
+    my $st = _get_spacetrack ();
+    my $rslt = $st->iridium_status;
+    $rslt->is_success or die $rslt->status_line;
+    push @_, $rslt->content;
+    }
+delete $types{iridium};
+foreach my $id (keys %status) {
+    $status{$id}{type} eq 'iridium' and delete $status{$id};
+    }
+my @ids;
+foreach my $buffer (split '\n', $_[0]) {
+    next unless $buffer;
+    my ($id, $name, $status, $comment) =
+	map {s/\s+$//; s/^\s+//; $_}
+	$buffer =~ m/(.{8})(.{0,15})(.{0,9})(.*)/;
+    $status{$id} = {
+	type => 'iridium',
+	id => $id,
+	name => $name,
+	status => $status,
+	comment => $comment,
+	text => $buffer,
+	};
+#0         1         2         3         4         5         6         7
+#01234567890123456789012345678901234567890123456789012345678901234567890
+# 25777   Iridium 14     ?        Spare   was called Iridium 14A
+    push @ids, $status{$id};
+    }
+$types{iridium} = [sort {$a->{id} <=> $b->{id}} @ids];
 }
 
 
@@ -1966,11 +2067,76 @@ use Scalar::Util qw{weaken};
 use Symbol;
 
 my ($clip, $clipout, $memio);
+our @ISA;
+our $clipboard_unavailable;
 
 BEGIN {
-# For the benefit of parenthesis-matching editor: [
-our @ISA = $] >= 5.008 ? () : qw{IO::String};
+
+$clipboard_unavailable = '';
+
+sub _win32 {
+eval "use Win32::Clipboard" ?
+    sub {(my $s = $_[0]) =~ s/\n/\r\n/mg;
+	Win32::Clipboard->new ()->Set ($s)} : undef
+}
+
+sub _xclip {
+no warnings;
+`xclip -o`;
+use warnings;
+$? ? undef : sub {
+    my $hdl;
+    open ($hdl, '|xclip') or croak <<eod;
+Error - Failed to open handle to xclip.
+        $!
+eod
+    print $hdl $_[0];
+    };
+}
+
+sub _pb {
+no warnings;
+`pbcopy -help 2>&1`;
+use warnings;
+$? ? undef : sub {
+    my $hdl;
+    open ($hdl, '|pbcopy') or croak <<eod;
+Error - Failed to open handle to pbcopy.
+        $!
+eod
+    print $hdl $_[0];
+    };
+}
+
+sub _flunk {
+$clipboard_unavailable = shift;
+($memio = sub {croak $clipboard_unavailable});
+}
+
 my $err = "Can not open handle to clipboard.";
+
+$clipout = $^O eq 'MSWin32' ? _win32 || _flunk (<<eod) :
+Error - Clipboard unavailable. Can not load Win32::Clipboard.
+eod
+    $^O eq 'cygwin' ? _win32 || _xclip || _flunk (<<eod) :
+Error - Clipboard unavailable. Can not load Win32::Clipboard
+        and xclip has not been installed. For xclip, see
+        http://freshmeat.net/projects/xclip
+eod
+    $^O eq 'darwin' ? _pb || _flunk (<<eod) :
+Error - Clipboard unavailable. Can not find pbcopy. This is
+        supposed to come with Mac OS X.
+eod
+    $^O eq 'MacOS' ? _flunk (<<eod) :
+Error - Clipboard unavailable. Mac OS 9 and below not supported.
+eod
+    _xclip || _flunk (<<eod);
+Error - Clipboard unavailable. Can not find xclip. For xclip,
+        see http://freshmeat.net/projects/xclip
+eod
+
+=begin comment
+
 $clipout = $^O eq 'MSWin32' ?
     do {
 	eval "use Win32::Clipboard";
@@ -1990,11 +2156,20 @@ eod
 	$@ ? ($memio = sub {croak "$err Clipboard not available"}) :
 	    sub {Clipboard->copy ($_[0])}
 	};
-# For the benefit of parenthesis-matching editor: [
+
+=end comment
+
+=cut
+
+=for comment For parenthesis-matching editor: [
+
+=cut
+
 $memio ||= $] >= 5.008 ?
     sub {my $fh = gensym; open ($fh, $_[0], $_[1]); $fh} :
     do {
 	eval "use IO::String";
+	$@ or push @ISA, 'IO::String';
         $@ ? sub {croak "$err IO::String not available"} :
 	    sub {new IO::String ($_[1])};
 	};
@@ -2652,6 +2827,17 @@ Track login:
  satpass> # Only keep the ones we want.
  satpass> choose 20580 25544
 
+=item status
+
+This command displays the operational status of satellites, fetching
+it if necessary. You can specify one or more satellite types if
+desired, but there is not much point since the only legal type at
+the moment is 'iridium'.
+
+Normally, this command will not reload status if it is already
+available, since it does not change that often. But you can force
+a reload using the -reload qualifier.
+
 =item system command
 
 This command passes its arguments to the system as a command. The
@@ -3165,6 +3351,9 @@ L<http://rt.cpan.org/>.
 The VMS- and MSWin32-specific code to find the initialization file and
 do tilde expansion is untested, since I do not currently have access to
 those systems.
+
+As of 0.003, clipboard functionality is provided by this code, not by
+the Clipboard module, making clipboard bugs mine also.
 
 =head1 AUTHOR
 

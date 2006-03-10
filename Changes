@@ -1,6 +1,6 @@
- 0.001 T. R. Wyant
+0.001 T. R. Wyant
   Initial release
- 0.002 T. R. Wyant
+0.002 T. R. Wyant
   bin/satpass -
     Behave better when no Clipboard module.
     Do not use Clipboard module under darwin.
@@ -12,4 +12,20 @@
     Add NAD83 ellipsoid.
   Astro::Coord::ECI::Utils -
     Corrected documentation.
+0.003 T. R. Wyant
+  bin/satpass -
+    Remove all uses of Clipboard, to try to get built under
+      ActiveState's ActivePerl.
+    Correct version number in Astro::SpaceTrack load.
+    Accumulate Iridium operational statuses.
+    Add status command to display satellite operational status.
+  Astro::Coord::ECI
+    Increment version, as a lazy way to increment the distribution
+      version.
+    Tweak documentation.
+  Astro::Coord::ECI::Utils
+    Make subclass of Exporter, since ActiveState's build
+      seems to have a problem with 'use Exporter qw{import}'
+      (except under darwin, strangely enough).
+    Increment version.
 
