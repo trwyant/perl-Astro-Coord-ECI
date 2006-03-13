@@ -100,7 +100,8 @@ eod
 	    }
 	  else {
 	    push @prereq, $module, $version
-		if prompt ("Do you want to install optional module @mv?", 'n') =~ m/^y/i;
+		if prompt ("Do you want to install optional module @mv?", 'n')
+			=~ m/^y/i;
 	    }
 	}
     if ($^O eq 'MSWin32') {
