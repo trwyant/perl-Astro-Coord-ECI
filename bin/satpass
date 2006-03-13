@@ -52,7 +52,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.003';
+$VERSION = '0.004';
 
 use constant LINFMT => <<eod;
 %s %5.1f %5.1f %-2s %7.1f %8.4f %9.4f %7.1f %-4s %s
@@ -69,8 +69,10 @@ my @sky = (
     );
 
 my %opt;	# Options passed when we were invoked.
+my %cmdconfig;	# How option parsing is to be comfigured for command.
 my %cmdopt;	# Options for individual satpass commands.
 my %cmdlgl;	# Legal options for a given command.
+my %cmdquote;	# 1 if we keep quotes when parsing the command.
 my %status;	# Status (by NORAD ID) where applicable.
             # Each NORAD ID gets a hash ref including:
             # {type} => 'iridium' (only valid type)
@@ -166,12 +168,12 @@ $inifil = $^O eq 'VMS' ? "SYS\$LOGIN:$inifil" :
     $^O eq 'MacOS' ? $inifil :
     $ENV{HOME} ? "$ENV{HOME}/$inifil" :
     $ENV{LOGDIR} ? "$ENV{LOGDIR}/$inifil" : undef or warn <<eod;
-Warning - Can't find home directory. Initialization file will not be
+Warning - Can not find home directory. Initialization file will not be
         executed.
 eod
 
 
-sub _format_location;	# Predeclare, so I don't need explicit STDOUT.
+sub _format_location;	# Predeclare, so I do not need explicit STDOUT.
 
 #	The problem we're solving with the following is that
 #	Date::Manip assumes an epoch of midnight January 1 1970, but
@@ -313,23 +315,23 @@ while (1) {
     $parm{echo} && (@stdin || !-t STDIN) and
 	print "$cntind$parm{prompt} $buffer\n";
 
+#	Pull the verb off by brute force, because we need to know what
+#	it is before we know how to parse the rest of the line.
+
+    my ($verb, $rest) = split '\s+', $buffer, 2;
+    $verb = $alias{$verb} if $alias{$verb};
+
 #	Parse the line, pulling off output redirection as we go.
 
     my $redout = '';
     my @args = map {m/^>/ ? do {$redout = $_; ()} :
 	$redout =~ m/^>+$/ ? do {$redout .= $_; ()} :
-	$_} parse_line ('\s+', 0, $buffer);
+	$_} parse_line ('\s+', $cmdquote{$verb} || 0, $rest);
 
 #	Do pseudo tilde expansion.
 
     $redout =~ s%^(>+)~%$1 . (
 	$^O eq 'VMS' ? '/sys$login' : $ENV{HOME} || $ENV{LOGDIR})%e;
-
-#	Pull the verb off the parsed arguments, and replace it with its
-#	canonical name if needed.
-
-    my $verb = lc shift @args;
-    $verb = $alias{$verb} if $alias{$verb};
 
 #	Special-case 'exit' to drop out of the input loop.
 
@@ -349,8 +351,9 @@ eod
 #	our relative time format would confuse it.
 
     %cmdopt = ();
-    {	# Local symbol block
+    {	# Begin local symbol block.
 	local @ARGV = @args;
+        Getopt::Long::Configure (@{$cmdconfig{$verb} ||= ['permute']});
 	GetOptions (\%cmdopt, qw{clipboard debug}, @{$cmdlgl{$verb} ||= []});
 	@args = @ARGV;
 	}
@@ -1683,6 +1686,12 @@ eod
 #	system () - Execute a system command.
 #
 
+BEGIN {
+##$cmdlgl{system} = undef;	# No option parsing.
+$cmdconfig{system} = [qw{require_order}];	# Options must come first.
+$cmdquote{system} = 1;	# Keep quotes when parsing.
+}
+
 sub system {
 my $cmd = @_ ? "@_" : $ENV{SHELL} || ($^O eq 'MSWin32' ? 'cmd' :
     die <<eod);
@@ -2374,12 +2383,15 @@ somewhere on the command line. See the L</SYNOPSIS> for an example.
 In addition, any command can place text on the clipboard if the
 -clipboard qualifier is specified. This qualifier will be ignored
 if -clipboard is already in effect. This functionality requires the
-availability of the Win32::Clipboard module under MSWin32, or the
-Clipboard module under any other operating system. If the required
-module is not available, the command containing it will be ignored
-with a warning. The -clipboard qualifier can be abbreviated. Currently,
-the minimum abbreviation is "-c", but this may change if other
-conflicting qualifiers are added.
+availability of the Win32::Clipboard module under MSWin32, the pbcopy
+command under darwin (and any Mac OS X I know of comes with pbcopy and
+pbpaste), or the xclip command (available from
+L<http://freshmeat.net/projects/xclip>) under any other operating system.
+The -clipboard qualifier can be abbreviated. Currently, the minimum
+abbreviation is "-c", but this may change if other conflicting qualifiers
+are added. Command qualifiers may appear anywhere in the command unless
+otherwise documented with the specific command ('system' being the only
+exception at the moment).
 
 The clipboard functionality is implemented as a singleton object,
 so that if you redirect output away from the clipboard and then
@@ -2432,8 +2444,9 @@ forward-looking user might want to set up
 
  macro ephemeris 'almanac "${1:tomorrow midnight}"'
 
-which is like the previous example except it defaults to 'tomorrow
-midnight', where the 'almanac' command defaults to 'today midnight'.
+which is like the previous example except it defaults to
+'tomorrow midnight', where the 'almanac' command defaults to
+'today midnight'.
 
 As a slightly less trivial example,
 
@@ -2469,6 +2482,8 @@ no directory is specified and the user's home directory can be
 determined. This change affects this script, and any processes invoked
 by it, but B<not> the invoking process. In plainer English, it does not
 affect the directory in which you find yourself after exiting satpass.
+
+=for comment help editor that does not understand POD "
 
 =item choose name_or_id ...
 
@@ -2543,7 +2558,7 @@ B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
 Bureau's TIGER/LineE<reg> database. They add their opinion that it tends to
 be buggy and not to cover rural areas well.
 
-=for comment ' help syntax-highlighting editor that does not understand POD
+=for comment " help syntax-highlighting editor that does not understand POD
 
 =item height latitude longitude
 
@@ -2851,6 +2866,21 @@ If the command is omitted, the value of environment variable SHELL
 is used as the command, with the intent of dropping you into the
 given shell. If environment variable SHELL is not defined and you
 are running under MSWin32, value 'cmd' is used as the command.
+
+The -clipboard qualifier B<must> come immediately after the verb
+'system', and before the name of the command you are actually
+issuing if any. This restriction is to prevent legal qualifiers
+from being stripped from the command. For example:
+
+ satpass> system -c ls
+
+Issues the 'ls' command, and captures the output on the clipboard.
+That is to say the satpass script handles the -c. But
+
+ satpass> system ls -c
+
+displays the status change time of the file, with output going to
+standard out. That is to say the ls command handles the -c.
 
 =item tle
 
