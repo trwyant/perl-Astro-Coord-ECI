@@ -2485,6 +2485,8 @@ The following commands are available:
 
 =over
 
+=for html <a name="almanac"></a>
+
 =item almanac start_time end_time
 
 This command displays almanac data for the current background bodies
@@ -2501,6 +2503,9 @@ The start_time defaults to 'today midnight', and the end_time to '+1'.
 
 See L</SPECIFYING TIMES> below for how to specify times.
 
+
+=for html <a name="cd"></a>
+
 =item cd directory
 
 This command changes to the named directory, or to the user's home if
@@ -2509,7 +2514,7 @@ determined. This change affects this script, and any processes invoked
 by it, but B<not> the invoking process. In plainer English, it does not
 affect the directory in which you find yourself after exiting satpass.
 
-=for comment help editor that does not understand POD "
+=for html <a name="choose"></a>
 
 =item choose name_or_id ...
 
@@ -2528,10 +2533,26 @@ For example:
  satpass> # Keep only the HST and the ISS
  satpass> choose hst iss
 
+
+=for html <a name="clear"></a>
+
 =item clear
 
 This command clears the observing list. It is not an error to issue it
 with the list already clear.
+
+=for html <a name="exit"></a>
+
+=item exit
+
+This command causes this script to terminate immediately. If issued
+from a 'source' file, this is done without giving control back to the
+user.
+
+'bye' and 'quit' are synonyms. End-of-file at the command prompt will
+also cause this script to terminate.
+
+=for html <a name="export"></a>
 
 =item export name value
 
@@ -2543,14 +2564,7 @@ If the name is the name of a parameter, the value is optional, but if
 supplied will be used to set the parameter. The environment variable
 is set from the value of the parameter, and will track changes in it.
 
-=item exit
-
-This command causes this script to terminate immediately. If issued
-from a 'source' file, this is done without giving control back to the
-user.
-
-'bye' and 'quit' are synonyms. End-of-file at the command prompt will
-also cause this script to terminate.
+=for html <a name="geocode"></a>
 
 =item geocode location
 
@@ -2594,8 +2608,6 @@ Web Services (L<http://gisdata.usgs.gov/>). If the lookup succeeds,
 the latitude and longitude parameters are set to the arguments and
 the height parameter is set to the result.
 
-=for comment ' help syntax-highlighting editor that does not understand POD
-
 The latitude and longitude default to the current
 L<latitude|/latitude> and L<longitude|/longitude> parameters.
 
@@ -2609,6 +2621,8 @@ file. You can use macros to define alternate locations if you
 want.
 
 =for comment ' help syntax-highlighting editor that does not understand POD
+
+=for html <a name="help"></a>
 
 =item help
 
@@ -2630,6 +2644,8 @@ If you set the L<webcmd|/webcmd> parameter properly, this
 command will launch the L<http://search.cpan.org/> page for this
 package, and any arguments will be ignored.
 
+=for html <a name="list"></a>
+
 =item list
 
 This command displays the observing list. Each body's NORAD ID, name
@@ -2638,11 +2654,15 @@ the observing list is empty, you get a message to that effect.
 
 =for comment ' help syntax-highlighting editor that does not understand POD
 
+=for html <a name="load"></a>
+
 =item load file ...
 
 This command loads the contents of one or more files into the
 observing list. The files must contain NORAD two- or three- line
 element sets.
+
+=for html <a name="macro"></a>
 
 =item macro name command ...
 
@@ -2679,6 +2699,8 @@ Be aware that there is no syntax checking done when the macro is
 defined. You only find out if your macro definition is good by
 trying to execute it.
 
+=for html <a name="pass"></a>
+
 =item pass start_time end_time increment
 
 This command predicts visibility of the contents of the observing
@@ -2693,6 +2715,8 @@ most-recently-specified explicit time), and 60 (seconds) respectively.
 Example:
 
  satpass> pass 'today noon' 'tomorrow noon'
+
+=for html <a name="phase"></a>
 
 =item phase time
 
@@ -2709,10 +2733,14 @@ to be at quarter-phase if it is within 6.1 degrees (about 12 hours for
 the Moon) of 0, 90, 180, or 270 degrees. Otherwise you get
 waxing|waning crescent|gibbous.
 
+=for html <a name="position"></a>
+
 =item position time
 
 This position gives the positions of all objects in the observing list
 and in the sky at the given time, the default being the current time.
+
+=for html <a name="quarters"></a>
 
 =item quarters start_time end_time
 
@@ -2727,12 +2755,16 @@ See the L</SPECIFYING TIMES> topic below for how to specify times.
 The defaults are 'today noon' and '+30' (meaning 30 days after the
 most-recently-specified explicit time).
 
+=for html <a name="set"></a>
+
 =item set name value ...
 
 This command sets operating parameters. See L</PARAMETERS> below for
 the list, and what they are used for.
 
 You can specify more than one name-value pair on the same command.
+
+=for html <a name="show"></a>
 
 =item show ...
 
@@ -2742,6 +2774,8 @@ given, it displays the complete list.
 
 The display format is in terms of the 'set' commands used to set
 the given values.
+
+=for html <a name="sky"></a>
 
 =item sky ...
 
@@ -2813,6 +2847,8 @@ upgraded, replaced with a more expeditious data source, or retracted
 completely; the author makes no promises of which, or of timing.
 B<Caveat user.>
 
+=for html <a name="source"></a>
+
 =item source file_name
 
 This command takes commands from the given file, reading it until it is
@@ -2825,6 +2861,8 @@ source. If you do, there need not be a space between the '.' and the
 file name.
 
 The file name must be quoted if it contains whitespace.
+
+=for html <a name="st"></a>
 
 =item st ...
 
@@ -2868,6 +2906,8 @@ Track login:
  satpass> # Only keep the ones we want.
  satpass> choose 20580 25544
 
+=for html <a name="status"></a>
+
 =item status
 
 This command displays the operational status of satellites, fetching
@@ -2878,6 +2918,8 @@ the moment is 'iridium'.
 Normally, this command will not reload status if it is already
 available, since it does not change that often. But you can force
 a reload using the -reload qualifier.
+
+=for html <a name="system"></a>
 
 =item system command
 
@@ -2908,6 +2950,8 @@ That is to say the satpass script handles the -c. But
 displays the status change time of the file, with output going to
 standard out. That is to say the ls command handles the -c.
 
+=for html <a name="tle"></a>
+
 =item tle
 
 This command displays the original two- or three- line element data
@@ -2937,6 +2981,8 @@ The parameters are:
 
 =over
 
+=for html <a name="appulse"></a>
+
 =item appulse (numeric)
 
 This parameter specifies the maximum reportable angle between the
@@ -2952,14 +2998,18 @@ is displayed in decimal degrees.
 
 The initial setting is 0.
 
+=for html <a name="autoheight"></a>
+
 =item autoheight (boolean)
 
-This parameter determines whether the L<geocode|/geocode_location>
+This parameter determines whether the L<geocode|/geocode>
 command attempts to acquire the height of the location above sea level.
 It does this only if the parameter is true. You may wish to turn this
 off (i.e. set it to 0) if the USGS elevation service is being balky.
 
 The default is 1 (i.e. true).
+
+=for html <a name="background"></a>
 
 =item background (boolean)
 
@@ -2968,6 +3018,8 @@ is displayed when the L<appulse|/appulse> logic detects an
 appulse.
 
 The default is 1 (i.e. true).
+
+=for html <a name="date_format"></a>
 
 =item date_format (string)
 
@@ -2983,6 +3035,8 @@ needs to be taken out to make the URL good. I<Caveat user.>
 The default is '%a %d-%b-%Y', which produces (e.g.)
 'Mon 01-Jan-2001' for the first day of the current millennium. 
 
+=for html <a name="debug"></a>
+
 =item debug (numeric)
 
 This parameter turns on debugging output. The only supported value
@@ -2993,6 +3047,8 @@ release to release.
 
 The default is 0.
 
+=for html <a name="echo"></a>
+
 =item echo (boolean)
 
 This parameter causes commands that did not come from the keyboard to
@@ -3001,6 +3057,8 @@ debug your macros, since the echo takes place B<after> parameter
 substitution has occurred.
 
 The default is 0.
+
+=for html <a name="ellipsoid"></a>
 
 =item ellipsoid (string)
 
@@ -3011,6 +3069,8 @@ see L<Astro::Coord::ECI>.
 
 The default is 'WGS84'.
 
+=for html <a name="exact_event"></a>
+
 =item exact_event (boolean)
 
 This parameter specifies whether visibility events (rise, set, max, 
@@ -3019,6 +3079,8 @@ to the nearest second. If false, such events are reported to the step
 size specified when the 'pass' command was issued.
 
 The default is 1 (i.e. true).
+
+=for html <a name="geometric"></a>
 
 =item geometric (boolean)
 
@@ -3030,12 +3092,16 @@ is versus whatever the 'horizon' parameter specifies.
 
 The default is 1 (i.e. true).
 
+=for html <a name="height"></a>
+
 =item height (numeric)
 
 This parameter specifies the height of the observer above mean sea
 level, in meters.
 
 There is no default; you must specify a value.
+
+=for html <a name="horizon"></a>
 
 =item horizon (numeric)
 
@@ -3049,6 +3115,8 @@ is displayed in decimal degrees.
 
 The default is 20 degrees.
 
+=for html <a name="latitude"></a>
+
 =item latitude (numeric)
 
 This parameter specifies the latitude of the observer in degrees north.
@@ -3060,6 +3128,8 @@ is displayed in decimal degrees.
 
 There is no default; you must specify a value.
 
+=for html <a name="lit"></a>
+
 =item lit (boolean)
 
 This parameter specifies how to determine if a body is lit by the sun.
@@ -3069,6 +3139,8 @@ body is considered lit if the center of the sun is above the horizon.
 
 The default is 1 (i.e. true).
 
+=for html <a name="location"></a>
+
 =item location (string)
 
 This parameter contains a text description of the observer's location.
@@ -3077,6 +3149,8 @@ displayed wherever the observer's latitude, longitude, and height are.
 
 There is no default; the parameter is undefined unless you supply a
 value.
+
+=for html <a name="longitude"></a>
 
 =item longitude (numeric)
 
@@ -3089,6 +3163,8 @@ See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
 
 There is no default; you must specify a value.
+
+=for html <a name="model"></a>
 
 =item model (string)
 
@@ -3130,6 +3206,8 @@ model8 - Use either sgp8 or sdp8 as appropriate.
 
 The default is 'model'.
 
+=for html <a name="perltime"></a>
+
 =item perltime (boolean)
 
 This parameter specifies the time zone mechanism for date input. If
@@ -3154,11 +3232,15 @@ no-op this attribute and deprecate its use.
 
 The default is 0 (i.e. false).
 
+=for html <a name="prompt"></a>
+
 =item prompt (string)
 
 This parameter specifies the string used to prompt for commands.
 
 The default is 'satpass>'.
+
+=for html <a name="simbad_url"></a>
 
 =item simbad_url (string)
 
@@ -3175,6 +3257,8 @@ experimental,> and see the warnings on that command. Changes in the
 command may result in this parameter becoming deprecated and/or
 no-oped.
 
+=for html <a name="time_format"></a>
+
 =item time_format (string)
 
 This parameter specifies the strftime(3) format used to display times.
@@ -3188,6 +3272,8 @@ The above is a long URL, and may be split across multiple lines. More
 than that, the formatter may have inserted a hyphen at the break, which
 needs to be taken out to make the URL good. I<Caveat user.>
 
+=for html <a name="timing"></a>
+
 =item timing (boolean)
 
 This parameter specifies whether timing information should be displayed
@@ -3195,6 +3281,8 @@ on pass computations. A true setting (i.e. 1) displays this
 information, a false (i.e. 0) value does not.
 
 The default is 0 (i.e. false).
+
+=for html <a name="twilight"></a>
 
 =item twilight (string or numeric)
 
@@ -3210,6 +3298,8 @@ is displayed in decimal degrees, unless 'civil', 'nautical', or
 
 The default is 'civil'.
 
+=for html <a name="tz"></a>
+
 =item tz (string)
 
 This parameter specifies the time zone for Date::Manip. You probably
@@ -3224,6 +3314,8 @@ L<Date::Manip> for more information.
 This parameter is not set at all by default, and will not appear
 in the 'show' output until it has been set.
 
+=for html <a name="verbose"></a>
+
 =item verbose (boolean)
 
 This parameter specifies whether the 'pass' command should give the
@@ -3232,6 +3324,8 @@ If false, only rise, set, max, into or out of shadow, and the
 beginning or end of twilight are displayed.
 
 The default is 0 (i.e. false).
+
+=for html <a name="visible"></a>
 
 =item visible (boolean)
 
@@ -3245,6 +3339,8 @@ observer (i.e. "it's dark"), but the satellite is illuminated by the
 sun.
 
 The default is 1 (i.e. true).
+
+=for html <a name="webcmd"></a>
 
 =item webcmd (string)
 
