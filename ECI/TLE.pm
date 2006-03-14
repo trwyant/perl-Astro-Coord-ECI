@@ -101,11 +101,11 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = 0.001;
+our $VERSION = 0.002;
 
 use base qw{Astro::Coord::ECI};
 
-use Astro::Coord::ECI::Utils qw{thetag};
+use Astro::Coord::ECI::Utils qw{mod2pi thetag};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor};
@@ -617,7 +617,7 @@ my $e = $a > $parm->{q0} ? 1 - $parm->{q0} / $a : SGP_E6A;
 my $p = $a * (1 - $e * $e);
 my $xnodes = $self->{rightascension} + $parm->{xnodot} * $tsince;
 my $omgas = $self->{argumentofperigee} + $parm->{omgdt} * $tsince;
-my $xls = _fmod2p ($parm->{xlo} + ($self->{meanmotion} + $parm->{omgdt} +
+my $xls = mod2pi ($parm->{xlo} + ($self->{meanmotion} + $parm->{omgdt} +
 	$parm->{xnodot} + ($self->{firstderivative} +
 	$self->{secondderivative} * $tsince) * $tsince) * $tsince);
 $self->{debug} and warn <<eod;
@@ -636,7 +636,7 @@ eod
 
 my $axnsl = $e * cos ($omgas);
 my $aynsl = $e * sin ($omgas) - $parm->{c6} / $p;
-my $xl = _fmod2p ($xls - $parm->{c5} / $p * $axnsl);
+my $xl = mod2pi ($xls - $parm->{c5} / $p * $axnsl);
 $self->{debug} and warn <<eod;
 Debug sgp - long period periodics
         AXNSL = $axnsl
@@ -647,7 +647,7 @@ eod
 
 #*	Solve Kepler's equation.
 
-my $u = _fmod2p ($xl - $xnodes);
+my $u = mod2pi ($xl - $xnodes);
 my ($item3, $eo1, $tem5) = (0, $u, 1);
 my ($sineo1, $coseo1);
 while (1) {
@@ -661,7 +661,7 @@ while (1) {
     $eo1 += $tem5;
     }
 $self->{debug} and warn <<eod;
-Debug sgp - solve Kepler's equation
+Debug sgp - solve equation of Kepler
         U = $u
         EO1 = $eo1
         SINEO1 = $sineo1
@@ -983,7 +983,7 @@ my $ayn = $e * sin($omega) + $aynl;
 
 #*	Solve Kepler's equation.
 
-my $capu = _fmod2p($xlt - $xnode);
+my $capu = mod2pi($xlt - $xnode);
 my $temp2 = $capu;
 my ($temp3, $temp4, $temp5, $temp6, $sinepw, $cosepw);
 for (my $i = 0; $i < 10; $i++) {
@@ -1268,7 +1268,7 @@ my $ayn = $e * sin ($omgadf) + $aynl;
 
 #* SOLVE KEPLERS EQUATION
 
-my $capu = _fmod2p ($xlt - $xnode);
+my $capu = mod2pi ($xlt - $xnode);
 my $temp2 = $capu;
 my ($epw, $sinepw, $cosepw, $temp3, $temp4, $temp5, $temp6);
 for (my $i = 0; $i < 10; $i++) {
@@ -1520,13 +1520,35 @@ EOD
 		$xgdt1 * ($c9 * $cosg - 2 * $c8 * $sin2g));
 	my $d25 = $edot ** 2;
 	my $d17 = $xnddt / $xnodp - $xndtn ** 2;
-	my $tsddts = 2 * $tsdtts * ($tsdtts - $d20) + $aodp * $tsi * (SGP_TOTHRD * $beta02 * $d17 - 4 * $d20 * $self->{eccentricity} * $edot + 2 * ($d25 + $self->{eccentricity} * $eddot));
+	my $tsddts = 2 * $tsdtts * ($tsdtts - $d20) + $aodp * $tsi *
+	    (SGP_TOTHRD * $beta02 * $d17 - 4 * $d20 *
+	    $self->{eccentricity} * $edot + 2 *
+	    ($d25 + $self->{eccentricity} * $eddot));
 	my $etddt = ($eddot + 2 * $edot * $tsdtts) * $tsi * SGP_S + $tsddts * $eta;
 	my $d18 = $tsddts - $tsdtts ** 2;
 	my $d19 = - $psdtps ** 2 / $eta2 - $eta * $etddt * $psim2 - $psdtps ** 2;
 	my $d23 = $etdt * $etdt;
-	my $d1ddt = $d1dt * ($d14 + $d15) + $d1 * ($d18 - 2 * $d19 + SGP_TOTHRD * $d17 + 2 * ($alpha2 * $d25 / $beta02 + $self->{eccentricity} * $eddot) / $beta02);
-	my $xntrdt = $xndt * (2 * SGP_TOTHRD * $d17 + 3 * ($d25 + $self->{eccentricity} * $eddot) / $alpha2 - 6 * $aldtal ** 2 + 4 * $d18 - 7 * $d19 ) + $c1dtc1 * $xnddt + $c1 * ($c1dtc1 * $d16 + $d9 * $etddt + $d10 * $eddot + $d23 * (6 + 30 * $eeta + 68 * $eosq) + $etdt * $edot * (40 + 30 * $eta2 + 272 * $eeta) + $d25 * (17 + 68 * $eta2) + $b1 * ($d1ddt * $d2 + 2 * $d1dt * $d2dt + $d1 * ($etddt * $d11 + $d23 * (72 + 54 * $eta2))) + $b2 * ($d1ddt * $d3 + 2 * $d1dt * $d3dt + $d1 * ($etddt * $d12 + $d23 * (30 + 30 * $eta2))) * $cos2g + $b3 * ( ($d5dt * $d14 + $d5 * ($d18 - 2 * $d19)) * $d4 + 2 * $d4dt * $d5dt + $d5 * ($etddt * $d13 + 22.5 * $eta * $d23)) * $sing + $xgdt1 * ( (7 * $d20 + 4 * $self->{eccentricity} * $edot / $beta02) * ($c5 * $cosg - 2 * $c4 * $sin2g) + ( (2 * $c5dt * $cosg - 4 * $c4dt * $sin2g) - $xgdt1 * ($c5 * $sing + 4 * $c4 * $cos2g))));
+	my $d1ddt = $d1dt * ($d14 + $d15) + $d1 * ($d18 - 2 * $d19 +
+	    SGP_TOTHRD * $d17 + 2 * ($alpha2 * $d25 / $beta02 +
+	    $self->{eccentricity} * $eddot) / $beta02);
+	my $xntrdt = $xndt * (2 * SGP_TOTHRD * $d17 + 3 * ($d25 +
+	    $self->{eccentricity} * $eddot) / $alpha2 -
+	    6 * $aldtal ** 2 + 4 * $d18 - 7 * $d19 ) +
+	    $c1dtc1 * $xnddt + $c1 * ($c1dtc1 * $d16 + $d9 * $etddt +
+	    $d10 * $eddot + $d23 * (6 + 30 * $eeta + 68 * $eosq) +
+	    $etdt * $edot * (40 + 30 * $eta2 + 272 * $eeta) +
+	    $d25 * (17 + 68 * $eta2) + $b1 * ($d1ddt * $d2 +
+	    2 * $d1dt * $d2dt + $d1 * ($etddt * $d11 +
+	    $d23 * (72 + 54 * $eta2))) + $b2 * ($d1ddt * $d3 +
+	    2 * $d1dt * $d3dt + $d1 * ($etddt * $d12 +
+	    $d23 * (30 + 30 * $eta2))) * $cos2g +
+	    $b3 * (($d5dt * $d14 + $d5 * ($d18 - 2 * $d19)) * $d4 +
+	    2 * $d4dt * $d5dt + $d5 * ($etddt * $d13 +
+	    22.5 * $eta * $d23)) * $sing + $xgdt1 * ((7 * $d20 +
+	    4 * $self->{eccentricity} * $edot / $beta02) *
+	    ($c5 * $cosg - 2 * $c4 * $sin2g) + ( (2 * $c5dt * $cosg -
+	    4 * $c4dt * $sin2g) - $xgdt1 * ($c5 * $sing +
+	    4 * $c4 * $cos2g))));
 	my $tmnddt = $xnddt * 1.e9;
 	my $temp = $tmnddt ** 2 - $xndt * 1.e18 * $xntrdt;
 	$pp = ($temp + $tmnddt ** 2) / $temp;
@@ -1596,7 +1618,7 @@ eod
 
 #*	UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
 
-my $xmam = _fmod2p ($self->{meananomaly} + $parm->{xlldot} * $tsince);
+my $xmam = mod2pi ($self->{meananomaly} + $parm->{xlldot} * $tsince);
 my $omgasm = $self->{argumentofperigee} + $parm->{omgdt} * $tsince;
 my $xnodes = $self->{rightascension} + $parm->{xnodot} * $tsince;
 
@@ -1616,7 +1638,7 @@ if ($parm->{isimp}) {
     $z1 = $parm->{xnd} * ($tsince + $parm->{ovgpp} * ($temp * $temp1 - 1.));
     }
 my $z7 = 3.5 * SGP_TOTHRD * $z1 / $parm->{xnodp};
-$xmam = _fmod2p ($xmam + $z1 + $z7 * $parm->{xmdt1});
+$xmam = mod2pi ($xmam + $z1 + $z7 * $parm->{xmdt1});
 $omgasm = $omgasm + $z7 * $parm->{xgdt1};
 $xnodes = $xnodes + $z7 * $parm->{xhdt1};
 
@@ -1792,7 +1814,8 @@ EOD
     my $xgdt1 = - .5 * $pardt1 * $unm5th;
     my $xhdt1 = - $pardt1 * $cosi;
     my $xlldot = $xnodp + $xmdt1 + .0625 * $pardt2 * $beta0 * (13 - 78 * $theta2 + 137 * $theta4);
-    my $omgdt = $xgdt1 + .0625 * $pardt2 * (7 - 114 * $theta2 + 395 * $theta4) + $pardt4 * (3 - 36 * $theta2 + 49 * $theta4);
+    my $omgdt = $xgdt1 + .0625 * $pardt2 * (7 - 114 * $theta2 +
+        395 * $theta4) + $pardt4 * (3 - 36 * $theta2 + 49 * $theta4);
     my $xnodot = $xhdt1 + (.5 * $pardt2 * (4 - 19 * $theta2) + 2 * $pardt4 * (3 - 7 * $theta2)) * $cosi;
     my $tsi = 1 / ($po - SGP_S);
     my $eta = $self->{eccentricity} * SGP_S * $tsi;
@@ -1809,11 +1832,14 @@ EOD
     my $b1 = SGP_CK2 * $tthmun;
     my $b2 = - SGP_CK2 * $unmth2;
     my $b3 = $a3cof * $sini;
-    my $c0 = .5 * $b * SGP_RHO * SGP_QOMS2T * $xnodp * $aodp * $tsi ** 4 * $psim2 ** 3.5 / sqrt ($alpha2);
+    my $c0 = .5 * $b * SGP_RHO * SGP_QOMS2T * $xnodp * $aodp *
+	$tsi ** 4 * $psim2 ** 3.5 / sqrt ($alpha2);
     my $c1 = 1.5 * $xnodp * $alpha2 ** 2 * $c0;
     my $c4 = $d1 * $d3 * $b2;
     my $c5 = $d5 * $d4 * $b3;
-    my $xndt = $c1 * ( (2 + $eta2 * (3 + 34 * $eosq) + 5 * $eeta * (4 + $eta2) + 8.5 * $eosq) + $d1 * $d2 * $b1 + $c4 * $cos2g + $c5 * $sing);
+    my $xndt = $c1 * ( (2 + $eta2 * (3 + 34 * $eosq) +
+	5 * $eeta * (4 + $eta2) + 8.5 * $eosq) + $d1 * $d2 * $b1 +
+	$c4 * $cos2g + $c5 * $sing);
     my $xndtn = $xndt / $xnodp;
     my $edot = - SGP_TOTHRD * $xndtn * (1 - $self->{eccentricity});
     $self->{_deep} = {$self->_dpinit ($eosq, $sini, $cosi, $beta0,
@@ -1864,7 +1890,7 @@ $xn = $xn + $parm->{xndt} * $tsince;
 $em = $em + $parm->{edot} * $tsince;
 my $xmam = $xmamdf + $z1 + $z7 * $parm->{xmdt1};
 $self->_dpper (\$em, \$xinc, \$omgasm, \$xnodes, \$xmam, $tsince);
-$xmam = _fmod2p ($xmam);
+$xmam = mod2pi ($xmam);
 
 
 #*	SOLVE KEPLERS EQUATION
@@ -1982,7 +2008,7 @@ goto &_convert_out;
 
 ##sub thetag {
 ##my $self = shift;
-##my $rslt = _fmod2p (1.72944494 + 6.3003880987 * (@_ ?
+##my $rslt = mod2pi (1.72944494 + 6.3003880987 * (@_ ?
 ##	$self->ds50 ($_[0]) :
 ##	($self->{ds50} ||= $self->ds50 ())));
 ##ref $self && $self->{debug} and print <<eod;
@@ -1996,11 +2022,10 @@ goto &_convert_out;
 This method sets the coordinate of the object to whatever is
 computed by the model specified by the model attribute.
 
-Although there's no reason this method can't be called directly, it
+Although there is no reason this method can not be called directly, it
 exists to take advantage of the hook in the B<Astro::Coord::ECI>
 object, to allow the position of the body to be computed when the
-object's time is set.
-
+time of the object is set.
 
 =cut
 
@@ -2091,14 +2116,14 @@ my $zsinhl =  .089683511 * $stem / $zsinil;
 my $zcoshl = sqrt (1 - $zsinhl * $zsinhl);
 my $c = 4.7199672 + .22997150 * $day;
 my $gam = 5.8351514 + .0019443680 * $day;
-my $zmol = _fmod2p ($c - $gam);
+my $zmol = mod2pi ($c - $gam);
 my $zx = .39785416 * $stem / $zsinil;
 my $zy = $zcoshl * $ctem + 0.91744867 * $zsinhl * $stem;
 $zx = _actan ($zx, $zy);
 $zx = $gam + $zx - $xnodce;
 my $zcosgl = cos ($zx);
 my $zsingl = sin ($zx);
-my $zmos = _fmod2p (6.2565837 + .017201977 * $day);
+my $zmos = mod2pi (6.2565837 + .017201977 * $day);
 
 #>>>	Here endeth the optimization - only it isn't one any more
 #>>>	since I removed it. - TRW
@@ -2814,16 +2839,6 @@ $self->universal (pop @_);
 $self->eci (@_);
 }
 
-#	_fmod2p
-
-#	Return argument modulo 2 pi
-
-sub _fmod2p {
-my $arg = shift;
-my $whole = floor ($arg / SGP_TWOPI);
-$arg - $whole * SGP_TWOPI;
-}
-
 1;
 
 __END__
@@ -2852,15 +2867,15 @@ significantly.
 =item argumentofperigee (numeric, parse)
 
 This attribute contains the argument of perigee (angular distance from
-ascending node to perigee) of the body's orbit, in radians.
+ascending node to perigee) of the orbit, in radians.
 
 =item bstardrag (numeric, parse)
 
-This attribute contains the body's B* drag term, decoded into a number.
+This attribute contains the B* drag term, decoded into a number.
 
 =item classification (string, parse)
 
-This attribute contains the body's security classification. You should
+This attribute contains the security classification. You should
 expect to see only the value 'U', for 'Unclassified.'
 
 =item ds50 (numeric, readonly, parse)
@@ -2870,7 +2885,7 @@ Setting the L<epoch|/item_epoch> also modified this attribute.
 
 =item eccentricity (numeric, parse)
 
-This attribute contains the body's orbital eccentricity, with the
+This attribute contains the orbital eccentricity, with the
 implied decimal point inserted.
 
 =item elementnumber (numeric, parse)
@@ -2892,20 +2907,20 @@ also modifies the ds50 attribute.
 
 =item firstderivative (numeric, parse)
 
-This attribute contains the first time derivative of the body's mean
+This attribute contains the first time derivative of the mean
 motion, in radians per minute squared.
 
 =item id (numeric, parse)
 
-This attribute contains the body's NORAD SATCAT catalog ID.
+This attribute contains the NORAD SATCAT catalog ID.
 
 =item inclination (numeric, parse)
 
-This attribute contains the body's orbital inclination in radians.
+This attribute contains the orbital inclination in radians.
 
 =item international (string, parse)
 
-This attribute contains the body's international launch designator.
+This attribute contains the international launch designator.
 This consists of three parts: a two-digit number (with leading zero if
 needed) giving the last two digits of the launch year (in the range
 1957-2056); a three-digit number (with leading zeros if needed) giving
@@ -2915,7 +2930,7 @@ first letters, and spent boosters, debris, etc getting the rest.
 
 =item meananomaly (numeric, parse)
 
-This attribute contains the body's mean orbital anomaly in radians.
+This attribute contains the mean orbital anomaly in radians.
 
 =item meanmotion (numeric, parse)
 
@@ -2944,11 +2959,11 @@ launch, at the epoch.
 =item rightascension (numeric, parse)
 
 This attribute contains the right ascension of the ascending node
-of the body's orbit at the epoch, in radians.
+of the orbit at the epoch, in radians.
 
 =item secondderivative (numeric, parse)
 
-This attribute contains the second time derivative of the body's mean
+This attribute contains the second time derivative of the mean
 motion, in radians per minute cubed.
 
 =item tle (string, readonly, parse)
