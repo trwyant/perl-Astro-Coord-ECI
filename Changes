@@ -28,4 +28,17 @@
       seems to have a problem with 'use Exporter qw{import}'
       (except under darwin, strangely enough).
     Increment version.
+0.004
+  bin/satpass -
+    Rewrite command parsing so that we can retain quotes and
+      be POSIXly correct in option processing for the system
+      command.
+    Give tle command a -verbose qualifier, to produce a formatted
+      listing of the orbital parameters.
+    Provide HTML =item targets consistent with links.
+  ECI.pm
+    Clean up docs.
+  TLE.pm
+    Clean up docs, wrap some really long lines.
+    Replace _fmod2p with mod2pi from Utils module.
 
