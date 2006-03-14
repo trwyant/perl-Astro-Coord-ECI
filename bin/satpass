@@ -2483,9 +2483,9 @@ arguments were given when the macro is expanded.
 
 The following commands are available:
 
-=over
-
 =for html <a name="almanac"></a>
+
+=over
 
 =item almanac start_time end_time
 
@@ -2979,9 +2979,9 @@ true, or 0 for false. The evaluation rules are those of Perl itself:
 
 The parameters are:
 
-=over
-
 =for html <a name="appulse"></a>
+
+=over
 
 =item appulse (numeric)
 
