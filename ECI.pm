@@ -55,7 +55,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
