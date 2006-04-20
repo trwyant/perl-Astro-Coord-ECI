@@ -55,7 +55,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -140,8 +140,11 @@ positive), elevation above the horizon in radians (negative if
 below), and range in kilometers.
 
 If the optional 'upper' argument is true, the calculation will be of
-the upper limb of the object, using the 'angularradius' attribute of
-the $coord2 object.
+the upper limb of the object, using the 'diameter' attribute of the
+$coord2 object.
+
+As a side effect, the time of the $coord object is set from the
+$coord object.
 
 If the L<refraction|/refraction> attribute of the $coord object is
 true, the elevation will be corrected for atmospheric refraction using
@@ -151,6 +154,8 @@ The basic algorithm comes from T. S. Kelso's "Computers and Satellites"
 column in "Satellite Times", November/December 1995, titled "Orbital
 Coordinate Systems, Part II" and available at
 F<http://celestrak.com/columns/v02n02/>.
+
+=for comment help syntax-highlighting editor '
 
 =cut
 
@@ -187,7 +192,6 @@ my $tz = $coslat * $rterm + $sinlat * $delta[2];
 my $azimuth = mod2pi (atan2 ($te, - $ts));
 my $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
 	$delta[2] * $delta[2]);
-my $sinele = $tz / $range;
 my $elevation = asin ($tz / $range);
 
 
@@ -202,7 +206,6 @@ $upper and
 $self->{refraction} and
     $elevation = $self->correct_for_refraction ($elevation);
 
-###($azimuth, $elevation, $range, $da / $range, $de / $range, $dz);
 ($azimuth, $elevation, $range);
 }
 
@@ -213,6 +216,8 @@ This method does a deep clone of an object, producing a different
 but identical object.
 
 It's really just a wrapper for Storable::dclone.
+
+=for comment help syntax-highlighting editor '
 
 =cut
 
@@ -255,19 +260,18 @@ if ($elevation > MINUSONEDEGREE) {
 
 #	Thorsteinn Saemundsson's algorithm for refraction, as reported
 #	in Meeus, page 106, equation 16.4, and adjusted per the
-#	suggestion in Meeus' following paragraph. Saemundsson's
+#	suggestion in Meeus' following paragraph. Thorsteinn's
 #	formula is in terms of angles in degrees and produces
 #	a correction in minutes of arc. Meeus reports the original
 #	publication as Sky and Telescope, volume 72 page 70, July 1986.
 
 #	In deference to Thorsteinn I will point out:
-#	* The Icelanders do not use so-called Christian (or family)
-#	  names. The "Saemundsson" simply means his father's name
-#	  was Saemund.
+#	* The Icelanders do not use family names. The "Saemundsson"
+#	  simply means his father's name was Saemund.
 #	* I have transcribed the names into 7-bit characters.
 #	  "Thorsteinn" actually does not begin with "Th" but with
 #	  the letter "Thorn." Similarly, the "ae" in "Saemund" is
-#	  supposed to be a ligature.
+#	  supposed to be a ligature (i.e. squished into one letter).
 
     my $deg = rad2deg ($elevation);
     my $correction = 1.02 / tan (deg2rad ($deg + 10.3/($deg + 5.11))) +
@@ -297,6 +301,8 @@ above the surface of the reference ellipsoid, and positive for a
 location below the surface.
 
 The algorithm is simple enough to be the author's.
+
+=for comment '
 
 =cut
 
@@ -341,6 +347,11 @@ eod
 	_dynamical_delta ($self->{universal} || croak <<eod));
 Error - Object's time has not been set.
 eod
+
+=for comment ' help syntax-highlighting editor.
+
+=cut
+
     }
 
 if (@_ == 1) {
@@ -359,6 +370,7 @@ eod
 $self;
 }
 
+
 #	_dynamical_delta ($universal_time)
 
 #	calculates and returns the difference between the dynamical
@@ -373,7 +385,6 @@ my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
 (25.3 * $t + 102) * $t + 102		# Meeus (10.2)
 	+ $correction;			# Meeus' correction.
 }
-
 
 =item $coord = $coord->ecef($x, $y, $z, $xdot, $ydot, $zdot)
 
@@ -397,6 +408,8 @@ be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
 transforms worked out.
 
+=for comment help syntax-highlighting editor '
+
 =cut
 
 sub ecef {
@@ -418,6 +431,7 @@ if (@_ == 6) {
     foreach my $key (@kilatr) {delete $self->{$key}}
     $self->{ecef} = [@_];
     $self->{specified} = 'ecef';
+    $self->{inertial} = 0;
     }
   else {
     croak <<eod;
@@ -470,6 +484,8 @@ be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
 transforms worked out.
 
+=for comment help syntax-highlighting editor '
+
 =cut
 
 sub eci {
@@ -516,6 +532,7 @@ if (@_ == 6) {
     $self->ecef (@ecef);
     $self->{eci} = [@_];
     $self->{specified} = 'eci';
+    $self->{inertial} = 1;
     }
   else {
     croak <<eod;
@@ -552,6 +569,8 @@ This method returns the ecliptic latitude and longitude of the
 object at the given time. The time is optional if the time represented
 by the object has already been set (e.g. by the universal() or
 dynamical() methods).
+
+=for comment help syntax-highlighting editor '
 
 =cut
 
@@ -608,6 +627,7 @@ eod
     $self->equatorial ($alpha, $delta, $rho);
     $self->{ecliptic} = [@_];
     $self->{specified} = 'ecliptic';
+    $self->{inertial} = 1;
     }
   else {
     croak <<eod;
@@ -636,24 +656,79 @@ instantiates the desired object. In this case the time is not optional.
 
 =item ($rightasc, $declin, $range) = $coord->equatorial ($time);
 
-This method returns the equatorial coordinates of the object at the
+This method returns the L</Equatorial> coordinates of the object at the
 given time. The time argument is optional if the time represented by
 the object has already been set (e.g. by the universal() or
 dynamical() methods).
+
+=item ($rightasc, $declin, $range) = $coord->equatorial ($coord2);
+
+This method returns the apparant equatorial coordinates of the object
+represented by $coord2, as seen from the location represented by
+$coord.
+
+As a side effect, the time of the $coord object is set from the
+$coord object.
+
+If the L<refraction|/refraction> attribute of the $coord object is
+true, the coordinates will be corrected for atmospheric refraction using
+the correct_for_refraction() method.
+
+The algorithm is lifted pretty much verbatim from the Calculate_RADec
+subroutine of SGP4 Pascal Library Version 2.65 by T. S. Kelso,
+available at L<http://celestrak.com/software/tskelso-sw.asp>. Dr.
+Kelso credits the algorithm to "Methods of Orbit Determination" by
+Pedro Ramon Escobal, pages 401 - 402.
 
 =cut
 
 sub equatorial {
 my $self = shift;
 
+my $body = shift if @_ && isa ($_[0], __PACKAGE__);
+
 $self = $self->_check_coord (equatorial => \@_);
 
 my $time = $self->universal;
 
 unless (@_) {
+
+    if ($body) {
+	my ($azimuth, $elevation, $range) = $self->azel ($body, 0);
+	my $time = $self->universal ();	# azel set this to $body->universal
+	my ($phi, $theta) = $self->geodetic;
+	$theta = mod2pi ($theta + thetag ($time));
+	my $sin_theta = sin ($theta);
+	my $cos_theta = cos ($theta);
+	my $sin_phi = sin ($phi);
+	my $cos_phi = cos ($phi);
+	my $coselev = cos ($elevation);
+	my $lxh = - cos ($azimuth) * $coselev;
+	my $lyh = sin ($azimuth) * $coselev;
+	my $lzh = sin ($elevation);
+	my $sx = $sin_phi * $cos_theta;
+	my $ex = - $sin_theta;
+	my $zx = $cos_theta * $cos_phi;
+	my $sy = $sin_phi * $sin_theta;
+	my $ey = $cos_theta;
+	my $zy = $sin_theta * $cos_phi;
+	my $sz = - $cos_phi;
+	my $ez = 0;
+	my $zz = $sin_phi;
+	my $lx = $sx * $lxh + $ex * $lyh + $zx * $lzh;
+	my $ly = $sy * $lxh + $ey * $lyh + $zy * $lzh;
+	my $lz = $sz * $lxh + $ez * $lyh + $zz * $lzh;
+	my $declination = asin ($lz);
+	my $cos_delta = sqrt (1 - $lz * $lz);
+	my $sin_alpha = $ly / $cos_delta;
+	my $cos_alpha = $lx / $cos_delta;
+	my $right_ascension = mod2pi (atan2 ($sin_alpha,$cos_alpha));
+	return ($right_ascension, $declination, $range);
+	}
+
     return @{$self->{equatorial}} if $self->{equatorial};
     my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->eci ();
-    my $ra = atan2 ($y, $x);
+    my $ra = mod2pi (atan2 ($y, $x));	# Right ascension is always positive.
     my $rsq = $x * $x + $y * $y;
     my $dec = atan2 ($z, sqrt ($rsq));
     my $range = sqrt ($rsq + $z * $z);
@@ -661,6 +736,10 @@ unless (@_) {
     }
 
 if (@_ == 3) {
+    $body && croak <<eod;
+Error - You may not set the equatorial coordinates relative to an
+        observer.
+eod
     my ($ra, $dec, $range) = @_;
     my $z = $range * sin ($dec);
     my $r = $range * cos ($dec);
@@ -669,6 +748,7 @@ if (@_ == 3) {
     $self->eci ($x, $y, $z, 0, 0, 0);
     $self->{equatorial} = [@_];
     $self->{specified} = 'equatorial';
+    $self->{inertial} = 1;
     }
   else {
     croak <<eod;
@@ -704,6 +784,8 @@ author's.
 
 This method returns the L</Geocentric latitude>, L</Longitude>, and
 distance to the center of the Earth.
+
+=for comment help syntax-highlighting editor '
 
 =cut
 
@@ -754,6 +836,7 @@ eod
     $self->ecef ($x, $y, $z);
     $self->{geocentric} = [@_];
     $self->{specified} = 'geocentric';
+    $self->{inertial} = 0;
     }
   else {
     croak <<eod;
@@ -799,6 +882,8 @@ Borkowski's "Accurate Algorithms to Transform Geocentric to Geodetic
 Coordinates", at F<http://www.astro.uni.torun.pl/~kb/Papers/geod/Geod-BG.htm>.
 This is best viewed with Internet Explorer because of its use of Microsoft's
 Symbol font.
+
+=for comment help syntax-highlighting editor '
 
 =cut
 
@@ -972,6 +1057,7 @@ if (@_ == 3) {
  
     $self->{geodetic} = [$phi, $lamda, $h];
     $self->{specified} = 'geodetic';
+    $self->{inertial} = 0;
     }
 
 
@@ -1108,6 +1194,8 @@ body will be at its highest at meridian passage. It also assumes
 that if the body hasn't passed the given elevation in 183 days it
 never will. In this case it returns undef in scalar context, or
 an empty list in list context.
+
+=for comment help syntax-highlighting editor '
 
 =cut
 
@@ -1260,7 +1348,7 @@ B<NOTE> that side effects of setting the time (i.e. in subclasses which
 define the time_set() method) B<will> take place as a result of calling
 this method.
 
-The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
+The algorithm comes from Jean Meeus, "Astronomical Algorithms", 2nd
 Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
 
 =cut
@@ -1346,7 +1434,7 @@ The following reference ellipsoids are known to the class initially:
 
  IAU76 - International Astronomical Union, 1976.
    semimajor => 6378.14 km, flattening => 1 / 298.257.
-   Source: Jean Meeus' "Astronomical Algorithms", 2nd Edition
+   Source: Jean Meeus, "Astronomical Algorithms", 2nd Edition
 
  NAD83 - North American Datum, 1983.
     semimajor => 6378.137 km, flattening => 1/298.257.
@@ -1372,7 +1460,7 @@ The default model is WGS84.
 
 =cut
 
-# help for editor that does not understand POD '
+# help for editor that does not understand POD "
 
 # Wish I had:
 # Maling, D.H., 1989, Measurements from Maps: Principles and methods of cartometry, Pergamon Press, Oxford, England.
@@ -1504,6 +1592,7 @@ $self;
     ellipsoid => \&_set_reference_ellipsoid,
     flattening => \&_set_custom_ellipsoid,
     id => \&_set_value,
+    inertial => undef,
     name => \&_set_value,
     refraction => \&_set_value,
     semimajor => \&_set_custom_ellipsoid,
@@ -1525,11 +1614,12 @@ SET_ACTION_RESET;
 
 sub _set_reference_ellipsoid {
 defined $_[2] or croak <<eod;
-Error - Can't set reference ellipsoid to undefined.
+Error - Can not set reference ellipsoid to undefined.
 eod
 exists $known_ellipsoid{$_[2]} or croak <<eod;
 Error - Reference ellipsoid '$_[2]' is unknown.
 eod
+
 $_[0]->{semimajor} = $known_ellipsoid{$_[2]}{semimajor};
 $_[0]->{flattening} = $known_ellipsoid{$_[2]}{flattening};
 $_[0]->{$_[1]} = $_[2];
@@ -1568,6 +1658,7 @@ eod
     return $self->{universal} || croak <<eod;
 Error - Object's time has not been set.
 eod
+# help syntax-highlighting editor '
     }
 
 if (@_ == 1) {
@@ -1756,6 +1847,13 @@ This is an informational attribute, and its setting (or lack thereof)
 does not affect the functioning of the class. Certain subclasses will
 set this when they are instantiated. See the subclass documentation
 for details.
+
+=item inertial (boolean, read-only)
+
+This attribute returns true (in the Perl sense) if the object was
+most-recently set to inertial coordinates (i.e. eci, ecliptic, or
+equatorial) and false otherwise. If coordinates have not been set,
+it is undefined (and therefore false).
 
 =item name (string)
 
