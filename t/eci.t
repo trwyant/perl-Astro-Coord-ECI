@@ -9,7 +9,7 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 59}
+BEGIN {plan tests => 62}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
@@ -598,6 +598,44 @@ foreach ([timegm (28, 15, 18, 31, 11, 2000), 29/60 + 40, -(8/60 + 86),
 eod
     ok ($expect == floor ($got + .5));
     }
+
+
+#	Tests 60 - 62: Equatorial coordinates relative to observer.
+
+#	I don't have a book solution for this, but if I turn off
+#	atmospheric refraction, you should get the same result as if
+#	you simply subtract the ECI coordinates of the observer from
+#	the ECI coordinates of the body.
+
+
+{	# Begin local symbol block;
+my $time = time ();
+my $station = Astro::Coord::ECI->geodetic (deg2rad (38.898741),
+	deg2rad (-77.037684), 0.01668);
+$station->set (refraction => 0);
+my $body = Astro::Coord::ECI->eci (2328.97048951, -5995.22076416,
+	1719.97067261, 2.91207230, -0.98341546, -7.09081703, $time);
+my @staeci = $station->eci ($time);
+my @bdyeci = $body->eci ();
+my @want = Astro::Coord::ECI->eci (
+	(map {$bdyeci[$_] - $staeci[$_]} 0 .. 5), $time)->
+	equatorial ();
+my @got = $station->equatorial ($body);
+foreach (['right ascension' => $got[0], $want[0]],
+	[declination => $got[1], $want[1]],
+	[range => $got[2], $want[2]],
+	) {
+    $test++;
+    my ($what, $got, $want) = @$_;
+    print <<eod;
+# Test $test: Equatorial coordinates relative to observer.
+#      Quantity: $what
+#           Got: $got
+#      Expected: $want
+eod
+    ok (abs ($got - $want) < 0.000001);
+    }
+}	# End local symbol block.
 
 
 # need to test:
