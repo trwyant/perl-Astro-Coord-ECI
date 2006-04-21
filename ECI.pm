@@ -4,9 +4,48 @@ Astro::Coord::ECI - Manipulate geocentric coordinates
 
 =head1 SYNOPSIS
 
+ use Astro::Coord::ECI;
+ use Astro::Coord::ECI::Sun;
+ use Astro::Coord::ECI::TLE;
+ use Math::Trig;	# for the rad2deg function.
+ # 1600 Pennsylvania Avenue, in radians, radians, and KM
+ my ($lat, $lon, $elev) = (0.678911227503559,
+     -1.34456123391096, 0.01668);
+ # Record the time
+ my $time = time ();
+ # Set up observer's location
  my $loc = Astro::Coord::ECI->geodetic ($lat, $lon, $elev);
- my $sun = Astro::Coord::ECI::Sun->new ()->universal (time ());
+ # Instantiate the Sun.
+ my $sun = Astro::Coord::ECI::Sun->universal ($time);
+ # Figure out if the Sun is up at the observer's location.
  my ($azimuth, $elevation, $range) = $loc->azel ($sun);
+ print "The Sun is ", rad2deg ($elevation),
+     " degrees above the horizon.\n";
+ # Instantiate a satellite. The parser returns a list.
+ my ($tle) = Astro::Coord::ECI::TLE->parse (<<eod);
+ Pretend this text contains NORAD orbital element data for
+ a satellite. If it contains more than one set of data, you
+ get more than one object back.
+ eod
+ # Figure out where the satellite is in the observer's sky.
+ # Note that setting the time runs the model.
+ my ($right_asc, $decl, $rng) =
+     $loc->equatorial ($tle->universal ($time));
+ # Find the satellite's ECI coordinates at the given time.
+ # It is not necessary to run the model again, unless you
+ # want coordinates for a different time.
+ my ($X, $Y, $Z) = $tle->eci ();
+ print <<eod;
+ Satellite position
+     equatorial coordinates:
+         right ascension: @{[rad2deg ($right_asc)]} degr
+         declination: @{[rad2deg ($decl)]} degr
+         range: $rng km
+     ECI coordinates:
+         X: $X
+         Y: $Y
+         Z: $Z
+ eod
 
 =head1 DESCRIPTION
 
@@ -689,13 +728,13 @@ my $body = shift if @_ && isa ($_[0], __PACKAGE__);
 
 $self = $self->_check_coord (equatorial => \@_);
 
-my $time = $self->universal;
+my $time = $self->universal unless $body;
 
 unless (@_) {
 
     if ($body) {
 	my ($azimuth, $elevation, $range) = $self->azel ($body, 0);
-	my $time = $self->universal ();	# azel set this to $body->universal
+	my $time = $body->universal ();
 	my ($phi, $theta) = $self->geodetic;
 	$theta = mod2pi ($theta + thetag ($time));
 	my $sin_theta = sin ($theta);
