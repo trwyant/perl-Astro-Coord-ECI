@@ -7,8 +7,9 @@ Astro::Coord::ECI::TLE - Compute satellite locations using NORAD orbit propagati
  my @sats = Astro::Coord::ECI::TLE->parse ($tle_data);
  my $now = time ();
  foreach my $tle (@sats) {
-     my @data = $tle->model ($now)->geodetic ();
-     print $tle->get ('id'), "\t@data\n";
+     my @latlon = $tle->universal ($now)->geodetic ();
+     my @xyz = $tle->eci ();	# For same time.
+     print $tle->get ('id'), "\t@latlon\t@xyx\n";
      }
 
 The acquisition of the orbital elements represented by $tle_data
@@ -101,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = 0.002;
+our $VERSION = 0.003;
 
 use base qw{Astro::Coord::ECI};
 
