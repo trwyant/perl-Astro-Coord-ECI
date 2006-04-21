@@ -41,4 +41,16 @@
   TLE.pm
     Clean up docs, wrap some really long lines.
     Replace _fmod2p with mod2pi from Utils module.
+0.005
+  ECI.pm
+    Add 'inertial' read-only attribute.
+    Add equatorial coordinates relative to observer.
+    Fix negative right ascension - should be mod 2 pi.
+    Tweak docs, including fuller synopsis.
+  bin/satpass
+    Add local_coord parameter to determine local coordinate system
+      (azel or equatorial).
+    Modify pass and position output to use local_coord.
+  TLE.pm
+    Tweak synopsis, to show that setting time runs model.
 
