@@ -52,14 +52,14 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.004';
+$VERSION = '0.005';
 
 use constant LINFMT => <<eod;
-%s %5.1f %5.1f %-2s %7.1f %8.4f %9.4f %7.1f %-4s %s
+%s %s %8.4f %9.4f %7.1f %-4s %s
 eod
 
 use constant BGFMT => <<eod;
-%s %5.1f %5.1f %-2s         %8.4f %9.4f              %s
+%s %s %8.4f %9.4f              %s
 eod
 
 my @bodies;
@@ -97,6 +97,7 @@ my %parm = (
     geometric => 1,
     horizon => 20,	# Degrees
     lit => 1,
+    local_coord => 'azel',
     model => 'model',
     prompt => 'satpass>',
     simbad_url => 'simbad.harvard.edu',
@@ -125,6 +126,7 @@ my %mutator = (
     height => \&_set_unmodified,
     horizon => \&_set_angle,
     latitude => \&_set_angle,
+    local_coord => \&_set_local_coord,
     location => \&_set_unmodified,
     lit => \&_set_unmodified,
     longitude => \&_set_angle,
@@ -913,6 +915,8 @@ sub pass {
 
 my @lighting = qw{Shdw Lit Day};
 my $dtfmt = "$parm{date_format} $parm{time_format}";
+my $lcfmt = \&{"_format_local_$parm{local_coord}"};
+
 my $pass_start = _parse_time (shift || 'today noon');
 my $pass_end = _parse_time (shift || '+7');
 $pass_start >= $pass_end and die <<eod;
@@ -932,7 +936,7 @@ my $header = <<eod;
 
 %s%s
 
-time@{[' ' x ($timlen - 4)]}  elev azimuth   range  latitude longitude altitude
+time@{[' ' x ($timlen - 4)]} @{[$lcfmt->()]} latitude longitude altitude
 
 eod
 
@@ -1027,12 +1031,13 @@ foreach my $tle (@bodies) {
 
 	    while ($parm{visible}) {
 		my $time = $data[0][0] - $step;
-		my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
 		last if $elev < $effective_horizon;
 		my ($lat, $long, $alt) = $tle->geodetic;
 		my $illum = ($tle->azel ($sun->universal ($time), 1))[1] < $tle->dip () ? 0 :
 			$rise ? 1 : 2;
-		unshift @data, [$time, $elev, $azm, $rng, $lat, $long, $alt, $illum];
+		unshift @data, [$time, $elev, $azm, $rng,
+			Astro::Coord::ECI->eci ($tle->eci (), $time),
+			undef, undef, $illum];
 		}
 
 
@@ -1118,10 +1123,11 @@ foreach my $tle (@bodies) {
 			$sta->universal ($time)->next_elevation ($sun, $parm{_twilight})
 			if !$suntim || $time >= $suntim;
 		    my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
-		    my ($lat, $long, $alt) = $tle->geodetic;
 		    my $illum = ($tle->azel ($sun->universal ($time), $parm{lit}))[1] < $tle->dip () ? 0 :
 			$rise ? 1 : 2;
-		    push @data, [$time, $elev, $azm, $rng, $lat, $long, $alt, $illum, @event];
+		    push @data, [$time, $elev, $azm, $rng,
+			Astro::Coord::ECI->eci ($tle->eci (), $time),
+			undef, undef, $illum];
 		    }
 
 
@@ -1165,19 +1171,16 @@ foreach my $tle (@bodies) {
 		my $temp = strftime $parm{date_format}, localtime $pt->[0];
 		print "$temp\n" if $temp ne $day;
 		$day = $temp;
+		my ($lat, $long, $alt) = $pt->[4]->geodetic ();
 		printf LINFMT, strftime ($parm{time_format}, localtime $pt->[0]),
-		    rad2deg ($pt->[1]), rad2deg ($pt->[2]),
-		    $bearing[floor ($pt->[2]/TWOPI * @bearing + .5) % @bearing],
-		    $pt->[3],
-		    rad2deg ($pt->[4]), rad2deg ($pt->[5]), $pt->[6],
+		    $lcfmt->($sta, $pt->[4]),
+		    rad2deg ($lat), rad2deg ($long), $alt,
 		    $lighting[$pt->[7]], $pt->[8] || '';
 		if ($body && $parm{background}) {
 		    my $time = $pt->[0];
-		    my ($azm, $elev, $rng) = $sta->azel ($body->universal ($time));
 		    my ($lat, $long, $alt) = $body->geodetic;
 		    printf BGFMT, strftime ($parm{time_format}, localtime $time),
-			rad2deg ($elev), rad2deg ($azm),
-			$bearing[floor ($azm / TWOPI * @bearing + .5) % @bearing],
+			$lcfmt->($sta, $body),
 			rad2deg ($lat), rad2deg ($long),
 			$body->get ('name') || $body->get ('id') || '';
 		    }
@@ -1192,11 +1195,6 @@ foreach my $tle (@bodies) {
 	    }
 
 
-#	Get the geodetic position of the body.
-
-	my ($lat, $long, $alt) = $tle->geodetic;
-
-
 #	Calculate whether the body is illuminated.
 
 	my $illum = ($tle->azel ($sun->universal ($time), $parm{lit}))[1] < $tle->dip () ? 0 :
@@ -1206,7 +1204,9 @@ foreach my $tle (@bodies) {
 
 #	Accumulate results.
 
-	push @data, [$time, $elev, $azm, $rng, $lat, $long, $alt, $illum];
+	push @data, [$time, $elev, $azm, $rng,
+		Astro::Coord::ECI->eci ($tle->eci (), $time),
+		undef, undef, $illum];
 
 
 #	Count iterations
@@ -1288,6 +1288,7 @@ foreach my $body (@sky) {
 sub position {
 my $time = $_[0] ? _parse_time (shift) : time ();
 my $dtfmt = "$parm{date_format} $parm{time_format}";
+my $lcfmt = \&{"_format_local_$parm{local_coord}"};
 
 
 #	Define the observing station.
@@ -1305,19 +1306,17 @@ my $sta = Astro::Coord::ECI->new (
 
 printf <<eod, _format_location (), strftime ($dtfmt, localtime $time);
 %s%s
-            name elev  azim  range     right asc decl
+            name @{[$lcfmt->()]}
 eod
 
 foreach my $body (@bodies, @sky) {
+    $body->universal ($time);
     my $name = $body->get ('name') || $body->get ('id') || 'body';
-    my ($az, $el, $rng) = $sta->azel ($body->universal ($time));
-    my ($ra, $dec) = $body->equatorial ();
-    printf "%16s %5.1f %5.1f @{[$rng > 1e6 ? '%10.3g' : '%10.1f'
-	]} %8s %5.1f\n", $name, rad2deg ($el),
-	rad2deg ($az), $rng, _rad2hms ($ra), rad2deg ($dec);
+    printf "%16s %s\n", $name, $lcfmt->($sta, $body);
     }
 
 }
+
 
 ########################################################################
 #
@@ -1388,6 +1387,22 @@ sub _set_ellipsoid {
 Astro::Coord::ECI->set (ellipsoid => $_[1]);
 $parm{$_[0]} = $_[1];
 }
+
+BEGIN {
+    my %legal = map {$_ => 1} qw{azel equatorial};
+
+    sub _set_local_coord {
+    die <<eod unless $legal {$_[1]};
+Error - Illegal local coordinate specification. The only legal values
+        are @{[join ', ', map {"'$_'"} sort keys %legal]}
+eod
+    $parm{$_[0]} = $_[1];
+    }
+}
+
+=for comment } help syntax highlighting editor.
+
+=cut
 
 sub _set_perltime {
 $parm{$_[0]} = $_[1];
@@ -1746,6 +1761,45 @@ eod
 #	Accessors and mutators are with show() and set() respectively.
 
 
+#	$string = _format_local_azel ($station, $body)
+
+#	This subroutine formats the elevation, azimuth, and range of
+#	the body as seen from the station. If called with no arguments,
+#	it returns a suitable heading for this information.
+
+sub _format_local_azel {
+@_ or return ' elev  azim     range    ';
+@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
+    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
+Programming error - _format_azel () must be called with either zero
+    or two arguments. If two, both must be Astro::Coord::ECI objects.
+eod
+my ($az, $el, $rng) = $_[0]->azel ($_[1]);
+sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
+    rad2deg ($el), rad2deg ($az),
+    $bearing[floor ($az/TWOPI * @bearing + .5) % @bearing],
+    $rng;
+}
+
+#	$string = _format_local_equatorial ($station, $body)
+
+#	This subroutine formats the right ascension, declination, and
+#	range of the body as seen from the station. If called with no
+#	arguments, it returns a suitable heading for this information.
+
+sub _format_local_equatorial {
+@_ or return 'right asc decl  range    ';
+@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
+    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
+Programming error - _format_azel () must be called with either zero
+    or two arguments. If two, both must be Astro::Coord::ECI objects.
+eod
+my ($ra, $dec, $rng) = $_[0]->equatorial ($_[1]);
+sprintf "%s %5.1f @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
+    _rad2hms ($ra), rad2deg ($dec), $rng;
+}
+
+
 #	$location = _format_location ()
 
 #	Formats the location data for printing.
@@ -1952,9 +2006,7 @@ my $hr = floor ($sec);
 $sec = ($sec - $hr) * 60;
 my $min = floor ($sec);
 $sec = ($sec - $min) * 60;
-my $rslt = sprintf '%2d:%02d:%02f', $hr, $min, $sec;
-$rslt =~ s/0+$//;
-$rslt =~ s/\.$//;
+my $rslt = sprintf '%2d:%02d:%02d', $hr, $min, $sec;
 $rslt;
 }
 
@@ -2709,6 +2761,12 @@ start_time and end_time, using the given increment. See the
 L</SPECIFYING TIMES> topic below for how to specify times. The increment
 is in seconds.
 
+The position of the visible body is given in either elevation, azimuth,
+and range or right ascension, declination, and range as seen from the
+location of the observer, as determined by the value of the
+L<local_coord|/local_coord> parameter. The geodetic latitude, longitude,
+and altitude are also given.
+
 The defaults are 'today noon', '+7' (meaning 7 days after the
 most-recently-specified explicit time), and 60 (seconds) respectively.
 
@@ -2739,6 +2797,9 @@ waxing|waning crescent|gibbous.
 
 This position gives the positions of all objects in the observing list
 and in the sky at the given time, the default being the current time.
+The position is given as seen by the observer, either as elevation,
+azimuth, and range, or as right ascension, declination, and range,
+depending on the setting of the L<local_coord|/local_coord> parameter.
 
 =for html <a name="quarters"></a>
 
@@ -3138,6 +3199,20 @@ sun is above the horizon, as seen from the body. If false (i.e. 0), the
 body is considered lit if the center of the sun is above the horizon.
 
 The default is 1 (i.e. true).
+
+=for html <a name="local_coord"></a>
+
+=item local_coord (string)
+
+This parameter determines what local coordinates of the object are
+displayed by the L<pass|/pass> and L<position|/position> commands.
+The only legal values are:
+
+azel - displays azimuth, elevation, and range;
+
+equatorial - displays right ascension, declination, and range.
+
+The default is 'azel'.
 
 =for html <a name="location"></a>
 
