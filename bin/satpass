@@ -52,7 +52,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.005_02';
+$VERSION = '0.005_021';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -110,7 +110,6 @@ my %parm = (
 $parm{tz} = $ENV{TZ} if $ENV{TZ};
 
 my ($tz_init) = grep {m/^TZ=/} Date_Init ();
-warn "Initial zone = '$tz_init'\n";
 
 my %macro;
 
@@ -438,11 +437,7 @@ my $almanac_end = _parse_time (shift || '+1');
 $almanac_start >= $almanac_end and die <<eod;
 Error - End time must be after start time.
 eod
-$parm{height} && $parm{latitude} && $parm{longitude} or
-    die <<eod;
-Error - Can not calculate almanac data without setting height,
-	latitude, and longitude.
-eod
+_check_station ();
 
 #	Build an object representing our ground location.
 
@@ -1435,7 +1430,7 @@ eod
 }
 
 sub _set_tz {
-if ($_[1]) {
+if ($_[1] || looks_like_number ($_[1])) {
     $ENV{TZ} = $parm{$_[0]} = $_[1];
     Date_Init ("TZ=$_[1]") unless $parm{perltime};
     }
