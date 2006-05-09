@@ -922,10 +922,10 @@ my $pass_end = _parse_time (shift || '+7');
 $pass_start >= $pass_end and die <<eod;
 Error - End time must be after start time.
 eod
-@bodies && $parm{height} && $parm{latitude} && $parm{longitude} or
-    die <<eod;
-Error - Can not calculate satellite pass without setting height,
-        latitude, longitude, and at least one body.
+_check_station ();
+@bodies or die <<eod;
+Error - Can not calculate satellite pass without loading at least one
+        body.
 eod
 my $pass_step = shift || 60;
 my $timlen = max (
@@ -1289,7 +1289,7 @@ sub position {
 my $time = $_[0] ? _parse_time (shift) : time ();
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
-
+_check_station ();
 
 #	Define the observing station.
 
@@ -1760,6 +1760,18 @@ eod
 
 #	Accessors and mutators are with show() and set() respectively.
 
+#	_check_station ();
+
+#	This subroutine throws an exception if the height, latitude, and
+#	longitude are not defined.
+
+sub _check_station {
+defined $parm{height} && defined $parm{latitude} &&
+    defined $parm{longitude} or die <<eod;
+Error - You must set height, latitude, and longitude to use this
+        function.
+eod
+}
 
 #	$string = _format_local_azel ($station, $body)
 
