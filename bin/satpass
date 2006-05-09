@@ -52,7 +52,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.005';
+$VERSION = '0.005_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -110,6 +110,7 @@ my %parm = (
 $parm{tz} = $ENV{TZ} if $ENV{TZ};
 
 my ($tz_init) = grep {m/^TZ=/} Date_Init ();
+warn "Initial zone = '$tz_init'\n";
 
 my %macro;
 
@@ -1434,9 +1435,15 @@ eod
 }
 
 sub _set_tz {
-$ENV{TZ} = $parm{$_[0]} = $_[1];
-$parm{$_[0]} = $_[1];
-Date_Init ("TZ=$_[1]") unless $parm{perltime};
+if ($_[1]) {
+    $ENV{TZ} = $parm{$_[0]} = $_[1];
+    Date_Init ("TZ=$_[1]") unless $parm{perltime};
+    }
+  else {
+    $parm{$_[0]} = undef;
+    delete $ENV{TZ};
+    Date_Init ($tz_init) unless $parm{perltime};
+    }
 }
 
 sub _set_unmodified {$parm{$_[0]} = $_[1]}
