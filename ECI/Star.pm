@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = 0.001;
+our $VERSION = 0.002;
 
 use base qw{Astro::Coord::ECI};
 
@@ -74,7 +74,7 @@ my $self = $class->SUPER::new (angularvelocity => 0,
 
 This method produces almanac data for the star for the given location,
 between the given start and end times. The location is assumed to be
-Earth-Fixed - that is, you can't do this for something in orbit.
+Earth-Fixed - that is, you can not do this for something in orbit.
 
 The start time defaults to the current time setting of the $star
 object, and the end time defaults to a day after the start time.
@@ -143,7 +143,7 @@ B<extremely> small number!), and the proper motion in recession
 in kilometers per second.
 
 The range defaults to 1 parsec, which is too close but probably good
-enough since we don't take paralax into account when computing
+enough since we do not take paralax into account when computing
 position, and since you can override it with a range (in km!) if you
 so desire. The proper motions default to 0. The time defaults to
 J2000.0. If you are not interested in proper motion but are interested
@@ -185,8 +185,8 @@ taken into account if this was specified.
 
 Although there's no reason this method can't be called directly, it
 exists to take advantage of the hook in the B<Astro::Coord::ECI>
-object, to allow the position of the Moon to be computed when the
-object's time is set.
+object, to allow the position of the star to be computed when the
+time is set.
 
 The computation comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 23, pages 149ff.
