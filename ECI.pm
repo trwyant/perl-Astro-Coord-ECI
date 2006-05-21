@@ -7,7 +7,7 @@ Astro::Coord::ECI - Manipulate geocentric coordinates
  use Astro::Coord::ECI;
  use Astro::Coord::ECI::Sun;
  use Astro::Coord::ECI::TLE;
- use Math::Trig;	# for the rad2deg function.
+ use Astro::Coord::ECI::Utils qw{rad2deg};
  # 1600 Pennsylvania Avenue, in radians, radians, and KM
  my ($lat, $lon, $elev) = (0.678911227503559,
      -1.34456123391096, 0.01668);
@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.005';
+our $VERSION = '0.005_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -120,7 +120,7 @@ my %static = (	# The geoid, etc. Geoid get set later.
     );
 my %savatr;	# Attribs saved across "normal" operations. Set at end.
 my @kilatr =	# Attributes to purge when setting coordinates.
-    qw{_need_purge eci ecliptic equatorial
+    qw{_need_purge azel eci ecliptic equatorial
 	geocentric geodetic local_mean_time specified ecef}; #?
 
 
@@ -220,10 +220,10 @@ for (my $i = 0; $i < 6; $i++) {
     $delta[$i] = $obj[$i] - $base[$i];
     }
 my $theta = mod2pi (thetag ($time) + $lamda);
-my $sinlat = sin ($phi);
-my $sintheta = sin ($theta);
-my $coslat = cos ($phi);
-my $costheta = cos ($theta);
+my $sinlat = ($self->{azel}{sinphi} ||= sin ($phi));
+my $sintheta = ($self->{azel}{sintheta} ||= sin ($theta));
+my $coslat = ($self->{azel}{cosphi} ||= cos ($phi));
+my $costheta = ($self->{azel}{costheta} ||= cos ($theta));
 my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
 my $ts = $sinlat * $rterm - $coslat * $delta[2];
 my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
