@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.005_02';
+our $VERSION = '0.005_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1238,6 +1238,8 @@ return $self->can ('period') ?
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item ($time, $rise) = $coord->next_elevation ($body, $elev, $upper)
 
 This method calculates the next time the given body passes above or
@@ -1255,7 +1257,7 @@ that if the body hasn't passed the given elevation in 183 days it
 never will. In this case it returns undef in scalar context, or
 an empty list in list context.
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -1395,6 +1397,8 @@ wantarray ? ($end, $above) : $end;
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $coord = $coord->precess ($time);
 
 This method precesses the equatorial coordinates of the object to the
@@ -1410,6 +1414,8 @@ this method.
 
 The algorithm comes from Jean Meeus, "Astronomical Algorithms", 2nd
 Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
+
+=for comment help syntax-highlighting editor "
 
 =cut
 
