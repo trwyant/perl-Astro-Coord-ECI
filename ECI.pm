@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.005_01';
+our $VERSION = '0.005_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -120,8 +120,8 @@ my %static = (	# The geoid, etc. Geoid get set later.
     );
 my %savatr;	# Attribs saved across "normal" operations. Set at end.
 my @kilatr =	# Attributes to purge when setting coordinates.
-    qw{_need_purge azel eci ecliptic equatorial
-	geocentric geodetic local_mean_time specified ecef}; #?
+    qw{_need_purge cache eci ecliptic equatorial
+	geocentric geodetic inertial local_mean_time specified ecef}; #?
 
 
 =item $coord = Astro::Coord::ECI->new ();
@@ -200,6 +200,7 @@ F<http://celestrak.com/columns/v02n02/>.
 
 sub azel {
 my $self = shift;
+my $cache = ($self->{cache} ||= {});
 $self->{debug} and do {
     local $Data::Dumper::Terse = 1;
     print "Debug azel - ", Dumper ($self, @_);
@@ -219,11 +220,12 @@ my @delta;
 for (my $i = 0; $i < 6; $i++) {
     $delta[$i] = $obj[$i] - $base[$i];
     }
-my $theta = mod2pi (thetag ($time) + $lamda);
-my $sinlat = ($self->{azel}{sinphi} ||= sin ($phi));
-my $sintheta = ($self->{azel}{sintheta} ||= sin ($theta));
-my $coslat = ($self->{azel}{cosphi} ||= cos ($phi));
-my $costheta = ($self->{azel}{costheta} ||= cos ($theta));
+my $thetag = thetag ($time);
+my $theta = mod2pi ($thetag + $lamda);
+my $sinlat = ($cache->{sinphi} ||= sin ($phi));
+my $sintheta = sin ($theta);
+my $coslat = ($cache->{cosphi} ||= cos ($phi));
+my $costheta = cos ($theta);
 my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
 my $ts = $sinlat * $rterm - $coslat * $delta[2];
 my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
@@ -249,6 +251,8 @@ $self->{refraction} and
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $coord2 = $coord->clone ();
 
 This method does a deep clone of an object, producing a different
@@ -256,13 +260,15 @@ but identical object.
 
 It's really just a wrapper for Storable::dclone.
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax-highlighting editor "
 
 =cut
 
 sub clone {
 dclone shift;
 }
+
+=for comment help syntax-highlighting editor "
 
 =item $elevation = $coord->correct_for_refraction ($elevation);
 
@@ -281,6 +287,8 @@ Saemundsson's article in "Sky and Telescope", volume 72, page 70
 (July 1986) as reported Jean Meeus' "Astronomical Algorithms",
 2nd Edition, chapter 16, page 106, and includes the adjustment
 suggested by Meeus.
+
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -332,6 +340,8 @@ $elevation;
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $angle = $coord->dip ();
 
 This method calculates the dip angle of the horizon due to the
@@ -341,7 +351,7 @@ location below the surface.
 
 The algorithm is simple enough to be the author's.
 
-=for comment '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -354,6 +364,8 @@ my $angle = $h >= 0 ?
     acos ($rho / ($rho - $h));
 }
 
+
+=for comment help syntax-highlighting editor "
 
 =item $coord = $coord->dynamical ($time);
 
@@ -373,6 +385,8 @@ universal time previously set, converted to dynamical. The algorithm
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 10, pages 78ff.
 
+=for comment help syntax-highlighting editor "
+
 =cut
 
 sub dynamical {
@@ -384,13 +398,8 @@ Error - The dynamical() method may not be called as a class method
 eod
     return ($self->{dynamical} ||= $self->{universal} +
 	_dynamical_delta ($self->{universal} || croak <<eod));
-Error - Object's time has not been set.
+Error - Universal time of object has not been set.
 eod
-
-=for comment ' help syntax-highlighting editor.
-
-=cut
-
     }
 
 if (@_ == 1) {
@@ -425,6 +434,8 @@ my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
 	+ $correction;			# Meeus' correction.
 }
 
+=for comment help syntax-highlighting editor "
+
 =item $coord = $coord->ecef($x, $y, $z, $xdot, $ydot, $zdot)
 
 This method sets the coordinates represented by the object in terms
@@ -447,7 +458,7 @@ be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
 transforms worked out.
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -484,6 +495,8 @@ eod
 $self;
 }
 
+
+=for comment help syntax-highlighting editor "
 
 =item $coord = $coord->eci ($x, $y, $z, $xdot, $ydot, $zdot, $time)
 
@@ -523,7 +536,7 @@ be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
 transforms worked out.
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -531,17 +544,18 @@ sub eci {
 my $self = shift;
 
 $self = $self->_check_coord (eci => \@_);
+my $cache = ($self->{cache} ||= {});
 
 unless (@_) {
     return @{$self->{eci}} if $self->{eci};
-    my $thetag = thetag ($self->universal);
+    my $thetag = ($cache->{thetag} ||= thetag ($self->universal));
     my @data = $self->ecef;
     $self->{debug} and print <<eod;
 Debug eci - thetag = $thetag
     (x, y) = (@data[0, 1])
 eod
-    my $costh = cos ($thetag);
-    my $sinth = sin ($thetag);
+    my $costh = ($cache->{costhetag} ||= cos ($thetag));
+    my $sinth = ($cache->{sinthetag} ||= sin ($thetag));
     @data[0, 1] = ($data[0] * $costh - $data[1] * $sinth,
 	$data[0] * $sinth + $data[1] * $costh);
     @data[3, 4] = ($data[3] * $costh - $data[4] * $sinth,
@@ -550,7 +564,7 @@ eod
 Debug eci - after rotation,
     (x, y) = (@data[0, 1])
 eod
-   $data[3] += $data[1] * $self->{angularvelocity};
+    $data[3] += $data[1] * $self->{angularvelocity};
     $data[4] -= $data[0] * $self->{angularvelocity};
     return @{$self->{eci} = [@data]};
     }
@@ -558,12 +572,14 @@ eod
 @_ == 3 and push @_, 0, 0, 0;
 
 if (@_ == 6) {
-    my $thetag = thetag ($self->universal);
+    my $thetag = ($cache->{thetag} ||= thetag ($self->universal));
     my @ecef = @_;
     $ecef[3] -= $ecef[1] * $self->{angularvelocity};
     $ecef[4] += $ecef[0] * $self->{angularvelocity};
-    my $costh = cos (- $thetag);
-    my $sinth = sin (- $thetag);
+##    my $costh = cos (- $thetag);
+    my $costh = ($cache->{costhetag} ||= cos ($thetag));	# cos (-theta) == cos (theta)
+##    my $sinth = sin (- $thetag);
+    my $sinth = - ($cache->{sinthetag} ||= sin ($thetag));	# sin (-theta) == - sin (theta)
     @ecef[0, 1] = ($ecef[0] * $costh - $ecef[1] * $sinth,
 	$ecef[0] * $sinth + $ecef[1] * $costh);
     @ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
@@ -584,6 +600,8 @@ eod
 $self;
 }
 
+
+=for comment help syntax highlighting editor "
 
 =item $coord = $coord->ecliptic ($latitude, $longitude, $range, $time);
 
@@ -609,7 +627,7 @@ object at the given time. The time is optional if the time represented
 by the object has already been set (e.g. by the universal() or
 dynamical() methods).
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax highlighting editor "
 
 =cut
 
@@ -727,7 +745,6 @@ my $self = shift;
 my $body = shift if @_ && isa ($_[0], __PACKAGE__);
 
 $self = $self->_check_coord (equatorial => \@_);
-
 my $time = $self->universal unless $body;
 
 unless (@_) {
@@ -801,6 +818,8 @@ $self;
 }
 
 
+=for comment help syntax highlighting editor "
+
 =item $coord = $coord->geocentric($psiprime, $lamda, $rho);
 
 This method sets the L</Geocentric> coordinates represented by the
@@ -824,7 +843,7 @@ author's.
 This method returns the L</Geocentric latitude>, L</Longitude>, and
 distance to the center of the Earth.
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax highlighting editor "
 
 =cut
 
@@ -888,6 +907,8 @@ $self;
 }
 
 
+=for comment help syntax highlighting editor "
+
 =item $coord = $coord->geodetic($psi, $lamda, $h, $ellipsoid);
 
 This method sets the L</Geodetic> coordinates represented by the object
@@ -922,7 +943,7 @@ Coordinates", at F<http://www.astro.uni.torun.pl/~kb/Papers/geod/Geod-BG.htm>.
 This is best viewed with Internet Explorer because of its use of Microsoft's
 Symbol font.
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax highlighting editor "
 
 =cut
 
