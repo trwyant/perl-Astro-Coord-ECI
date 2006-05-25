@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = 0.003;
+our $VERSION = "0.003_01";
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -53,7 +53,8 @@ use UNIVERSAL qw{can isa};
 our @EXPORT;
 our @EXPORT_OK = qw{
 	AU LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI
-	acos asin deg2rad distsq equation_of_time jcent2000 jday2000
+	acos asin deg2rad distsq equation_of_time
+	intensity_to_magnitude jcent2000 jday2000
 	julianday mod2pi nutation_in_longitude nutation_in_obliquity
 	obliquity omega rad2deg tan theta0 thetag};
 
@@ -171,6 +172,33 @@ $E * SECSPERDAY / TWOPI;	# The formula gives radians.
 }
 
 
+=for comment help syntax-highlighting editor "
+
+=item $difference = intensity_to_magnitude ($ratio)
+
+This method converts a ratio of light intensities to a difference in
+stellar magnitudes. The algorithm comes from Jean Meeus' "Astronomical
+Algorithms", Second Edition, Chapter 56, Page 395.
+
+Note that, because of the way magnitudes work (a more negative number
+represents a brighter star) you get back a positive result for an
+intensity ratio less than 1, and a negative result for an intensity
+ratio greater than 1.
+
+=for comment help syntax-highlighting editor "
+
+=cut
+
+{	# Begin local symbol block
+    my $intensity_to_mag_factor;	# Calculate only if needed.
+    sub intensity_to_magnitude {
+    - ($intensity_to_mag_factor ||= 2.5 / log (10)) * log ($_[0]);
+    }
+}
+
+
+=for comment help syntax-highlighting editor "
+
 =item $century = jcent2000 ($time);
 
 Several of the algorithms in Jean Meeus' "Astronomical Algorithms"
@@ -178,7 +206,8 @@ are expressed in terms of the number of Julian centuries from epoch
 J2000.0 (e.g equations 12.1, 22.1). This subroutine encapsulates
 that calculation.
 
-=for comment help our editor, which does not understand POD '
+
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -204,6 +233,8 @@ sub jday2000 {
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $jd = julianday ($time);
 
 This subroutine converts a Perl date to a Julian day number.
@@ -211,7 +242,7 @@ This subroutine converts a Perl date to a Julian day number.
 The computation makes use of information from Jean Meeus' "Astronomical
 Algorithms", 2nd Edition, Chapter 7, page 62.
 
-=for comment help our editor, which does not understand POD '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -232,6 +263,8 @@ $_[0] - floor ($_[0] / TWOPI) * TWOPI;
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $delta_psi = nutation_in_longitude ($time)
 
 This subroutine calculates the nutation in longitude (delta psi) for
@@ -241,7 +274,7 @@ The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 0.5 seconds of arc.
 
-=for comment help our editor, which does not understand POD '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -262,6 +295,8 @@ $delta_psi;
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $delta_epsilon = nutation_in_obliquity ($time)
 
 This subroutine calculates the nutation in obliquity (delta epsilon)
@@ -271,7 +306,7 @@ The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 0.1 seconds of arc.
 
-=for comment help our editor, which does not understand POD '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -292,6 +327,8 @@ $delta_epsilon;
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $epsilon = obliquity ($time)
 
 This subroutine calculates the obliquity of the ecliptic in radians at
@@ -301,7 +338,7 @@ The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. The conversion from universal to
 dynamical time comes from chapter 10, equation 10.2  on page 78.
 
-=for comment help our editor, which does not understand POD '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -320,6 +357,7 @@ my $epsilon0 = deg2rad (((0.001813 * $T - 0.00059) * $T - 46.8150)
 $epsilon0 + $delta_epsilon;
 }
 
+=for comment help syntax-highlighting editor "
 
 =item $radians = omega ($time);
 
@@ -328,6 +366,8 @@ of the Moon's mean orbit at the given B<dynamical> time.
 
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff.
+
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -388,6 +428,8 @@ thetag (timegm (0, 0, 0, (gmtime $_[0])[3 .. 5]));
 }
 
 
+=for comment help syntax-highlighting editor "
+
 =item $value = thetag ($time);
 
 This subroutine returns the Greenwich hour angle of the mean equinox at
@@ -396,7 +438,7 @@ the given time.
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, equation 12.4, page 88.
 
-=for comment help our editor, which does not understand POD '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -409,6 +451,8 @@ mod2pi (4.89496121273579 + 6.30038809898496 *
 	jday2000 ($_[0]))
 	+ (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
 }
+
+1;
 
 =back
 
