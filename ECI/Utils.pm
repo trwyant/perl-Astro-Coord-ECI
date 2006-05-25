@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = "0.003_01";
+our $VERSION = "0.003_02";
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -53,18 +53,10 @@ use UNIVERSAL qw{can isa};
 our @EXPORT;
 our @EXPORT_OK = qw{
 	AU LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI
-	acos asin deg2rad distsq equation_of_time
+	acos asin atmospheric_extinction deg2rad distsq equation_of_time
 	intensity_to_magnitude jcent2000 jday2000
 	julianday mod2pi nutation_in_longitude nutation_in_obliquity
 	obliquity omega rad2deg tan theta0 thetag};
-
-# Notes for the conversion: The all caps names are constants. The
-# following names were once public methods of Astro::Coord::ECI:
-#	equation_of_time jcent2000 jday2000 julianday
-#	nutation_in_longitude nutation_in_obliquity obliquity omega
-#	theta0 thetag
-# All others were "private" methods whose names began with an
-# underscore.
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -99,6 +91,47 @@ value.
 =cut
 
 sub asin {atan2 ($_[0], sqrt (1 - $_[0] * $_[0]))}
+
+
+=for comment help syntax-highlighting editor "
+
+=item $magnitude = atmospheric_extinction ($elevation, $height);
+
+This subroutine calculates the typical atmospheric extinction in
+magnitudes at the given elevation above the horizon in radians and the
+given height above sea level in kilometers.
+
+The algorithm comes from Daniel W. E. Green's article "Magnitude
+Corrections for Atmospheric Extinction", which was published in
+the July 1992 issue of "International Comet Quarterly", and is
+available online at
+L<http://www.cfa.harvard.edu/icq/ICQExtinct.html>. The text of
+this article makes it clear that the actual value of the
+atmospheric extinction can vary greatly from the typical
+values given even in the absence of cloud cover.
+
+=for comment help syntax-highlighting editor "
+
+=cut
+
+#	Note that the "constant" 0.120 in Aaer (aerosol scattering) is
+#	based on a compromise value A0 = 0.050 in Green's equation 3
+#	(not exhibited here), which can vary from 0.035 in the winter to
+#	0.065 in the summer. This makes a difference of a couple tenths
+#	at 20 degrees elevation, but a couple magnitudes at the
+#	horizon. Green also remarks that the 1.5 denominator in the
+#	same equation (a.k.a. the scale height) can be up to twice
+#	that.
+
+
+sub atmospheric_extinction {
+my ($elevation, $height) = @_;
+my $cosZ = cos (PIOVER2 - $elevation);
+my $X = 1/($cosZ + 0.025 * exp (-11 * $cosZ));	# Green 1
+my $Aray = 0.1451 * exp (-$height / 7.996);	# Green 2
+my $Aaer = 0.120 * exp (-$height / 1.5);	# Green 4
+($Aray + $Aaer + 0.016) * $X;	# Green 5, 6
+}
 
 
 =item $rad = deg2rad ($degr)
@@ -453,6 +486,8 @@ mod2pi (4.89496121273579 + 6.30038809898496 *
 }
 
 1;
+
+__END__
 
 =back
 
