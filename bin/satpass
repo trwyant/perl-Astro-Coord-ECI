@@ -55,7 +55,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.005_04';
+$VERSION = '0.005_05';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -441,6 +441,10 @@ print "\n";
 #		the specified day(s)
 #
 
+BEGIN {
+$cmdlgl{almanac} = [qw{horizon|rise|set transit twilight quarter}];
+}
+
 sub almanac {
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
@@ -451,6 +455,8 @@ $almanac_start >= $almanac_end and die <<eod;
 Error - End time must be after start time.
 eod
 _check_station ();
+
+my $all = 1 unless grep{$cmdopt{$_}} qw{horizon transit twilight quarter};
 
 #	Build an object representing our ground location.
 
@@ -494,6 +500,7 @@ eod
 my $last = '';
 foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
     my ($time, $event, $detail, $descr) = @$_;
+    next unless $all || $cmdopt{$event};
     $descr = ('End ', 'Begin ')[$detail] . $id if $event eq 'twilight';
     my $day = strftime $parm{date_format}, localtime $time;
     print "$day\n" if $day ne $last;
@@ -2867,6 +2874,22 @@ quarter-phases. This is all done based on the current parameter
 settings (see L</PARAMETERS> below).
 
 The output is in chronological order.
+
+This command supports the following options:
+
+-horizon specifies that rise and set times are reported. -rise and -set
+are both synonyms for this; -rise also reports when the bodies set, and
+vice versa.
+
+-quarter specifies that quarters are reported.
+
+-transit specifies that transits are reported. This includes transits
+below the observer (e.g. local midnight), if these are generated.
+
+-twilight specifies that the beginning and end of twilight are
+reported.
+
+By default, all events are reported.
 
 The start_time defaults to 'today midnight', and the end_time to '+1'.
 
