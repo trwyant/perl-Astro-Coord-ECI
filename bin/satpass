@@ -55,7 +55,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.005_05';
+$VERSION = '0.005_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -361,7 +361,7 @@ eod
     {	# Begin local symbol block.
 	local @ARGV = @args;
         Getopt::Long::Configure (@{$cmdconfig{$verb} ||= ['permute']});
-	GetOptions (\%cmdopt, qw{clipboard debug}, @{$cmdlgl{$verb} ||= []});
+	GetOptions (\%cmdopt, qw{clipboard debug time}, @{$cmdlgl{$verb} ||= []});
 	@args = @ARGV;
 	}
     $cmdopt{_redirection} = $cmdopt{clipboard} ? '-clipboard' : $redout;
