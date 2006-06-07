@@ -55,7 +55,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.005_06';
+$VERSION = '0.005_07';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -793,7 +793,9 @@ goto \&{$handler};
 
 no warnings qw{once};
 INIT {
+*height_af = \&height_us;	# Afghanistan (believe it or not).
 *height_as = \&height_us;	# American Samoa
+*height_ca = \&height_us;	# Canada. U.S. has North American data
 *height_fm = \&height_us;	# Federated States of Micronesia
 *height_gu = \&height_us;	# Guam
 *height_mh = \&height_us;	# Marshall Islands
@@ -826,6 +828,7 @@ local $USGSElevationData::debug = 1 if $cmdopt{debug};
 #	Manufacture a SOAP::Lite object appropriate to the installed
 #	version of SOAP::Lite.
 
+$cmdopt{debug} and SOAP::Trace->import ('all');
 my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices/',
     'http://gisdata.usgs.gov/XMLWebServices/TNM_Elevation_Service.asmx');
 
@@ -833,7 +836,9 @@ my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices/',
 #	because they're using .NET.
 
 my $rslt;
-my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
+##my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
+my $xmlns = 'http://gisdata.usgs.gov/XMLWebServices/';
+
 if ($cmdopt{all}) {
     $rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
 		{xmlns => $xmlns}) =>
@@ -852,6 +857,8 @@ if ($cmdopt{all}) {
 	SOAP::Data->new (name => 'Elevation_Only', type => 'string', value => 'false'),
 	)->result;
     }
+undef $soap;
+$cmdopt{debug} and SOAP::Trace->import ('-all');
 
 #	Parse our result. This is not straightforward either, because
 #	they decided to encode the result in XML, but they omit one or
@@ -877,7 +884,9 @@ if ($rslt) {
 	    print "Warning - Supplying missing end tag $endtag\n";
 	$rslt .= $endtag;
 	}
+    $cmdopt{debug} and print 'Parsing: ', $rslt, "\n";
     my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
+##    my $psr = XML::Parser->new (Style => 'Debug', Pkg => 'USGSElevationData');
     $rslt = $psr->parse ($rslt);
     }
   else {
@@ -2543,6 +2552,8 @@ use Scalar::Util qw{looks_like_number};
 
 our $debug;
 
+{	# Establish variable context
+
 my @data;
 my $current = {};
 my $tag;
@@ -2578,6 +2589,8 @@ sub Text {
 $text = $_;
 }
 
+}	# End of variable context
+
 ########################################################################
 
 #	The parser code for the geocoder.ca data gets its own namespace
@@ -2589,11 +2602,12 @@ use Scalar::Util qw{looks_like_number};
 
 our $debug;
 
-## my @data;
-## my $current = {};
-## my $tag;
-## my $text = '';
-## my %interest;
+{	# Establish variable context
+my @data;
+my $current = {};
+my $tag;
+my $text = '';
+my %interest;
 my ($error, $description);
 $current = {};
 BEGIN {
@@ -2633,6 +2647,7 @@ sub Text {
 $text = $_;
 }
 
+}	# End variable context
 
 ########################################################################
 
@@ -3101,11 +3116,26 @@ The latitude and longitude can be omitted, in which case the current
 L<latitude|/latitude> and L<longitude|/longitude> parameters are
 used.
 
+=for html <a name="height_af"></a>
+
+=item height_af latitude longitude
+
+Afghanistan is handled by L<height_us|/height_us>, since this is
+(supposedly) covered by the U.S. Geological Survey's Afghanistan
+Digital Elevation Model.
+
 =for html <a name="height_as"></a>
 
 =item height_as latitude longitude
 
 American Samoa is handled by L<height_us|/height_us>.
+
+=for html <a name="height_ca"></a>
+
+=item height_ca latitude longitude
+
+Canada is handled by L<height_us|/height_us>, since the U.S. Geological
+Survey dataset includes all of North America.
 
 =for html <a name="height_fm"></a>
 
