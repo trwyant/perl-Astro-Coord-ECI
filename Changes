@@ -53,4 +53,24 @@
     Modify pass and position output to use local_coord.
   TLE.pm
     Tweak synopsis, to show that setting time runs model.
-
+0.006
+  ECI.pm
+    Cache some calculations for re-use.
+  ECI/Star.pm
+    Tweak docs.
+  ECI/Utils.pm
+    Add intensity_to_magnitude(), atmospheric_extinction().
+  bin/satpass
+    Correct check for whether location has been set. Old check
+      did not recognize 0 latitude, longitude, or height.
+    Special-case code to 'unset' tz when it is set to undef or ''.
+    Make 'position' iterate over time, in real time with -realtime.
+    Add -time global command option to time execution.
+    Add 'country' parameter. Break out 'geocode' and 'height' to
+      country-specific versions, and make the original command
+      dispatch based on 'country' parameter or explicit argument.
+    Allow formatting of local coordinates without range information.
+    Round pass times to the nearest second (since strftime truncates).
+    Add 'almanac' command options -horizon, -quarters, -transit, and
+      -twilight to restrict the output.
+    Make height_us() work with revised USGS SOAP calling sequence.
