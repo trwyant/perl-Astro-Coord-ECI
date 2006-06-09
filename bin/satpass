@@ -55,7 +55,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006';
+$VERSION = '0.006_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3015,9 +3015,6 @@ command.
 Because of restrictions on the use of the Geocoder.ca site, you may not
 use this command for commercial purposes.
 
-I currently have no source for height information in Canada. Attempts
-to acquire it will result in a warning.
-
 =for html <a name="geocode_fm"></a>
 
 =item geocode_fm location
@@ -3091,7 +3088,7 @@ be buggy and not to cover rural areas well.
 
 =for html <a name="geocode_vi"></a>
 
-=item geocode_as location
+=item geocode_vi location
 
 The U.S. Virgin Islands are handled by L<geocode_us|/geocode_us>.
 
