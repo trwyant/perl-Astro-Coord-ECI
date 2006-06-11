@@ -22,6 +22,7 @@ use List::Util qw{max};
 use Pod::Usage;
 use POSIX qw{floor strftime};
 use Scalar::Util qw{looks_like_number};
+use Storable ();
 use Term::ReadLine;
 use Text::Abbrev;
 use Text::ParseWords;
@@ -55,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006_01';
+$VERSION = '0.006_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1526,6 +1527,19 @@ foreach (sort {$a->[0] <=> $b->[0]} @data) {
 
 ########################################################################
 #
+#	retrieve () - Reload the observing list using Storable::retrieve.
+#
+
+sub retrieve {
+my $fn = shift or die <<eod;
+Error - No file name specified.
+eod
+@bodies = @{Storable::retrieve ($fn)};
+}
+
+
+########################################################################
+#
 #	set () - set the values of parameters
 #
 
@@ -1863,6 +1877,18 @@ eod
     }
 }
 
+
+########################################################################
+#
+#	store () - Save the observing list using Storable nstore().
+#
+
+sub store {
+my $fn = shift or die <<eod;
+Error - No file name specified.
+eod
+Storable::nstore (\@bodies, $fn);
+}
 
 ########################################################################
 #
@@ -3352,6 +3378,14 @@ See the L</SPECIFYING TIMES> topic below for how to specify times.
 The defaults are 'today noon' and '+30' (meaning 30 days after the
 most-recently-specified explicit time).
 
+=for html <a name="retrieve"></a>
+
+=item retrieve filename
+
+This command is one half of the interface to the Storable module.
+It uses the retrieve() subroutine to read the observing list from
+the given file.
+
 =for html <a name="set"></a>
 
 =item set name value ...
@@ -3515,6 +3549,14 @@ the moment is 'iridium'.
 Normally, this command will not reload status if it is already
 available, since it does not change that often. But you can force
 a reload using the -reload qualifier.
+
+=for html <a name="store"></a>
+
+=item store filename
+
+This command is one half of the interface to the Storable module.
+It uses the nstore() subroutine to write the observing list to
+the given file.
 
 =for html <a name="system"></a>
 
