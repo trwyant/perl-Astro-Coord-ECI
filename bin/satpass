@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006_02';
+$VERSION = '0.006_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -338,8 +338,9 @@ while (1) {
 
 #	Do pseudo tilde expansion.
 
-    $redout =~ s%^(>+)~%$1 . (
-	$^O eq 'VMS' ? '/sys$login' : $ENV{HOME} || $ENV{LOGDIR})%e;
+##    $redout =~ s%^(>+)~%$1 . (
+##	$^O eq 'VMS' ? '/sys$login' : $ENV{HOME} || $ENV{LOGDIR})%e;
+    $redout =~ s/^(>+)(~.*)/ $1 . _tilde_expand ($2) /e;
 
 #	Special-case 'exit' to drop out of the input loop.
 
@@ -1016,8 +1017,9 @@ if (@bodies) {
 
 sub load {
 foreach my $fn (@_) {
-    my $fh = FileHandle->new ("<$fn") or die <<eod;
-Error - Cannot open $fn.
+    my $expand = _tilde_expand ($fn);
+    my $fh = FileHandle->new ("<$expand") or die <<eod;
+Error - Cannot open $expand.
         $!
 eod
     push @bodies, Astro::Coord::ECI::TLE->parse (<$fh>);
@@ -1534,7 +1536,7 @@ sub retrieve {
 my $fn = shift or die <<eod;
 Error - No file name specified.
 eod
-@bodies = @{Storable::retrieve ($fn)};
+@bodies = @{Storable::retrieve (_tilde_expand ($fn))};
 }
 
 
@@ -1887,7 +1889,7 @@ sub store {
 my $fn = shift or die <<eod;
 Error - No file name specified.
 eod
-Storable::nstore (\@bodies, $fn);
+Storable::nstore (\@bodies, _tilde_expand ($fn));
 }
 
 ########################################################################
@@ -2429,6 +2431,16 @@ if ($ctrl eq '+') {
   else {
     die "Unrecognized substitution control character '$ctrl'\n";
     }
+}
+
+#	$expand = _tilde_expand ($filename)
+
+#	Perform tilde expansion on the given filename if needed.
+
+sub _tilde_expand {
+(my $rslt = $_[0] || '') =~ s%^~%
+	$^O eq 'VMS' ? '/sys$login' : $ENV{HOME} || $ENV{LOGDIR}%e;
+$rslt
 }
 
 
