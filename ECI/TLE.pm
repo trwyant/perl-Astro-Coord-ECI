@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = 0.003;
+our $VERSION = 0.003_01;
 
 use base qw{Astro::Coord::ECI};
 
@@ -213,6 +213,8 @@ my %static = (
     model => 'model',
     );
 
+use constant TLE_INIT => '_init';
+
 =item $tle = Astro::Coord::ECI::TLE->new()
 
 This method instantiates an object to represent a NORAD two- or
@@ -302,8 +304,8 @@ its period is at least 225 minutes (= 13500 seconds).
 =cut
 
 sub is_deep {
-return $_[0]{_isdeep} if exists $_[0]{_isdeep};
-return ($_[0]{_isdeep} = $_[0]->period () >= 13500);
+return $_[0]->{&TLE_INIT}{TLE_isdeep} if exists $_[0]->{&TLE_INIT}{TLE_isdeep};
+return ($_[0]->{&TLE_INIT}{TLE_isdeep} = $_[0]->period () >= 13500);
 }
 
 
@@ -511,11 +513,7 @@ while (@_) {
 	$clear ||= $attrib{$name};
 	}
     }
-$clear and do {
-    foreach (qw{_sgp _sgp4 _sdp4 _sgp8 _sdp8 _deep _isdeep}) {
-	delete $self->{$_};
-	}
-    };
+$clear and delete $self->{&TLE_INIT};
 }
 
 
@@ -549,7 +547,7 @@ my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 #>>>	retrieve the results of initialization, performing the
 #>>>	calculations if needed. -- TRW
 
-my $parm = $self->{_sgp} ||= do {
+my $parm = $self->{&TLE_INIT}{TLE_sgp} ||= do {
     $self->is_deep and croak <<EOD;
 Error - The SGP model is not valid for deep space objects.
         Use the SDP4 or SDP8 models instead.
@@ -765,7 +763,7 @@ my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 #>>>	retrieve the results of initialization, performing the
 #>>>	calculations if needed. -- TRW
 
-my $parm = $self->{_sgp4} ||= do {
+my $parm = $self->{&TLE_INIT}{TLE_sgp4} ||= do {
     $self->is_deep and croak <<EOD;
 Error - The SGP4 model is not valid for deep space objects.
         Use the SDP4 or SDP8 models instead.
@@ -1093,7 +1091,7 @@ my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 #>>>	retrieve the results of initialization, performing the
 #>>>	calculations if needed. -- TRW
 
-my $parm = $self->{_sdp4} ||= do {
+my $parm = $self->{&TLE_INIT}{TLE_sdp4} ||= do {
     $self->is_deep or croak <<EOD;
 Error - The SGP4 model is not valid for near-earth objects.
         Use the SGP, SGP4, or SGP8 models instead.
@@ -1174,7 +1172,7 @@ EOD
     my $xlcof = .125 * $a3ovk2 * $sini0 * (3 + 5 * $cosi0) / (1 + $cosi0);
     my $aycof = .25 * $a3ovk2 * $sini0;
     my $x7thm1 = 7 * $theta2 - 1;
-    $self->{_deep} = {$self->_dpinit ($eosq, $sini0, $cosi0, $beta0,
+    $self->{&TLE_INIT}{TLE_deep} = {$self->_dpinit ($eosq, $sini0, $cosi0, $beta0,
 	$aodp, $theta2, $sing, $cosg, $beta02, $xmdot, $omgdot,
 	$xnodot, $xnodp)},
 
@@ -1232,7 +1230,7 @@ eod
 	xnodp => $xnodp,
 	};
     };
-my $dpsp = $self->{_deep};
+my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
 
 #* UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
@@ -1376,7 +1374,7 @@ my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 #>>>	retrieve the results of initialization, performing the
 #>>>	calculations if needed. -- TRW
 
-my $parm = $self->{_sgp8} ||= do {
+my $parm = $self->{&TLE_INIT}{TLE_sgp8} ||= do {
     $self->is_deep and croak <<EOD;
 Error - The SGP8 model is not valid for deep space objects.
         Use the SDP4 or SDP8 models instead.
@@ -1768,7 +1766,7 @@ my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 #>>>	retrieve the results of initialization, performing the
 #>>>	calculations if needed. -- TRW
 
-my $parm = $self->{_sdp8} ||= do {
+my $parm = $self->{&TLE_INIT}{TLE_sdp8} ||= do {
     $self->is_deep or croak <<EOD;
 Error - The SDP8 model is not valid for near-earth objects.
         Use the SGP, SGP4 or SGP8 models instead.
@@ -1843,7 +1841,7 @@ EOD
 	$c4 * $cos2g + $c5 * $sing);
     my $xndtn = $xndt / $xnodp;
     my $edot = - SGP_TOTHRD * $xndtn * (1 - $self->{eccentricity});
-    $self->{_deep} = {$self->_dpinit ($eosq, $sini, $cosi, $beta0,
+    $self->{&TLE_INIT}{TLE_deep} = {$self->_dpinit ($eosq, $sini, $cosi, $beta0,
 	$aodp, $theta2, $sing, $cosg, $beta02, $xlldot, $omgdt,
 	$xnodot, $xnodp)},
     {
@@ -1874,7 +1872,7 @@ EOD
 	xnodp => $xnodp,
 	};
     };
-my $dpsp = $self->{_deep};
+my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
 
 #*	UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
@@ -2551,7 +2549,7 @@ return (
 
 sub _dpsec {
 my $self = shift;
-my $dpsp = $self->{_deep};
+my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 my ($xll, $omgasm, $xnodes, $em, $xinc, $xn, $t) = @_;
 my @orig = map {defined $_ ? $_ : 'undef'}
 	map {ref $_ eq 'SCALAR' ? $$_ : $_} @_
@@ -2630,7 +2628,7 @@ eod
 
 sub _dps_dot {
 my $self = shift;
-my $dpsp = $self->{_deep};
+my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
 
 #C
@@ -2709,7 +2707,7 @@ return ($xldot, $xndot, $xnddt);
 
 sub _dpper {
 my $self = shift;
-my $dpsp = $self->{_deep};
+my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 my ($em, $xinc, $omgasm, $xnodes, $xll, $t) = @_;
 my @orig = map {defined $_ ? $_ : 'undef'}
 	map {ref $_ eq 'SCALAR' ? $$_ : $_} @_
