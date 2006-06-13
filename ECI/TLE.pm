@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = 0.003_01;
+our $VERSION = 0.003_02;
 
 use base qw{Astro::Coord::ECI};
 
@@ -163,8 +163,16 @@ use constant SGP_RHO => .15696615;
 
 #	Legal model names.
 
-my %legal_model = map {$_ => 1} qw{model model4 model8 sdp4 sdp8 sgp sgp4 sgp8};
-
+no warnings qw{once};
+*_model_model = \&model;
+*_model_model4 = \&model4;
+*_model_model8 = \&model8;
+*_model_sdp4 = \&sdp4;
+*_model_sdp8 = \&sdp8;
+*_model_sgp = \&sgp;
+*_model_sgp4 = \&sgp4;
+*_model_sgp8 = \&sgp8;
+use warnings qw{once};
 
 #	List all the legitimate attributes for the purposes of the
 #	get and set methods. Possible values of the hash are:
@@ -194,7 +202,7 @@ my %attrib = (
     elementnumber => 0,
     inclination => 1,
     model => sub {
-	$_[2] and $legal_model{$_[2]} || croak <<eod;
+	$_[2] and $_[0]->can ("_model_$_[2]") || croak <<eod;
 Error - Illegal model name '$_[2]'.
 eod
 	$_[0]->{$_[1]} = $_[2];
@@ -458,10 +466,12 @@ return @rslt;
 
 This method returns the orbital period of the object in seconds.
 
+=for comment help parenthesis-matching editor }
+
 =cut
 
 sub period {
-return $_[0]{_period} if exists $_[0]{_period};
+return $_[0]->{&TLE_INIT}{TLE_period} if exists $_[0]->{&TLE_INIT}{TLE_period};
 my $self = shift;
 
 my $a1 = (SGP_XKE / $self->{meanmotion}) ** SGP_TOTHRD;
@@ -472,7 +482,7 @@ my $a0 = $a1 * (1 - $del1 * (.5 * SGP_TOTHRD +
 	$del1 * (1 + 134/81 * $del1)));
 my $del0 = $temp / ($a0 * $a0);
 my $xnodp = $self->{meanmotion} / (1 + $del0);
-return ($self->{_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
+return ($self->{&TLE_INIT}{TLE_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
 }
 
 
