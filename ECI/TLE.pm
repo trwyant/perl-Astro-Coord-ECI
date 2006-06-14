@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = 0.003_02;
+our $VERSION = 0.003_03;
 
 use base qw{Astro::Coord::ECI};
 
@@ -2939,11 +2939,15 @@ first letters, and spent boosters, debris, etc getting the rest.
 
 =item meananomaly (numeric, parse)
 
-This attribute contains the mean orbital anomaly in radians.
+This attribute contains the mean orbital anomaly at the epoch, in
+radians. In slightly less technical terms, this is the angular
+distance a body in a circular orbit of the same period (that is
+what the 'mean' means) would be from perigee at the epoch, measured
+in the plane of the orbit.
 
 =item meanmotion (numeric, parse)
 
-This attribute contains mean motion of body, in radians per
+This attribute contains the mean motion of the body, in radians per
 minute.
 
 =item model (string, static)
