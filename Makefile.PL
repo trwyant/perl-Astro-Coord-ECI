@@ -8,6 +8,8 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
+our $VERSION = '0.002';
+
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
 The only legal options are
@@ -89,20 +91,21 @@ eod
 	next unless $module;
 	my @mv = $version ? ($module, $version) : ($module);
 	eval "use @mv";
-	$@ or do {push @prereq, $module, $version; next};
+##	$@ or do {push @prereq, $module, $version; next};
+	$@ or next;
 	print "\n", $info, "\n";
-	if ($opt{n}) {
-	    print "Because you have asserted -n, optional module @mv will not be installed.\n\n";
-	    }
-	  elsif ($opt{y}) {
-	    print "Because you have asserted -y, optional module @mv will be installed.\n\n";
-	    push @prereq, $module, $version;
-	    }
-	  else {
-	    push @prereq, $module, $version
-		if prompt ("Do you want to install optional module @mv?", 'n')
-			=~ m/^y/i;
-	    }
+##	if ($opt{n}) {
+##	    print "Because you have asserted -n, optional module @mv will not be installed.\n\n";
+##	    }
+##	  elsif ($opt{y}) {
+##	    print "Because you have asserted -y, optional module @mv will be installed.\n\n";
+##	    push @prereq, $module, $version;
+##	    }
+##	  else {
+##	    push @prereq, $module, $version
+##		if prompt ("Do you want to install optional module @mv?", 'n')
+##			=~ m/^y/i;
+##	    }
 	}
     if ($^O eq 'MSWin32') {
 	@exe_files = map {"bin/$_"} @exe_files;
