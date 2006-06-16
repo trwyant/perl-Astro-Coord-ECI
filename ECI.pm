@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -207,6 +207,12 @@ $self->{debug} and do {
     };
 my $trn2 = shift;
 my $upper = shift;
+
+my $algorithm = lc ($ENV{ECI_AZEL_ALGORITHM} || 'kelso');
+
+my ($azimuth, $range, $elevation);
+if ($algorithm eq 'kelso') {
+
 my @obj = $trn2->eci (@_);
 my $time = $trn2->universal;
 my @base = $self->eci ($time);
@@ -230,14 +236,62 @@ my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
 my $ts = $sinlat * $rterm - $coslat * $delta[2];
 my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
 my $tz = $coslat * $rterm + $sinlat * $delta[2];
-my $azimuth = mod2pi (atan2 ($te, - $ts));
-my $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
+$azimuth = mod2pi (atan2 ($te, - $ts));
+$range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
 	$delta[2] * $delta[2]);
-my $elevation = asin ($tz / $range);
+$elevation = asin ($tz / $range);
 
 
 #	End of Kelso algorithm.
 
+} else {	# $algorithm ne 'kelso'
+
+########### Begin own algorithm based on ECEF coordinates
+
+$self->universal ($trn2->universal ()) if $self->{inertial};
+my ($sinphi, $cosphi, $sinlamda, $coslamda) = @{
+    $cache->{geodetic_funcs} ||= do {
+	my ($phi, $lamda) = $self->geodetic();
+	[sin ($phi), cos ($phi), sin ($lamda), cos ($lamda)]
+	}
+    };
+
+my @base = ($self->ecef ())[0, 1, 2];
+my @tgt = ($trn2->ecef ())[0, 1, 2];
+my @delta;
+foreach my $ix (0 .. 2) {$delta[$ix] = $tgt[$ix] - $base[$ix]}
+
+# +-                           -+   +-                     -+
+# |  cos(90-phi) 0 -sin(90-phi) |   |  sin(phi) 0 -cos(phi) |
+# |       0      1       0      | = |      0    1     0     |
+# |  sin(90-phi) 0  cos(90-phi) |   |  cos(phi) 0  sin(phi) |
+# +-                           -+   +-                     -+
+
+# +-                     -+   +-                        -+
+# |  sin(phi) 0 -cos(phi) |   | cos(lamda) -sin(lamda) 0 |
+# |      0    1     0     | x | sin(lamda)  cos(lamda) 0 | =
+# |  cos(phi) 0  sin(phi) |   |      0          0      1 |
+# +-                     -+   +-                        -+
+
+# +-                                                -+
+# |  cos(lamda)sin(phi) -sin(lamda)sin(phi) -cos(phi) |
+# |  sin(lamda)          cos(lamda)             0     |
+# |  cos(lamda)cos(phi) -sin(lamda)cos(phi)  sin(phi) |
+# +-                                                -+
+
+##my $lclx = $coslamda * $sinphi * $delta[0] - $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
+  my $lclx = $coslamda * $sinphi * $delta[0] + $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
+##my $lcly =   $sinlamda * $delta[0] + $coslamda * $delta[1];
+  my $lcly = - $sinlamda * $delta[0] + $coslamda * $delta[1];
+##my $lclz = $coslamda * $cosphi * $delta[0] - $sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
+  my $lclz = $coslamda * $cosphi * $delta[0] + $sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
+
+$azimuth = mod2pi (atan2 ($lcly, -$lclx));
+$range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] + $delta[2] * $delta[2]);
+$elevation = asin ($lclz / $range);
+
+########### End own algorithm based on ECEF coordinates
+}
 
 #	Adjust for upper limb and refraction if needed.
 
