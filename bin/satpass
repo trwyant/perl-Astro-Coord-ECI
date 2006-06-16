@@ -35,8 +35,8 @@ my ($clipboard_unavailable, $io_string_unavailable,
 	$spacetrack_unavailable, $xml_parser_unavailable);
 BEGIN {
     eval "use Astro::SpaceTrack";
-    $spacetrack_unavailable = <<eod if $@ || Astro::SpaceTrack->VERSION < 0.016;
-Error - You need to install the Astro::SpaceTrack module version 0.016
+    $spacetrack_unavailable = <<eod if $@ || Astro::SpaceTrack->VERSION < 0.017;
+Error - You need to install the Astro::SpaceTrack module version 0.017
         or higher if you wish to use the st command.
 eod
     eval "use LWP::UserAgent";
@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006_03';
+$VERSION = '0.006_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1822,7 +1822,7 @@ $fh = $hdl;
 #	which means to display all data fetched..
 
 BEGIN {
-$cmdlgl{st} = [qw{verbose}];
+$cmdlgl{st} = [qw{end=s start=s verbose}];
 }
 
 sub st {
@@ -1833,6 +1833,8 @@ eod
 $func !~ m/^_/ && $st->can ($func) or die <<eod;
 Error - Unknown Astro::SpaceTrack method $func.
 eod
+unshift @_, -start => _parse_time ($cmdopt{start}) if $cmdopt{start};
+unshift @_, -end =>  _parse_time ($cmdopt{end}) if $cmdopt{end};
 my $rslt = $st->$func (@_);
 my $content = $st->content_type || '';
 if (!$rslt->is_success) {
@@ -2256,7 +2258,7 @@ $string * $units{$units};
 BEGIN {	# Begin local symbol block.
 my $last_time_set = time ();
 sub _parse_time {
-my $time = shift or return ($last_time_set = time ());
+my $time = $_[0] or return ($last_time_set = time ());
 my $rslt;
 if ($time =~ m/^([\+\-])\s*(\d+)(?:\s+(\d+)(?::(\d+)(?::(\d+))?)?)?/) {
     my $delta = ((($2 || 0) * 24 + ($3 || 0)) * 60 + ($4 || 0)) * 60 + ($5 || 0);
@@ -3520,13 +3522,23 @@ B<Astro::SpaceTrack> package. If a command returns orbital elements,
 those elements will be added to the observing list. You can use
 'st help' to get brief help, or see L<Astro::SpaceTrack>.
 
-In addition to the usual qualifiers, you can specify -verbose to cause
-the content of the response to be displayed in cases where it
-normally would not be (e.g. cases where the content is "OK", or where
-it  would normally simply be digested by this application (e.g. orbital
-elements)).
+In addition to the usual options, the following options specific to
+this command are supported:
 
-You must install B<Astro::SpaceTrack> version 0.011 or higher to use
+-start and -end specify the start and end of the date range to be
+retrieved. The date may be specified in any legal format. See
+L<SPECIFYING TIMES|/SPECIFYING TIMES> for the details. If you
+specify relative times, be aware that the -start value is parsed
+before the -end value, regardless of their positions on the command
+line. Yes, Astro::SpaceTrack already supports this, but by pre-parsing
+them we get more flexability on how to specify the date and time.
+
+-verbose causes the content of the response to be displayed in cases
+where it normally would not be (e.g. cases where the content is "OK",
+or where it  would normally simply be digested by this application
+(e.g. orbital elements)).
+
+You must install B<Astro::SpaceTrack> version 0.017 or higher to use
 this command.
 
 Example of retrieving data on the International Space Station and the
