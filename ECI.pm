@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.006_02';
+our $VERSION = '0.006_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -521,7 +521,10 @@ my $self = shift;
 $self = $self->_check_coord (ecef => \@_);
 
 unless (@_) {
-    return @{$self->{_ECI_cache}{fixed}{ecef} || croak <<eod};
+    my $cache = ($self->{_ECI_cache} ||= {});
+    return @{$cache->{fixed}{ecef}} if $cache->{fixed}{ecef};
+    return $self->_convert_eci_to_ecef () if $self->{inertial};
+    croak <<eod;
 Error - Object has not been initialized.
 eod
     }
@@ -597,45 +600,21 @@ sub eci {
 my $self = shift;
 
 $self = $self->_check_coord (eci => \@_);
-my $cache = ($self->{_ECI_cache} ||= {});
 
 unless (@_) {
+    my $cache = ($self->{_ECI_cache} ||= {});
     return @{$cache->{inertial}{eci}} if $cache->{inertial}{eci};
-    my $thetag = thetag ($self->universal);
-    my @data = $self->ecef;
-    $self->{debug} and print <<eod;
-Debug eci - thetag = $thetag
-    (x, y) = (@data[0, 1])
+    return $self->_convert_ecef_to_eci () if $self->{specified};
+    croak <<eod;
+Error - Object has not been initialized.
 eod
-    my $costh = cos ($thetag);
-    my $sinth = sin ($thetag);
-    @data[0, 1] = ($data[0] * $costh - $data[1] * $sinth,
-	$data[0] * $sinth + $data[1] * $costh);
-    @data[3, 4] = ($data[3] * $costh - $data[4] * $sinth,
-	$data[3] * $sinth + $data[4] * $costh);
-     $self->{debug} and print <<eod;
-Debug eci - after rotation,
-    (x, y) = (@data[0, 1])
-eod
-    $data[3] += $data[1] * $self->{angularvelocity};
-    $data[4] -= $data[0] * $self->{angularvelocity};
-    return @{$cache->{inertial}{eci} = [@data]};
+
     }
 
 @_ == 3 and push @_, 0, 0, 0;
 
 if (@_ == 6) {
-    my $thetag = thetag ($self->universal);
-    my @ecef = @_;
-    $ecef[3] -= $ecef[1] * $self->{angularvelocity};
-    $ecef[4] += $ecef[0] * $self->{angularvelocity};
-    my $costh = cos (- $thetag);
-    my $sinth = sin (- $thetag);
-    @ecef[0, 1] = ($ecef[0] * $costh - $ecef[1] * $sinth,
-	$ecef[0] * $sinth + $ecef[1] * $costh);
-    @ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
-	$ecef[3] * $sinth + $ecef[4] * $costh);
-    $self->ecef (@ecef);
+    foreach my $key (@kilatr) {delete $self->{$key}}
     $self->{_ECI_cache}{inertial}{eci} = [@_];
     $self->{specified} = 'eci';
     $self->{inertial} = 1;
@@ -1797,7 +1776,8 @@ if (@_ == 1) {
     $self->{universal} = shift;
     if ($self->{specified}) {
 	if ($self->{inertial}) {
-	    $self->{_need_purge} = 1;
+##	    $self->{_need_purge} = 1;
+	    delete $self->{_ECI_cache}{fixed};
 	    }
 	  else {
 	    delete $self->{_ECI_cache}{inertial};
@@ -1877,6 +1857,51 @@ if ($self->{specified}) {
 $self;
 }
 
+#	@eci = $self->_convert_ecef_to_eci ()
+
+#	This subroutine converts the object's ECEF setting to ECI, and
+#	both caches and returns the result.
+
+sub _convert_ecef_to_eci {
+my $self = shift;
+my $thetag = thetag ($self->universal);
+my @data = $self->ecef ();
+$self->{debug} and print <<eod;
+Debug eci - thetag = $thetag
+    (x, y) = (@data[0, 1])
+eod
+my $costh = cos ($thetag);
+my $sinth = sin ($thetag);
+@data[0, 1] = ($data[0] * $costh - $data[1] * $sinth,
+	$data[0] * $sinth + $data[1] * $costh);
+@data[3, 4] = ($data[3] * $costh - $data[4] * $sinth,
+	$data[3] * $sinth + $data[4] * $costh);
+$self->{debug} and print <<eod;
+Debug eci - after rotation,
+    (x, y) = (@data[0, 1])
+eod
+$data[3] += $data[1] * $self->{angularvelocity};
+$data[4] -= $data[0] * $self->{angularvelocity};
+return @{$self->{_ECI_cache}{inertial}{eci} = [@data]};
+}
+
+#	This subroutine converts the object's ECI setting to ECEF, and
+#	both caches and returns the result.
+
+sub _convert_eci_to_ecef {
+my $self = shift;
+my $thetag = thetag ($self->universal);
+my @ecef = $self->eci ();
+$ecef[3] -= $ecef[1] * $self->{angularvelocity};
+$ecef[4] += $ecef[0] * $self->{angularvelocity};
+my $costh = cos (- $thetag);
+my $sinth = sin (- $thetag);
+@ecef[0, 1] = ($ecef[0] * $costh - $ecef[1] * $sinth,
+	$ecef[0] * $sinth + $ecef[1] * $costh);
+@ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
+	$ecef[3] * $sinth + $ecef[4] * $costh);
+return @{$self->{_ECI_cache}{fixed}{ecef} = [@ecef]};
+}
 
 #	$value = _local_mean_delta ($coord)
 
