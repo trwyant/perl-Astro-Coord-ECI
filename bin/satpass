@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006_04';
+$VERSION = '0.006_05';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -175,10 +175,7 @@ my $inifil = $^O eq 'MSWin32' || $^O eq 'VMS' || $^O eq 'MacOS' ?
 $inifil = $^O eq 'VMS' ? "SYS\$LOGIN:$inifil" :
     $^O eq 'MacOS' ? $inifil :
     $ENV{HOME} ? "$ENV{HOME}/$inifil" :
-    $ENV{LOGDIR} ? "$ENV{LOGDIR}/$inifil" : undef or warn <<eod;
-Warning - Can not find home directory. Initialization file will not be
-        executed.
-eod
+    $ENV{LOGDIR} ? "$ENV{LOGDIR}/$inifil" : undef;
 
 
 sub _format_location;	# Predeclare, so I do not need explicit STDOUT.
@@ -204,7 +201,8 @@ my %alias = (
     quit => 'exit',
     );
 
-GetOptions (\%opt, qw{clipboard filter}) or die <<eod;
+GetOptions (\%opt, qw{clipboard filter initialization_file=s}) or
+    die <<eod;
 
 Predict satellite visibility.
 
@@ -215,14 +213,38 @@ where the legal options are
   -clipboard
     Asserting this option causes all output to stdout to be captured
     and placed on the system clipboard. Command-line output redirection
-    is ignored. 
+    is ignored.
 
   -filter
     Asserting this option supresses extraneous output, making satpass
     behave more like a Unix filter.
 
+  -initialization_file filename
+    Initializes satpass from the named file. The default is
+    $inifil.
+
+Option names can be abbreviated, as long as the abbreviation is unique.
+
 $clipboard_unavailable
 eod
+
+$inifil || $opt{initialization_file} or warn <<eod;
+
+Warning - Can not find home directory, and no explicit initialization
+        file specified.
+eod
+if ($opt{initialization_file}) {
+    if (-e $opt{initialization_file}) {
+	$inifil = $opt{initialization_file};
+	}
+      else {
+	warn <<eod;
+
+Warning - File $opt{initialization_file} does not exist.
+        Initializing with $inifil
+eod
+	}
+    }
 
 $opt{clipboard} and select (IO::Clipboard->new ());
 
