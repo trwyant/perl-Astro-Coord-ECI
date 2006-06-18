@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.006_03';
+our $VERSION = '0.006_04';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -161,9 +161,13 @@ ref $B && UNIVERSAL::isa ($B, __PACKAGE__) &&
 Error - Both arguments must be @{[__PACKAGE__]} objects.
 eod
 
-my $a = distsq ([$B->ecef], [$C->ecef]);
-my $b = distsq ([$self->ecef], [$C->ecef]);
-my $c = distsq ([$self->ecef], [$B->ecef]);
+my $method = $self->{inertial} ? 'eci' : 'ecef';
+my $cA = [$self->$method ()];
+my $cB = [$B->$method ()];
+my $cC = [$C->$method ()];
+my $a = distsq ($cB, $cC);
+my $b = distsq ($cA, $cC);
+my $c = distsq ($cA, $cB);
 
 acos (($b + $c - $a) / sqrt (4 * $b * $c));
 }
