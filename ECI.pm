@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.006_04';
+our $VERSION = '0.006_05';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -212,6 +212,7 @@ my $trn2 = shift;
 my $upper = shift;
 
 my $algorithm = lc ($ENV{ECI_AZEL_ALGORITHM} || 'kelso');
+$algorithm = $self->{inertial} ? 'kelso' : 'my' if $algorithm eq 'choose';
 
 my ($azimuth, $range, $elevation);
 if ($algorithm eq 'kelso') {
