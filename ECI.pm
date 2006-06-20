@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.006_05';
+our $VERSION = '0.006_06';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -175,6 +175,8 @@ acos (($b + $c - $a) / sqrt (4 * $b * $c));
 
 =item ($azimuth, $elevation, $range) = $coord->azel ($coord2, $upper);
 
+=for comment help syntax-highlighting editor "
+
 This method takes another coordinate object, and computes its azimuth,
 elevation, and range in reference to the object doing the computing.
 The return is azimuth in radians measured clockwise from North (always
@@ -195,9 +197,11 @@ the correct_for_refraction() method.
 The basic algorithm comes from T. S. Kelso's "Computers and Satellites"
 column in "Satellite Times", November/December 1995, titled "Orbital
 Coordinate Systems, Part II" and available at
-F<http://celestrak.com/columns/v02n02/>.
+F<http://celestrak.com/columns/v02n02/>. If the object represents fixed
+coordinates, the author's algorithm is used, but the author confesses
+needing to refer to Dr. Kelso's work to get the signs right.
 
-=for comment help syntax-highlighting editor '
+=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -211,91 +215,96 @@ $self->{debug} and do {
 my $trn2 = shift;
 my $upper = shift;
 
-my $algorithm = lc ($ENV{ECI_AZEL_ALGORITHM} || 'kelso');
-$algorithm = $self->{inertial} ? 'kelso' : 'my' if $algorithm eq 'choose';
-
 my ($azimuth, $range, $elevation);
-if ($algorithm eq 'kelso') {
+if ($self->{inertial}) {
 
-my @obj = $trn2->eci (@_);
-my $time = $trn2->universal;
-my @base = $self->eci ($time);
-my ($phi, $lamda, $h) = $self->geodetic ();
-my @delta;
+    my @obj = $trn2->eci (@_);
+    my $time = $trn2->universal;
+    my @base = $self->eci ($time);
+    my ($phi, $lamda, $h) = $self->geodetic ();
+    my @delta;
 
 
 #	Kelso algorithm from
 #	http://celestrak.com/columns/v02n02/
 
-for (my $i = 0; $i < 6; $i++) {
-    $delta[$i] = $obj[$i] - $base[$i];
-    }
-my $thetag = thetag ($time);
-my $theta = mod2pi ($thetag + $lamda);
-my $sinlat = ($cache->{sinphi} ||= sin ($phi));
-my $sintheta = sin ($theta);
-my $coslat = ($cache->{cosphi} ||= cos ($phi));
-my $costheta = cos ($theta);
-my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
-my $ts = $sinlat * $rterm - $coslat * $delta[2];
-my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
-my $tz = $coslat * $rterm + $sinlat * $delta[2];
-$azimuth = mod2pi (atan2 ($te, - $ts));
-$range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
+    for (my $i = 0; $i < 6; $i++) {
+	$delta[$i] = $obj[$i] - $base[$i];
+	}
+    my $thetag = thetag ($time);
+    my $theta = mod2pi ($thetag + $lamda);
+    my $sinlat = ($cache->{inertial}{sinphi} ||= sin ($phi));
+    my $sintheta = sin ($theta);
+    my $coslat = ($cache->{inertial}{cosphi} ||= cos ($phi));
+    my $costheta = cos ($theta);
+    my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
+    my $ts = $sinlat * $rterm - $coslat * $delta[2];
+    my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
+    my $tz = $coslat * $rterm + $sinlat * $delta[2];
+    $azimuth = mod2pi (atan2 ($te, - $ts));
+    $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
 	$delta[2] * $delta[2]);
-$elevation = asin ($tz / $range);
+    $elevation = asin ($tz / $range);
 
 
 #	End of Kelso algorithm.
 
-} else {	# $algorithm ne 'kelso'
+    }
+  else {	# !$self->{inertial}
 
-########### Begin own algorithm based on ECEF coordinates
+    $self->universal ($trn2->universal ()) if $self->{inertial};
+    my ($sinphi, $cosphi, $sinlamda, $coslamda) = @{
+	$cache->{fixed}{geodetic_funcs} ||= do {
+	    my ($phi, $lamda) = $self->geodetic ();
+	    [sin ($phi), cos ($phi), sin ($lamda), cos ($lamda)]
+	    }
+	};
 
-$self->universal ($trn2->universal ()) if $self->{inertial};
-my ($sinphi, $cosphi, $sinlamda, $coslamda) = @{
-    $cache->{geodetic_funcs} ||= do {
-	my ($phi, $lamda) = $self->geodetic ();
-	[sin ($phi), cos ($phi), sin ($lamda), cos ($lamda)]
-	}
-    };
+    my @base = ($self->ecef ())[0, 1, 2];
+    my @tgt = ($trn2->ecef ())[0, 1, 2];
+    my @delta;
+    foreach my $ix (0 .. 2) {$delta[$ix] = $tgt[$ix] - $base[$ix]}
 
-my @base = ($self->ecef ())[0, 1, 2];
-my @tgt = ($trn2->ecef ())[0, 1, 2];
-my @delta;
-foreach my $ix (0 .. 2) {$delta[$ix] = $tgt[$ix] - $base[$ix]}
+#	We need to rotate the coordinate system in the X-Y plane by the
+#	longitude, followed by a rotation in the Z-X plane by 90
+#	degrees minus the latitude. In linear algebra, this is the
+#	theta matrix premultiplied by the phi matrix, which is
+#
+#	+-                           -+   +-                     -+
+#	|  cos(90-phi) 0 -sin(90-phi) |   |  sin(phi) 0 -cos(phi) |
+#	|       0      1       0      | = |      0    1     0     |
+#	|  sin(90-phi) 0  cos(90-phi) |   |  cos(phi) 0  sin(phi) |
+#	+-                           -+   +-                     -+
+#
+#	The entire rotation is therefore
+#
+#	+-                     -+   +-                        -+
+#	|  sin(phi) 0 -cos(phi) |   |  cos(lamda)  sin(lamda) 0 |
+#	|      0    1     0     | x | -sin(lamda)  cos(lamda) 0 | =
+#	|  cos(phi) 0  sin(phi) |   |       0          0      1 |
+#	+-                     -+   +-                        -+
+#
+#	+-                                                 -+
+#	|  cos(lamda)sin(phi)  sin(lamda)sin(phi) -cos(phi) |
+#	| -sin(lamda)          cos(lamda)             0     |
+#	|  cos(lamda)cos(phi)  sin(lamda)cos(phi)  sin(phi) |
+#	+-                                                 -+
 
-# +-                           -+   +-                     -+
-# |  cos(90-phi) 0 -sin(90-phi) |   |  sin(phi) 0 -cos(phi) |
-# |       0      1       0      | = |      0    1     0     |
-# |  sin(90-phi) 0  cos(90-phi) |   |  cos(phi) 0  sin(phi) |
-# +-                           -+   +-                     -+
+    my $lclx = $coslamda * $sinphi * $delta[0] + $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
+    my $lcly = - $sinlamda * $delta[0] + $coslamda * $delta[1];
+    my $lclz = $coslamda * $cosphi * $delta[0] + $sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
 
-# +-                     -+   +-                        -+
-# |  sin(phi) 0 -cos(phi) |   | cos(lamda) -sin(lamda) 0 |
-# |      0    1     0     | x | sin(lamda)  cos(lamda) 0 | =
-# |  cos(phi) 0  sin(phi) |   |      0          0      1 |
-# +-                     -+   +-                        -+
+#	We end with a Cartesian coordinate system with the observer at
+#	the origin, with X pointing to the South, Y to the East, and Z
+#	to the zenith. This gets converted to azimuth and elevation
+#	using the definition of those terms. Note that X gets negated
+#	in the computation of azimuth, since azimuth is from the North.
 
-# +-                                                -+
-# |  cos(lamda)sin(phi) -sin(lamda)sin(phi) -cos(phi) |
-# |  sin(lamda)          cos(lamda)             0     |
-# |  cos(lamda)cos(phi) -sin(lamda)cos(phi)  sin(phi) |
-# +-                                                -+
+    $azimuth = mod2pi (atan2 ($lcly, -$lclx));
+    $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] + $delta[2] * $delta[2]);
+    $elevation = asin ($lclz / $range);
 
-##my $lclx = $coslamda * $sinphi * $delta[0] - $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
-  my $lclx = $coslamda * $sinphi * $delta[0] + $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
-##my $lcly =   $sinlamda * $delta[0] + $coslamda * $delta[1];
-  my $lcly = - $sinlamda * $delta[0] + $coslamda * $delta[1];
-##my $lclz = $coslamda * $cosphi * $delta[0] - $sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
-  my $lclz = $coslamda * $cosphi * $delta[0] + $sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
-
-$azimuth = mod2pi (atan2 ($lcly, -$lclx));
-$range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] + $delta[2] * $delta[2]);
-$elevation = asin ($lclz / $range);
-
-########### End own algorithm based on ECEF coordinates
-}
+    }
 
 #	Adjust for upper limb and refraction if needed.
 
