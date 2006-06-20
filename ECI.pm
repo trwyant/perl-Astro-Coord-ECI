@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.006_06';
+our $VERSION = '0.006_07';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -187,7 +187,7 @@ If the optional 'upper' argument is true, the calculation will be of
 the upper limb of the object, using the 'diameter' attribute of the
 $coord2 object.
 
-As a side effect, the time of the $coord object is set from the
+As a side effect, the time of the $coord object may be set from the
 $coord object.
 
 If the L<refraction|/refraction> attribute of the $coord object is
@@ -252,7 +252,7 @@ if ($self->{inertial}) {
     }
   else {	# !$self->{inertial}
 
-    $self->universal ($trn2->universal ()) if $self->{inertial};
+###    $self->universal ($trn2->universal ()) if $self->{inertial};
     my ($sinphi, $cosphi, $sinlamda, $coslamda) = @{
 	$cache->{fixed}{geodetic_funcs} ||= do {
 	    my ($phi, $lamda) = $self->geodetic ();
