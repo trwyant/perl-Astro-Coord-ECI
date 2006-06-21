@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006_05';
+$VERSION = '0.006_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -542,8 +542,9 @@ foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
 #
 
 sub cd {
-$_[0] ? chdir ($_[0]) || die <<eod : chdir () || die <<eod;
-Error - Can not cd to $_[0]
+my $expand = _tilde_expand ($_[0]) if $_[0];
+$expand ? chdir ($expand) || die <<eod : chdir () || die <<eod;
+Error - Can not cd to $expand
         $!
 eod
 Error - Can not cd to home
