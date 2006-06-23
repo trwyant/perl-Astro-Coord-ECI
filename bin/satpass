@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006_07';
+$VERSION = '0.006_08';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1829,8 +1829,8 @@ $cmdlgl{source} = [qw{optional}];
 
 sub source {
 my $fn = shift;
-my $hdl = ref $fn ? $fn : FileHandle->new ("<$fn") ||
-    $cmdopt{optional} ? return : die <<eod;
+my $hdl = ref $fn ? $fn : FileHandle->new ("<@{[_tilde_expand ($fn)]}") ||
+    ($cmdopt{optional} ? return : die <<eod);
 Error - Can not open $fn for input.
         $!
 eod
