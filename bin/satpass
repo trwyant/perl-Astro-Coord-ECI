@@ -54,7 +54,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_09';
+our $VERSION = '0.006_10';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -248,6 +248,7 @@ Getopt::Long::Configure (qw{pass_through});	# Need because of relative time form
 
 push @frame, {
 	args => [],
+	parm => {},
 	stdin => $fh,
 	stdout => select (),
 	};
@@ -297,10 +298,11 @@ while (1) {
 #	we select the proper STDOUT and redo the loop.
 
     defined $buffer or do {
-	my $info = pop @frame;
-	last unless @frame;
-	$fh = $info->{stdin};
-	select ($info->{stdout});
+##!!	my $info = pop @frame;
+##!!	last unless @frame;
+##!!	$fh = $info->{stdin};
+##!!	select ($info->{stdout});
+	defined ($fh = _frame_pop ()) or last;
 	redo;
 	};
 
@@ -339,10 +341,11 @@ while (1) {
 	    unless $buffer =~ m/^\s*macro\b/};
     $@ and do {
 	warn $@;
-	my $info = pop @frame;
-	last unless @frame;
-	$fh = $info->{stdin};
-	select ($info->{stdout});
+	defined ($fh = _frame_pop ()) or last;
+##!!	my $info = pop @frame;
+##!!	last unless @frame;
+##!!	$fh = $info->{stdin};
+##!!	select ($info->{stdout});
 	redo;
 	};
 
@@ -371,8 +374,6 @@ while (1) {
 
 #	Do pseudo tilde expansion.
 
-##    $redout =~ s%^(>+)~%$1 . (
-##	$^O eq 'VMS' ? '/sys$login' : $ENV{HOME} || $ENV{LOGDIR})%e;
     $redout =~ s/^(>+)(~.*)/ $1 . _tilde_expand ($2) /e;
 
 #	Special-case 'exit' to drop out of the input loop.
@@ -921,7 +922,6 @@ if ($rslt) {
 	}
     $cmdopt{debug} and print 'Parsing: ', $rslt, "\n";
     my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
-##    my $psr = XML::Parser->new (Style => 'Debug', Pkg => 'USGSElevationData');
     $rslt = $psr->parse ($rslt);
     }
   else {
@@ -1059,6 +1059,22 @@ eod
     }
 }
 
+
+########################################################################
+#
+#	localize () - Localize parameter settings.
+#
+
+sub localize {
+foreach my $key (@_) {
+    $key =~ m/\W/ || $key =~ m/^_/ || !exists ($parm{$key}) and
+	die <<eod;
+Error - Parameter $key does not exist.
+eod
+    $frame[$#frame]{parm}{$key} = $parm{$key}
+	unless exists $frame[$#frame]{parm}{$key};
+    }
+}
 
 ########################################################################
 #
@@ -1846,12 +1862,10 @@ Error - Can not open $fn for input.
 eod
 push @frame, {
 	args => [@_],
+	parm => {},
 	stdin => $fh,
 	stdout => select (),
 	};
-##!!push @stdin, $fh;
-##!#push @stdout, select ();
-##!!$argstk[$#frame] = [@_];
 $fh = $hdl;
 }
 
@@ -2133,6 +2147,18 @@ eod
 	<<eod, map {$parm{$_}} qw{latitude longitude height});
 Location: Latitude %.4f, longitude %.4f, height %.0f m
 eod
+}
+
+#	$input_handle = _frame_pop ();
+
+#	Pops a stack frame. Returns the desired input handle, or
+#	undef if there are no frames left on the stack.
+
+sub _frame_pop {
+my $info = pop @frame;
+select ($info->{stdout});
+set (%{$info->{parm}});
+@frame ? $info->{stdin} : undef;
 }
 
 
@@ -2567,32 +2593,6 @@ eod
 Error - Clipboard unavailable. Can not find xclip. For xclip,
         see http://freshmeat.net/projects/xclip
 eod
-
-=begin comment
-
-$clipout = $^O eq 'MSWin32' ?
-    do {
-	eval "use Win32::Clipboard";
-	$@ ? ($memio = sub {croak "$err Win32::Clipboard not available"}) :
-	    sub {(my $s = $_[0]) =~ s/\n/\r\n/g;
-		Win32::Clipboard->new ()->Set ($s)}
-	} : $^O eq 'darwin' ?
-    sub {my $hdl;
-	my $pid = open ($hdl, '|pbcopy') or die <<eod;
-Error - Unable to open pipe to pbcopy.
-        $!
-eod
-	print $hdl $_[0]
-	} :
-    do {
-	eval "use Clipboard";
-	$@ ? ($memio = sub {croak "$err Clipboard not available"}) :
-	    sub {Clipboard->copy ($_[0])}
-	};
-
-=end comment
-
-=cut
 
 =for comment For parenthesis-matching editor: [
 
@@ -3324,6 +3324,17 @@ the observing list is empty, you get a message to that effect.
 This command loads the contents of one or more files into the
 observing list. The files must contain NORAD two- or three- line
 element sets.
+
+=for html <a name="localize"></a>
+
+=item localize parameter_name ...
+
+This command localizes the values of the given parameters. If done in a
+macro or source file, this causes the old parameter values to be
+restored when the macro or source file exits.
+
+If you localize a parameter more than once in a given macro or source
+file, the duplicate localizations are ignored.
 
 =for html <a name="macro"></a>
 
