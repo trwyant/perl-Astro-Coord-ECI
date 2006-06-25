@@ -3,8 +3,6 @@
 use strict;
 use warnings;
 
-use vars qw{$VERSION};
-
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
@@ -56,7 +54,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-$VERSION = '0.006_08';
+our $VERSION = '0.006_09';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -191,9 +189,7 @@ my $date_manip_fudge =
 
 my $rl = Term::ReadLine->new ('Predict satellite passes') if -t STDIN;
 my $fh = *STDIN;
-my @stdin;
-my @argstk;
-my @stdout;
+my @frame;
 my %alias = (
     '!' => 'system',
     '.' => 'source',
@@ -250,6 +246,12 @@ $opt{clipboard} and select (IO::Clipboard->new ());
 
 Getopt::Long::Configure (qw{pass_through});	# Need because of relative time format.
 
+push @frame, {
+	args => [],
+	stdin => $fh,
+	stdout => select (),
+	};
+
 $opt{filter} or print <<eod;
 
 satpass $VERSION - Satellite pass predictor
@@ -276,10 +278,16 @@ my @line;
 my $cntind = '';
 while (1) {
 
+
+#	Select the default output
+
+    select ($frame[$#frame]{stdout});
+
+
 #	Get the next command, wherever it comes from.
 
-    my $buffer = @stdin ? <$fh> :
-	-t STDIN ?
+    my $buffer = @frame > 1 ? <$fh> :
+	-t $fh ?
 	    $rl ? $rl->readline ("$cntind$parm{prompt} ") :
 		do {print "\n$cntind$parm{prompt} "; <$fh>} :
 	    <$fh>;
@@ -289,9 +297,10 @@ while (1) {
 #	we select the proper STDOUT and redo the loop.
 
     defined $buffer or do {
-	last unless @stdin;
-	$fh = pop @stdin;
-	@stdout and select (pop @stdout);
+	my $info = pop @frame;
+	last unless @frame;
+	$fh = $info->{stdin};
+	select ($info->{stdout});
 	redo;
 	};
 
@@ -326,12 +335,14 @@ while (1) {
 
     eval {$buffer =~ s/\$(?:(\w+)|\{(\w+)(?:\:(.*?))\}|(.))/
 	    $4 ? $4 : _sub_arg ($1 || $2, $3 || '',
-	    $argstk[scalar @stdin] || [])/mgex
+	    $frame[$#frame]->{args} || [])/mgex
 	    unless $buffer =~ m/^\s*macro\b/};
     $@ and do {
 	warn $@;
-	$fh = pop @stdin;
-	@stdout and select (pop @stdout);
+	my $info = pop @frame;
+	last unless @frame;
+	$fh = $info->{stdin};
+	select ($info->{stdout});
 	redo;
 	};
 
@@ -342,7 +353,7 @@ while (1) {
 
 #	Echo the line, if this is selected.
 
-    $parm{echo} && (@stdin || !-t STDIN) and
+    $parm{echo} && (@frame > 1 || !-t $fh) and
 	print "$cntind$parm{prompt} $buffer\n";
 
 #	Pull the verb off by brute force, because we need to know what
@@ -392,7 +403,6 @@ eod
 
 #	Preserve our current output, and redirect as and if specified.
 
-    push @stdout, select ();
     if ($cmdopt{clipboard}) {
 	$redout = '';
 	my $fh = eval {IO::Clipboard->new ()};
@@ -448,9 +458,9 @@ Error - Verb '$verb' not recognized.
 eod
 	}
 
-#	End of command dispatching. Re-establish the old output.
 
-    @stdout and select (pop @stdout);
+#	End of command dispatching.
+
     }
 
 #	End of the input loop. Print a newline just in case we
@@ -1834,9 +1844,14 @@ my $hdl = ref $fn ? $fn : FileHandle->new ("<@{[_tilde_expand ($fn)]}") ||
 Error - Can not open $fn for input.
         $!
 eod
-push @stdin, $fh;
-push @stdout, select ();
-$argstk[scalar @stdin] = [@_];
+push @frame, {
+	args => [@_],
+	stdin => $fh,
+	stdout => select (),
+	};
+##!!push @stdin, $fh;
+##!#push @stdout, select ();
+##!!$argstk[$#frame] = [@_];
 $fh = $hdl;
 }
 
@@ -2432,27 +2447,28 @@ $dflt = '' unless defined $dflt;
 my $ctrl = $dflt =~ s/^(\W)// ? $1 : '-';
 my $val = $name !~ m/\D/ ? $args->[$name - 1] :
     exists $mutator{$name} ? $parm{$name} : $ENV{$name};
+my $rslt;
 if ($ctrl eq '+') {
-    return defined $val ? $dflt : '';
+    $rslt = defined $val ? $dflt : '';
     }
   elsif ($val || looks_like_number $val) {
-    return $val;
+    $rslt = $val;
     }
   elsif ($ctrl eq '-') {
-    return $dflt;
+    $rslt = $dflt;
     }
   elsif ($ctrl eq '=') {
     if ($name !~ m/\D/) {
 	$args->[$name - 1] = $dflt;
-	return $dflt;
+	$rslt = $dflt;
 	}
       elsif (exists $mutator{$name}) {
 	set ($name, $dflt);
-	return $parm{$name};
+	$rslt = $parm{$name};
 	}
       else {
 	$ENV{$name} = $dflt;
-	return $dflt;
+	$rslt = $dflt;
 	}
     }
   elsif ($ctrl eq '?') {
@@ -2461,6 +2477,7 @@ if ($ctrl eq '+') {
   else {
     die "Unrecognized substitution control character '$ctrl'\n";
     }
+$rslt;
 }
 
 #	$expand = _tilde_expand ($filename)
