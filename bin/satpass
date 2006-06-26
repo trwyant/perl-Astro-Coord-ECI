@@ -1,5 +1,7 @@
 #!/usr/local/bin/perl
 
+package Astro::satpass;
+
 use strict;
 use warnings;
 
@@ -54,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_10';
+our $VERSION = '0.006_11';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -244,6 +246,17 @@ eod
 
 $opt{clipboard} and select (IO::Clipboard->new ());
 
+my $exception;
+ref $Astro::satpass::Test::Hook eq 'CODE' and do {
+    $fh = Astro::satpass::Test->new () or die <<eod;
+Error - Failed to instantiate Astro::satpass::Test object.
+eod
+    select ($fh);
+    no warnings qw{once};
+    $exception = \$Astro::satpass::Test::Exception;
+    use warnings qw{once};
+    };
+
 Getopt::Long::Configure (qw{pass_through});	# Need because of relative time format.
 
 push @frame, {
@@ -287,21 +300,17 @@ while (1) {
 
 #	Get the next command, wherever it comes from.
 
-    my $buffer = @frame > 1 ? <$fh> :
+    my $buffer = @frame > 1 ? $fh->getline () :
 	-t $fh ?
 	    $rl ? $rl->readline ("$cntind$parm{prompt} ") :
-		do {print "\n$cntind$parm{prompt} "; <$fh>} :
-	    <$fh>;
+		do {print "\n$cntind$parm{prompt} "; $fh->getline ()} :
+	    $fh->getline ();
 
 #	If it was end-of-file, pop one level off the stack of input
 #	files. If it's empty, we exit the execution loop. Otherwise
 #	we select the proper STDOUT and redo the loop.
 
     defined $buffer or do {
-##!!	my $info = pop @frame;
-##!!	last unless @frame;
-##!!	$fh = $info->{stdin};
-##!!	select ($info->{stdout});
 	defined ($fh = _frame_pop ()) or last;
 	redo;
 	};
@@ -340,12 +349,8 @@ while (1) {
 	    $frame[$#frame]->{args} || [])/mgex
 	    unless $buffer =~ m/^\s*macro\b/};
     $@ and do {
-	warn $@;
+	$exception ? $$exception = $@ : warn $@;
 	defined ($fh = _frame_pop ()) or last;
-##!!	my $info = pop @frame;
-##!!	last unless @frame;
-##!!	$fh = $info->{stdin};
-##!!	select ($info->{stdout});
 	redo;
 	};
 
@@ -383,9 +388,10 @@ while (1) {
 #	Arbitrarily disallow syntactically invalid commands.
 
     $verb =~ m/^_/ || $verb =~ m/\W/ and do {
-	warn <<eod;
+	my $stuff = <<eod;
 Error - Verb '$verb' not recognized.
 eod
+	$exception ? ($$exception = $stuff) : warn $stuff;
 	next;
 	};
 
@@ -407,7 +413,7 @@ eod
     if ($cmdopt{clipboard}) {
 	$redout = '';
 	my $fh = eval {IO::Clipboard->new ()};
-	$@ and do {warn $@; next;};
+	$@ and do {$exception ? $$exception = $@ : warn $@; next;};
 	select ($fh) or die <<eod;
 Error - Failed to redirect output to clipboard.
         $!
@@ -444,7 +450,7 @@ eod
 	$SIG{INT} = 'DEFAULT';
 	my $end_time = time ();
 	use strict qw{refs};
-	$@ and warn $@;
+	$@ and $exception ? $$exception = $@ : warn $@;
 	$cmdopt{time} and print <<eod;
 Information - Elapsed time for command is @{[$end_time - $start_time
 	]} seconds.
@@ -454,9 +460,10 @@ eod
 #	Else, complain about the unrecognized verb.
 
       else {
-    warn <<eod;
+	my $stuff = <<eod;
 Error - Verb '$verb' not recognized.
 eod
+	$exception ? $$exception = $stuff : warn $stuff;
 	}
 
 
@@ -720,23 +727,6 @@ eod
 
 #	The options are those documented with geocode().
 
-#	We have the following synonyms, based on the fact that ISO 3166
-#	defines as separate countries territories of the U.S. that may
-#	be covered by the census database.
-
-no warnings qw{once};
-INIT {
-*geocode_as = \&geocode_us;	# American Samoa
-*geocode_fm = \&geocode_us;	# Federated States of Micronesia
-*geocode_gu = \&geocode_us;	# Guam
-*geocode_mh = \&geocode_us;	# Marshall Islands
-*geocode_mp = \&geocode_us;	# Northern Mariana Islands
-*geocode_pr = \&geocode_us;	# Puerto Rico
-*geocode_pw = \&geocode_us;	# Palau
-*geocode_vi = \&geocode_us;	# Virgin Islands
-}
-use warnings qw{once};
-
 sub geocode_us {
 $soap_unavailable and die <<eod;
 Error - You need to install the SOAP::Lite module if you wish to use
@@ -789,6 +779,23 @@ if (@$rslt == 1) {
     }
 }
 
+#	We have the following synonyms, based on the fact that ISO 3166
+#	defines as separate countries territories of the U.S. that may
+#	be covered by the census database.
+
+no warnings qw{once};
+BEGIN {
+*geocode_as = \&geocode_us;	# American Samoa
+*geocode_fm = \&geocode_us;	# Federated States of Micronesia
+*geocode_gu = \&geocode_us;	# Guam
+*geocode_mh = \&geocode_us;	# Marshall Islands
+*geocode_mp = \&geocode_us;	# Northern Mariana Islands
+*geocode_pr = \&geocode_us;	# Puerto Rico
+*geocode_pw = \&geocode_us;	# Palau
+*geocode_vi = \&geocode_us;	# Virgin Islands
+}
+use warnings qw{once};
+
 #	_geocode_height () is a helper subroutine to get the caller
 #	from one of the geocode_* routines to the proper height_*
 #	routine.
@@ -826,21 +833,6 @@ Error - I have no idea how to get the height of a location in country
 eod
 goto \&{$handler};
 }
-
-no warnings qw{once};
-INIT {
-*height_af = \&height_us;	# Afghanistan (believe it or not).
-*height_as = \&height_us;	# American Samoa
-*height_ca = \&height_us;	# Canada. U.S. has North American data
-*height_fm = \&height_us;	# Federated States of Micronesia
-*height_gu = \&height_us;	# Guam
-*height_mh = \&height_us;	# Marshall Islands
-*height_mp = \&height_us;	# Northern Mariana Islands
-*height_pr = \&height_us;	# Puerto Rico
-*height_pw = \&height_us;	# Palau
-*height_vi = \&height_us;	# Virgin Islands
-}
-use warnings qw{once};
 
 sub height_us {
 $soap_unavailable and die <<eod;
@@ -950,6 +942,21 @@ eod
     }
 
 }
+
+no warnings qw{once};
+BEGIN {
+*height_af = \&height_us;	# Afghanistan (believe it or not).
+*height_as = \&height_us;	# American Samoa
+*height_ca = \&height_us;	# Canada. U.S. has North American data
+*height_fm = \&height_us;	# Federated States of Micronesia
+*height_gu = \&height_us;	# Guam
+*height_mh = \&height_us;	# Marshall Islands
+*height_mp = \&height_us;	# Northern Mariana Islands
+*height_pr = \&height_us;	# Puerto Rico
+*height_pw = \&height_us;	# Palau
+*height_vi = \&height_us;	# Virgin Islands
+}
+use warnings qw{once};
 
 
 ########################################################################
@@ -2522,6 +2529,7 @@ $rslt
 package IO::Clipboard;
 
 use Carp;
+use Config;
 use Scalar::Util qw{weaken};
 use Symbol;
 
@@ -2598,7 +2606,7 @@ eod
 
 =cut
 
-$memio ||= $] >= 5.008 ?
+$memio ||= $] >= 5.008 && $Config{useperlio} ?
     sub {my $fh = gensym; open ($fh, $_[0], $_[1]); $fh} :
     do {
 	eval "use IO::String";
@@ -2606,13 +2614,20 @@ $memio ||= $] >= 5.008 ?
         $@ ? sub {croak "$err IO::String not available"} :
 	    sub {new IO::String ($_[1])};
 	};
+
+*_memio = \&$memio;
 }
+
+##sub _memio {
+##$memio->(@_);
+##}
 
 sub new {
 return $clip if $clip;
 my $class = shift;
 my $data = '';
-my $clip = $memio->('>', \$data);
+##!!my $clip = $memio->('>', \$data);
+my $clip = _memio ('>', \$data);
 *$clip->{__PACKAGE__}{data} = \$data;
 bless $clip, $class;
 my $self = $clip;
@@ -2625,6 +2640,74 @@ my $self = shift;
 my $data = *$self->{__PACKAGE__}{data};
 $clipout->($$data);
 }
+
+########################################################################
+
+#	Test hook.
+
+package Astro::satpass::Test;
+
+use Carp;
+use Config;
+
+our @ISA;
+
+=for comment For parenthesis-matching editor: [
+
+=cut
+
+our $noios;
+
+unless ($] >= 5.008 && $Config{useperlio}) {
+    eval "use IO::String";
+    if ($@) {
+	$noios = $@;
+	}
+    else {
+	push @ISA, 'IO::String';
+	}
+    }
+
+
+our $Hook;
+our $Exception;
+
+sub new {
+my $class = shift;
+confess <<eod if $noios;
+Programming error - You are trying to use the test hook under
+        a version of Perl prior to v5.8 and you do not have
+	the IO::String package available.
+eod
+confess <<eod unless ref $Hook eq 'CODE';
+Programming error - Should not instantiate a @{[__PACKAGE__]} object
+        unless \$@{[__PACKAGE__]}::Hook has been set to a code
+	reference.
+eod
+my $data = '';
+my $hook = IO::Clipboard::_memio ('+<', \$data);
+*$hook->{__PACKAGE__} = {
+	data => \$data,
+	loc => 0,
+	last_line => undef,
+	};
+bless $hook, $class;
+$hook;
+}
+
+sub getline {
+my $self = shift;
+my $attr = *$self->{__PACKAGE__};
+my $oldout = select (*STDOUT);
+$attr->{last_line} =
+    $Hook->($self, $attr->{last_line},
+	substr (${$attr->{data}}, $attr->{loc}), $Exception);
+$Exception = undef;
+select ($oldout);
+$attr->{loc} = length ${$attr->{data}};
+$attr->{last_line};
+}
+
 
 ########################################################################
 
