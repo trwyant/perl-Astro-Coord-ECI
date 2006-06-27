@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.006_07';
+our $VERSION = '0.006_08';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -221,7 +221,7 @@ if ($self->{inertial}) {
     my @obj = $trn2->eci (@_);
     my $time = $trn2->universal;
     my @base = $self->eci ($time);
-    my ($phi, $lamda, $h) = $self->geodetic ();
+    my ($phi, $lambda, $h) = $self->geodetic ();
     my @delta;
 
 
@@ -232,7 +232,7 @@ if ($self->{inertial}) {
 	$delta[$i] = $obj[$i] - $base[$i];
 	}
     my $thetag = thetag ($time);
-    my $theta = mod2pi ($thetag + $lamda);
+    my $theta = mod2pi ($thetag + $lambda);
     my $sinlat = ($cache->{inertial}{sinphi} ||= sin ($phi));
     my $sintheta = sin ($theta);
     my $coslat = ($cache->{inertial}{cosphi} ||= cos ($phi));
@@ -255,8 +255,8 @@ if ($self->{inertial}) {
 ###    $self->universal ($trn2->universal ()) if $self->{inertial};
     my ($sinphi, $cosphi, $sinlamda, $coslamda) = @{
 	$cache->{fixed}{geodetic_funcs} ||= do {
-	    my ($phi, $lamda) = $self->geodetic ();
-	    [sin ($phi), cos ($phi), sin ($lamda), cos ($lamda)]
+	    my ($phi, $lambda) = $self->geodetic ();
+	    [sin ($phi), cos ($phi), sin ($lambda), cos ($lambda)]
 	    }
 	};
 
@@ -279,15 +279,15 @@ if ($self->{inertial}) {
 #	The entire rotation is therefore
 #
 #	+-                     -+   +-                        -+
-#	|  sin(phi) 0 -cos(phi) |   |  cos(lamda)  sin(lamda) 0 |
-#	|      0    1     0     | x | -sin(lamda)  cos(lamda) 0 | =
+#	|  sin(phi) 0 -cos(phi) |   |  cos(lambda)  sin(lambda) 0 |
+#	|      0    1     0     | x | -sin(lambda)  cos(lambda) 0 | =
 #	|  cos(phi) 0  sin(phi) |   |       0          0      1 |
 #	+-                     -+   +-                        -+
 #
 #	+-                                                 -+
-#	|  cos(lamda)sin(phi)  sin(lamda)sin(phi) -cos(phi) |
-#	| -sin(lamda)          cos(lamda)             0     |
-#	|  cos(lamda)cos(phi)  sin(lamda)cos(phi)  sin(phi) |
+#	|  cos(lambda)sin(phi)  sin(lambda)sin(phi) -cos(phi) |
+#	| -sin(lambda)          cos(lambda)             0     |
+#	|  cos(lambda)cos(phi)  sin(lambda)cos(phi)  sin(phi) |
 #	+-                                                 -+
 
     my $lclx = $coslamda * $sinphi * $delta[0] + $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
@@ -424,7 +424,7 @@ The algorithm is simple enough to be the author's.
 
 sub dip {
 my $self = shift;
-my ($psi, $lamda, $h) = $self->geodetic ();
+my ($psi, $lambda, $h) = $self->geodetic ();
 my ($psiprime, undef, $rho) = $self->geocentric ();
 my $angle = $h >= 0 ?
     - acos (($rho - $h) / $rho) :
@@ -691,35 +691,35 @@ unless (@_) {
     my $cosepsilon = cos ($epsilon);
     my $sinepsilon = sin ($epsilon);
 
-    my $lamda = mod2pi (atan2 ($sinalpha * $cosepsilon +	# Meeus (13.1), pg 93.
+    my $lambda = mod2pi (atan2 ($sinalpha * $cosepsilon +	# Meeus (13.1), pg 93.
 	$sindelta / $cosdelta * $sinepsilon, cos ($alpha)));
     my $beta = asin ($sindelta * $cosepsilon -		# Meeus (13.2), pg 93.
 	$cosdelta * $sinepsilon * $sinalpha);
 
-    return @{$self->{_ECI_cache}{inertial}{ecliptic} = [$beta, $lamda, $rho]};
+    return @{$self->{_ECI_cache}{inertial}{ecliptic} = [$beta, $lambda, $rho]};
     }
 
 if (@_ == 3) {
     ref $self or $self = $self->new ();
-    my ($beta, $lamda, $rho) = @_;
+    my ($beta, $lambda, $rho) = @_;
 
-    $lamda = mod2pi ($lamda);
+    $lambda = mod2pi ($lambda);
     my $epsilon = obliquity ($self->dynamical);
-    my $sinlamda = sin ($lamda);
+    my $sinlamda = sin ($lambda);
     my $cosepsilon = cos ($epsilon);
     my $sinepsilon = sin ($epsilon);
     my $cosbeta = cos ($beta);
     my $sinbeta = sin ($beta);
     my $alpha = mod2pi (atan2 ($sinlamda * $cosepsilon -	# Meeus (13.3), pg 93
-	$sinbeta / $cosbeta * $sinepsilon, cos ($lamda)));
+	$sinbeta / $cosbeta * $sinepsilon, cos ($lambda)));
     my $delta = asin ($sinbeta * $cosepsilon +		# Meeus (13.4), pg 93.
 	$cosbeta * $sinepsilon * $sinlamda);
     $self->{debug} and print <<eod;
 Debug ecliptic -
     beta = $beta (ecliptic latitude, radians)
          = @{[rad2deg ($beta)]} (ecliptic latitude, degrees)
-    lamda = $lamda (ecliptic longitude, radians)
-         = @{[rad2deg ($lamda)]} (ecliptic longitude, degrees)
+    lambda = $lambda (ecliptic longitude, radians)
+         = @{[rad2deg ($lambda)]} (ecliptic longitude, degrees)
     rho = $rho (range, kilometers)
     epsilon = $epsilon (obliquity of ecliptic, radians)
     alpha = $alpha (right ascension, radians)
@@ -764,7 +764,7 @@ dynamical() methods).
 
 =item ($rightasc, $declin, $range) = $coord->equatorial ($coord2);
 
-This method returns the apparant equatorial coordinates of the object
+This method returns the apparent equatorial coordinates of the object
 represented by $coord2, as seen from the location represented by
 $coord.
 
@@ -864,11 +864,11 @@ $self;
 
 =for comment help syntax highlighting editor "
 
-=item $coord = $coord->geocentric($psiprime, $lamda, $rho);
+=item $coord = $coord->geocentric($psiprime, $lambda, $rho);
 
 This method sets the L</Geocentric> coordinates represented by the
 object in terms of L</Geocentric latitude> psiprime and L</Longitude>
-lamda in radians, and distance from the center of the Earth rho in
+lambda in radians, and distance from the center of the Earth rho in
 kilometers.
 
 This method can also be called as a class method, in which case it
@@ -882,7 +882,7 @@ essentially, spherical coordinates.
 The algorithm for conversion between geocentric and ECEF is the
 author's.
 
-=item ($psiprime, $lamda, $rho) = $coord->geocentric();
+=item ($psiprime, $lambda, $rho) = $coord->geocentric();
 
 This method returns the L</Geocentric latitude>, L</Longitude>, and
 distance to the center of the Earth.
@@ -901,7 +901,7 @@ unless (@_) {
 	my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->ecef;
 	my $rsq = $x * $x + $y * $y;
 	my $rho = sqrt ($z * $z + $rsq);
-	my $lamda = atan2 ($y, $x);
+	my $lambda = atan2 ($y, $x);
 	my $psiprime = atan2 ($z, sqrt ($rsq));
 	$self->get ('debug') and print <<eod;
 Debug geocentric () - ecef -> geocentric
@@ -911,24 +911,24 @@ Debug geocentric () - ecef -> geocentric
         z = $z
     outputs:
         psiprime = $psiprime
-        lamda = $lamda
+        lambda = $lambda
         rho = $rho
 eod
-	[$psiprime, $lamda, $rho];
+	[$psiprime, $lambda, $rho];
 	}};
     }
 
 if (@_ == 3) {
-    my ($psiprime, $lamda, $rho) = @_;
+    my ($psiprime, $lambda, $rho) = @_;
     my $z = $rho * sin ($psiprime);
     my $r = $rho * cos ($psiprime);
-    my $x = $r * cos ($lamda);
-    my $y = $r * sin ($lamda);
+    my $x = $r * cos ($lambda);
+    my $y = $r * sin ($lambda);
     $self->get ('debug') and print <<eod;
 Debug geocentric () - geocentric -> ecef
     inputs:
         psiprime = $psiprime
-        lamda = $lamda
+        lambda = $lambda
         rho = $rho
     outputs:
         x = $x
@@ -953,10 +953,10 @@ $self;
 
 =for comment help syntax highlighting editor "
 
-=item $coord = $coord->geodetic($psi, $lamda, $h, $ellipsoid);
+=item $coord = $coord->geodetic($psi, $lambda, $h, $ellipsoid);
 
 This method sets the L</Geodetic> coordinates represented by the object
-in terms of its L</Geodetic latitude> psi and L</Longitude> lamda in
+in terms of its L</Geodetic latitude> psi and L</Longitude> lambda in
 radians, and its height h above mean sea level in kilometers.
 
 The ellipsoid argument is the name of a L</Reference Ellipsoid> known
@@ -972,7 +972,7 @@ The conversion from geodetic to geocentric comes from Jean Meeus'
 
 B<This is the method that should be used with map coordinates.>
 
-=item ($psi, $lamda, $h) = $coord->geodetic($ellipsoid);
+=item ($psi, $lambda, $h) = $coord->geodetic($ellipsoid);
 
 This method returns the geodetic latitude, longitude, and height
 above mean sea level.
@@ -1038,7 +1038,7 @@ unless (@_) {
 
 #	Calculate geodetic coordinates.
 
-    my ($phiprime, $lamda, $rho) = $self->geocentric;
+    my ($phiprime, $lambda, $rho) = $self->geocentric;
     my $r = $rho * cos ($phiprime);
     my $b = $elps->{semimajor} * (1- $elps->{flattening});
     my $a = $elps->{semimajor};
@@ -1087,7 +1087,7 @@ unless (@_) {
 #	Cache the results of the calculation if they were done using
 #	the default ellipsoid.
 
-    $self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lamda, $h] unless $elps;
+    $self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lambda, $h] unless $elps;
 
 
 #	Return the results in any event.
@@ -1096,7 +1096,7 @@ unless (@_) {
 Debug geodetic: geocentric to geodetic
     inputs:
         phiprime = $phiprime
-        lamda = $lamda
+        lambda = $lambda
         rho = $rho
     intermediates:
         z = $z
@@ -1117,7 +1117,7 @@ Debug geodetic: geocentric to geodetic
           = @{[$r - $a * $t]} * cos (phi) + @{[$z - $b]} * sin (phi)
           = $h (kilometers)
 eod
-    return ($phi, $lamda, $h);
+    return ($phi, $lambda, $h);
     }
 
 
@@ -1133,7 +1133,7 @@ if (@_ == 3) {
 
 #	Calculate the geocentric data.
 
-    my ($phi, $lamda, $h) = @_;
+    my ($phi, $lambda, $h) = @_;
     my $bovera = 1 - $self->{flattening};
 
 
@@ -1155,12 +1155,12 @@ if (@_ == 3) {
 
 #	Set the geocentric data as the coordinates.
 
-    $self->geocentric ($phiprime, $lamda, $rho);
+    $self->geocentric ($phiprime, $lambda, $rho);
  
  
  #	Cache the geodetic coordinates.
  
-    $self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lamda, $h];
+    $self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lambda, $h];
     $self->{specified} = 'geodetic';
     $self->{inertial} = 0;
     }
@@ -1982,7 +1982,7 @@ method.
 This attribute turns on debugging output. The only supported value of
 this attribute is 0. That is to say, the author makes no guarantees of
 what will happen if you set it to some other value, nor does he
-guarantee that this behaviour will not change from release to release.
+guarantee that this behavior will not change from release to release.
 
 The default is 0.
 
@@ -2261,7 +2261,7 @@ minutes in an hour, and 24 hours in a circle.
 
 See L</Earth-Centered, Earth-fixed (ECEF) coordinates>.
 
-=head1 ACKNOWLEDGEMENTS
+=head1 ACKNOWLEDGMENTS
 
 The author wishes to acknowledge the following individuals and
 organizations.

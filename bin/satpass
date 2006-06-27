@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_11';
+our $VERSION = '0.006_12';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -214,7 +214,7 @@ where the legal options are
     is ignored.
 
   -filter
-    Asserting this option supresses extraneous output, making satpass
+    Asserting this option suppresses extraneous output, making satpass
     behave more like a Unix filter.
 
   -initialization_file filename
@@ -2437,7 +2437,7 @@ wantarray ? @temp : join ' ', @temp;
 #	The action argument is the separater for building the
 #	SOAPAction header. It defaults to '' (suitable for .NET's
 #	delicate digestion). If you want to restore SOAP::Lite's
-#	original behaviour, specify '#'. Any other values are
+#	original behavior, specify '#'. Any other values are
 #	_NOT_ supported, and may result in a visit from unsympathetic
 #	men in snap-brim hats, dark glasses, and bad suits.
 
@@ -2955,7 +2955,7 @@ will be discussed more below.
 
 -debug is accepted but not supported - that is, the author makes
 no claims of what will happen if you assert it, and reserves the
-right to change this behaviour without warning. It is really a
+right to change this behavior without warning. It is really a
 development aid.
 
 -time causes the elapsed time of the command in seconds to be
@@ -2984,7 +2984,7 @@ back to it, both sets of clipboard data are considered to be the
 same data stream, and both end up on the clipboard, without the
 intervening data.
 
-The command loop also supports rudamentary interpolation of arguments
+The command loop also supports rudimentary interpolation of arguments
 and other values into commands. The "magic" character is a dollar sign,
 which may be followed by the name of what is to be substituted. A
 number represents the corresponding macro or source argument (numbered
@@ -3095,7 +3095,7 @@ affect the directory in which you find yourself after exiting satpass.
 
 This command retains only the objects named on the command in the
 observing list, eliminating all others. It is intended for reducing
-a downloaded catalog to managable size. Either names, NORAD ID numbers,
+a downloaded catalog to manageable size. Either names, NORAD ID numbers,
 or a mixture may be given. Numeric items are matched against the NORAD
 IDs of the items in the observing list; non-numeric items are made into
 case-insensitive regular expressions and matched against the names of
@@ -3164,7 +3164,7 @@ Alabama) through PE (either Peru or Prince Edward Island) to VA
 
 =item geocode_as location
 
-Amercan Samoa is handled by L<geocode_us|/geocode_us>.
+American Samoa is handled by L<geocode_us|/geocode_us>.
 
 =for html <a name="geocode_ca"></a>
 
@@ -3673,7 +3673,7 @@ L<SPECIFYING TIMES|/SPECIFYING TIMES> for the details. If you
 specify relative times, be aware that the -start value is parsed
 before the -end value, regardless of their positions on the command
 line. Yes, Astro::SpaceTrack already supports this, but by pre-parsing
-them we get more flexability on how to specify the date and time.
+them we get more flexibility on how to specify the date and time.
 
 -verbose causes the content of the response to be displayed in cases
 where it normally would not be (e.g. cases where the content is "OK",
@@ -3693,7 +3693,7 @@ Hubble Space Telescope from Space Track:
  satpass> # Get the data by NORAD ID number
  satpass> st retrieve 20580 25544
 
-Exampe of retrieving the data from Celestrak without using a Space
+Example of retrieving the data from Celestrak without using a Space
 Track login:
 
  satpass> # Specify direct retrieval.
@@ -3763,7 +3763,7 @@ This command displays the original two- or three- line element data
 which was used to build the observation list.
 
 The -verbose qualifier causes the data to be displayed verbosely,
-one item per line, labelled and with units if applicable.
+one item per line, labeled and with units if applicable.
 
 =back
 
@@ -3836,7 +3836,7 @@ States of America) do anything useful.
 See L<http://www.iso.org/iso/en/prods-services/iso3166ma/index.html>
 for the current list of country codes. Note that these are B<not>
 always the same as the corresponding top-level geographic domain names
-(e.g. Great Britiain is 'GB' in ISO 3166 but has 'uk' as the top-level
+(e.g. Great Britain is 'GB' in ISO 3166 but has 'uk' as the top-level
 geographic domain name).
 
 The country codes are case-insensitive, since they will be converted to
@@ -3867,7 +3867,7 @@ The default is '%a %d-%b-%Y', which produces (e.g.)
 This parameter turns on debugging output. The only supported value
 is 0, which is the default. The author makes no representation of
 what will happen if a non-zero value is set, not does he promise
-that the behaviour for a given non-zero value will not change from
+that the behavior for a given non-zero value will not change from
 release to release.
 
 The default is 0.
@@ -4065,7 +4065,7 @@ The problem this attempts to fix is that, in jurisdictions that do
 summer time, Date::Manip appears (to me, at least) to give the wrong
 time if the current time is not summer time but the time converted is.
 That is to say, with a time zone of EST5EDT, in January, 'jan 1 noon'
-converts to 5:00 PM GMT. But 'jul 1 noon'does also, and it seems to
+converts to 5:00 PM GMT. But 'jul 1 noon' does also, and it seems to
 me that this should give 4:00 PM GMT.
 
 If you turn this setting on, 'jul 1 noon' comes out 4:00 PM GMT even
@@ -4073,7 +4073,7 @@ if done in January. If you plan to parse times B<with zones> (e.g.
 'jul 1 noon edt'), you should turn this setting off.
 
 I confess to considering this a wart. If I figure out how to get
-behaviour I consider more straightforward out of Date::Manip, I will
+behavior I consider more straightforward out of Date::Manip, I will
 no-op this attribute and deprecate its use.
 
 The default is 0 (i.e. false).
@@ -4298,8 +4298,8 @@ available.
 
 =item -filter
 
-which supresses extraneous output to make satpass behave more like a
-Unix filter. The only thing supressed at the moment is the banner text.
+which suppresses extraneous output to make satpass behave more like a
+Unix filter. The only thing suppressed at the moment is the banner text.
 
 =back
 

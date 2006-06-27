@@ -75,7 +75,7 @@ a given time, you do
 
   my ($lat, $long, $alt) = $body->model ($time)->geodetic;
 
-Or, assuming the L<model|/item_model> attribue is set the way you want
+Or, assuming the L<model|/item_model> attribute is set the way you want
 it, by
 
   my ($lat, $long, $alt) = $body->geodetic ($time);
@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = 0.003_03;
+our $VERSION = 0.003_04;
 
 use base qw{Astro::Coord::ECI};
 
@@ -490,7 +490,7 @@ return ($self->{&TLE_INIT}{TLE_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
 
 This method sets the values of the various attributes. The changing of
 attributes actually used by the orbital models will cause the models to
-be reinitialized. This happens transparantly, and is no big deal. For
+be reinitialized. This happens transparently, and is no big deal. For
 a description of the attributes, see L</ATTRIBUTES>.
 
 Because this is a subclass of Astro::Coord::ECI, any attributes of that
@@ -2868,7 +2868,7 @@ static - if the attribute may be set on the class.
 
 Note that the orbital elements provided by NORAD are tweaked for use by
 the models implemented by this class. If you plug them in to the
-same-named parameters of other models, your milage may vary
+same-named parameters of other models, your mileage may vary
 significantly.
 
 =over
@@ -2899,7 +2899,7 @@ implied decimal point inserted.
 
 =item elementnumber (numeric, parse)
 
-This attribue contains the element set number of the data set. In
+This attribute contains the element set number of the data set. In
 theory, this gets incremented every time a data set is issued.
 
 =item ephemeristype (numeric, parse)
@@ -3013,7 +3013,7 @@ implementation of these models.
 
 I am aware of no other modules that perform calculations with NORAD
 orbital element sets. The Astro-Coords package by Tim Jenness
-provides calculations using oribtal elements, but the NORAD elements
+provides calculations using orbital elements, but the NORAD elements
 are tweaked for use by the models implemented in this package.
 
 =head1 AUTHOR

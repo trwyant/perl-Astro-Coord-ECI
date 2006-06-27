@@ -37,7 +37,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.001_01';
+our $VERSION = '0.001_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -219,7 +219,7 @@ wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal
 
 =for comment help syntax-highlighting editor "
 
-This method returns the siderial period of the Moon, per Appendix I
+This method returns the sidereal period of the Moon, per Appendix I
 (pg 408) of Jean Meeus' "Astronomical Algorithms," 2nd edition.
 
 =for comment help syntax-highlighting editor "
@@ -404,16 +404,16 @@ $sigmab += - 2235 * sin ($Lprime) + 382 * sin ($A3) +
 
 #	Coordinates of Moon (finally!)
 
-my $lamda = deg2rad ($sigmal / 1_000_000) + $Lprime;
+my $lambda = deg2rad ($sigmal / 1_000_000) + $Lprime;
 my $beta = deg2rad ($sigmab / 1_000_000);
 my $delta = $sigmar / 1000 + 385_000.56;
 
 #	Correct longitude for nutation (from Chapter 22, pg 144).
 
-$lamda += nutation_in_longitude ($time);
+$lambda += nutation_in_longitude ($time);
 
 
-$self->ecliptic ($beta, $lamda, $delta);
+$self->ecliptic ($beta, $lambda, $delta);
 }
 
 
@@ -421,7 +421,7 @@ $self->ecliptic ($beta, $lamda, $delta);
 
 =back
 
-=head1 ACKNOWLEDGEMENTS
+=head1 ACKNOWLEDGMENTS
 
 The author wishes to acknowledge Jean Meeus, whose book "Astronomical
 Algorithms" (second edition) formed the basis for this module.

@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = 0.002;
+our $VERSION = '0.002_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -143,7 +143,7 @@ B<extremely> small number!), and the proper motion in recession
 in kilometers per second.
 
 The range defaults to 1 parsec, which is too close but probably good
-enough since we do not take paralax into account when computing
+enough since we do not take parallax into account when computing
 position, and since you can override it with a range (in km!) if you
 so desire. The proper motions default to 0. The time defaults to
 J2000.0. If you are not interested in proper motion but are interested
@@ -223,9 +223,9 @@ $self->precess ($time);
 
 #	Get ecliptic coordinates, and correct for nutation.
 
-my ($beta, $lamda) = $self->ecliptic ();
+my ($beta, $lambda) = $self->ecliptic ();
 my $delta_psi = nutation_in_longitude ($self->dynamical);
-$lamda += $delta_psi;
+$lambda += $delta_psi;
 
 
 #	Calculate and add in the abberation terms (Meeus 23.2);
@@ -236,16 +236,16 @@ my $pi = deg2rad ((0.00046 * $T + 1.71946) * $T + 102.93735);
 my $sun = $self->{_star_sun} ||= Astro::Coord::ECI::Sun->new ();
 $sun->universal ($time);
 
-my $geoterm = $sun->geometric_longitude () - $lamda;
-my $periterm = $pi - $lamda;
+my $geoterm = $sun->geometric_longitude () - $lambda;
+my $periterm = $pi - $lambda;
 my $deltalamda = ($e * cos ($periterm) - cos ($geoterm)) *
 	CONSTANT_OF_ABERRATION / cos ($beta);
 my $deltabeta = - (sin ($geoterm) - $e * sin ($periterm)) * sin ($beta) *
 	CONSTANT_OF_ABERRATION;
-$lamda += $deltalamda;
+$lambda += $deltalamda;
 $beta += $deltabeta;
 
-$self->ecliptic ($beta, $lamda, $range);
+$self->ecliptic ($beta, $lambda, $range);
 }
 
 
@@ -253,20 +253,20 @@ $self->ecliptic ($beta, $lamda, $range);
 
 =back
 
-=head1 ACKNOWLEDGEMENTS
+=head1 ACKNOWLEDGMENTS
 
 The author wishes to acknowledge Jean Meeus, whose book "Astronomical
 Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
 
-The B<Astro-Catalog> package by Alasdair Allan, which accomodates a
+The B<Astro-Catalog> package by Alasdair Allan, which accommodates a
 much more fulsome description of a star. The star's coordinates are
 represented by an B<Astro::Coords> object.
 
 The B<Astro-Coords> package by Tim Jenness can also be used to find
 the position of a star at a given time given a catalog entry for the
-star. A wide variety of coordinate representations is accomodated.
+star. A wide variety of coordinate representations is accommodated.
 This package requires B<Astro::SLA>, which in its turn requires the
 SLALIB library.
 

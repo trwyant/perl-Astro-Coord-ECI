@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = 0.001;
+our $VERSION = '0.001_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -234,7 +234,7 @@ wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal
 =item $period = $sun->period()
 
 Although this method is attached to an object that represents the
-Sun, what it actually returns is the siderial period of the Earth,
+Sun, what it actually returns is the sidereal period of the Earth,
 per Appendix I (pg 408) of Jean Meeus' "Astronomical Algorithms,"
 2nd edition.
 
@@ -292,7 +292,7 @@ my $C  = ((SUN_C1_2 * $T + SUN_C1_1) * $T + SUN_C1_0) * sin ($M)
 	+ SUN_C3_0 * sin (3 * $M);
 my $O = $self->{_sun_geometric_longitude} = $L0 + $C;
 my $omega = mod2pi (deg2rad (125.04 - 1934.156 * $T));
-my $lamda = mod2pi ($O - deg2rad (0.00569 + 0.00478 * sin ($omega)));
+my $lambda = mod2pi ($O - deg2rad (0.00569 + 0.00478 * sin ($omega)));
 my $nu = $M + $C;
 my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
 	* ASTRONOMICAL_UNIT;
@@ -306,17 +306,17 @@ Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
     O  = @{[_rad2deg ($O)]} degrees
     R  = @{[$R / ASTRONOMICAL_UNIT]} AU
     omega = @{[_rad2deg ($omega)]} degrees
-    lamda = @{[_rad2deg ($lamda)]} degrees
+    lambda = @{[_rad2deg ($lambda)]} degrees
 eod
 
-$self->ecliptic (0, $lamda, $R);
+$self->ecliptic (0, $lambda, $R);
 }
 
 1;
 
 =back
 
-=head1 ACKNOWLEDGEMENTS
+=head1 ACKNOWLEDGMENTS
 
 The author wishes to acknowledge Jean Meeus, whose book "Astronomical
 Algorithms" (second edition) formed the basis for this module.

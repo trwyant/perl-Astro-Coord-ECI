@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = "0.004_01";
+our $VERSION = "0.004_02";
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -288,7 +288,7 @@ jday2000($_[0]) + 2_451_545.0	#   Meeus p. 62
 
 =item $theta = mod2pi ($theta)
 
-This subrouting reduces the given angle in radians to the range 0 <=
+This subroutine reduces the given angle in radians to the range 0 <=
 $theta < TWOPI.
 
 =cut
@@ -493,7 +493,7 @@ __END__
 
 =back
 
-=head1 ACKNOWLEDGEMENTS
+=head1 ACKNOWLEDGMENTS
 
 The author wishes to acknowledge Jean Meeus, whose book "Astronomical
 Algorithms" (second edition) published by Willmann-Bell Inc
