@@ -3,12 +3,27 @@
 use strict;
 use warnings;
 
-use Test::Spelling;
+my $skip;
+BEGIN {
+    eval "use Test::Spelling";
+    $@ and do {
+	eval "use Test";
+	plan (tests => 1);
+	$skip = 'Test::Spelling not available';;
+    };
+}
 
-add_stopwords (<DATA>);
+our $VERSION = '0.001_01';
 
-all_pod_files_spelling_ok ();
+if ($skip) {
+    skip ($skip, 1);
+} else {
+    add_stopwords (<DATA>);
+
+    all_pod_files_spelling_ok ();
+}
 __DATA__
+Above's
 accreted
 Alasdair
 altazimuth
@@ -69,6 +84,8 @@ GMT
 Green's
 harvard
 IDs
+illum
+illuminator
 ini
 internet
 jan
@@ -86,9 +103,12 @@ Lune
 ly
 magma
 Mariana
+McCants
 meananomaly
 meanmotion
 Meeus
+mma
+mmas
 Moon's
 MoonPhase
 MSWin
@@ -111,12 +131,17 @@ perigee
 perltime
 Persei
 pg
+pm
 pp
 pre
 psiprime
 rad
 Ramon
 readonly
+rebless
+reblessed
+reblesses
+reblessing
 reportable
 revolutionsatepoch
 Rico
@@ -125,6 +150,7 @@ Roehric
 Saemundsson's
 SATCAT
 satpass
+SATPASSINI
 SDP
 sdp
 secondderivative
@@ -134,6 +160,8 @@ sgp
 SIGINT
 SIMBAD
 simbad
+SKYSAT
+skysat
 SLALIB
 Smart's
 solstices
@@ -150,6 +178,7 @@ TIMEZONES
 TLE
 tle
 Touze
+Turbo
 TWOPI
 tz
 uk
