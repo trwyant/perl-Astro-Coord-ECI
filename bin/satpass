@@ -656,7 +656,17 @@ eod
 #	the autoheight setting)
 
 BEGIN {
-$cmdlgl{geocode} = [qw{all height}];
+$cmdlgl{geocode} = [qw{all height retry_on_zero=i source_layer=s}];
+$cmdlgl{geocode_as} = $cmdlgl{geocode};
+$cmdlgl{geocode_ca} = $cmdlgl{geocode};
+$cmdlgl{geocode_fm} = $cmdlgl{geocode};
+$cmdlgl{geocode_gu} = $cmdlgl{geocode};
+$cmdlgl{geocode_mh} = $cmdlgl{geocode};
+$cmdlgl{geocode_mp} = $cmdlgl{geocode};
+$cmdlgl{geocode_pr} = $cmdlgl{geocode};
+$cmdlgl{geocode_pw} = $cmdlgl{geocode};
+$cmdlgl{geocode_us} = $cmdlgl{geocode};
+$cmdlgl{geocode_vi} = $cmdlgl{geocode};
 }
 
 #	Here is the subroutine proper. It is just a dispatcher.
@@ -816,7 +826,18 @@ $cmdopt{height} ? !$parm{autoheight} : $parm{autoheight} and
 #	first valid result is accepted.
 
 BEGIN {
-$cmdlgl{height} = [qw{all}];
+$cmdlgl{height} = [qw{all retry_on_zero=i source_layer=s}];
+$cmdlgl{height_af} = $cmdlgl{height};
+$cmdlgl{height_as} = $cmdlgl{height};
+$cmdlgl{height_ca} = $cmdlgl{height};
+$cmdlgl{height_fm} = $cmdlgl{height};
+$cmdlgl{height_gu} = $cmdlgl{height};
+$cmdlgl{height_mh} = $cmdlgl{height};
+$cmdlgl{height_mp} = $cmdlgl{height};
+$cmdlgl{height_pr} = $cmdlgl{height};
+$cmdlgl{height_pw} = $cmdlgl{height};
+$cmdlgl{height_us} = $cmdlgl{height};
+$cmdlgl{height_vi} = $cmdlgl{height};
 }
 
 #	Here is the height() subroutine itself.
@@ -834,6 +855,27 @@ eod
 goto \&{$handler};
 }
 
+########################################################################
+#
+#	height_ca () - Fetch the height above sea level in Canada.
+#
+#	We default the source layer to 'SRTM.C_1TO19_3', and redispatch
+#	to height_us ().
+
+sub height_ca {
+$cmdopt{debug} and warn "Debug - Calling height_ca()\n";
+$cmdopt{source_layer} ||= 'SRTM.C_1TO19_3';
+$cmdopt{retry_on_zero} = 3 unless defined $cmdopt{retry_on_zero};
+goto \&height_us;
+}
+
+########################################################################
+#
+#	height_us () - Fetch the height above sea level in Canada.
+#
+#	The USGS has data for locations other than the USA, so other
+#	countries will be handled here as well.
+
 sub height_us {
 $soap_unavailable and die <<eod;
 Error - You need to install the SOAP::Lite module if you wish to use
@@ -848,8 +890,12 @@ my $set_pos = @_;
 my $lat = @_ ? shift @_ : $parm{latitude};
 my $lon = @_ ? shift @_ : $parm{longitude};
 
+$cmdopt{source_layer} ||= -1;
+$cmdopt{retry_on_zero} ||= 0;
 $cmdopt{debug} and warn <<eod;
 Debug - Getting elevation for latitude $lat, longitude $lon
+        -source_layer $cmdopt{source_layer}
+	-retry_on_zero $cmdopt{retry_on_zero}
 eod
 local $USGSElevationData::debug = 1 if $cmdopt{debug};
 
@@ -867,26 +913,28 @@ my $rslt;
 ##my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
 my $xmlns = 'http://gisdata.usgs.gov/XMLWebServices/';
 
-if ($cmdopt{all}) {
-    $rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
+my $tries = ($cmdopt{retry_on_zero} || 0) + 1;
+
+while (--$tries >= 0) {
+
+    if ($cmdopt{all}) {
+	$rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
 		{xmlns => $xmlns}) =>
-	SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
-	SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
-	SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
-	)->result;
-    }
-  else {
-    $rslt = $soap->call (SOAP::Data->name ('getElevation')->attr (
+	    SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
+	    SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
+	    SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
+	    )->result;
+	}
+      else {
+	$rslt = $soap->call (SOAP::Data->name ('getElevation')->attr (
 		{xmlns => $xmlns}) =>
-	SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
-	SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
-	SOAP::Data->new (name => 'Source_Layer', type => 'string',  value => -1),
-	SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
-	SOAP::Data->new (name => 'Elevation_Only', type => 'string', value => 'false'),
-	)->result;
-    }
-undef $soap;
-$cmdopt{debug} and SOAP::Trace->import ('-all');
+	    SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
+	    SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
+	    SOAP::Data->new (name => 'Source_Layer', type => 'string',  value => $cmdopt{source_layer} || -1),
+	    SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
+	    SOAP::Data->new (name => 'Elevation_Only', type => 'string', value => 'false'),
+	    )->result;
+	}
 
 #	Parse our result. This is not straightforward either, because
 #	they decided to encode the result in XML, but they omit one or
@@ -895,31 +943,39 @@ $cmdopt{debug} and SOAP::Trace->import ('-all');
 #	we have to examine the result and fix it up _before_ calling
 #	XML::Parser.
 
-if ($rslt) {
+    if ($rslt) {
 
-   $cmdopt{debug} and print 'Result: ', $rslt, "\n";
+	$cmdopt{debug} and print 'Result: ', $rslt, "\n";
 
-    my @endtag;
-    while ($rslt =~ m/(<\w+.*?>)/g) {
-	my $begintag = $1;
-	(my $endtag = $begintag) =~ s|<|</|;
-	$endtag =~ s/\s+.*/>/;
-	last if $rslt =~ m/$endtag/i;
-	unshift @endtag, $endtag;
+	my @endtag;
+	while ($rslt =~ m/(<\w+.*?>)/g) {
+	    my $begintag = $1;
+	    (my $endtag = $begintag) =~ s|<|</|;
+	    $endtag =~ s/\s+.*/>/;
+	    last if $rslt =~ m/$endtag/i;
+	    unshift @endtag, $endtag;
+	    }
+	if (my $endtag = join '', @endtag) {
+	    $cmdopt{debug} and
+		print "Warning - Supplying missing end tag $endtag\n";
+	    $rslt .= $endtag;
+	    }
+	$cmdopt{debug} and print 'Parsing: ', $rslt, "\n";
+	my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
+	$rslt = $psr->parse ($rslt);
+	last unless $rslt == 0;
+	sleep 2 if $tries;
 	}
-    if (my $endtag = join '', @endtag) {
-	$cmdopt{debug} and
-	    print "Warning - Supplying missing end tag $endtag\n";
-	$rslt .= $endtag;
+      else {
+	$cmdopt{debug} and print "No result from http://gisdata.usgs.gov/\n";
+	$rslt = undef;
+	last;
 	}
-    $cmdopt{debug} and print 'Parsing: ', $rslt, "\n";
-    my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
-    $rslt = $psr->parse ($rslt);
+
     }
-  else {
-    $cmdopt{debug} and print "No result from http://gisdata.usgs.gov/\n";
-    $rslt = undef;
-    }
+
+undef $soap;
+$cmdopt{debug} and SOAP::Trace->import ('-all');
 
 #	If, after all the above shenannigans, we have a result, set
 #	the height (and latitude and longitude if not defaulted), and
@@ -947,7 +1003,6 @@ no warnings qw{once};
 BEGIN {
 *height_af = \&height_us;	# Afghanistan (believe it or not).
 *height_as = \&height_us;	# American Samoa
-*height_ca = \&height_us;	# Canada. U.S. has North American data
 *height_fm = \&height_us;	# Federated States of Micronesia
 *height_gu = \&height_us;	# Guam
 *height_mh = \&height_us;	# Marshall Islands
@@ -3206,12 +3261,32 @@ geocode_* commands, which may also be invoked explicitly. In fact,
 it is the existence of such a command that makes a given country
 code work.
 
+If a single location is found, the latitude and longitude parameters
+will be set. The location parameter will also be set if it was not
+defaulted. In addition, if the L<autoheight|/autoheight> parameter is
+asserted the L<height|/height> command will be issued with the latitude
+and longitude defaulted, and the effective country code used for the
+geocode lookup.
+
 Yes, it would be nice to simply parse the country code off the end
 of the location, but unfortunately there are many conflicts between
 the ISO 3166 country codes and the U.S. Postal Service state codes
 and Canadian province codes, ranging from AL (either Albania or
 Alabama) through PE (either Peru or Prince Edward Island) to VA
 (either Vatican City or Virginia).
+
+In addition to the global options, the following additional options
+are available:
+
+-height causes the command to behave as though the
+L<autoheight|/autoheight> parameter were complemented. That is, it
+causes the height command to be issued if autoheight is false, and
+vice versa.
+
+Also, any options legal for the height command are legal, and will be
+passed through to it.
+
+The above options are also available on all of the 'geocode_*' commands.
 
 =for html <a name="geocode_as"></a>
 
@@ -3334,6 +3409,23 @@ The latitude and longitude can be omitted, in which case the current
 L<latitude|/latitude> and L<longitude|/longitude> parameters are
 used.
 
+In addition to the global options, the following options are available
+for this command:
+
+-all causes all results to be fetched, rather than just the 'best' one.
+This probably makes no difference in the value you get, since the
+results are assumed to be in descending order of goodness, and we
+return the first one.
+
+-retry_on_zero specifies the number of times to retry the query if the
+result is zero. The default is 0, but you can specify more.
+
+-source_layer specifies the data set to retrieve the height from. The
+default is '-1', which specifies the 'best' dataset. This is ignored
+unless -all is asserted, and you can probably ignore it too.
+
+These options are also available on all of the 'height_*' commands.
+
 =for html <a name="height_af"></a>
 
 =item height_af latitude longitude
@@ -3352,8 +3444,11 @@ American Samoa is handled by L<height_us|/height_us>.
 
 =item height_ca latitude longitude
 
-Canada is handled by L<height_us|/height_us>, since the U.S. Geological
-Survey dataset includes all of North America.
+This command is equivalent to L<height_us|/height_us> and in fact is
+handled by it since the U.S. Geological Survey dataset includes all of
+North America. But in order to cover some observed weirdness in the
+data returned, -source_layer is defaulted to 'SRTM.C_1TO19_3' and
+-retry_on_zero is defaulted to 3.
 
 =for html <a name="height_fm"></a>
 
