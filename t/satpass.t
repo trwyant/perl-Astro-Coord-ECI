@@ -29,6 +29,7 @@ use warnings qw{once};
 #	Initialize.
 
 my $data = '';		# Test data;
+my $failure;		# Notes to output if the next test fails.
 my $skip;		# Skip indicator
 my $test = 0;		# Test number;
 
@@ -58,6 +59,34 @@ if (-e $script) {
     $skip = $gblskip = "Cannot find $script";
     1 while defined (tester (undef, '', ''));
     }
+
+#	not_available(module ...) is a utility to determine whether the
+#	given modules are available. If so, it loads them. If not, it
+#	returns a message for the first module that can not be loaded.
+
+sub not_available {
+foreach my $module (@_) {
+    eval "use $module";
+    return "Module $module can not be loaded." if $@;
+    }
+return '';
+}
+
+#	not_reachable($url ...) is a utilty to determine whether the given
+#	URLs are reachable. If so, it returns false. If not, it returns
+#	a suitable message. Makes use of LWP::UserAgent, so may return
+#	the results of not_available ('LWP::UserAgent').
+
+sub not_reachable {
+my $ok = not_available ('LWP::UserAgent');
+return $ok if $ok;
+my $ua = LWP::UserAgent->new () or return "Cannot instantiate LWP::UserAgent.\n$@";
+foreach my $url (@_) {
+    my $resp = $ua->get ($url);
+    return $resp->status_line unless $resp->is_success;
+    }
+return '';
+}
 
 #	tester() is the test callback. It is called whenever the
 #	satpass script wants top-level input. The arguments are the
@@ -120,6 +149,10 @@ eod
 
     s/-data\b\s*//m and do {$data = $_; next};
 
+#	-fail specifies a note to be output if the next test fails.
+
+    s/-fail\b\s*//m and do {$failure = $_; next};
+
 #	-read reads the named file into $output. The presumption is
 #	that we're testing output redirected to a file.
 
@@ -151,16 +184,21 @@ eod
 	$test++;
 	print "#\n";
 	print $_ ? "# Test $test - $_\n" : "# Test $test\n";
+##	$data =~ s/^\s*\n//m;
 	chomp $data;
 	print $data !~ m/\n/g ?
 	    "#      Expected: $data\n" :
 	   ("#      Expected:\n", map {"#         $_\n"} split '\n', $data);
 	$output = $except if defined $except;
+	$output =~ s/^\s*\n//m;
 	chomp $output;
 	print $output !~ m/\n/g ?
 	    "#           Got: $output\n" :
 	   ("#           Got:\n", map {"#         $_\n"} split '\n', $output);
 	skip ($skip, $data eq $output);
+	warn sprintf "\n\n$failure\n\n", $test
+	    unless $skip || $data eq $output || !$failure;
+	$failure = undef;
 	next;
 	};
 
@@ -199,12 +237,12 @@ return undef;
 __END__
 
 st get direct
--data
+-data st set direct ''
 -test st get direct
 
 st set direct 1
 st get direct
--data 1
+-data st set direct 1
 -test st set direct 1
 
 set horizon 10
@@ -335,3 +373,36 @@ show horizon
 -data set horizon 40
 -test macro parameter overriding
 
+-skip not_available ('SOAP::Lite') || not_reachable ('http://rpc.geocoder.us/')
+
+set country us
+set autoheight 0
+geocode '1600 pennsylvania ave washington dc'
+-data <<eod
+
+1600 Pennsylvania Ave NW
+Washington DC 20502
+
+set location '1600 Pennsylvania Ave NW Washington DC 20502'
+set latitude 38.898748
+set longitude -77.037684
+eod
+-test geocode location via http://rpc.geocoder.us/
+
+-skip not_available ('SOAP::Lite', 'XML::Parser') || not_reachable ('http://gisdata.usgs.gov/')
+
+set location '1600 Pennsylvania Ave NW Washington DC 20502'
+set latitude 38.898748
+set longitude -77.037684
+set height 0
+height
+-fail <<eod
+Test %d may fail due to a database problem on http://gisdata.usgs.gov/
+or due to a change in the interface specification. If you want to
+distinguish between the two, visit that site and look up the height
+at latitude 38.898748 longitude -77.037684 by hand.
+eod
+-data set height 16.68
+-test fetch height from http://gisdata.usgs.gov/
+
+-skip ''
