@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_12';
+our $VERSION = '0.006_13';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1078,8 +1078,8 @@ foreach my $key (@_) {
 	die <<eod;
 Error - Parameter $key does not exist.
 eod
-    $frame[$#frame]{parm}{$key} = $parm{$key}
-	unless exists $frame[$#frame]{parm}{$key};
+    $frame[$#frame]{local_parm}{$key} = $parm{$key}
+	unless exists $frame[$#frame]{local_parm}{$key};
     }
 }
 
@@ -1894,11 +1894,41 @@ my $st = _get_spacetrack ();
 my $func = lc shift or die <<eod;
 Error - No Astro::SpaceTrack method specified.
 eod
+$func = 'get' if $func eq 'show';	# Special-case 'show' into 'get'.
+
+#	$st->get() is special-cased to: allow multiple arguments, allow
+#	no argument to get all defined, and format output as st set.
+
+if ($func eq 'get') {
+    @_ = _get_spacetrack_attrib_names () unless @_;
+    foreach my $name (@_) {
+	my $rslt = $st->get ($name);
+	die $rslt->status_line unless $rslt->is_success;
+	print "st set $name ", _quoter ($rslt->content), "\n";
+	}
+    return;
+    }
+
+#	$st->localize does not exist, but we special-case it to
+#	$st->get all the arguments and save them in the stack frame.
+
+  elsif ($func eq 'localize') {
+    foreach my $key (@_) {
+	$frame[$#frame]{local_st}{$key} = $st->get ($key)->content
+	    unless exists $frame[$#frame]{local_st}{$key};
+	}
+    return;
+    }
+
+#	Otherwise we just execute the function and dispatch on the
+#	result.
+
 $func !~ m/^_/ && $st->can ($func) or die <<eod;
 Error - Unknown Astro::SpaceTrack method $func.
 eod
 unshift @_, -start => _parse_time ($cmdopt{start}) if $cmdopt{start};
 unshift @_, -end =>  _parse_time ($cmdopt{end}) if $cmdopt{end};
+
 my $rslt = $st->$func (@_);
 my $content = $st->content_type || '';
 if (!$rslt->is_success) {
@@ -2164,7 +2194,9 @@ eod
 sub _frame_pop {
 my $info = pop @frame;
 select ($info->{stdout});
-set (%{$info->{parm}});
+set (%{$info->{local_parm}});
+_get_spacetrack ()->set (%{$info->{local_st}})
+    if exists $info->{local_st};
 @frame ? $info->{stdin} : undef;
 }
 
@@ -2187,6 +2219,30 @@ $st ||=
     Astro::SpaceTrack->new (webcmd => $parm{webcmd}, filter => 1);
 }
 }	# End local symbol block.
+
+#	@names = _get_spacetrack_attrib_names ();
+
+#	Get the names of all the Spacetrack attributes.
+
+{	# local symbol block.
+my @names;
+
+sub _get_spacetrack_attrib_names {
+unless (@names) {
+    my $st = _get_spacetrack ();
+    if ($st->can ('attribute_names')) {
+	@names = $st->attribute_names ();
+	}
+      else {
+	eval {$st->get ('##')};
+	(my $data = $@) =~ s/.*?Legal attributes are\s+//;
+	$data =~ s/\..*//s;
+	@names = split ',\s*', $data;
+	}
+    }
+@names;
+}
+}	# end local symbol block;
 
 #	$suf = _get_suffix ($prefix, $backoff);
 
@@ -2357,6 +2413,8 @@ eod
 
 sub _quoter {
 my $string = shift;
+return $string if looks_like_number ($string);
+return "''" unless $string;
 return $string unless $string =~ m/[\s'"]/;
 $string =~ s/([\\'])/\\$1/g;
 return "'$string'";
@@ -2618,15 +2676,10 @@ $memio ||= $] >= 5.008 && $Config{useperlio} ?
 *_memio = \&$memio;
 }
 
-##sub _memio {
-##$memio->(@_);
-##}
-
 sub new {
 return $clip if $clip;
 my $class = shift;
 my $data = '';
-##!!my $clip = $memio->('>', \$data);
 my $clip = _memio ('>', \$data);
 *$clip->{__PACKAGE__}{data} = \$data;
 bless $clip, $class;
@@ -3659,10 +3712,20 @@ It can also retrieve them from the Celestrak web site for as long as
 Dr. Kelso retains his authorization to redistribute the orbital
 elements.
 
-What comes after the 'st' is a legal command to the
-B<Astro::SpaceTrack> package. If a command returns orbital elements,
+What comes after the 'st' is the name of an B<Astro::SpaceTrack>
+method. If the method returns orbital elements,
 those elements will be added to the observing list. You can use
 'st help' to get brief help, or see L<Astro::SpaceTrack>.
+
+In addition to the legal B<Astro::SpaceTrack> methods, 'show' has been
+made a synonym to 'get', for consistency. Also, as of satpass 0.006_13,
+multiple attributes may be shown, 'show' or 'get' without an argument
+shows all B<Astro::SpaceTrack> arguments, and the output is formatted
+as 'st set' commands.
+
+You can also use the 'st localize' command to localize
+B<Astro::SpaceTrack> attribute values in exactly the same way that the
+L<localize|/localize> command localizes satpass parameters.
 
 In addition to the usual options, the following options specific to
 this command are supported:
