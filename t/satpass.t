@@ -30,6 +30,7 @@ use warnings qw{once};
 
 my $data = '';		# Test data;
 my $failure;		# Notes to output if the next test fails.
+my @save;		# Storage for testers.
 my $skip;		# Skip indicator
 my $test = 0;		# Test number;
 
@@ -324,6 +325,29 @@ macro
 foo
 -data Error - Verb 'foo' not recognized.
 -test make sure macro can not be executed
+
+-skip -d 'fubar' ? 'Directory fubar exists' : ''
+cd fubar
+-data <<eod
+Error - Can not cd to fubar
+        No such file or directory
+eod
+-test change directory (bad directory name)
+
+-skip <<eod
+$save[0] = getcwd or die "Can not get current directory\n";
+-d 't' ? '' : 'Directory t does not exist'
+eod
+cd t
+-result <<eod
+$save[1] = getcwd or die "Can not get current directory\n";
+chdir $save[0];
+$save[0] eq $save[1] ? 'Failed to change directory' : 'Changed directory to t'
+eod
+-data Changed directory to t
+-test change directory
+
+-skip ''
 
 set tz GMT
 almanac '01-Jul-2006 midnight'
