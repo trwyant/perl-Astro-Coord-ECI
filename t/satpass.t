@@ -10,13 +10,13 @@ use Test;
 
 our $VERSION = '0.001';
 
+$| = 1;
+
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
 
-my $gblskip = $] >= 5.008 && $Config{useperlio} ? '' : do {
-    eval "use IO::String";
-    $@ ? "IO::String needed but not available." : '';
-    };
+my $gblskip = $] >= 5.008 && $Config{useperlio} ? '' :
+    not_available ('IO::String');
 
 #	Set up the testing hook in satpass.
 # >>>	This interface is undocumented, and unsupported except for its
@@ -30,7 +30,7 @@ use warnings qw{once};
 
 my $data = '';		# Test data;
 my $failure;		# Notes to output if the next test fails.
-my @save;		# Storage for testers.
+my $home = getcwd;	# Directory test runs in.
 my $skip;		# Skip indicator
 my $test = 0;		# Test number;
 
@@ -101,7 +101,8 @@ return '';
 #	handle, parsing the file as it goes. A line that begins with
 #	'-' is a test directive; these will be documented in-line.
 #	Empty lines and lines beginning with '#' are ignored.
-#	Any thing else is returned intact to the caller.
+#	Any thing else is returned intact to the caller if the $skip
+#	indicator (see below) is false, or ignored if it is true.
 
 #	The test mechanism relies on the values of four local
 #	variables:
@@ -127,7 +128,10 @@ while (<DATA>) {
     s/\s+$//;
     next unless $_;
     next if m/^#/;
-    m/^-/ or return "$_\n";
+    unless (m/^-/) {
+	next if $skip;
+	return "$_\n";
+	}
 
 #	We support here documents in directives. The syntax is
 #	pretty much the same as Perl's, except the indicator may
@@ -217,7 +221,7 @@ eod
 
     s/-write\b\s*//m and do {
 	my $fh;
-	open ($fh, '>', File::Spec->catfile (cwd, $_));
+	open ($fh, '>', File::Spec->catfile (getcwd, $_));
 	print $fh $data;
 	next;
 	};
@@ -326,7 +330,11 @@ foo
 -data Error - Verb 'foo' not recognized.
 -test make sure macro can not be executed
 
--skip -d 'fubar' ? 'Directory fubar exists' : ''
+-skip <<eod
+-d 'fubar' ? 'Directory fubar exists' :
+-e 'fubar' ? 'File fubar exists but is not a directory' : ''
+eod
+
 cd fubar
 -data <<eod
 Error - Can not cd to fubar
@@ -335,19 +343,16 @@ eod
 -test change directory (bad directory name)
 
 -skip <<eod
-$save[0] = getcwd or die "Can not get current directory\n";
--d 't' ? '' : 'Directory t does not exist'
+chdir $home; (-d 't') ? '' : 'Directory t does not exist'
 eod
 cd t
 -result <<eod
-$save[1] = getcwd or die "Can not get current directory\n";
-chdir $save[0];
-$save[0] eq $save[1] ? 'Failed to change directory' : 'Changed directory to t'
+($home eq getcwd) ? 'Failed to change directory' : 'Changed directory to t'
 eod
 -data Changed directory to t
 -test change directory
 
--skip ''
+-skip chdir $home; ''
 
 set tz GMT
 almanac '01-Jul-2006 midnight'
@@ -447,7 +452,7 @@ set location '80 Wellington Street Ottawa ON'
 set latitude 45.423388
 set longitude -75.697786
 set height 0
-height
+height -retry 8
 -data set height 82.00
 -fail <<eod
 Test %d may fail due to a database problem on http://gisdata.usgs.gov/
