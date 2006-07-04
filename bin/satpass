@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_15';
+our $VERSION = '0.006_16';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1316,15 +1316,21 @@ foreach my $tle (@bodies) {
 		my @time = (
 		    [_pass_zero_in ($data[0][0] - $step, $data[0][0],
 			sub {($sta->azel ($tle->universal ($_[0])))[1] >=
-			$effective_horizon})],
+			$effective_horizon}), 'Rise'],
 		    [_pass_zero_in ($data[$#data][0], $data[$#data][0] + $step,
 			sub {($sta->azel ($tle->universal ($_[0])))[1] <
-			$effective_horizon})],
+			$effective_horizon}), 'Set'],
 		    [_pass_zero_in ($data[0][0], $data[$#data][0],
 			sub {($sta->azel ($tle->universal ($_[0])))[1] >
-				($sta->azel ($tle->universal ($_[0] + 1)))[1]})],
+				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
+				'Max'],
 		    );
+		warn <<eod if $parm{debug};
 
+Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]]} $time[0][1]
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[1][0]]} $time[1][1]
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
+eod
 
 #		Compute visibility changes.
 
@@ -1344,7 +1350,12 @@ foreach my $tle (@bodies) {
 				    $_[0] < $_[1]{suntim} ? 1 : 2 :
 				    $_[0] < $_[1]{suntim} ? 2 : 1;
 			    $illum == $evt->[7]
-			    }, {suntim => $suntim, rise => $rise})];
+			    }, {suntim => $suntim, rise => $rise}),
+			    $lighting[$evt->[7]]];
+			warn <<eod if $parm{debug};
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]} $lighting[$evt->[7]]
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
+eod
 		    }
 		  continue {
 		    $last = $evt;
@@ -1370,6 +1381,9 @@ foreach my $tle (@bodies) {
 		    next if $angle > $parm{appulse};
 		    push @time, [$when, sprintf ('%.1f from %s', $angle,
 			$body->get ('name') || $body->get ('id')), $body];
+			warn <<eod if $parm{debug};
+                $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]}
+eod
 		    }
 
 
@@ -1381,6 +1395,7 @@ foreach my $tle (@bodies) {
 #		Generate the full data for the exact events.
 
 		my ($suntim, $rise);
+		warn "Contents of \@time: ", Dumper (\@time) if $parm{debug};
 		foreach (sort {$a->[0] <=> $b->[0]} @time) {
 		    my @event = @$_;
 		    my $time = shift @event;
@@ -1392,7 +1407,7 @@ foreach my $tle (@bodies) {
 			$rise ? 1 : 2;
 		    push @data, [$time, $elev, $azm, $rng,
 			Astro::Coord::ECI->eci ($tle->eci (), $time),
-			undef, undef, $illum];
+			undef, undef, $illum, @event ? $event[0] : ()];
 		    }
 
 
@@ -1410,22 +1425,24 @@ foreach my $tle (@bodies) {
 
 #	    Figure out what the events are.
 
-	    $data[0][8] = 'Rise';
-	    $data[$#data][8] = 'Set';
-	    $data[$#data][1] = 0 if $data[$#data][1] < 0;
+	    unless ($parm{exact_event}) {
+		$data[0][8] = 'Rise';
+		$data[$#data][8] = 'Set';
+		$data[$#data][1] = 0 if $data[$#data][1] < 0;
 					# Because -.6 degrees
 					# (which we get because no atmospheric
 					# refraction below the horizon) looks funny.
-	    my ($last, $max);
-	    foreach my $pt (@data) {
-		$last or next;
-		$last->[1] > $pt->[1] and $max ||= $last;
-		$last->[7] != $pt->[7] and $pt->[8] ||= $lighting[$pt->[7]];
+		my ($last, $max);
+		foreach my $pt (@data) {
+		    $last or next;
+		    $last->[1] > $pt->[1] and $max ||= $last;
+		    $last->[7] != $pt->[7] and $pt->[8] ||= $lighting[$pt->[7]];
+		    }
+		continue {
+		    $last = $pt;
+		    }
+		$max and $max->[8] = 'Max';
 		}
-	      continue {
-		$last = $pt;
-		}
-	    $max and $max->[8] = 'Max';
 
 
 #	    Print the data for the pass.
