@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_14';
+our $VERSION = '0.006_15';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1557,7 +1557,7 @@ $cmdlgl{position} = [qw{realtime}];
 
 sub position {
 my $time = _parse_time (shift);
-my $endtm = _parse_time (shift || ($cmdopt{realtime} ? '+10' : ''));
+my $endtm = _parse_time (shift || ($cmdopt{realtime} ? '+10' : '+0'));
 my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
