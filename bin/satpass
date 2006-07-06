@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_17';
+our $VERSION = '0.006_18';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -599,6 +599,26 @@ foreach my $tle (@bodies) {
 
 sub clear {
 @bodies = ();
+}
+
+
+########################################################################
+#
+#	drop ()  - remove the given bodies from the observing list.
+#
+
+sub drop {
+my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_} @_;
+my @keep;
+DROP_LOOP:
+foreach my $tle (@bodies) {
+    my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
+    foreach my $test (@check) {
+	next DROP_LOOP if ref $test ? $name =~ m/$test/ : $id == $test;
+	}
+    push @keep, $tle;
+    }
+@bodies = @keep;
 }
 
 
@@ -3255,6 +3275,17 @@ For example:
 
 This command clears the observing list. It is not an error to issue it
 with the list already clear.
+
+=for html <a name="drop"></a>
+
+=item drop name_or_id ...
+
+This command removes the objects named in the command from the
+observing list, retaining all others. Either names, NORAD ID numbers,
+or a mixture may be given. Numeric items are matched against the NORAD
+IDs of the items in the observing list; non-numeric items are made into
+case-insensitive regular expressions and matched against the names of
+the items if any.
 
 =for html <a name="exit"></a>
 
