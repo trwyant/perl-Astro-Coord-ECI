@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_19';
+our $VERSION = '0.006_20';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2834,7 +2834,8 @@ unless ($] >= 5.008 && $Config{useperlio}) {
     }
 
 
-our $Hook;
+our $Hook;	# Code reference that we use to get data from.
+our $Handle;	# First argument to pass to hook when called.
 our $Exception;
 
 sub new {
@@ -2865,7 +2866,7 @@ my $self = shift;
 my $attr = *$self->{__PACKAGE__};
 my $oldout = select (*STDOUT);
 $attr->{last_line} =
-    $Hook->($self, $attr->{last_line},
+    $Hook->($Handle, $attr->{last_line},
 	substr (${$attr->{data}}, $attr->{loc}), $Exception);
 $Exception = undef;
 select ($oldout);
