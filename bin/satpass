@@ -12,6 +12,7 @@ use Astro::Coord::ECI::Star;
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::Utils qw{:all};
 
+use Carp qw{confess};
 use Config;
 use Data::Dumper;
 use Date::Manip;
@@ -56,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_18';
+our $VERSION = '0.006_19';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2208,9 +2209,10 @@ sort @rslt;
 sub _format_local_azel {
 @_ or return ' elev  azim   ';
 @_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
-Programming error - _format_azel () must be called with either zero
-    or two arguments. If two, both must be Astro::Coord::ECI objects.
+    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+Programming error - _format_local_azel () must be called with either
+    zero or two arguments. If two, both must be Astro::Coord::ECI
+    objects.
 eod
 my ($az, $el, $rng) = $_[0]->azel ($_[1]);
 sprintf "%5.1f %5.1f %-2s",
@@ -2228,9 +2230,10 @@ sprintf "%5.1f %5.1f %-2s",
 sub _format_local_azel_rng {
 @_ or return ' elev  azim     range    ';
 @_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
-Programming error - _format_azel () must be called with either zero
-    or two arguments. If two, both must be Astro::Coord::ECI objects.
+    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+Programming error - _format_local_azel_rng () must be called with
+    either zero or two arguments. If two, both must be
+    Astro::Coord::ECI objects.
 eod
 my ($az, $el, $rng) = $_[0]->azel ($_[1]);
 sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
@@ -2248,9 +2251,10 @@ sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
 sub _format_local_equatorial {
 @_ or return 'right asc decl';
 @_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
-Programming error - _format_azel () must be called with either zero
-    or two arguments. If two, both must be Astro::Coord::ECI objects.
+    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+Programming error - _format_local_equatorial () must be called with
+    either zero or two arguments. If two, both must be
+    Astro::Coord::ECI objects.
 eod
 my ($ra, $dec, $rng) = $_[0]->equatorial ($_[1]);
 sprintf "%s %5.1f",
@@ -2266,9 +2270,10 @@ sprintf "%s %5.1f",
 sub _format_local_equatorial_rng {
 @_ or return 'right asc decl  range    ';
 @_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
-Programming error - _format_azel () must be called with either zero
-    or two arguments. If two, both must be Astro::Coord::ECI objects.
+    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+Programming error - _format_local_equatorial_rng () must be called with
+    either zero or two arguments. If two, both must be
+    Astro::Coord::ECI objects.
 eod
 my ($ra, $dec, $rng) = $_[0]->equatorial ($_[1]);
 sprintf "%s %5.1f @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
