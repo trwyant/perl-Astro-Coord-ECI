@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.003_04';
+our $VERSION = '0.003_05';
 
 use base qw{Astro::Coord::ECI};
 
@@ -969,6 +969,22 @@ $parm->{isimp} or do {
 my $a = $parm->{aodp} * $tempa ** 2;
 my $e = $self->{eccentricity} - $tempe;
 my $xl = $xmp + $omega + $xnode + $parm->{xnodp} * $templ;
+die <<eod if $e > 1 || $e < -1;
+Error - Effective eccentricity > 1
+    ID = @{[$self->get ('id')]}
+    Epoch = @{[scalar gmtime $self->get ('epoch')]} GMT
+    \$self->{bstardrag} = $self->{bstardrag}
+    \$parm->{c4} = $parm->{c4}
+    \$tsince = $tsince
+    \$tempe = \$self->{bstardrag} * \$parm->{c4} * \$tsince
+    \$tempe = $tempe
+    \$self->{eccentricity} = $self->{eccentricity}
+    \$e = \$self->{eccentricity} - \$tempe
+    \$e = $e
+    Either this object represents a bad set of elements, or you are
+    using it beyond its "best by" date ("expiry date" in some dialects
+    of English).
+eod
 my $beta = sqrt(1 - $e * $e);
 $self->{debug} and print <<eod;
 Debug SGP4 - Before xn,
