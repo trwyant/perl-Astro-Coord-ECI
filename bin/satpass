@@ -56,7 +56,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_16';
+our $VERSION = '0.006_17';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1579,6 +1579,9 @@ my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
 _check_station ();
+my @lighting = qw{Shdw Lit Day};	# Duped from pass()
+my $twilight = $parm{_twilight};
+
 
 
 #	Define the observing station.
@@ -1591,20 +1594,32 @@ my $sta = Astro::Coord::ECI->new (
 	deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
 	$parm{height} / 1000);
 
+my $sun = Astro::Coord::ECI::Sun->new ();
 
 #	Print a header.
 
-printf <<eod, _format_location ();
-%s            name @{[$lcfmt->()]}
+printf <<eod, _format_location (),
+%s            name @{[$lcfmt->()]} %-*s illum
 eod
-
+	length (strftime $dtfmt, localtime time), 'epoch of data';
+ 
 my $when = time ();
 while ($time <= $endtm) {
     print strftime ($dtfmt, localtime $time), "\n";
     foreach my $body (@bodies, @sky) {
 	$body->universal ($time);
 	my $name = $body->get ('name') || $body->get ('id') || 'body';
-	printf "%16s %s\n", $name, $lcfmt->($sta, $body);
+	if ($body->isa ('Astro::Coord::ECI::TLE')) {
+	    my $illum = ($sta->azel ($body))[1] < 0 ? 10 :
+		($sta->azel ($sun->universal ($time)))[1] > $twilight ? 2 :
+		($body->azel ($sun))[1] > $body->dip() ? 1 : 0;
+	    printf "%16s %s %s %s\n", $name, $lcfmt->($sta, $body),
+		strftime ($dtfmt, localtime $body->get ('epoch')),
+		$lighting[$illum] || '';
+	    }
+	  else {
+	    printf "%16s %s\n", $name, $lcfmt->($sta, $body);
+	    }
 	}
     $when += $interval;
     $time += $interval;
