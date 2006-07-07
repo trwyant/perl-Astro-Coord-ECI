@@ -74,3 +74,55 @@
     Add 'almanac' command options -horizon, -quarters, -transit, and
       -twilight to restrict the output.
     Make height_us() work with revised USGS SOAP calling sequence.
+0.007
+  ECI.pm
+    Optimize, mostly by being smarter about when to clear cached
+      coordinates.
+    Correct spelling in POD.
+  ECI/Moon.pm
+    Change die to confess on programming error.
+    Correct spelling in POD.
+  ECI/Star.pm
+    Correct spelling in POD.
+  ECI/Sun.pm
+    Correct spelling in POD.
+  ECI/TLE.pm
+    Modify internals for easier cache clearing.
+    Better documentation of 'mean anomaly'.
+    Correct spelling in POD.
+    Trap invalid effective eccentricity in sgp4. The underlying cause
+      of the problem is probably either an invalid TLE or using the TLE
+      past its 'good until' date.
+  ECI/Utils.pm
+    Change die to confess on programming error.
+    Correct spelling in POD.
+  Makefile.PL
+    Get rid of wrong-headed attempt to configure optional modules.
+  bin/satpass
+    Various documentation corrections.
+    Correct spelling in POD.
+    Add store() and retrieve() as interface to Storable.
+    Centralize tilde expansion, and do it on cd(), load(), retrieve (), source(), store (),
+    Preprocess -start and -end options of st(), to make dates
+      consistent with the rest of satpass.
+    Add -initialization_file command option.
+    Add -optional option on source().
+    Add localize(), and macro/source call frames to support this.
+    Add localize subcommand to st().
+    Make 'st show' a synonym for 'st get', and make 'st get' without
+      arguments show all settings.
+    Add test hooks, and a test to exercise the more arcane functions
+      of the script.
+    Add -source_layer and -retry_on_zero options to height_us().
+    Add a separate height_ca() method that makes use of the above
+      options when delegating to height_us(), in response to anomalous
+      responses to height queries.
+    Fix problem displaying appulses in pass().
+    Make the position() display positions for a range of times. Add
+      -realtime option to position() to display positions in
+      near-real-time.
+    Add drop().
+    Fix formatting of error messages from the local coordinate
+      formatters.
+    Have position() display epoch and illumination when displaying
+      objects from the observing list.

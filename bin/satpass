@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.006_20';
+our $VERSION = '0.007';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3937,11 +3937,18 @@ Track login:
 This command displays the operational status of satellites, fetching
 it if necessary. You can specify one or more satellite types if
 desired, but there is not much point since the only legal type at
-the moment is 'iridium'.
+the moment is 'iridium', and the specification of the type is
+deprecated anyway (see note below).
 
 Normally, this command will not reload status if it is already
 available, since it does not change that often. But you can force
 a reload using the -reload qualifier.
+
+B<Note:> If Iridium flare functionality is ever released, subcommands
+to manipulate the status list will be added, and the format of the
+output of the unqualified command will change to the commands
+necessary to rebuild the list. This is the reason the 'status iridium'
+command is deprecated.
 
 =for html <a name="store"></a>
 
