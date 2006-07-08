@@ -10,6 +10,7 @@ use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Star;
 use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::Utils qw{:all};
 
 use Carp qw{confess};
@@ -57,7 +58,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1255,7 +1256,7 @@ print _format_location ();
 
 #	Foreach body to be modelled
 
-foreach my $tle (@bodies) {
+foreach my $tle (_aggregate ()) {
     my $id = $tle->get ('id');
     my $name = $tle->get ('name');
     $name = $name ? " - $name" : '';
@@ -1600,9 +1601,9 @@ my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
 _check_station ();
+
 my @lighting = qw{Shdw Lit Day};	# Duped from pass()
 my $twilight = $parm{_twilight};
-
 
 
 #	Define the observing station.
@@ -1627,10 +1628,11 @@ eod
 my $when = time ();
 while ($time <= $endtm) {
     print strftime ($dtfmt, localtime $time), "\n";
-    foreach my $body (@bodies, @sky) {
+    foreach my $body (_aggregate (), @sky) {
 	$body->universal ($time);
 	my $name = $body->get ('name') || $body->get ('id') || 'body';
-	if ($body->isa ('Astro::Coord::ECI::TLE')) {
+	if ($body->isa ('Astro::Coord::ECI::TLE') ||
+		$body->isa ('Astro::Coord::ECI::TLE::Set')) {
 	    my $illum = ($sta->azel ($body))[1] < 0 ? 10 :
 		($sta->azel ($sun->universal ($time)))[1] > $twilight ? 2 :
 		($body->azel ($sun))[1] > $body->dip() ? 1 : 0;
@@ -2160,6 +2162,16 @@ eod
 
 #	Accessors and mutators are with show() and set() respectively.
 
+#	_aggregate ();
+
+#	This is just a wrapper for
+#	Astro::Coord::ECI::TLE::Set->aggregate.
+
+sub _aggregate {
+Astro::Coord::ECI::TLE::Set->aggregate (@bodies);
+}
+
+
 #	_check_station ();
 
 #	This subroutine throws an exception if the height, latitude, and
@@ -2206,10 +2218,16 @@ sort @rslt;
 #	as seen from the station. If called with no arguments, it
 #	returns a suitable heading for this information.
 
+use Carp;
 sub _format_local_azel {
 @_ or return ' elev  azim   ';
-@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+@_ == 2 && (
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
+    ) && (
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
+    ) or confess <<eod;
 Programming error - _format_local_azel () must be called with either
     zero or two arguments. If two, both must be Astro::Coord::ECI
     objects.
@@ -2229,8 +2247,13 @@ sprintf "%5.1f %5.1f %-2s",
 
 sub _format_local_azel_rng {
 @_ or return ' elev  azim     range    ';
-@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+@_ == 2 && (
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
+    ) && (
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
+    ) or confess <<eod;
 Programming error - _format_local_azel_rng () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
@@ -2250,8 +2273,13 @@ sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
 
 sub _format_local_equatorial {
 @_ or return 'right asc decl';
-@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+@_ == 2 && (
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
+    ) && (
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
+    ) or confess <<eod;
 Programming error - _format_local_equatorial () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
@@ -2269,8 +2297,13 @@ sprintf "%s %5.1f",
 
 sub _format_local_equatorial_rng {
 @_ or return 'right asc decl  range    ';
-@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or confess <<eod;
+@_ == 2 && (
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
+    ) && (
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
+	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
+    ) or confess <<eod;
 Programming error - _format_local_equatorial_rng () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
