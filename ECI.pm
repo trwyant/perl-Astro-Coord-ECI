@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -155,8 +155,13 @@ sub angle {
 my $self = shift;
 my $B = shift;
 my $C = shift;
-ref $B && UNIVERSAL::isa ($B, __PACKAGE__) &&
-	ref $C && UNIVERSAL::isa ($C, __PACKAGE__) or
+ref $B && (
+	UNIVERSAL::isa ($B, __PACKAGE__) ||
+	UNIVERSAL::isa ($B, 'Astro::Coord::ECI::TLE::Set')
+    ) && ref $C && (
+	UNIVERSAL::isa ($C, __PACKAGE__) ||
+	UNIVERSAL::isa ($C, 'Astro::Coord::ECI::TLE::Set')
+    ) or
 	croak <<eod;
 Error - Both arguments must be @{[__PACKAGE__]} objects.
 eod
