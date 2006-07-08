@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.004';
+our $VERSION = '0.004_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -167,6 +167,7 @@ no warnings qw{once};
 *_model_model = \&model;
 *_model_model4 = \&model4;
 *_model_model8 = \&model8;
+*_model_null = \&null;
 *_model_sdp4 = \&sdp4;
 *_model_sdp8 = \&sdp8;
 *_model_sgp = \&sgp;
@@ -371,6 +372,17 @@ or equatorial ()) to retrieve the position you just calculated.
 sub model8 {
 return $_[0]->is_deep ? $_[0]->sdp8 ($_[1]) : $_[0]->sgp8 ($_[1]);
 }
+
+=item $tle = $tle->null ($time)
+
+This method does nothing. It is a valid orbital model, though. If you
+call $tle->set (model => 'null'), no position calculation is done as a
+side effect of calling $tle->universal ($time).
+
+=cut
+
+sub null {}
+
 
 =item @elements = Astro::Coord::ECI::TLE->parse (@data);
 
