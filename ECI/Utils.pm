@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = "0.005";
+our $VERSION = '0.005_01';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -53,8 +53,8 @@ use UNIVERSAL qw{can isa};
 our @EXPORT;
 our @EXPORT_OK = qw{
 	AU LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI
-	acos asin atmospheric_extinction deg2rad distsq equation_of_time
-	intensity_to_magnitude jcent2000 jday2000
+	acos asin atmospheric_extinction deg2rad distsq dynamical_delta
+	equation_of_time intensity_to_magnitude jcent2000 jday2000
 	julianday mod2pi nutation_in_longitude nutation_in_obliquity
 	obliquity omega rad2deg tan theta0 thetag};
 
@@ -166,6 +166,33 @@ for (my $inx = 0; $inx < $size; $inx++) {
     $sum += $delta * $delta;
     }
 $sum
+}
+
+
+=item $seconds = dynamical_delta ($time);
+
+=for comment help syntax-highlighting editor "
+
+This method returns the difference between dynamical and universal time
+at the given universal time. That is,
+
+ $dynamical = $time + dynamical_delta ($time)
+
+if $time is universal time.
+
+The algorithm is from Jean Meeus' "Astronomical Algorithms", 2nd
+Edition, Chapter 10, page 78.
+
+=for comment help syntax-highlighting editor "
+
+=cut
+
+sub dynamical_delta {
+my $year = (gmtime $_[0])[5] + 1900;
+my $t = ($year - 2000) / 100;
+my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
+(25.3 * $t + 102) * $t + 102		# Meeus (10.2)
+	+ $correction;			# Meeus' correction.
 }
 
 
