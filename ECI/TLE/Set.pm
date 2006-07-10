@@ -22,10 +22,7 @@ This module is intended to represent a set of orbital elements,
 representing the same NORAD ID at different points in time. It
 can contain any number of objects of class Astro::Coord::ECI::TLE
 (or any subclass thereof) provided all contents are of the same
-class and represent the same NORAD ID. If you set the time,
-the member whose epoch best represents that time is selected, and
-subsequent method calls are delegated to that member. Setting a
-different time selects a different member. Possibly.
+class and represent the same NORAD ID.
 
 In addition to the methods documented here, an
 Astro::Coord::ECI::TLE::Set supports all methods provided by the
@@ -36,16 +33,13 @@ appropriate to the time given. The weasel word 'almost' is expanded
 on in the L</Incompatibilities with Astro::Coord::ECI::TLE> section,
 below.
 
-The 'best representative' member for a given time is chosen by
-considering all members in the set, ordered by ascending epoch. If all
-epochs are after the given time, the earliest epoch is chosen. If some
-epochs are on or before the given time, the latest epoch that is not
-after the given time is chosen.
-
-The 'best representative' algorithm tries select the element set that
-would actually be current at the given time. If no element set is
-current (i.e. all are in the future at the given time) we take the
-earliest, to minimize peeking into the future.
+When the first member object is added via the add() method, it becomes
+the currently-selected object. The select() method can be used to
+select the member that best represents the time passed to the select
+method. In addition, certain method calls that are delegated to the
+currently-selected member object can cause a new member to be selected
+before the delegation is done. These include 'universal', 'dynamical',
+and any Astro::Coord::ECI::TLE orbital propagation model.
 
 There may be cases where the member class does not want to use the
 normal delegation mechanism. In this case, it needs to define a
@@ -94,11 +88,11 @@ Astro::Coord::ECI::TLE::Set->universal () is an error.
 
 =head3 Return semantics for delegated behaviors
 
-In general, methods which return the object they were called on (e.g.
-$object->ecef ($X, $Y, $Z ...) return the Astro::Coord::ECI object,
-not the Astro::Coord::ECI::TLE::Set object. This does not necessarily
-apply to methods implemented on Astro::Coord::ECI::TLE::Set; see the
-documentation to those methods for details.
+In general, when behavior is delegated to a member object, the return
+is whatever the delegated method returns. This means that, for methods
+that return the object they are called on (e.g. universal()) you get
+back a reference to the member object, not a reference to the
+containing Astro::Coord::ECI::TLE::Set object.
 
 =head2 Methods
 
@@ -118,7 +112,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.000_03';
+our $VERSION = '0.000_05';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -260,29 +254,6 @@ $self->{current} = undef;
 }
 
 
-=item $set->dynamical ($time);
-
-This method converts the given time to universal, and delegates to
-the universal() method.
-
-If called without an argument, it returns the dynamical time of the
-currently-selected member.
-
-=cut
-
-sub dynamical {
-my $self = shift;
-if (@_) {
-    my $time = shift;
-    $self->universal ($time - dynamical_delta ($time));
-    }
-  else {
-    croak sprintf ERR_NOCURRENT, 'dynamical' unless $self->{current};
-    $self->{current}->dynamical ();
-    }
-}
-
-
 =item @tles = $set->members ();
 
 This method returns all members of the set, in ascending order by
@@ -301,6 +272,17 @@ map {$_->[1]} @{$self->{members}};
 This method selects the member object that best represents the given
 time, and returns that member. If called without an argument or with an
 undefined argument, it simply returns the currently-selected member.
+
+The 'best representative' member for a given time is chosen by
+considering all members in the set, ordered by ascending epoch. If all
+epochs are after the given time, the earliest epoch is chosen. If some
+epochs are on or before the given time, the latest epoch that is not
+after the given time is chosen.
+
+The 'best representative' algorithm tries select the element set that
+would actually be current at the given time. If no element set is
+current (i.e. all are in the future at the given time) we take the
+earliest, to minimize peeking into the future.
 
 =cut
 
@@ -379,43 +361,22 @@ $delegate->set (@_);
 }
 
 
-=item $set->universal ($time);
-
-This method selects the member object that best represents the given
-time, and calls the universal() method on that object. The $set object
-is returned.
-
-If called without an argument, it returns the universal time setting
-of the currently-selected object.
-
-=cut
-
-sub universal {
-my $self = shift;
-croak <<eod unless ref $self;
-Error - You may not call universal() as a static method.
-eod
-if (@_) {
-    my $time = shift;
-    $self->select ($time)->universal ($time);
-    $self;
-    }
-  else {
-    croak sprintf ERR_NOCURRENT, 'universal' unless $self->{current};
-    $self->{current}->universal ();
-    }
-}
-
 #	The AUTOLOAD routine does not define methods, it simply
 #	simulates them. This is because there is no good way to
 #	get rid of the routines if we end up representing a
 #	different class.
+
+my %selector = map {$_ => 1} qw{dynamical universal};
 
 sub AUTOLOAD {
 our $AUTOLOAD;
 (my $routine = $AUTOLOAD) =~ s/.*:://;
 my $delegate = $_[0]{current} or
     croak sprintf ERR_NOCURRENT, $routine;
+if (@_ > 1 && ($selector{$routine} || $delegate->can ("_model_$routine"))) {
+    $_[0]->select ($_[1]);
+    $delegate = $_[0]{current};
+    }
 my $coderef;
 if ($coderef = $delegate->can ("_nodelegate_$routine")) {
     }
