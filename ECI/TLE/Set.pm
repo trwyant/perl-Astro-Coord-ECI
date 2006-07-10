@@ -4,11 +4,15 @@ Astro::Coord::ECI::TLE::Set - Represent a set of data for the same ID.
 
 =head1 SYNOPSIS
 
- # We assume all data is for the same ID, different epochs.
- my @sats = Astro::Coord::ECI::TLE->parse ($tle_data);
- my $satset = Astro::Coord::ECI::TLE::Set->new (@sats);
- my @latlon = $satset->universal (time ())->geodetic ();
- print $satset->get ('id'), "\t@latlon\n";
+ my @sats = Astro::Coord::ECI::TLE::Set->aggregate (
+     Astro::Coord::ECI::TLE->parse ($tle_data));
+ my $now = time ();
+ foreach my $tle (@sats) {
+    print join ("\t",
+       $tle->get ('id'),
+       $tle->universal ($now)->geodetic ()),
+       "\n";
+ }
 
 =head1 DESCRIPTION
 
@@ -56,9 +60,9 @@ use warnings;
 package Astro::Coord::ECI::TLE::Set;
 
 use Carp;
-use UNIVERSAL qw{can isa};
+use UNIVERSAL qw{isa};
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -144,7 +148,7 @@ eod
 
 This method aggregates the given Astro::Coord::ECI::TLE objects into
 sets by NORAD ID. If there is only one object with a given NORAD ID, it
-is simply returned intact, and not made into a singleton set.
+is simply returned intact, B<not> made into a set with one member.
 
 =cut
 
@@ -160,6 +164,26 @@ foreach my $tle (@_) {
 map {@{$data{$_}} > 1 ? $class->new (@{$data{$_}}) :
 	@{$data{$_}} ? $data{$_}[0] : ()}
     sort keys %data;
+}
+
+=item $set->can ($method);
+
+This method checks to see if the object and execute the given method.
+If so, it returns a code reference to the subroutine; otherwise it
+returns undef.
+
+This override to UNIVERSAL::can is necessary because we want to return
+true for member class methods, but we execute them by autoloading, so
+they are not in our namespace.
+
+=cut
+
+sub can {
+my ($self, $method) = @_;
+my $rslt = UNIVERSAL::can ($self, $method);
+$rslt = UNIVERSAL::can ($self->{current}, $method)
+    if !$rslt && $self->{current};
+$rslt;
 }
 
 =item $set->clear ();
@@ -256,20 +280,21 @@ if (@_) {
 sub AUTOLOAD {
 our $AUTOLOAD;
 (my $routine = $AUTOLOAD) =~ s/.*:://;
-my $self = shift;
-my $delegate = $self->{current} or
+my $delegate = $_[0]{current} or
     croak sprintf ERR_NOCURRENT, $routine;
-$delegate->can ($routine) or croak <<eod;
+my $coderef;
+if ($coderef = $delegate->can ("_nodelegate_$routine")) {
+    }
+  elsif ($coderef = $delegate->can ($routine)) {
+    splice @_, 0, 1, $delegate;	# Not $_[0] = $delegate!!!
+    }
+  else {
+    croak <<eod;
 Error - Can not call $routine because it is not supported by
         class @{[ref $delegate]}
 eod
-my $nodele = '_nodelegate_' . $routine;
-$delegate->can ($nodele) ?
-    do {
-	$nodele = \&{"@{[ref $delegate]}::$nodele"};
-	$nodele->($self, @_);
-	} :
-    $delegate->$routine (@_);
+    }
+$coderef->(@_);
 }
 
 sub DESTROY {
