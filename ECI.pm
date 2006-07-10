@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.007_02';
+our $VERSION = '0.007_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1711,7 +1711,7 @@ $self;
     diameter => \&_set_value,
     ellipsoid => \&_set_reference_ellipsoid,
     flattening => \&_set_custom_ellipsoid,
-    id => \&_set_value,
+    id => \&_set_id,
     inertial => undef,
     name => \&_set_value,
     refraction => \&_set_value,
@@ -1726,6 +1726,15 @@ sub _set_custom_ellipsoid {
 $_[0]->{ellipsoid} = undef;
 $_[0]->{$_[1]} = $_[2];
 SET_ACTION_RESET;
+}
+
+#	Unfortunately, the TLE subclass may need objects reblessed if
+#	the ID changes. So much for factoring. Sigh.
+
+sub _set_id {
+$_[0]{$_[1]} = $_[2];
+$_[0]->rebless () if $_[0]->can ('rebless');
+SET_ACTION_NONE;
 }
 
 #	If this is a reference ellipsoid name, check it, and if it's
