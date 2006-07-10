@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.004_02';
+our $VERSION = '0.004_03';
 
 use base qw{Astro::Coord::ECI};
 
@@ -242,6 +242,9 @@ my $self = $class->SUPER::new (%static, @_);
 $self;
 }
 
+sub attribute {
+$attrib{$_[1]} ? __PACKAGE__ : $_[0]->SUPER::attribute ($_[1])
+}
 
 =item $value = $tle->ds50($time)
 
