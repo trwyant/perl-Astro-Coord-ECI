@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.004_01';
+our $VERSION = '0.004_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -188,8 +188,6 @@ use warnings qw{once};
 #		return 0 or 1, interpreted as above.
 
 my %attrib = (
-    name => 0,
-    id => 0,
     classification => 0,
     international => 0,
     epoch => sub {
