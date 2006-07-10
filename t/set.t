@@ -8,7 +8,9 @@ use t::SetDelegate;
 use Test;
 use Time::Local;
 
-plan tests => 36;
+our $VERSION = '0.000_02';
+
+plan tests => 42, todo => [];
 
 my $test = 0;
 
@@ -220,6 +222,7 @@ eod
 		[1, 'Astro::Coord::ECI::TLE::Set'],
 		) {
 	my ($inx, $expect) = @$_;
+	$test++;
 	my $got = $skip ? '' : ref $set[$inx];
 	print <<eod;
 #
@@ -250,6 +253,39 @@ eod
 #       Got: '$got'
 eod
 	skip ($skip, $expect eq $got);
+    }
+
+}	# End of local symbol block.
+
+{	# Begin local symbol block.
+    my $set = Astro::Coord::ECI::TLE::Set->new ();
+    my $status = 'empty';
+    foreach ([members => 1], [delegate => 0],
+	    [add => t::SetDelegate->new (id => 333333,
+		name => 'Nobody',
+		epoch => timegm (0, 0, 0, 2, 6, 2006))],
+	    [members => 1], [delegate => 1],
+	    [clear => 0],
+	    [members => 1], [delegate => 0],
+	    ) {
+	my ($method, $expect) = @$_;
+	if ($method eq 'add') {
+	    $set->add ($expect);
+	    $status = 'non-empty';
+	} elsif ($method eq 'clear') {
+	    $set->clear ();
+	    $status = 'empty';
+	} else {
+	    $test++;
+	    my $got = $set->can ($method) ? 1 : 0;
+	    print <<eod;
+#
+# Test $test - \$set->can ($method) with \$set $status.
+#    Expect: $expect
+#       Got: $got
+eod
+	ok ($expect == $got);
+	}
     }
 
 }	# End of local symbol block.
