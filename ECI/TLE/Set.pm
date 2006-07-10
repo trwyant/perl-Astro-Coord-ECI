@@ -118,7 +118,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.000_02';
+our $VERSION = '0.000_03';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -260,6 +260,29 @@ $self->{current} = undef;
 }
 
 
+=item $set->dynamical ($time);
+
+This method converts the given time to universal, and delegates to
+the universal() method.
+
+If called without an argument, it returns the dynamical time of the
+currently-selected member.
+
+=cut
+
+sub dynamical {
+my $self = shift;
+if (@_) {
+    my $time = shift;
+    $self->universal ($time - dynamical_delta ($time));
+    }
+  else {
+    croak sprintf ERR_NOCURRENT, 'dynamical' unless $self->{current};
+    $self->{current}->dynamical ();
+    }
+}
+
+
 =item @tles = $set->members ();
 
 This method returns all members of the set, in ascending order by
@@ -302,16 +325,20 @@ $self->{current};
 =item $set->set ($name => $value ...);
 
 This method iterates over the individual name-value pairs. If the name
-is an attribute of Astro::Coord::ECI::TLE, it calls set_selected($name,
-$value). Otherwise, it calls set_all($name, $value).
+is an attribute of Astro::Coord::ECI::TLE and is not 'debug' or
+'model', it calls set_selected($name, $value). Otherwise, it calls
+set_all($name, $value).
 
 =cut
+
+my %tle_exception = map {$_ => 1} qw{debug model};
 
 sub set {
 my $self = shift;
 while (@_) {
     my $name = shift;
-    if ($self->attribute ($name) eq 'Astro::Coord::ECI::TLE') {
+    if ($self->attribute ($name) eq 'Astro::Coord::ECI::TLE' &&
+	    !$tle_exception{$name}) {
 	$self->set_selected ($name, shift);
 	}
       else {
@@ -357,6 +384,9 @@ $delegate->set (@_);
 This method selects the member object that best represents the given
 time, and calls the universal() method on that object. The $set object
 is returned.
+
+If called without an argument, it returns the universal time setting
+of the currently-selected object.
 
 =cut
 
