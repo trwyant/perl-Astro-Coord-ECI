@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -176,6 +176,16 @@ my $c = distsq ($cA, $cB);
 
 acos (($b + $c - $a) / sqrt (4 * $b * $c));
 }
+
+
+=item $which = $coord->attribute ($name);
+
+This method returns the name of the class that implements the named
+attribute, or undef if the attribute name is not valid.
+
+=cut
+
+sub attribute {$mutator{$_[1]} ? __PACKAGE__ : undef}
 
 
 =item ($azimuth, $elevation, $range) = $coord->azel ($coord2, $upper);
@@ -469,14 +479,14 @@ Error - The dynamical() method may not be called as a class method
         unless you specify arguments.
 eod
     return ($self->{dynamical} ||= $self->{universal} +
-	_dynamical_delta ($self->{universal} || croak <<eod));
+	dynamical_delta ($self->{universal} || croak <<eod));
 Error - Universal time of object has not been set.
 eod
     }
 
 if (@_ == 1) {
     $self = $self->new () unless ref $self;
-    $self->universal ($_[0] - _dynamical_delta ($_[0]));
+    $self->universal ($_[0] - dynamical_delta ($_[0]));
     $self->{dynamical} = $_[0];
     }
   else {
@@ -490,21 +500,6 @@ eod
 $self;
 }
 
-
-#	_dynamical_delta ($universal_time)
-
-#	calculates and returns the difference between the dynamical
-#	time and the universal time at the given universal time.
-#	Actually, we typically ignore whether we're passing dynamical
-#	or universal time, since the relation changes so slowly.
-
-sub _dynamical_delta {
-my $year = (gmtime $_[0])[5] + 1900;
-my $t = ($year - 2000) / 100;
-my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
-(25.3 * $t + 102) * $t + 102		# Meeus (10.2)
-	+ $correction;			# Meeus' correction.
-}
 
 =item $coord = $coord->ecef($x, $y, $z, $xdot, $ydot, $zdot)
 
@@ -1483,7 +1478,7 @@ my $self = shift;
 my $time = shift;
 
 my $start = $self->dynamical;
-my $end = $time + _dynamical_delta ($time);
+my $end = $time + dynamical_delta ($time);
 
 my ($alpha0, $delta0, $rho0) = $self->equatorial ();
 
