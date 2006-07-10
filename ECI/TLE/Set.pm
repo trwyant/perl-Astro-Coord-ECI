@@ -16,6 +16,8 @@ Astro::Coord::ECI::TLE::Set - Represent a set of data for the same ID.
 
 =head1 DESCRIPTION
 
+=for comment help syntax-highlighting editor "
+
 This module is intended to represent a set of orbital elements,
 representing the same NORAD ID at different points in time. It
 can contain any number of objects of class Astro::Coord::ECI::TLE
@@ -25,11 +27,20 @@ the member whose epoch best represents that time is selected, and
 subsequent method calls are delegated to that member. Setting a
 different time selects a different member. Possibly.
 
-The 'best representative' is chosen by considering all members in the
-set, ordered by ascending epoch. If all epochs are after the given
-time, the earliest epoch is chosen. If some epochs are on or before the
-given time, the latest epoch that is not after the given time is
-chosen.
+In addition to the methods documented here, an
+Astro::Coord::ECI::TLE::Set supports all methods provided by the
+currently-selected member object, through Perl's AUTOLOAD mechanism.
+In this way, the object is almost a plug-compatible replacement for
+an Astro::Coord::ECI::TLE object, but it uses the orbital elements
+appropriate to the time given. The weasel word 'almost' is expanded
+on in the L</Incompatibilities with Astro::Coord::ECI::TLE> section,
+below.
+
+The 'best representative' member for a given time is chosen by
+considering all members in the set, ordered by ascending epoch. If all
+epochs are after the given time, the earliest epoch is chosen. If some
+epochs are on or before the given time, the latest epoch that is not
+after the given time is chosen.
 
 The 'best representative' algorithm tries select the element set that
 would actually be current at the given time. If no element set is
@@ -46,9 +57,54 @@ member object. Use of this mechanism constitutes a pledge that the
 _nodelegate method does not make use of any private interfaces to the
 member objects.
 
+=head2 Incompatibilities with Astro::Coord::ECI::TLE
+
+=head3 Inheritance
+
+Astro::Coord::ECI::TLE::Set is not a member of the Astro::Coord::ECI
+inheritance hierarchy, so $set->isa ('Astro::Coord::ECI') is false.
+
+=head3 Calling semantics for delegated behaviors
+
+In general, when Astro::Coord::ECI::TLE::Set delegates functionality
+to a member object, that object's method receives a reference to the
+member object as its first argument. That is, if $set is the
+Astro::Coord::ECI::TLE::Set object and $tle is the relevant member
+object, $set->method (...) becomes $tle->method (...) from the point
+of view of the called method.
+
+If the member class wishes to see the Astro::Coord::ECI::TLE::Set
+object as the first argument of method xxxx, it defines method
+_nodelegate_xxxx, which is called as though by $set->_nodelegate_xxx
+(...). The _nodelegate_xxx method must use only the public interface
+to the $tle object (whatever its class). A cheap way to get this
+method is
+
+ *_nodelegate_xxxx = \&xxxx;
+
+but nothing says the _nodelegate_xxxx method B<must> be defined this
+way.
+
+=head3 Calling semantics for static behaviors
+
+Some Astro::Coord::ECI methods (e.g. universal()) will instantiate an
+object for you if you call them statically. This will not work with
+Astro::Coord:ECI::TLE::Set; that is,
+Astro::Coord::ECI::TLE::Set->universal () is an error.
+
+=head3 Return semantics for delegated behaviors
+
+In general, methods which return the object they were called on (e.g.
+$object->ecef ($X, $Y, $Z ...) return the Astro::Coord::ECI object,
+not the Astro::Coord::ECI::TLE::Set object. This does not necessarily
+apply to methods implemented on Astro::Coord::ECI::TLE::Set; see the
+documentation to those methods for details.
+
 =head2 Methods
 
 The following methods should be considered public:
+
+=for comment help syntax-highlighting editor "
 
 =over
 
@@ -89,6 +145,7 @@ bless $self, $class;
 $self->add (@_) if @_;
 $self;
 }
+
 
 =item $set->add ($member ...);
 
@@ -144,6 +201,7 @@ eod
     map {[$_, $ep{$_}]} keys %ep;
 }
 
+
 =item @sets = Astro::Coord::ECI::TLE::Set->aggregate ($tle ...);
 
 This method aggregates the given Astro::Coord::ECI::TLE objects into
@@ -166,6 +224,7 @@ map {@{$data{$_}} > 1 ? $class->new (@{$data{$_}}) :
     sort keys %data;
 }
 
+
 =item $set->can ($method);
 
 This method checks to see if the object and execute the given method.
@@ -186,6 +245,7 @@ $rslt = UNIVERSAL::can ($self->{current}, $method)
 $rslt;
 }
 
+
 =item $set->clear ();
 
 This method removes all members from the set, allowing it to be
@@ -199,6 +259,7 @@ $self->{current} = undef;
 @{$self->{members}} = ();
 }
 
+
 =item @tles = $set->members ();
 
 This method returns all members of the set, in ascending order by
@@ -210,6 +271,7 @@ sub members {
 my $self = shift;
 map {$_->[1]} @{$self->{members}};
 }
+
 
 =item $set->select ($time);
 
@@ -236,6 +298,29 @@ eod
 $self->{current};
 }
 
+
+=item $set->set ($name => $value ...);
+
+This method iterates over the individual name-value pairs. If the name
+is an attribute of Astro::Coord::ECI::TLE, it calls set_selected($name,
+$value). Otherwise, it calls set_all($name, $value).
+
+=cut
+
+sub set {
+my $self = shift;
+while (@_) {
+    my $name = shift;
+    if ($self->attribute ($name) eq 'Astro::Coord::ECI::TLE') {
+	$self->set_selected ($name, shift);
+	}
+      else {
+	$self->set_all ($name, shift);
+	}
+    }
+}
+
+
 =item $set->set_all ($name => $value ...);
 
 This method sets the given attribute values on all members of the set.
@@ -251,6 +336,22 @@ foreach my $member (@{$self->{members}}) {
     }
 }
 
+=item $set->set_selected ($name => $value ...);
+
+This method sets the given attribute values on the currently-selected
+member of the set. It is an error to call this on an object with no
+members.
+
+=cut
+
+sub set_selected {
+my $self = shift;
+my $delegate = $_[0]{current} or
+    croak sprintf ERR_NOCURRENT, 'set_selected';
+$delegate->set (@_);
+}
+
+
 =item $set->universal ($time);
 
 This method selects the member object that best represents the given
@@ -261,6 +362,9 @@ is returned.
 
 sub universal {
 my $self = shift;
+croak <<eod unless ref $self;
+Error - You may not call universal() as a static method.
+eod
 if (@_) {
     my $time = shift;
     $self->select ($time)->universal ($time);
