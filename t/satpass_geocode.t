@@ -1,5 +1,7 @@
 #!/usr/local/bin/perl
 
+our $VERSION = '0.001_01';
+
 use t::Satpass;
 
 t::Satpass::satpass (*DATA);
@@ -56,7 +58,7 @@ set location '80 Wellington Street Ottawa ON'
 set latitude 45.423388
 set longitude -75.697786
 set height 0
-height -retry 8
+height
 -data set height 82.00
 -fail <<eod
 Test %d may fail due to a database problem on http://gisdata.usgs.gov/
@@ -69,5 +71,6 @@ returned zero for the height. I consider this to be a server bug,
 not a bug in satpass.
 eod
 -test fetch height in Canada from http://gisdata.usgs.gov/
+-todo	# This applies to the previous test.
 
 -skip ''
