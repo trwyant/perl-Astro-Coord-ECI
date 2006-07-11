@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-our $VERSION = '0.001_01';
+our $VERSION = '0.001_02';
 
 use t::Satpass;
 
@@ -71,6 +71,6 @@ returned zero for the height. I consider this to be a server bug,
 not a bug in satpass.
 eod
 -test fetch height in Canada from http://gisdata.usgs.gov/
--todo	# This applies to the previous test.
+# -todo	# This applies to the previous test.
 
 -skip ''
