@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.000_05';
+our $VERSION = '0.000_06';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -133,7 +133,6 @@ $class = ref $class if ref $class;
 my $self = {
     current => undef,	# Current member
     members => [],	# [epoch, TLE].
-    universal => undef,	# Current time setting.
     };
 bless $self, $class;
 $self->add (@_) if @_;
@@ -202,7 +201,17 @@ This method aggregates the given Astro::Coord::ECI::TLE objects into
 sets by NORAD ID. If there is only one object with a given NORAD ID, it
 is simply returned intact, B<not> made into a set with one member.
 
+If you should for some reason want sets with one member, do
+
+ $Astro::Coord::ECI::TLE::Set::Singleton = 1;
+
+before you call aggregate(). Actually, any value that Perl will
+interpret as true will work. You might want a 'local' in front of all
+this.
+
 =cut
+
+our $Singleton = 0;
 
 sub aggregate {
 my $class = shift;
@@ -213,7 +222,8 @@ foreach my $tle (@_) {
     $data{$id} ||= [];
     push @{$data{$id}}, $tle;
     }
-map {@{$data{$_}} > 1 ? $class->new (@{$data{$_}}) :
+map {(@{$data{$_}} > 1 || $Astro::Coord::ECI::TLE::Set::Singleton) ?
+	$class->new (@{$data{$_}}) :
 	@{$data{$_}} ? $data{$_}[0] : ()}
     sort keys %data;
 }
