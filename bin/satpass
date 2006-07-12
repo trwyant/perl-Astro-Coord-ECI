@@ -108,6 +108,7 @@ my %parm = (
     model => 'model',
     prompt => 'satpass>',
     simbad_url => 'simbad.harvard.edu',
+    singleton => 0,
     time_format => '%H:%M:%S',
     timing => 0,
     verbose => 0,
@@ -142,6 +143,7 @@ my %mutator = (
     perltime => \&_set_perltime,
     prompt => \&_set_unmodified,
     simbad_url => \&_set_unmodified,
+    singleton => \&_set_unmodified,
     time_format => \&_set_unmodified,
     timing => \&_set_unmodified,
     twilight => \&_set_twilight,  # 'civil', 'nautical', 'astronomical'
@@ -1255,6 +1257,15 @@ my $sun = Astro::Coord::ECI::Sun->new ();
 
 print _format_location ();
 
+#	Tell aggregate() how to work.
+
+local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
+if ($cmdopt{debug}) {
+    foreach my $tle (_aggregate ()) {
+	print join ("\t", $tle->get ('id'), $tle->get ('name'), ref $tle), "\n";
+	}
+    }
+
 #	Foreach body to be modelled
 
 foreach my $tle (_aggregate ()) {
@@ -1625,7 +1636,11 @@ printf <<eod, _format_location (),
 %s            name @{[$lcfmt->()]} %-*s illum
 eod
 	length (strftime $dtfmt, localtime time), 'epoch of data';
- 
+
+#	Tell aggregate() how to work.
+
+local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
+
 my $when = time ();
 while ($time <= $endtm) {
     print strftime ($dtfmt, localtime $time), "\n";
@@ -4370,6 +4385,20 @@ B<Please note that the command this parameter supports is
 experimental,> and see the warnings on that command. Changes in the
 command may result in this parameter becoming deprecated and/or
 no-oped.
+
+=for html <a name="singleton"></a>
+
+=item singleton (boolean)
+
+If this parameter is true, the script uses Astro::Coord::ECI::TLE::Set
+objects to represent all bodies. If false, the set object is used only
+if the observing list contains more than one instance of a given
+NORAD ID. This is really only useful for testing purposes.
+
+Use of the Astro::Coord::ECI::TLE::Set object causes calculations to
+take about 15% longer.
+
+The default is 0 (i.e. false).
 
 =for html <a name="time_format"></a>
 
