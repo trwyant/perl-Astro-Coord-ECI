@@ -24,7 +24,6 @@ use List::Util qw{max};
 use Pod::Usage;
 use POSIX qw{floor strftime};
 use Scalar::Util qw{looks_like_number};
-use Storable ();
 use Term::ReadLine;
 use Text::Abbrev;
 use Text::ParseWords;
@@ -58,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.007_02';
+our $VERSION = '0.007_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1715,10 +1714,7 @@ foreach (sort {$a->[0] <=> $b->[0]} @data) {
 #
 
 sub retrieve {
-my $fn = shift or die <<eod;
-Error - No file name specified.
-eod
-@bodies = @{Storable::retrieve (_tilde_expand ($fn))};
+@bodies = @{Storable::retrieve (_storable (@_))};
 }
 
 
@@ -2108,10 +2104,7 @@ eod
 #
 
 sub store {
-my $fn = shift or die <<eod;
-Error - No file name specified.
-eod
-Storable::nstore (\@bodies, _tilde_expand ($fn));
+Storable::nstore (\@bodies, _storable (@_));
 }
 
 ########################################################################
@@ -2672,6 +2665,21 @@ SOAP::Lite->can ('default_ns') ?
 	->on_action (sub {join $conn, @_})
 	->uri ($_[0])
 	->proxy ($_[1], timeout => 30);
+}
+
+#	$fn = _storable ($file)
+
+#	Initialize and check arguments for use of the Storable module.
+#	The return is the tilde-expanded filename.
+
+sub _storable {
+eval {require Storable} or die <<eod;
+Error - Storable module not available.
+eod
+my $fn = shift or die <<eod;
+Error - No file name specified.
+eod
+_tilde_expand ($fn);
 }
 
 
