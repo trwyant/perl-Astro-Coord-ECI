@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-our $VERSION = '0.001_02';
+our $VERSION = '0.001_03';
 
 use t::Satpass;
 
@@ -48,7 +48,7 @@ height
 Test %d may fail due to a database problem on http://gisdata.usgs.gov/
 or due to a change in the interface specification. If you want to
 distinguish between the two, visit that site and look up the height
-at latitude 38.898748 longitude -77.037684 by hand.
+at latitude 38.898748 (Y_value) longitude -77.037684 (X_value) by hand.
 eod
 -data set height 16.68
 -test fetch height in continental U.S. from http://gisdata.usgs.gov/
@@ -64,7 +64,7 @@ height
 Test %d may fail due to a database problem on http://gisdata.usgs.gov/
 or due to a change in the interface specification. If you want to
 distinguish between the two, visit that site and look up the height
-at latitude 45.423388 longitude -75.697786 by hand.
+at latitude 45.423388 (Y_value) longitude -75.697786 (X_value) by hand.
 
 This test may also occasionally fail because http://gisdata.usgs.gov/
 returned zero for the height. I consider this to be a server bug,
