@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.000_06';
+our $VERSION = '0.000_07';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -231,7 +231,7 @@ map {(@{$data{$_}} > 1 || $Astro::Coord::ECI::TLE::Set::Singleton) ?
 
 =item $set->can ($method);
 
-This method checks to see if the object and execute the given method.
+This method checks to see if the object can execute the given method.
 If so, it returns a code reference to the subroutine; otherwise it
 returns undef.
 
