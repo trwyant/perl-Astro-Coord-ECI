@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.007_04';
+our $VERSION = '0.007_05';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3434,6 +3434,10 @@ of the observer are set to the returned values, and the name of
 the location of the observer is set to the location passed to the
 command.
 
+If the location contains whitespace, it must be quoted. Example:
+
+ satpass> geocode_ca '80 wellington st ottawa on'
+
 Because of restrictions on the use of the Geocoder.ca site, you may not
 use this command for commercial purposes.
 
@@ -3496,7 +3500,7 @@ parameter for the command on which it is specified.
 
 If the location contains whitespace, it must be quoted. Example:
 
- satpass> geocode '1600 pennsylvania ave washington dc'
+ satpass> geocode_us '1600 pennsylvania ave washington dc'
 
 Because of restrictions on the use of the Geocoder.us site, you may not
 use this command for commercial purposes.
@@ -4127,8 +4131,8 @@ States of America) do anything useful.
 See L<http://www.iso.org/iso/en/prods-services/iso3166ma/index.html>
 for the current list of country codes. Note that these are B<not>
 always the same as the corresponding top-level geographic domain names
-(e.g. Great Britain is 'GB' in ISO 3166 but has 'uk' as the top-level
-geographic domain name).
+(e.g. Great Britain is 'GB' in ISO 3166 but for historical reasons has
+both 'gb' and 'uk' as top-level geographic domain name).
 
 The country codes are case-insensitive, since they will be converted to
 lower case for use.
