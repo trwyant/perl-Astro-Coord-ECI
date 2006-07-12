@@ -58,7 +58,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1046,6 +1046,7 @@ BEGIN {
 %help_module = (
     eci => 'Astro::Coord::ECI',
     moon => 'Astro::Coord::ECI::Moon',
+    set => 'Astro::Coord::ECI::TLE::Set',
     sun => 'Astro::Coord::ECI::Sun',
     st => 'Astro::SpaceTrack',
     star => 'Astro::Coord::ECI::Star',
