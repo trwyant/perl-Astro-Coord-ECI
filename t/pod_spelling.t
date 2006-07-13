@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 if ($skip) {
     skip ($skip, 1);
@@ -77,6 +77,7 @@ firstderivative
 fr
 Francou
 Fugina
+gb
 geocode
 Geocoder
 geocoder
