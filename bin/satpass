@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.007_06';
+our $VERSION = '0.007_07';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2806,7 +2806,6 @@ eod
 
 sub _flunk {
 $clipboard_unavailable = shift;
-($memio = sub {croak $clipboard_unavailable});
 }
 
 my $err = "Can not open handle to clipboard.";
@@ -2835,7 +2834,7 @@ eod
 
 =cut
 
-$memio ||= $] >= 5.008 && $Config{useperlio} ?
+$memio = $] >= 5.008 && $Config{useperlio} ?
     sub {my $fh = gensym; open ($fh, $_[0], $_[1]); $fh} :
     do {
 	eval "use IO::String";
@@ -2849,6 +2848,7 @@ $memio ||= $] >= 5.008 && $Config{useperlio} ?
 
 sub new {
 return $clip if $clip;
+croak $clipboard_unavailable if $clipboard_unavailable;
 my $class = shift;
 my $data = '';
 my $clip = _memio ('>', \$data);
