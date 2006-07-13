@@ -51,7 +51,7 @@ show horizon
 -data set horizon 20
 -test localization of horizon
 
--skip $^O eq 'darwin' ? '' : "Skipped under $^O"
+-skip $^O ne 'darwin' ? "Not running $^O" : -e '/usr/bin/pbcopy' ? '' : "Can not find /usr/bin/pbcopy"
 
 set horizon 30
 show horizon -clipboard
