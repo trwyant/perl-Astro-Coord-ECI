@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-our $VERSION = '0.001_03';
+our $VERSION = '0.001_04';
 
 use t::Satpass;
 
@@ -36,7 +36,7 @@ set longitude -75.697786
 eod
 -test geocode Canadian location via http://rpc.geocoder.ca/
 
--skip not_available ('SOAP::Lite', 'XML::Parser') || not_reachable ('http://gisdata.usgs.gov/')
+-skip not_available ('SOAP::Lite', 'XML::Parser') || not_reachable ('http://gisdata.usgs.gov/') || 'http://gisdata.usgs.gov/ seems to be returning 0 these days.'
 
 set country us
 set location '1600 Pennsylvania Ave NW Washington DC 20502'
