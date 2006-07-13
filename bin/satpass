@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.007_05';
+our $VERSION = '0.007_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -494,7 +494,7 @@ sub almanac {
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $almanac_start = _parse_time (shift || 'today midnight');
-my $almanac_end = _parse_time (shift || '+1');
+my $almanac_end = _parse_time (shift, $almanac_start + SECSPERDAY);
 
 $almanac_start >= $almanac_end and die <<eod;
 Error - End time must be after start time.
@@ -1207,7 +1207,7 @@ my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
 
 my $pass_start = _parse_time (shift || 'today noon');
-my $pass_end = _parse_time (shift || '+7');
+my $pass_end = _parse_time (shift, SECSPERDAY * 7 + $pass_start);
 $pass_start >= $pass_end and die <<eod;
 Error - End time must be after start time.
 eod
@@ -1580,7 +1580,7 @@ my @table = (
     );
 
 sub phase {
-my $time = $_[0] ? _parse_time (shift) : time ();
+my $time = _parse_time (shift);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
 foreach my $body (@sky) {
@@ -1607,7 +1607,8 @@ $cmdlgl{position} = [qw{realtime}];
 
 sub position {
 my $time = _parse_time (shift);
-my $endtm = _parse_time (shift || ($cmdopt{realtime} ? '+10' : '+0'));
+my $endtm = _parse_time (shift,
+	$cmdopt{realtime} ? SECSPERDAY * 10 + $time : $time);
 my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
@@ -1676,7 +1677,7 @@ while ($time <= $endtm) {
 
 sub quarters {
 my $start = _parse_time ($_[0] || 'today midnight');
-my $end = _parse_time ($_[1] || '+30');
+my $end = _parse_time ($_[1], 30 * SECSPERDAY);
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
@@ -1858,7 +1859,7 @@ defined $parm{$_[0]} ? $parm{$_[0]} : 'undef'
 # For proper motion, we need to convert arc seconds per year to degrees
 # per second.
 
-use constant SPY2DPS => 3600 * 365.24219 * 86400;
+use constant SPY2DPS => 3600 * 365.24219 * SECSPERDAY;
 
 sub sky {
 my $verb = lc (shift @_ || '');
@@ -2532,19 +2533,20 @@ $string * $units{$units};
 }
 }	# end of BEGIN block
 
-#	$time = _parse_time ($string)
+#	$time = _parse_time ($string, $default)
 
 #	Parses a time string in any known format. Strings with a
 #	leading "+" or "-" are assumed to be relative to the last
 #	explicit setting. Otherwise the time is assumed to be explicit,
 #	and passed to Date::Manip. The parsed time is returned. If the
 #	time to be parsed is false (in the Perl sense) we return the
-#	current time. We die on an invalid time.
+#	default (if specified) or the current time. We die on an
+#	invalid time.
 
 BEGIN {	# Begin local symbol block.
 my $last_time_set = time ();
 sub _parse_time {
-my $time = $_[0] or return ($last_time_set = time ());
+my $time = $_[0] or return $_[1] || time ();
 my $rslt;
 if ($time =~ m/^([\+\-])\s*(\d+)(?:\s+(\d+)(?::(\d+)(?::(\d+))?)?)?/) {
     my $delta = ((($2 || 0) * 24 + ($3 || 0)) * 60 + ($4 || 0)) * 60 + ($5 || 0);
@@ -3297,7 +3299,8 @@ reported.
 
 By default, all events are reported.
 
-The start_time defaults to 'today midnight', and the end_time to '+1'.
+The start_time defaults to 'today midnight', and the end_time to one
+day after the start time.
 
 See L</SPECIFYING TIMES> below for how to specify times.
 
@@ -3750,8 +3753,8 @@ location of the observer, as determined by the value of the
 L<local_coord|/local_coord> parameter. The geodetic latitude, longitude,
 and altitude are also given.
 
-The defaults are 'today noon', '+7' (meaning 7 days after the
-most-recently-specified explicit time), and 60 (seconds) respectively.
+The defaults are 'today noon', seven days after the start time, and 60
+(seconds) respectively.
 
 Example:
 
@@ -3763,8 +3766,7 @@ Example:
 
 This command gives the phase of the relevant background bodies (see
 L<sky|/sky>) at the given time. At the moment, the only
-body that supports this is the Moon. The default time is the time the
-command was issued.
+body that supports this is the Moon.
 
 The display shows the time, the phase angle in degrees (0 being new, 90
 being first quarter, and so on), and a description of the phase ('new',
@@ -3773,6 +3775,8 @@ gibbous', 'last quarter', or 'waning crescent'). The body is considered
 to be at quarter-phase if it is within 6.1 degrees (about 12 hours for
 the Moon) of 0, 90, 180, or 270 degrees. Otherwise you get
 waxing|waning crescent|gibbous.
+
+The default time is the time the command was issued.
 
 =for html <a name="position"></a>
 
@@ -3787,12 +3791,21 @@ The position is given as seen by the observer, either as elevation,
 azimuth, and range, or as right ascension, declination, and range,
 depending on the setting of the L<local_coord|/local_coord> parameter.
 
-If you specify the -realtime qualifier, the the default end_time
-changes to '+10' (i.e. 10 days), and the default interval to 10
-(seconds). Also, the script sleeps between outputs, so the output is
-more or less as it happens, at least to the nearest second. You can
-break out of this by sending the script a SIGINT signal (typically
-by typing control/C).
+In addition to the global options, this command takes the following
+options:
+
+-realtime causes the script to sleep between outputs, so that the
+output occurs more or less in real time. If you should wish to
+terminate output before the end time is reached, you can send the
+script a SIGINT signal, typically by typing control/C.
+
+The default start_time is the current time.
+
+The default end_time is the start time unless -realtime is specified,
+in which case the default end_time is ten days after the start time.
+
+The default interval is 60 (seconds) unless -realtime is specified, in
+which case the default interval is 10 (seconds).
 
 =for html <a name="quarters"></a>
 
@@ -3806,8 +3819,7 @@ calculating the position of the Sun to the nearest 0.01 degree.
 
 See the L</SPECIFYING TIMES> topic below for how to specify times.
 
-The defaults are 'today noon' and '+30' (meaning 30 days after the
-most-recently-specified explicit time).
+The defaults are 'today noon' and 30 days after the start time.
 
 =for html <a name="retrieve"></a>
 
