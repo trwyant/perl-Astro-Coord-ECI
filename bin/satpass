@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.007_07';
+our $VERSION = '0.007_08';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -4667,6 +4667,19 @@ or (under some flavor of Unix)
 or even
 
   $ satpass `cat commands`
+
+=head1 ACKNOWLEDGMENTS
+
+The L<Astro::Coord::ECI> module acknowledges those without whom this
+code would not exist. But the script has its own issues, and I would
+like to acknowledge here those who made this script better:
+
+Goran Gasparovic of MIT, who asked for (and supplied information for)
+the ability to display results in apparent equatorial coordinates,
+rather than azimuth and elevation.
+
+Imacat of Tavern IMACAT in Taiwan, for helping me to work out a satpass
+script testing problem.
 
 =head1 BUGS
 
