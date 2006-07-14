@@ -102,7 +102,8 @@
     Various documentation corrections.
     Correct spelling in POD.
     Add store() and retrieve() as interface to Storable.
-    Centralize tilde expansion, and do it on cd(), load(), retrieve (), source(), store (),
+    Centralize tilde expansion, and do it on cd(), load(), retrieve (),
+      source(), store ().
     Preprocess -start and -end options of st(), to make dates
       consistent with the rest of satpass.
     Add -initialization_file command option.
@@ -126,3 +127,25 @@
       formatters.
     Have position() display epoch and illumination when displaying
       objects from the observing list.
+0.008
+    ECI.pm 0.008
+      Support the use of Astro::Coord::ECI::TLE::Set objects in the
+        angle() method.
+      Add method attribute().
+    ECI/TLE.pm 0.005
+      Add the null model.
+    ECI/TLE/Set.pm 0.001 New container object.
+    ECI/Utils.pm 0.006
+      Add dynamical_delta() method (was private method in ECI.pm).
+    bin/satpass 0.008
+      Use Astro::Coord::ECI::TLE::Set objects to represent satellites
+        when we have more than one set of orbital elements.
+      Add help for Astro::Coord::ECI::TLE::Set.
+      Add and document 'singleton' parameter. Use it in pass() and
+        position().
+      Default end times relative to start times, rather than relative
+        to the last explicit time.
+      Fix interaction between clipboard functionality and test hook.
+        Thanks to IMACAT for help diagnosing and verifying.
+      Add acknowledgments.
+
