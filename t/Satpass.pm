@@ -10,13 +10,17 @@ use Cwd;
 use File::Spec;
 use Test;
 
-our $VERSION = '0.001_01';
+our $VERSION = '0.001_02';
 
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
 
 my $gblskip = $] >= 5.008 && $Config{useperlio} ? '' :
     not_available ('IO::String');
+
+#	We also need Date::Manip.
+
+$gblskip ||= not_available ('Date::Manip');
 
 #	Initialize.
 
