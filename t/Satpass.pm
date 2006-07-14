@@ -10,7 +10,7 @@ use Cwd;
 use File::Spec;
 use Test;
 
-our $VERSION = '0.001_02';
+our $VERSION = '0.002';
 
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
