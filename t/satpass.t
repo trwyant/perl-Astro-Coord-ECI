@@ -6,6 +6,8 @@ t::Satpass::satpass (*DATA);
 
 __END__
 
+-skip not_available ('Astro::SpaceTrack')
+
 st get direct
 -data st set direct ''
 -test st get direct
@@ -14,6 +16,8 @@ st set direct 1
 st get direct
 -data st set direct 1
 -test st set direct 1
+
+-skip ''
 
 set horizon 10
 show horizon
@@ -51,7 +55,7 @@ show horizon
 -data set horizon 20
 -test localization of horizon
 
--skip $^O ne 'darwin' ? "Not running $^O" : -e '/usr/bin/pbcopy' ? '' : "Can not find /usr/bin/pbcopy"
+-skip $^O ne 'darwin' ? "Not running darwin" : -e '/usr/bin/pbcopy' ? '' : "Can not find /usr/bin/pbcopy"
 
 set horizon 30
 show horizon -clipboard
