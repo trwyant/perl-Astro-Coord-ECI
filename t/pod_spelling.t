@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.002_01';
+our $VERSION = '0.002_02';
 
 if ($skip) {
     skip ($skip, 1);
@@ -77,16 +77,20 @@ firstderivative
 fr
 Francou
 Fugina
+Gasparovic
 gb
 geocode
 Geocoder
 geocoder
 GMT
+Goran
 Green's
 harvard
 IDs
 illum
 illuminator
+IMACAT
+Imacat
 ini
 internet
 jan
