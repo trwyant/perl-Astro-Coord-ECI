@@ -18,7 +18,6 @@ t/eci.t
 t/moon.t
 t/pod.t
 t/pod_coverage.t
-t/satpass.t
 t/set.t
 t/star.t
 t/sun.t
