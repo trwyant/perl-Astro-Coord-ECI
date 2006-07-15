@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -24,7 +24,7 @@ my @prereq;
 
 print <<eod;
 
-The following executable will be installed:
+The following executable can be installed:
 
   satpass is a scriptable program to predict satellite passes
     over a given observer.
