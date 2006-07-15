@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1677,7 +1677,7 @@ while ($time <= $endtm) {
 
 sub quarters {
 my $start = _parse_time ($_[0] || 'today midnight');
-my $end = _parse_time ($_[1], 30 * SECSPERDAY);
+my $end = _parse_time ($_[1], 30 * SECSPERDAY + $start);
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
