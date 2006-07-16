@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.008_01';
+our $VERSION = '0.008_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1992,7 +1992,6 @@ Error - Can not open $fn for input.
 eod
 push @frame, {
 	args => [@_],
-	parm => {},
 	stdin => $fh,
 	stdout => select (),
 	};
@@ -2349,7 +2348,7 @@ eod
 sub _frame_pop {
 my $info = pop @frame;
 select ($info->{stdout});
-set (%{$info->{local_parm}});
+set (%{$info->{local_parm}}) if exists $info->{local_parm};
 _get_spacetrack ()->set (%{$info->{local_st}})
     if exists $info->{local_st};
 @frame ? $info->{stdin} : undef;
