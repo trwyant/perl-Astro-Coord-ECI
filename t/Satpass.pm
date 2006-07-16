@@ -10,7 +10,7 @@ use Cwd;
 use File::Spec;
 use Test;
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
@@ -21,6 +21,12 @@ my $gblskip = $] >= 5.008 && $Config{useperlio} ? '' :
 #	We also need Date::Manip.
 
 $gblskip ||= not_available ('Date::Manip');
+
+#	We also need the actual script.
+
+my $script = File::Spec->catfile (qw{bin satpass});
+$gblskip ||= -e $script ? '' : 'Can not find satpass script.';
+
 
 #	Initialize.
 
@@ -34,6 +40,13 @@ my @todo = ();		# Tests expected to fail.
 sub satpass {
 my $handle = shift;
 
+#	If we can not get off the ground, do not try.
+
+if ($gblskip) {
+    plan tests => 1;
+    skip ($gblskip, 1);
+    return;
+}
 
 $| = 1;
 
@@ -65,16 +78,9 @@ $test = 0;
 #	further work is done by tester() when the script calls it.
 
 local @ARGV = ('-filter', -initialization_file => File::Spec->devnull ());
-my $script = File::Spec->catfile (qw{bin satpass});
-if (-e $script) {
-    $skip = $gblskip;
-    do $script;
-    print $@ if $@;
-    }
-  else {
-    $skip = $gblskip = "Cannot find $script";
-    1 while defined (tester (undef, '', ''));
-    }
+$skip = '';
+do $script;
+print $@ if $@;
 }
 
 #	not_available(module ...) is a utility to determine whether the
@@ -199,7 +205,7 @@ eod
 #	$skip variable. This will _not_ override any global
 #	considerations that force the whole shebang to be skipped.
 
-    s/-skip\b\s*//m and do {$skip = $gblskip || eval $_; die $@ if $@; next};
+    s/-skip\b\s*//m and do {$skip = eval $_; die $@ if $@; next};
 
 #	-test actually performs the test. The rest of the line is an
 #	optional title for the test. Note that if $except is defined,
