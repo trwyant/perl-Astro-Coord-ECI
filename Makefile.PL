@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.002_01';
+our $VERSION = '0.002_02';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -21,6 +21,11 @@ eod
 my @exe_files;
 my @clean_files;
 my @prereq;
+
+eval {
+    require t::Ctags;		# Make 'make' generate tags file.
+    push @clean_files, 'tags';	# Clean it up.
+};
 
 print <<eod;
 
@@ -154,3 +159,16 @@ WriteMakefile (
 		BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
 		) : (),
 	);
+
+package MY;
+
+sub top_targets {
+    my $self = shift;
+    my $target = $self->SUPER::top_targets (@_);
+    eval {
+	require t::Ctags;
+	$target = t::Ctags->munge ($target);
+    };
+    $target;
+}
+
