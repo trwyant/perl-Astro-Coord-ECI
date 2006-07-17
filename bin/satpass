@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.008_04';
+our $VERSION = '0.008_05';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1197,17 +1197,6 @@ $name !~ /\W/ && $name !~ /^_/ or die <<eod;
 Error - Invalid macro name '$name'. All characters must be alphanumeric
         or underscores, and the name must not start with an underscore.
 eod
-
-=begin comment
-
-can (__PACKAGE__, $name) and die <<eod;
-Error - Macro name '$name' conflicts with built-in function of the same
-        name.
-eod
-
-=end comment
-
-=cut
 
 if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
   else {delete $macro{$name}}
