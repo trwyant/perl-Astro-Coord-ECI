@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.008_02';
+our $VERSION = '0.008_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -370,7 +370,15 @@ while (1) {
 #	Pull the verb off by brute force, because we need to know what
 #	it is before we know how to parse the rest of the line.
 
-    my ($verb, $rest) = split '\s+', $buffer, 2;
+    my ($cmdspec, $rest) = split '\s+', $buffer, 2;
+    $cmdspec = $alias{$cmdspec} if $alias{$cmdspec};
+
+#	Pull the namespace off the command spec. We make use
+#	of the $cmdspec argument later as a macro name, since
+#	with the 'core.' on the front it will be invalid, and
+#	force the use of the built-in.
+
+    (my $verb = $cmdspec) =~ s/^core\.//;
     $verb = $alias{$verb} if $alias{$verb};
 
 #	Parse the line, pulling off output redirection as we go.
@@ -434,11 +442,15 @@ eod
 	}
 
 #	If our command is a macro, build an input stream from it, and
-#	pass the results to the source() command.
+#	pass the results to the source() command. We use $cmdspec
+#	because it contains the namespace 'core.' if it was specified,
+#	and therefore cannot match any macro name.
 
-    if ($macro{$verb}) {
-	my $cmd = join "\n", @{$macro{$verb}};
+    if ($macro{$cmdspec}) {
+	my $cmd = join "\n", @{$macro{$cmdspec}};
 	source (_memio  ('<', \$cmd), @args);
+	$frame[$#frame]{macro}{$cmdspec} = $macro{$verb};
+	delete $macro{$cmdspec};
 	}
 
 #	Else, if there exists a subroutine named after the command,
@@ -1184,10 +1196,18 @@ $name !~ /\W/ && $name !~ /^_/ or die <<eod;
 Error - Invalid macro name '$name'. All characters must be alphanumeric
         or underscores, and the name must not start with an underscore.
 eod
+
+=begin comment
+
 can (__PACKAGE__, $name) and die <<eod;
 Error - Macro name '$name' conflicts with built-in function of the same
         name.
 eod
+
+=end comment
+
+=cut
+
 if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
   else {delete $macro{$name}}
 }
@@ -2351,6 +2371,16 @@ select ($info->{stdout});
 set (%{$info->{local_parm}}) if exists $info->{local_parm};
 _get_spacetrack ()->set (%{$info->{local_st}})
     if exists $info->{local_st};
+if (exists $info->{macro}) {
+    foreach my $name (keys %{$info->{macro}}) {
+	if (defined $info->{macro}{$name}) {
+	    $macro{$name} = $info->{macro}{$name};
+	    }
+	  else {
+	    delete $macro{$name};
+	    }
+	}
+    }
 @frame ? $info->{stdin} : undef;
 }
 
@@ -3717,7 +3747,12 @@ to the parser)
 
 Macro names must be composed entirely of alphanumerics and underscores
 (characters that match \w, to be specific) and may not begin with an
-underscore. They also may not conflict with a builtin command.
+underscore. As of version 0.008_03, B<macros may redefine built-in
+commands.> A macro is undefined inside itself, so use of the name
+inside the macro invokes the built-in. The macro becomes redefined
+again when it exits. The built_in can still be accessed by prefixing
+the string 'core.' to its name, e.g. 'core.quarters', whether or
+not you have overridden the built_in with a macro.
 
 If you specify a macro name with no definition, it deletes the current
 definition of that macro, if any. Macros can also be redefined.
