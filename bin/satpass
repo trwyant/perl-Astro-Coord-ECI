@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.008_03';
+our $VERSION = '0.008_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -458,6 +458,7 @@ eod
 #	warnings.
 
       elsif (can (__PACKAGE__, $verb)) {
+	_parse_time_reset ();	# Reset relative time base to last explicit
 	no strict qw{refs};
 	my $start_time = time ();
 	$SIG{INT} = sub {die "\nInterrupted by user.\n"};
@@ -506,7 +507,7 @@ sub almanac {
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $almanac_start = _parse_time (shift || 'today midnight');
-my $almanac_end = _parse_time (shift, $almanac_start + SECSPERDAY);
+my $almanac_end = _parse_time (shift || '+1');
 
 $almanac_start >= $almanac_end and die <<eod;
 Error - End time must be after start time.
@@ -1227,7 +1228,7 @@ my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
 
 my $pass_start = _parse_time (shift || 'today noon');
-my $pass_end = _parse_time (shift, SECSPERDAY * 7 + $pass_start);
+my $pass_end = _parse_time (shift || '+7');
 $pass_start >= $pass_end and die <<eod;
 Error - End time must be after start time.
 eod
@@ -1627,8 +1628,8 @@ $cmdlgl{position} = [qw{realtime}];
 
 sub position {
 my $time = _parse_time (shift);
-my $endtm = _parse_time (shift,
-	$cmdopt{realtime} ? SECSPERDAY * 10 + $time : $time);
+my $endtm = _parse_time (shift ||
+	$cmdopt{realtime} ? '+10' : '+0');
 my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
@@ -1697,7 +1698,7 @@ while ($time <= $endtm) {
 
 sub quarters {
 my $start = _parse_time ($_[0] || 'today midnight');
-my $end = _parse_time ($_[1], 30 * SECSPERDAY + $start);
+my $end = _parse_time ($_[1] || '+30');
 
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 
@@ -2574,21 +2575,27 @@ $string * $units{$units};
 
 BEGIN {	# Begin local symbol block.
 my $last_time_set = time ();
+my $initial_time_set = $last_time_set;
 sub _parse_time {
 my $time = $_[0] or return $_[1] || time ();
 my $rslt;
 if ($time =~ m/^([\+\-])\s*(\d+)(?:\s+(\d+)(?::(\d+)(?::(\d+))?)?)?/) {
     my $delta = ((($2 || 0) * 24 + ($3 || 0)) * 60 + ($4 || 0)) * 60 + ($5 || 0);
-    $1 eq '+' ? $last_time_set + $delta : $last_time_set - $delta;
+    $last_time_set = $1 eq '+' ?
+	$last_time_set + $delta :
+	$last_time_set - $delta;
     }
   else {
     $last_time_set = (UnixDate ($time, '%s') || die <<eod) + $date_manip_fudge;
 Error - Invalid time '$time'
 eod
     $parm{perltime} and $last_time_set = timelocal gmtime $last_time_set;
-    $last_time_set;
+    $initial_time_set = $last_time_set;
     }
 }
+
+#	Reset the last time set.
+sub _parse_time_reset {$last_time_set = $initial_time_set}
 }	# End local symbol block.
 
 
@@ -4627,9 +4634,25 @@ whitespace after the day number, followed by hours:minutes:seconds. If
 you choose not to specify seconds, omit the trailing colon as well. The
 same applies if you choose not to specify minutes. For example:
 
-+7 specifies 7 days after the last absolute time.
++7 specifies 7 days after the last-specified time.
 
-'+7 12' specifies 7 days and 12 hours after the last absolute time.
+'+7 12' specifies 7 days and 12 hours after the last-specified time.
+
+If a relative time is specified as the first time argument of a command,
+it is relative to the most-recently-specified absolute time, even if
+that absolute time was specified by default. Relative times in subsequent
+arguments to the same command are relative to the previously-specified
+time, whether absolute or relative. For example:
+
+ almanac '' +5
+
+establishes the most-recently-specified time as 'today midnight', and does
+an almanac for 5 days from that time. If the next command is
+
+ almanac +5 +3
+
+this produces almanac output for three days, starting 5 days after
+'today midnight'.
 
 =head1 INVOCATION
 
