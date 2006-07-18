@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.001';
+our $VERSION = '0.001_01';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -165,7 +165,8 @@ foreach (@{$self->{members}}) {
     $class ||= ref $tle;
     $ep{$tle->get ('epoch')} = $tle;
     }
-foreach my $tle (@_) {
+foreach my $tle (map {UNIVERSAL::isa ($_, __PACKAGE__) ?
+	$_->members : $_} @_) {
     my $aid = $tle->get ('id');
     if (defined $id) {
 	croak <<eod unless ref $tle && isa ($tle, $class);
