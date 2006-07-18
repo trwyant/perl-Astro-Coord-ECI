@@ -8,9 +8,9 @@ use t::SetDelegate;
 use Test;
 use Time::Local;
 
-our $VERSION = '0.001';
+our $VERSION = '0.001_01';
 
-plan tests => 46, todo => [];
+plan tests => 47, todo => [];
 
 my $test = 0;
 
@@ -196,7 +196,7 @@ eod
 
 foreach my $single (0, 1) {
 
-    $Astro::Coord::ECI::TLE::Set::Singleton = $single;
+    local $Astro::Coord::ECI::TLE::Set::Singleton = $single;
 
     my @set = eval {Astro::Coord::ECI::TLE::Set->aggregate (
 		dummy (timegm (0, 0, 0, 1, 6, 2006), 99999),
@@ -237,6 +237,24 @@ eod
     }
 
 }
+
+{	# Begin local symbol block.
+
+    my $set1 = Astro::Coord::ECI::TLE::Set->new (
+	t::SetDelegate->new (id => 99999, name => 'Anonymous',
+	epoch => timegm (0, 0, 0, 1, 6, 2006)));
+    my $set2 = Astro::Coord::ECI::TLE::Set->new ();
+    eval {$set2->add ($set1)};
+    $test++;
+    my $got = $set2->members ();
+    print <<eod;
+#
+# Test $test - Add a set to another set.
+#    Expected: 1 member.
+#         Got: $got member@{[$got == 1 ? '' : 's']}
+eod
+    ok ($got == 1);
+}	# End local symbol block.
 
 {	# Begin local symbol block.
     my $set = Astro::Coord::ECI::TLE::Set->new (
