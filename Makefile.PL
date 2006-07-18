@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.002_02';
+our $VERSION = '0.002_03';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -159,16 +159,4 @@ WriteMakefile (
 		BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
 		) : (),
 	);
-
-package MY;
-
-sub top_targets {
-    my $self = shift;
-    my $target = $self->SUPER::top_targets (@_);
-    eval {
-	require t::Ctags;
-	$target = t::Ctags->munge ($target);
-    };
-    $target;
-}
 
