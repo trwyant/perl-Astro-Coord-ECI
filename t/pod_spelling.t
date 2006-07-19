@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 if ($skip) {
     skip ($skip, 1);
@@ -93,6 +93,7 @@ IMACAT
 Imacat
 ini
 internet
+isa
 jan
 jcent
 jday
@@ -147,6 +148,7 @@ rebless
 reblessed
 reblesses
 reblessing
+ref
 reportable
 revolutionsatepoch
 Rico
