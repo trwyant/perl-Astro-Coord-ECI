@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.003_01';
+our $VERSION = '0.003_02';
 
 if ($skip) {
     skip ($skip, 1);
@@ -145,6 +145,7 @@ rad
 Ramon
 readonly
 rebless
+reblessable
 reblessed
 reblesses
 reblessing
