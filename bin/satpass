@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.008_05';
+our $VERSION = '0.008_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1657,8 +1657,7 @@ while ($time <= $endtm) {
     foreach my $body (_aggregate (), @sky) {
 	$body->universal ($time);
 	my $name = $body->get ('name') || $body->get ('id') || 'body';
-	if ($body->isa ('Astro::Coord::ECI::TLE') ||
-		$body->isa ('Astro::Coord::ECI::TLE::Set')) {
+	if ($body->represents ('Astro::Coord::ECI::TLE')) {
 	    my $illum = ($sta->azel ($body))[1] < 0 ? 10 :
 		($sta->azel ($sun->universal ($time)))[1] > $twilight ? 2 :
 		($body->azel ($sun))[1] > $body->dip() ? 1 : 0;
@@ -2240,15 +2239,10 @@ sort @rslt;
 use Carp;
 sub _format_local_azel {
 @_ or return ' elev  azim   ';
-@_ == 2 && (
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
-    ) && (
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
-    ) or confess <<eod;
+@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
+    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
 Programming error - _format_local_azel () must be called with either
-    zero or two arguments. If two, both must be Astro::Coord::ECI
+    zero or two arguments. If two, both must represent Astro::Coord::ECI
     objects.
 eod
 my ($az, $el, $rng) = $_[0]->azel ($_[1]);
@@ -2266,13 +2260,8 @@ sprintf "%5.1f %5.1f %-2s",
 
 sub _format_local_azel_rng {
 @_ or return ' elev  azim     range    ';
-@_ == 2 && (
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
-    ) && (
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
-    ) or confess <<eod;
+@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
+    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
 Programming error - _format_local_azel_rng () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
@@ -2292,13 +2281,8 @@ sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
 
 sub _format_local_equatorial {
 @_ or return 'right asc decl';
-@_ == 2 && (
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
-    ) && (
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
-    ) or confess <<eod;
+@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
+    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
 Programming error - _format_local_equatorial () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
@@ -2316,13 +2300,8 @@ sprintf "%s %5.1f",
 
 sub _format_local_equatorial_rng {
 @_ or return 'right asc decl  range    ';
-@_ == 2 && (
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI::TLE::Set')
-    ) && (
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') ||
-	UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI::TLE::Set')
-    ) or confess <<eod;
+@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
+    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
 Programming error - _format_local_equatorial_rng () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
