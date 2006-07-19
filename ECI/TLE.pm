@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.005';
+our $VERSION = '0.005_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -193,7 +193,7 @@ my %attrib = (
     epoch => sub {
 	$_[0]->{$_[1]} = $_[2];
 	$_[0]->{ds50} = $_[0]->ds50 ();
-	0},
+	1},
     firstderivative => 1,
     secondderivative => 1,
     bstardrag => 1,
@@ -219,6 +219,13 @@ eod
 my %static = (
     model => 'model',
     );
+my %model_attrib = (	# For the benefit of is_model_attrib()
+    ds50 => 1,		# Read-only, but it fits the definition.
+    epoch => 1,		# Hand-set, since we dont want to call the code.
+    );
+foreach (keys %attrib) {
+    $model_attrib{$_} = 1 if $attrib{$_} && !ref $attrib{$_}
+    }
 
 use constant TLE_INIT => '_init';
 
@@ -318,6 +325,17 @@ return $_[0]->{&TLE_INIT}{TLE_isdeep} if exists $_[0]->{&TLE_INIT}{TLE_isdeep};
 return ($_[0]->{&TLE_INIT}{TLE_isdeep} = $_[0]->period () >= 13500);
 }
 
+=item $boolean = $tle->is_model_attribute ($name);
+
+This method returns true if the named attribute is an attribute of
+the model - i.e. it came from the TLE data and actually affects the
+computations. It is really for the benefit of
+Astro::Coord::ECI::TLE::Set, so that class can determine how its
+set() method should handle the attribute.
+
+=cut
+
+sub is_model_attribute { $model_attrib{$_[1]} }
 
 =item $tle = $tle->model($time)
 
