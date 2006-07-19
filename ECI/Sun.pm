@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -44,8 +44,6 @@ use Data::Dumper;
 use POSIX qw{floor strftime};
 ##use Time::Local;
 use UNIVERSAL qw{isa};
-
-use constant ASTRONOMICAL_UNIT => 149_597_870;	# Meeus, Appendix I, page 407.
 
 my %static = (
     id => 'Sun',
@@ -295,7 +293,7 @@ my $omega = mod2pi (deg2rad (125.04 - 1934.156 * $T));
 my $lambda = mod2pi ($O - deg2rad (0.00569 + 0.00478 * sin ($omega)));
 my $nu = $M + $C;
 my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
-	* ASTRONOMICAL_UNIT;
+	* AU;
 $self->{debug} and print <<eod;
 Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
     T  = $T
@@ -304,7 +302,7 @@ Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
     e  = $e
     C  = @{[_rad2deg ($C)]} degrees
     O  = @{[_rad2deg ($O)]} degrees
-    R  = @{[$R / ASTRONOMICAL_UNIT]} AU
+    R  = @{[$R / AU]} AU
     omega = @{[_rad2deg ($omega)]} degrees
     lambda = @{[_rad2deg ($lambda)]} degrees
 eod
