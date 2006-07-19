@@ -10,7 +10,7 @@ use Cwd;
 use File::Spec;
 use Test;
 
-our $VERSION = '0.002_01';
+our $VERSION = '0.002_02';
 
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
@@ -36,6 +36,7 @@ my $home = getcwd;	# Directory test runs in.
 my $skip;		# Skip indicator
 my $test = 0;		# Test number;
 my @todo = ();		# Tests expected to fail.
+my %h_todo;		# Hash of tests expected to fail.
 
 sub satpass {
 my $handle = shift;
@@ -69,6 +70,7 @@ while (<$handle>) {
     }
 seek ($handle, $start, 0);
 plan tests => $test, todo => \@todo;
+%h_todo = map {$_ => 1} @todo;
 
 #	We start from test 1 (since we increment before use).
 
@@ -228,7 +230,7 @@ eod
 	   ("#           Got:\n", map {"#         $_\n"} split '\n', $output);
 	skip ($skip, $data eq $output);
 	warn sprintf "\n\n$failure\n\n", $test
-	    unless $skip || $data eq $output || !$failure;
+	    unless $skip || $h_todo{$test} || $data eq $output || !$failure;
 	$failure = undef;
 	next;
 	};
