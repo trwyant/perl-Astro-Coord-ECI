@@ -9,7 +9,7 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 62}
+BEGIN {plan tests => 65}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
@@ -637,6 +637,22 @@ eod
     }
 }	# End local symbol block.
 
+#	Test 63 - 65: represents.
+
+foreach ([[], 'Astro::Coord::ECI'],
+	[['Astro::Coord::ECI'], 1],
+	[['Astro::Coord::ECI::TLE'], 0],
+	) {
+    my ($arg, $want) = @$_;
+    my $got = Astro::Coord::ECI->represents (@$arg);
+    $test++;
+    print <<eod;
+# Test $test: Astro::Coord::ECI->represents (@{[map {"'$_'"} @$arg]})
+#           Got: $got
+#      Expected: $want
+eod
+    $want =~ m/\D/ ? ok ($got eq $want) : ok ($got == $want);
+    }
 
 # need to test:
 #    dip
