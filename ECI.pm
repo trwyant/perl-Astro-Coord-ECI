@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -155,15 +155,10 @@ sub angle {
 my $self = shift;
 my $B = shift;
 my $C = shift;
-ref $B && (
-	UNIVERSAL::isa ($B, __PACKAGE__) ||
-	UNIVERSAL::isa ($B, 'Astro::Coord::ECI::TLE::Set')
-    ) && ref $C && (
-	UNIVERSAL::isa ($C, __PACKAGE__) ||
-	UNIVERSAL::isa ($C, 'Astro::Coord::ECI::TLE::Set')
-    ) or
-	croak <<eod;
-Error - Both arguments must be @{[__PACKAGE__]} objects.
+ref $B && $B->represents (__PACKAGE__)
+    && ref $C && $C->represents (__PACKAGE__)
+    or croak <<eod;
+Error - Both arguments must represent @{[__PACKAGE__]} objects.
 eod
 
 my $method = $self->{inertial} ? 'eci' : 'ecef';
@@ -1660,6 +1655,25 @@ eod
 @{$known_ellipsoid{$name}}{qw{semimajor flattening name}}
 }
 
+=item $coord->represents ($class);
+
+This method returns true if the $coord object represents the given class.
+It is pretty much like isa (), but if called on a container class (i.e.
+Astro::Coord::ECI::TLE::Set), it returns true based on the class of
+the members of the set, and dies if the set has no members.
+
+The $class argument is optional. If not specified (or undef), it is
+pretty much like ref $coord || $coord (i.e. it returns the class
+name), but with the delegation behavior described in the previous
+paragraph if the $coord object is a container.
+
+There. This took many more words to explain than it did to implement.
+
+=cut
+
+sub represents {
+defined ($_[1]) ? $_[0]->represents()->isa ($_[1]) : (ref $_[0] || $_[0]);
+}
 
 =item $coord->set (name => value ...);
 
