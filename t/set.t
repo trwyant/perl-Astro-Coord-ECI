@@ -8,9 +8,9 @@ use t::SetDelegate;
 use Test;
 use Time::Local;
 
-our $VERSION = '0.001_01';
+our $VERSION = '0.001_02';
 
-plan tests => 47, todo => [];
+plan tests => 53, todo => [];
 
 my $test = 0;
 
@@ -310,6 +310,39 @@ eod
     }
 
 }	# End of local symbol block.
+
+{	# Begin local symbol block.
+    my $set = Astro::Coord::ECI::TLE::Set->new ();
+    my $members = 0;
+    foreach ([represents => undef, 'Exception thrown'],
+	    [represents => 'Astro::Coord::ECI', 'Exception thrown'],
+	    [add => dummy (timegm (0, 0, 0, 6, 1, 2006), 99999)],
+	    [represents => undef, 'Astro::Coord::ECI::TLE'],
+	    [represents => 'Astro::Coord::ECI', 1],
+	    [represents => 'Astro::Coord::ECI::TLE', 1],
+	    [represents => 'Astro::Coord::ECI::TLE::Set', 0],
+	    ) {
+	my ($method, @args) = @$_;
+	if ($method eq 'represents') {
+	    my ($arg, $want) = @args;
+	    my $got = eval {$set->represents ($arg)};
+	    $got = 'Exception thrown' if $@;
+	    $test++;
+	    print <<eod;
+#
+# Test $test - \$set->represents (@{[defined $arg ? "'$arg'" : 'undef']})
+#   Members: $members
+#    Expect: $want
+#       Got: $got
+eod
+	    $want =~ m/\D/ ? ok ($want eq $got) : ok ($want == $got);
+	} else {
+	    $set->$method (@args);
+	    $members = $set->members ();
+	}
+    }
+}
+
 
 ########################################################################
 #
