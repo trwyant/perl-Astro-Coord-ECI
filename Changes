@@ -148,4 +148,25 @@
       Fix interaction between clipboard functionality and test hook.
         Thanks to IMACAT for help diagnosing and verifying.
       Add acknowledgments.
+0.009
+    ECI.pm 0.009
+      Add represents() method.
+    ECI/Sun.pm 0.003
+      Remove redundant definition of ASTRONOMICAL_UNIT; use AU from
+        Astro::Coord::ECI::Utils
+    ECI/TLE.pm 0.006
+      Add is_model_attribute(), is_valid_model().
+    ECI/TLE/Set.pm 0.002
+      Allow Astro::Coord::ECI::TLE::Set objects as arguments of add().
+      Take advantage of is_model_attribuite(), is_valid_model().
+    bin/satpass 0.009
+      Fix defaulting of second argument of quarters().
+      Allow macros to override core commands. Macros can no longer
+        call themselves, and core commands can be accessed explicitly
+        by the syntax core.command.
+      Relative times for the second and subsequent arguments of a
+        command are relative to previous time argument of the same
+        command, whether absolute or relative.
+    Build.PL 0.001
+      Initial version.
 
