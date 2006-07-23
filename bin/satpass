@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.008_06';
+our $VERSION = '0.009';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -4692,6 +4692,23 @@ or (under some flavor of Unix)
 or even
 
   $ satpass `cat commands`
+
+=head1 CHANGES
+
+The following changes have been introduced into this script since
+version 0.008:
+
+- Fixed defaulting of second argument of quarters().
+
+- Allowed macros to override core commands. Macros can no longer call
+themselves, and core commands can be accessed explicitly by the
+syntax 'core.command'.
+
+- Relative times for the second and subsequent arguments of a command
+are relative to the previous time argument of the same command, whether
+absolute or relative.
+
+For prior changes, see F<Changes>.
 
 =head1 ACKNOWLEDGMENTS
 

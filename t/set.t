@@ -8,7 +8,7 @@ use t::SetDelegate;
 use Test;
 use Time::Local;
 
-our $VERSION = '0.001_02';
+our $VERSION = '0.002';
 
 plan tests => 53, todo => [];
 

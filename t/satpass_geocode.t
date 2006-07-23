@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-our $VERSION = '0.002_02';
+our $VERSION = '0.003';
 
 use t::Satpass;
 
