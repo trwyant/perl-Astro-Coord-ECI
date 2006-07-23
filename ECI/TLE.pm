@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.005_01';
+our $VERSION = '0.005_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -161,20 +161,6 @@ use constant SGP_RHO => .15696615;
 # XNO => meanmotion
 
 
-#	Legal model names.
-
-no warnings qw{once};
-*_model_model = \&model;
-*_model_model4 = \&model4;
-*_model_model8 = \&model8;
-*_model_null = \&null;
-*_model_sdp4 = \&sdp4;
-*_model_sdp8 = \&sdp8;
-*_model_sgp = \&sgp;
-*_model_sgp4 = \&sgp4;
-*_model_sgp8 = \&sgp8;
-use warnings qw{once};
-
 #	List all the legitimate attributes for the purposes of the
 #	get and set methods. Possible values of the hash are:
 #	    undef => read-only attribute
@@ -201,7 +187,7 @@ my %attrib = (
     elementnumber => 0,
     inclination => 1,
     model => sub {
-	$_[2] and $_[0]->can ("_model_$_[2]") || croak <<eod;
+	$_[0]->is_valid_model ($_[2]) || croak <<eod;
 Error - Illegal model name '$_[2]'.
 eod
 	$_[0]->{$_[1]} = $_[2];
@@ -248,6 +234,8 @@ my $class = shift;
 my $self = $class->SUPER::new (%static, @_);
 $self;
 }
+
+#	See Astro::Coord::ECI for docs.
 
 sub attribute {
 $attrib{$_[1]} ? __PACKAGE__ : $_[0]->SUPER::attribute ($_[1])
@@ -336,6 +324,31 @@ set() method should handle the attribute.
 =cut
 
 sub is_model_attribute { $model_attrib{$_[1]} }
+
+=item $boolean = $tle->is_valid_model ($model_name);
+
+This method returns true if the given name is the name of an orbital
+model, and false otherwise.
+
+Actually, in the spirit of UNIVERSAL::can, it returns a reference to
+the code if the model exists, and undef otherwise.
+
+This is really for the benefit of Astro::Coord::ECI::TLE::Set, so it
+can select the correct member object before running the model.
+
+=cut
+
+{	# Begin local symbol block
+
+my %valid = map {$_ => UNIVERSAL::can (__PACKAGE__, $_)}
+    qw{model model4 model8 null sdp4 sdp8 sgp sgp4 sgp8};
+
+    sub is_valid_model {
+    $valid{$_[1]}
+    }
+
+}	# End local symbol block
+
 
 =item $tle = $tle->model($time)
 

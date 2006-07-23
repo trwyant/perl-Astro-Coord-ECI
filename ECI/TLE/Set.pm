@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.001_02';
+our $VERSION = '0.001_03';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -383,7 +383,8 @@ our $AUTOLOAD;
 (my $routine = $AUTOLOAD) =~ s/.*:://;
 my $delegate = $_[0]{current} or
     croak sprintf ERR_NOCURRENT, $routine;
-if (@_ > 1 && ($selector{$routine} || $delegate->can ("_model_$routine"))) {
+if (@_ > 1 && ($selector{$routine} ||
+	$delegate->is_valid_model ($routine))) {
     $_[0]->select ($_[1]);
     $delegate = $_[0]{current};
     }
