@@ -5,7 +5,6 @@ use warnings;
 
 use Module::Build;
 use Config;
-## use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 
 our $VERSION = '0.001';
@@ -43,7 +42,7 @@ The following executable can be installed:
   satpass is a scriptable program to predict satellite passes
     over a given observer.
 
-If you do not want this, run Makefile.PL with the -n option.
+If you do not want this, run Build.PL with the -n option.
 
 Unless you are running MSWin32 or VMS (which are special-cased),
 I will assume you are running some version of U*ix, and behave
