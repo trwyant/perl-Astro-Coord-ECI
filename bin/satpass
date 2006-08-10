@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.009';
+our $VERSION = '0.009_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -100,6 +100,7 @@ my %parm = (
     echo => 0,
     ellipsoid => Astro::Coord::ECI->get ('ellipsoid'),
     exact_event => 1,
+    explicit_macro_delete => 0,
     geometric => 1,
     horizon => 20,	# Degrees
     lit => 1,
@@ -130,6 +131,7 @@ my %mutator = (
     echo => \&_set_unmodified,
     ellipsoid => \&_set_ellipsoid,
     exact_event => \&_set_unmodified,
+    explicit_macro_delete => \&_set_unmodified,
     geometric => \&_set_unmodified,
     height => \&_set_unmodified,
     horizon => \&_set_angle,
@@ -1180,16 +1182,52 @@ eod
 #	macro () - Define a macro. With no name, lists all macros.
 #
 
+BEGIN {
+$cmdlgl{macro} = [qw{brief delete list}];
+}
+
 sub macro {
 $io_string_unavailable and die <<eod;
 Error - You can not use the macro facility unless you are running at
         at least Perl 5.8, or IO::String is available.
 eod
+
+unless (@_ != 1 || $cmdopt{brief} || $cmdopt{delete} || $cmdopt{list}) {
+    $cmdopt{$parm{explicit_macro_delete} ? 'list' : 'delete'} = 1;
+    }
+
+if ($cmdopt{brief}) {
+    foreach my $name (sort @_ ? @_ : keys %macro) {
+	print $name . "\n" if $macro{$name};
+	}
+    }
+  elsif ($cmdopt{list} || !@_) {
+    foreach my $name (sort @_ ? @_ : keys %macro) {
+	print "macro $name ", join (" \\\n    ", map {
+		_quoter ($_)} @{$macro{$name}}), "\n"
+		if $macro{$name};
+	}
+    }
+  elsif ($cmdopt{delete}) {
+    foreach my $name (@_ ? @_ : keys %macro) {
+	delete $macro{$name};
+	}
+    }
+  else {
+    my $name = shift;
+    $name !~ m/\W/ && $name !~ m/^_/ or die <<eod;
+Error - Invalid macro name '$name'. All characters must be alphanumeric
+        or underscores, and the name must not start with an underscore.
+eod
+    $macro{$name} = [map {s/\\(.)/$1/g; $_} @_];
+    }
+
+=begin comment
+
 my $name = shift or do {
     foreach my $name (sort keys %macro) {
 	print "macro $name ", join (" \\\n    ", map {
 		_quoter ($_)} @{$macro{$name}}), "\n";
-
 	}
     return;
     };
@@ -1200,6 +1238,11 @@ eod
 
 if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
   else {delete $macro{$name}}
+
+=end comment
+
+=cut
+
 }
 
 
@@ -3732,15 +3775,27 @@ not you have overridden the built_in with a macro.
 If you specify a macro name with no definition, it deletes the current
 definition of that macro, if any. Macros can also be redefined.
 
-If you specify the macro command without a macro name, it lists all
-the currently-defined macros and their definitions. The quoting in
-the listing may not be identical to the quoting originally specified,
-but will be functionally equivalent, and specifically will look like
-the first example above.
+The macro command takes the following options in addition to the
+global ones:
+
+-brief lists the names of macros. If names are given, they are listed
+provided they are currently defined. If no names are given, the names
+of all defined macros are given.
+
+-delete deletes the named macros. If no macro names are given, all
+macros are deleted. A macro may also be deleted by giving its name
+but no definition, but as of 0.009_01, B<this mechanism is deprecated
+in favor of use of the -delete option.> The
+L<explicit_macro_delete|/explicit_macro_delete> parameter may be used
+to require an explicit -delete to delete macros.
+
+-list lists the names and definitions of macros. If names are given,
+they are listed if they are defined. If no names are given, all
+defined macros are listed.
 
 Macros may be nested - that is, a macro may be defined in terms of
-other macros. There is no protection against the endless recursion
-that results if a macro invokes itself either directly or indirectly.
+other macros. A macro temporarily becomes undefined when it is called
+to prevent endless recursion. It becomes defined again when it exits.
 
 Be aware that there is no syntax checking done when the macro is
 defined. You only find out if your macro definition is good by
@@ -4221,6 +4276,17 @@ size specified when the 'pass' command was issued.
 
 The default is 1 (i.e. true).
 
+=for html <a name="explicit_macro_delete"></a>
+
+=item explicit_macro_delete (boolean)
+
+This parameter specifies whether an explicit -delete qualifier is needed
+to delete a macro. If false, 'macro foo' deletes macro foo. If true,
+'macro foo' lists macro foo.
+
+The default is 0 (i.e. false). B<This will change>, as deletion without
+an explicit -delete is deprecated.
+
 =for html <a name="geometric"></a>
 
 =item geometric (boolean)
@@ -4696,17 +4762,11 @@ or even
 =head1 CHANGES
 
 The following changes have been introduced into this script since
-version 0.008:
+version 0.009:
 
-- Fixed defaulting of second argument of quarters().
-
-- Allowed macros to override core commands. Macros can no longer call
-themselves, and core commands can be accessed explicitly by the
-syntax 'core.command'.
-
-- Relative times for the second and subsequent arguments of a command
-are relative to the previous time argument of the same command, whether
-absolute or relative.
+- 'macro' command options -brief, -delete, and -list added. The
+-delete option is the preferred way to delete macros; doing this
+by giving the name but no definition is deprecated.
 
 For prior changes, see F<Changes>.
 
