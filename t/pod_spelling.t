@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 if ($skip) {
     skip ($skip, 1);
@@ -74,6 +74,7 @@ EST
 exportable
 ff
 firstderivative
+foo
 fr
 Francou
 Fugina
