@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 my $bldr = Module::Build->new (
 	dist_author => 'Tom Wyant (wyant at cpan dot org)',
@@ -151,7 +151,7 @@ eod
 my $vers = '';
 
 $bldr->requires ({@prereq});
-$bldr->add_to_cleanup (\@clean_files);
+$bldr->add_to_cleanup (@clean_files);
 $bldr->script_files (\@exe_files);
 
 $bldr->create_build_script ();
