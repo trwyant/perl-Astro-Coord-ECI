@@ -90,6 +90,7 @@ foo >test.tmp
 
 -unlink test.tmp
 
+set explicit_macro_delete 0
 macro foo
 macro
 -data
@@ -98,6 +99,17 @@ macro
 foo
 -data Error - Verb 'foo' not recognized.
 -test make sure macro can not be executed
+
+macro foo 'set horizon 17'
+set explicit_macro_delete 1
+macro foo
+-data macro foo 'set horizon 17'
+-test explicit_macro_delete turned on
+
+macro -delete foo
+macro
+-data
+-test explicit macro deletion via -delete
 
 -skip <<eod
 -d 'fubar' ? 'Directory fubar exists' :
