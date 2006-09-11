@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.009';
+our $VERSION = '0.009_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1875,6 +1875,19 @@ $self->{debug} and do {
     local $Data::Dumper::Terse = 1;
     print "Debug $method (", Dumper (@$args, @_), ")\n";
     };
+
+{
+    my $inx = 0;
+    $Data::Dumper::Terse = 1;
+    foreach (@$args) {
+	croak <<eod unless defined $_;
+Error - @{[ (caller (1))[3] ]} argument $inx is undefined.
+        Arguments are (@{[ join ', ',
+	    map {my $x = Dumper $_; chomp $x; $x} @$args ]})
+eod
+	$inx++;
+	}
+    }
 
 $self->universal (pop @$args) if @$args % 3 == 1;
 
