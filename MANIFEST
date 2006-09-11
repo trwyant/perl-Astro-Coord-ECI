@@ -8,6 +8,8 @@ ECI/Sun.pm
 ECI/TLE.pm
 ECI/TLE/Set.pm
 ECI/Utils.pm
+eg/almanac
+eg/README
 Makefile.PL
 MANIFEST
 META.yml

@@ -1,0 +1,102 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Astro::Coord::ECI;
+use Astro::Coord::ECI::Sun;
+use Astro::Coord::ECI::Moon;
+use Astro::Coord::ECI::Utils qw{deg2rad};
+use Getopt::Long;
+use POSIX qw{strftime};
+use Time::Local;
+
+our $VERSION = '0.001';
+
+Getopt::Long::Configure ('pass_through');	# Numbers may be negative.
+
+my %opt = (
+    format => '%d-%b-%Y %H:%M:%S',
+);
+
+my $usage = <<eod;
+
+Generate almanac data.
+
+usage: almanac [options] latitude longitude height
+
+where latitude is degrees north of the equator,
+    longitude is degrees east of the Greenwich, and
+    height is meters above sea level.
+If no position is provided, it defaults to the contents of environment
+variable ALMANAC_POSITION, or to 1600 Pennsylvania Avenue Washington DC
+if the environment variable is not provided.
+
+The options are
+  -format strftime_format
+    specify the format for displaying dates and times;
+  -help
+    display this text and then exit;
+  -moon
+    display Moon data;
+  -sun
+    display Sun data;
+  -tomorrow
+    get the almanac data for tomorrow, not today.
+
+If you do not specify either -sun or -moon, both will be generated.
+eod
+
+GetOptions (\%opt, qw{format=s help moon sun tomorrow}) or die $usage;
+
+$opt{help} and do {print $usage; exit};
+
+@ARGV = split '\s+', $ENV{ALMANAC_POSITION}
+    if !@ARGV && $ENV{ALMANAC_POSITION};
+@ARGV = (38.898748, -77.037684, 16.68)
+    if !@ARGV;
+
+$opt{sun} = $opt{moon} = 1
+    unless $opt{sun} || $opt{moon};
+
+#	Stash position where it's convenient.
+
+my ($lat, $lon, $hgt) = @ARGV;
+
+#	Start time is the previous midnight. Unless -tomorrow is
+#	set, in which case it's the next midnight.
+
+my $start = timelocal (0, 0, 0, (localtime)[3 .. 5]);
+$start += 86400 if $opt{tomorrow};
+
+#	The end time is the start time + 1 day.
+
+my $end = $start + 86400;
+
+#	Create an object representing our location. Remember that
+#	angles are in radians, and distance in kilometers.
+
+my $loc = Astro::Coord::ECI->geodetic (
+    deg2rad ($lat), deg2rad ($lon), $hgt/1000);
+
+#	Generate the almanac data for the Sun, if this is desired. We
+#	instantiate the Sun, call Almanac on it, and then throw it
+#	away. We could also have instantiated the Sun, and then called
+#	the almanac () method as a separate step.
+
+my @almanac = Astro::Coord::ECI::Sun->new ()->almanac ($loc, $start, $end)
+    if $opt{sun};
+
+#	Generate the almanac data for the Moon, if desired, and add
+#	it to what we already have for the Sun.
+
+push @almanac, Astro::Coord::ECI::Moon->new ()->almanac ($loc, $start, $end)
+    if $opt{moon};
+
+#	Display the time and the text description of the event, in
+#	order of increasing time.
+
+foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
+    print strftime ($opt{format}, localtime $_->[0]), '  ',
+	ucfirst ($_->[3]), "\n";
+}
