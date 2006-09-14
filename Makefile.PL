@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -149,6 +149,7 @@ WriteMakefile (
 	PREREQ_PM => {
 			@prereq
 			},
+	PL_FILES => {},	# Prevent old MakeMaker from running Build.PL
 	EXE_FILES => \@exe_files,
 #	'linkext' => {LINKTYPE => ''},
 	'dist' => {COMPRESS => 'gzip', SUFFIX => 'gz'},
