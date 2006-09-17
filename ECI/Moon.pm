@@ -37,16 +37,15 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Sun;	# Need for phase of moon calc.
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
-use Data::Dumper;
+## use Data::Dumper;
 use POSIX qw{floor strftime};
-##use Time::Local;
 use UNIVERSAL qw{isa};
 
 
@@ -71,6 +70,20 @@ while (<DATA>) {
     }
 }	# End local symbol block.
 
+my %static = (
+    id => 'Moon',
+    name => 'Moon',
+    diameter => 3476,
+    );
+
+my $weaken = eval {
+    require Scalar::Util;
+    UNIVERSAL::can ('Scalar::Util', 'weaken');
+    };
+my $object;
+
+our $Singleton = $weaken;
+
 
 =item $moon = Astro::Coord::ECI::Moon->new ();
 
@@ -86,15 +99,34 @@ Any arguments are passed to the set() method once the object has been
 instantiated. Yes, you can override the "hard-wired" id and name in
 this way.
 
+If $Astro::Coord::ECI::Moon::Singleton is true, you get a singleton
+object; that is, only one object is instantiated and subsequent calls
+to new() just return that object. This only works if Scalar::Util
+exports weaken(). If it does not, the setting of
+$Astro::Coord::ECI::Moon::Singleton is silently ignored. The default
+is true if Scalar::Util can be loaded and exports weaken(), and false
+otherwise.
+
 =for comment help syntax-highlighting editor "
 
 =cut
 
 sub new {
 my $class = shift;
-my $self = $class->SUPER::new (
-    id => 'Moon', name => 'Moon', diameter => 3476,
-    @_);
+if ($Singleton && $weaken && UNIVERSAL::isa ($class, __PACKAGE__)) {
+    if ($object) {
+	$object->set (@_) if @_;
+	return $object;
+	}
+      else {
+	my $self = $object = $class->SUPER::new (%static, @_);
+	$weaken->($object);
+	return $self;
+	}
+    }
+  else {
+    my $self = $class->SUPER::new (%static, @_);
+    }
 }
 
 

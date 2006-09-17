@@ -34,15 +34,14 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
-use Data::Dumper;
+## use Data::Dumper;
 use POSIX qw{floor strftime};
-##use Time::Local;
 use UNIVERSAL qw{isa};
 
 my %static = (
@@ -50,6 +49,14 @@ my %static = (
     name => 'Sun',
     diameter => 1392000,
     );
+
+my $weaken = eval {
+    require Scalar::Util;
+    UNIVERSAL::can ('Scalar::Util', 'weaken');
+    };
+my $object;
+
+our $Singleton = $weaken;
 
 =item $sun = Astro::Coord::ECI::Sun->new();
 
@@ -63,11 +70,32 @@ Any arguments are passed to the set() method once the object has been
 instantiated. Yes, you can override the "hard-wired" id, name, and so
 forth in this way.
 
+If $Astro::Coord::ECI::Sun::Singleton is true, you get a singleton
+object; that is, only one object is instantiated and subsequent calls
+to new() just return that object. This only works if Scalar::Util
+exports weaken(). If it does not, the setting of
+$Astro::Coord::ECI::Sun::Singleton is silently ignored. The default
+is true if Scalar::Util can be loaded and exports weaken(), and false
+otherwise.
+
 =cut
 
 sub new {
 my $class = shift;
-my $self = $class->SUPER::new (%static, @_);
+if ($Singleton && $weaken && UNIVERSAL::isa ($class, __PACKAGE__)) {
+    if ($object) {
+	$object->set (@_) if @_;
+	return $object;
+	}
+      else {
+	my $self = $object = $class->SUPER::new (%static, @_);
+	$weaken->($object);
+	return $self;
+	}
+    }
+  else {
+    $class->SUPER::new (%static, @_);
+    }
 }
 
 

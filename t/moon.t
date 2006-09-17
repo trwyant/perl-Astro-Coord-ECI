@@ -10,7 +10,7 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 7}
+BEGIN {plan tests => 9}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 use constant PI => atan2 (0, -1);
@@ -129,4 +129,33 @@ eod
     ok (abs ($got - $expect) < $tolerance);
     }
 
+
+#	Tests 8 - 9: Singleton object
+
+{	# Local symbol block.
+    eval {
+	require Scalar::Util;
+	UNIVERSAL::can ('Scalar::Util', 'refaddr') or
+	    die "Scalar::Util does not implement refaddr().";
+	};
+    my $skip = $@;
+    my @text = qw{different same};
+
+    foreach ([1, 1], [0, 0]) {
+	my ($sgl, $expect) = @$_;
+	my $got =  do {
+	    local $Astro::Coord::ECI::Moon::Singleton = $sgl;
+	    my @moon = map {Astro::Coord::ECI::Moon->new} (0 .. 1);
+	    Scalar::Util::refaddr ($moon[0]) ==
+		Scalar::Util::refaddr ($moon[1]) ? 1 : 0;
+	    } unless $skip;
+	$test++;
+	print <<eod;
+# Test $test: \$Astro::Coord::ECI::Moon::Singleton = $sgl
+#      Expected: $text[$expect]
+#           Got: @{[$skip ? 'skipped' : $text[$got]]}
+eod
+	skip ($skip, $got == $expect);
+	}
+    }
 __END__
