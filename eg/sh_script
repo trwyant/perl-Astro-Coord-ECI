@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#	Pass the commands in sh_data to the satpass script. The -filter
+#	prevents the front matter from being displayed.
+
+satpass -filter <sh_data
+

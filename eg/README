@@ -2,10 +2,22 @@ This directory contains examples of how to use Astro::Coord::ECI and
 its subclasses. The following examples are provided:
 
 almanac
-    This script produces an almanac of Sun and Moon positions for the
-    current day, or optionally for the next day. By default the almanac
-    is for 1600 Pennsylvania Avenue Washington DC, but this can be
-    changed by setting environment variable ALMANAC_POSITION, or
+    This Perl script produces an almanac of Sun and Moon positions for
+    the current day, or optionally for the next day. By default the
+    almanac is for 1600 Pennsylvania Avenue Washington DC, but this can
+    be changed by setting environment variable ALMANAC_POSITION, or
     specifying latitude north (degrees), longitude east (degrees),
     and height (meters) on the command. The option -help gets you
     brief help.
+
+sh_script
+    This shell script executes the satpass Perl script (which comes with
+    this distribution) passing it the commands in sh_data, which is
+    described below.
+
+sh_data
+    This file contains the commands fed to the satpass script by
+    sh_script. It downloads International Space Station data from
+    NASA's manned spaceflight center and predicts visibility
+    of the ISS from 1600 Pennsylvania Avenue, Washington DC, USA.
+

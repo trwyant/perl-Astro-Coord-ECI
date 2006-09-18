@@ -1,0 +1,40 @@
+
+
+#	Tell Astro::SpaceTrack we intend to fetch data directly
+#	from a redistributor, so that we do not need a username
+#	and password for www.space-track.org.
+
+st set direct 1
+
+#	Retrieve all International Space Station data from
+#	spaceflight.nasa.gov, not just the current element.
+
+st spaceflight -all iss
+
+
+#	We need a location to work with. Substitude your own,
+#	using Google Maps, geocoder.us, geocoder.ca, or whatever.
+
+set location "1600 Pennsylvania Ave NW Washington DC 20502"
+set latitude 38.898748 longitude -77.037684 height 16.68
+
+
+#	We are not interested unless it passes 20 degrees above
+#	the horizon, nor in passes that take place in daylight,
+#	using civil twilight (center of Sun 6 degrees below
+#	horizon) to define daylight.
+
+set horizon 20 twilight civil
+
+
+#	Predict visibility of the given bodies (i.e. the ISS)
+#	from the given location for the seven days starting
+#	at noon today. This is in fact the default behaviour
+#	for 'pass'.
+
+pass 'today noon' +7
+
+
+#	That's all.
+
+exit
