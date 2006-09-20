@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.009_01';
+our $VERSION = '0.009_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1696,7 +1696,7 @@ ref $self or $self = \%static;
 @_ %2 and croak <<eod;
 Error - The set() method requires an even number of arguments.
 eod
-my $action;
+my $action = 0;
 while (@_) {
     my $name = shift;
     exists $mutator{$name} or croak <<eod;
