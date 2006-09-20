@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.009_01';
+our $VERSION = '0.009_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -251,14 +251,13 @@ eod
 
 $opt{clipboard} and select (IO::Clipboard->new ());
 
-my $exception;
 ref $Astro::satpass::Test::Hook eq 'CODE' and do {
     $fh = Astro::satpass::Test->new () or die <<eod;
 Error - Failed to instantiate Astro::satpass::Test object.
 eod
     select ($fh);
     no warnings qw{once};
-    $exception = \$Astro::satpass::Test::Exception;
+    $SIG{__WARN__} = sub {$Astro::satpass::Test::Exception = $_[0]};
     use warnings qw{once};
     };
 
@@ -354,7 +353,7 @@ while (1) {
 	    $frame[$#frame]->{args} || [])/mgex
 	    unless $buffer =~ m/^\s*macro\b/};
     $@ and do {
-	$exception ? $$exception = $@ : warn $@;
+	warn $@;
 	defined ($fh = _frame_pop ()) or last;
 	redo;
 	};
@@ -401,10 +400,9 @@ while (1) {
 #	Arbitrarily disallow syntactically invalid commands.
 
     $verb =~ m/^_/ || $verb =~ m/\W/ and do {
-	my $stuff = <<eod;
+	warn <<eod;
 Error - Verb '$verb' not recognized.
 eod
-	$exception ? ($$exception = $stuff) : warn $stuff;
 	next;
 	};
 
@@ -426,7 +424,7 @@ eod
     if ($cmdopt{clipboard}) {
 	$redout = '';
 	my $fh = eval {IO::Clipboard->new ()};
-	$@ and do {$exception ? $$exception = $@ : warn $@; next;};
+	$@ and do {warn $@; next;};
 	select ($fh) or die <<eod;
 Error - Failed to redirect output to clipboard.
         $!
@@ -468,7 +466,7 @@ eod
 	$SIG{INT} = 'DEFAULT';
 	my $end_time = time ();
 	use strict qw{refs};
-	$@ and $exception ? $$exception = $@ : warn $@;
+	$@ and warn $@;
 	$cmdopt{time} and print <<eod;
 Information - Elapsed time for command is @{[$end_time - $start_time
 	]} seconds.
@@ -478,10 +476,9 @@ eod
 #	Else, complain about the unrecognized verb.
 
       else {
-	my $stuff = <<eod;
+	warn <<eod;
 Error - Verb '$verb' not recognized.
 eod
-	$exception ? $$exception = $stuff : warn $stuff;
 	}
 
 
