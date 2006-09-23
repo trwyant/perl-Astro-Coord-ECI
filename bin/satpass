@@ -4302,7 +4302,7 @@ The default is 'WGS84'.
 
 =item error_out (boolean)
 
-This parameter specifies the behaviour on encountering an error. If
+This parameter specifies the behavior on encountering an error. If
 true, all macros, source files, etc are aborted and control is returned
 to the command prompt. If standard in is not a terminal, we exit. If
 false, we ignore the error.
