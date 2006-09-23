@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.009_02';
+our $VERSION = '0.009_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -99,6 +99,7 @@ my %parm = (
     debug => 0,
     echo => 0,
     ellipsoid => Astro::Coord::ECI->get ('ellipsoid'),
+    error_out => 0,
     exact_event => 1,
     explicit_macro_delete => 0,
     geometric => 1,
@@ -130,6 +131,7 @@ my %mutator = (
     debug => \&_set_unmodified,
     echo => \&_set_unmodified,
     ellipsoid => \&_set_ellipsoid,
+    error_out => \&_set_unmodified,
     exact_event => \&_set_unmodified,
     explicit_macro_delete => \&_set_unmodified,
     geometric => \&_set_unmodified,
@@ -441,11 +443,19 @@ Error - Failed to redirect output to $redout.
 eod
 	}
 
+#	Record start time if required.
+
+    $frame[$#frame]{timing} = {
+	command => $buffer,
+	start => time (),
+    } if $cmdopt{time};
+
 #	If our command is a macro, build an input stream from it, and
 #	pass the results to the source() command. We use $cmdspec
 #	because it contains the namespace 'core.' if it was specified,
 #	and therefore cannot match any macro name.
 
+    my $error;	# Status from command execution.
     if ($macro{$cmdspec}) {
 	my $cmd = join "\n", @{$macro{$cmdspec}};
 	source (_memio  ('<', \$cmd), @args);
@@ -460,26 +470,34 @@ eod
       elsif (can (__PACKAGE__, $verb)) {
 	_parse_time_reset ();	# Reset relative time base to last explicit
 	no strict qw{refs};
-	my $start_time = time ();
 	$SIG{INT} = sub {die "\nInterrupted by user.\n"};
 	eval {&$verb (@args)};
+	$error = $@;
 	$SIG{INT} = 'DEFAULT';
-	my $end_time = time ();
 	use strict qw{refs};
-	$@ and warn $@;
-	$cmdopt{time} and print <<eod;
-Information - Elapsed time for command is @{[$end_time - $start_time
-	]} seconds.
-eod
 	}
 
 #	Else, complain about the unrecognized verb.
 
       else {
-	warn <<eod;
+	$error = <<eod;
 Error - Verb '$verb' not recognized.
 eod
 	}
+	warn $error if $error;
+
+
+#	Display timing information if desired.
+
+    _display_timing ();
+
+
+#	Unwind frame stack if needed.
+
+    if ($error && $parm{error_out}) {
+	$fh = _frame_pop () while @frame > 1;
+	last unless -t $fh;
+    }
 
 
 #	End of command dispatching.
@@ -2243,6 +2261,23 @@ Error - You must set height, latitude, and longitude to use this
 eod
 }
 
+#	_display_timing ()
+
+#	Displays command timing information from the current frame
+#	if present, and clears it afterwards.
+
+sub _display_timing {
+if ($frame[$#frame]{timing}) {
+    my $end = time ();
+    my $delta = $end - $frame[$#frame]{timing}{start};
+    print <<eod;
+Information - $frame[$#frame]{timing}{command}
+        elapsed time is $delta seconds.
+eod
+    delete $frame[$#frame]{timing};
+    }
+}
+
 #	@suff = _find_suffixes ($prefix, $package)
 
 #	This subroutine traverses the symbol table of the given
@@ -2390,6 +2425,7 @@ if (exists $info->{macro}) {
 	    }
 	}
     }
+_display_timing ();
 @frame ? $info->{stdin} : undef;
 }
 
@@ -4261,6 +4297,17 @@ Astro::Coord::ECI may be used. For details,
 see L<Astro::Coord::ECI>.
 
 The default is 'WGS84'.
+
+=for html <a name="error_out"></a>
+
+=item error_out (boolean)
+
+This parameter specifies the behaviour on encountering an error. If
+true, all macros, source files, etc are aborted and control is returned
+to the command prompt. If standard in is not a terminal, we exit. If
+false, we ignore the error.
+
+The default is 0 (i.e. false).
 
 =for html <a name="exact_event"></a>
 
