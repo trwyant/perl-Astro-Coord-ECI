@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.009_04';
+our $VERSION = '0.010';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -4811,6 +4811,13 @@ version 0.009:
 - 'macro' command options -brief, -delete, and -list added. The
 -delete option is the preferred way to delete macros; doing this
 by giving the name but no definition is deprecated.
+
+- The -time option now works on macro and source commands.
+
+- By setting the error_out parameter true, you can now cause
+macros and source scripts to abort on error. This will return
+you to the command prompt if standard in is a terminal, or
+terminate the script otherwise.
 
 For prior changes, see F<Changes>.
 

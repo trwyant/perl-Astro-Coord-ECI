@@ -169,4 +169,26 @@
         command, whether absolute or relative.
     Build.PL 0.001
       Initial version.
+0.010
+    ECI.pm 0.010
+      Check for null arguments on most calls, so we die now rather
+        than later.
+      Fix undefined value when calling set() with no arguments.
+    ECI/Moon.pm 0.003
+      Make singleton object by default.
+    ECI/Sun.pm 0.004
+      Make singleton object by default.
+    bin/satpass 0.010
+      Add qualifiers -brief, -list, and -delete to macro command.
+        Parameter explicit_macro_delete controls what the macro
+        command does when given a name but no definition.
+      Make -time work on macros and source commands.
+      Add ability to abort macros and source scripts on error,
+        controlled by parameter error_out.
+    Build.PL
+      Correct add_to_cleanup() call.
+      Add omitted ECI/Sun.pm.
+    Makefile.PL
+      Add explicit PL_FILES => {}, to prevent old versions from
+        trying to execute 'perl Build.PL Build'.
 
