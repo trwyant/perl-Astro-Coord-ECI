@@ -57,7 +57,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.010';
+our $VERSION = '0.010_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -589,7 +589,7 @@ foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
 
 ########################################################################
 #
-#	cd ()  - Change Directry.
+#	cd ()  - Change Directory.
 #
 
 sub cd {
@@ -603,6 +603,58 @@ Error - Can not cd to home
 eod
 }
 
+
+########################################################################
+#
+#	check_version () - See if we're up to date.
+#
+
+sub check_version {
+    if ($lwp_unavailable) {
+	print <<eod;
+Version check cannot be performed. LWP::UserAgent not available.
+eod
+    } else {
+	my $lwp = LWP::UserAgent->new ();
+	my $url = 'http://search.cpan.org/dist/Astro-satpass/';
+	my $rslt = $lwp->get ($url);
+	if (!$rslt->is_success) {
+	    die <<eod;
+Error - Version check failed. Can not fetch $url
+        @{[$rslt->status_line]}
+eod
+	} else {
+	    my $re = __PACKAGE__;
+	    $re =~ s/::/-/g;
+	    $re .= '-(\d+\.\d+(_\d+)?)';
+	    if ($rslt->content =~ m/$re/m) {
+		my $curver = $1;
+		print <<eod;
+Current version: $curver. Your version: $VERSION.
+eod
+		$curver =~ s/_//g;
+		(my $myver = $VERSION) =~ s/_//g;
+		if ($curver == $myver) {
+		    print <<eod;
+	You are running the latest version.
+eod
+		} elsif ($curver > $myver) {
+		    print <<eod;
+	You are running an obsolete version.
+eod
+		} else {
+		    print <<eod;
+	You are running a pre-release version.
+eod
+		}
+	    } else {
+		die <<eod;
+Error - Can not find version number in $url.
+eod
+	    }
+	}
+    }
+}
 
 ########################################################################
 #
@@ -3394,6 +3446,16 @@ no directory is specified and the user's home directory can be
 determined. This change affects this script, and any processes invoked
 by it, but B<not> the invoking process. In plainer English, it does not
 affect the directory in which you find yourself after exiting satpass.
+
+=for html <a name="check_version"></a>
+
+=item check_version
+
+This command downloads L<http://search.cpan.org/dist/Astro-satpass/>,
+parses out the version, and compares it to the version of this script,
+displaying both versions and the result of the comparison. The intent
+is to provide a mechanism for checking the currency of this script in
+the event it becomes a separate distribution from Astro::Coord::ECI.
 
 =for html <a name="choose"></a>
 
