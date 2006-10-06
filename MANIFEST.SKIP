@@ -8,7 +8,6 @@ CVS/
 ^foo$
 ^Makefile$
 ^MANIFEST\.
-^META.yml$
 ^pm_to_blib$
 ^t/Ctags.pm$
 ^t/Satpass.pm$
