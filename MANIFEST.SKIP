@@ -1,3 +1,5 @@
+^\.#
+/\.#
 ^_build/
 ^blib/
 ^Build$
@@ -6,6 +8,7 @@ CVS/
 ^foo$
 ^Makefile$
 ^MANIFEST\.
+^META.yml$
 ^pm_to_blib$
 ^t/Ctags.pm$
 ^t/Satpass.pm$
@@ -15,5 +18,6 @@ CVS/
 ^t/satpass_geocode.t$
 ^tags$
 \.old$
+\.swp$
 \.tar\.gz$
 ^TODO$
