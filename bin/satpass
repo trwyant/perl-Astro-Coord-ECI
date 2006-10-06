@@ -30,25 +30,10 @@ use Text::ParseWords;
 use Time::Local;
 use UNIVERSAL qw{can};
 
-my ($clipboard_unavailable, $io_string_unavailable,
-	$lwp_unavailable,
-	$simbad_unavailable, $soap_unavailable,
-	$spacetrack_unavailable, $xml_parser_unavailable);
-BEGIN {
-    eval "use Astro::SpaceTrack";
-    $spacetrack_unavailable = <<eod if $@ || Astro::SpaceTrack->VERSION < 0.017;
-Error - You need to install the Astro::SpaceTrack module version 0.017
-        or higher if you wish to use the st command.
-eod
-    eval "use LWP::UserAgent";
-    $lwp_unavailable = $@;
-    eval "use Astro::SIMBAD::Query";
-    $simbad_unavailable = $@;
-    eval "use SOAP::Lite";
-    $soap_unavailable = $@;
-    eval "use XML::Parser";
-    $xml_parser_unavailable = $@;
-    }
+my (
+	$clipboard_unavailable,
+	$io_string_unavailable,
+    );
 $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 
 
@@ -57,7 +42,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.010_01';
+our $VERSION = '0.010_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -610,48 +595,43 @@ eod
 #
 
 sub check_version {
-    if ($lwp_unavailable) {
-	print <<eod;
-Version check cannot be performed. LWP::UserAgent not available.
+    _load_module ('LWP::UserAgent', 'check_version');
+    my $lwp = LWP::UserAgent->new ();
+    my $url = 'http://search.cpan.org/dist/Astro-satpass/';
+    my $rslt = $lwp->get ($url);
+    if (!$rslt->is_success) {
+	die <<eod;
+Error - Version check failed. Can not fetch $url
+    @{[$rslt->status_line]}
 eod
     } else {
-	my $lwp = LWP::UserAgent->new ();
-	my $url = 'http://search.cpan.org/dist/Astro-satpass/';
-	my $rslt = $lwp->get ($url);
-	if (!$rslt->is_success) {
-	    die <<eod;
-Error - Version check failed. Can not fetch $url
-        @{[$rslt->status_line]}
-eod
-	} else {
-	    my $re = __PACKAGE__;
-	    $re =~ s/::/-/g;
-	    $re .= '-(\d+\.\d+(_\d+)?)';
-	    if ($rslt->content =~ m/$re/m) {
-		my $curver = $1;
-		print <<eod;
+	my $re = __PACKAGE__;
+	$re =~ s/::/-/g;
+	$re .= '-(\d+\.\d+(_\d+)?)';
+	if ($rslt->content =~ m/$re/m) {
+	    my $curver = $1;
+	    print <<eod;
 Current version: $curver. Your version: $VERSION.
 eod
-		$curver =~ s/_//g;
-		(my $myver = $VERSION) =~ s/_//g;
-		if ($curver == $myver) {
-		    print <<eod;
-	You are running the latest version.
+	    $curver =~ s/_//g;
+	    (my $myver = $VERSION) =~ s/_//g;
+	    if ($curver == $myver) {
+		print <<eod;
+    You are running the latest version.
 eod
-		} elsif ($curver > $myver) {
-		    print <<eod;
-	You are running an obsolete version.
+	    } elsif ($curver > $myver) {
+		print <<eod;
+    You are running an obsolete version.
 eod
-		} else {
-		    print <<eod;
-	You are running a pre-release version.
-eod
-		}
 	    } else {
-		die <<eod;
-Error - Can not find version number in $url.
+		print <<eod;
+    You are running a pre-release version.
 eod
 	    }
+	} else {
+	    die <<eod;
+Error - Can not find version number in $url.
+eod
 	}
     }
 }
@@ -793,14 +773,8 @@ goto \&{$handler};
 #
 
 sub geocode_ca {
-$lwp_unavailable and die <<eod;
-Error - You need to install the LWP::UserAgent module if you wish to
-        use the geocode_ca command.
-eod
-$xml_parser_unavailable and die <<eod;
-Error - You need to install the XML::Parser module if you wish to use
-        the geocode_ca command.
-eod
+_load_module ('LWP::UserAgent', 'geocode_ca');
+_load_module ('XML::Parser', 'geocode_ca');
 
 my $set_loc = @_;
 my $loc = shift @_ || $parm{location};
@@ -843,10 +817,7 @@ eod
 #	The options are those documented with geocode().
 
 sub geocode_us {
-$soap_unavailable and die <<eod;
-Error - You need to install the SOAP::Lite module if you wish to use
-        the geocode_us command.
-eod
+_load_module ('SOAP::Lite', 'geocode_us');
 
 my $set_loc = @_;
 my $loc = shift @_ || $parm{location};
@@ -982,14 +953,8 @@ goto \&height_us;
 #	countries will be handled here as well.
 
 sub height_us {
-$soap_unavailable and die <<eod;
-Error - You need to install the SOAP::Lite module if you wish to use
-        the height command.
-eod
-$xml_parser_unavailable and die <<eod;
-Error - You need to install the XML::Parser module if you wish to use
-        the height command.
-eod
+_load_module ('SOAP::Lite', 'geocode_us');
+_load_module ('XML::Parser', 'height_us');
 
 my $set_pos = @_;
 my $lat = @_ ? shift @_ : $parm{latitude};
@@ -2131,7 +2096,7 @@ $cmdlgl{st} = [qw{end=s start=s verbose}];
 }
 
 sub st {
-my $st = _get_spacetrack ();
+my $st = _get_spacetrack (0, 'st');
 my $func = lc shift or die <<eod;
 Error - No Astro::SpaceTrack method specified.
 eod
@@ -2494,8 +2459,8 @@ _display_timing ();
 my $st;
 
 sub _get_spacetrack {
-$_[0] and return $st;
-die $spacetrack_unavailable if $spacetrack_unavailable;
+shift and return $st;
+_load_module ('Astro::SpaceTrack', @_);
 $st ||= 
     Astro::SpaceTrack->new (webcmd => $parm{webcmd}, filter => 1);
 }
@@ -2607,6 +2572,50 @@ eod
 	    sub {IO::String->new ($_[1])}
 	}
 }
+
+#	_load_module ($module_name)
+
+#	Loads the module if it has not yet been loaded. Dies if it
+#	can not be loaded.
+
+{	# Begin local symbol block
+
+    my %tried = ('.pm' => 'No module name specified.');
+    my %version;
+    BEGIN {
+       %version = (
+	    'Astro::SpaceTrack' => 0.017,
+	);
+    }
+
+    sub _load_module {
+	my $module = shift or
+	    die "Programming error - No module specified";
+	unless (exists $tried{$module}) {
+	    eval "use $module";
+	    if ($@) {
+		$tried{$module} = "$module must be installed";
+	    } elsif ($version{$module} &&
+		    (my $modver = $module->VERSION)) {
+		$modver =~ s/_//g;
+		if ($modver < $version{$module}) {
+		    $tried{$module} =
+			"$module version must be at least $version{$module}";
+		}
+	    }
+	    $tried{$module} = undef unless $tried{$module};
+	}
+	if ($tried{$module}) {
+	    die @_ ? <<eod : <<eod;
+Error - $tried{$module}
+        if you wish to use command @_.
+eod
+Error - $tried{$module}.
+eod
+	}
+    }
+
+}	# end local symbol block.
 
 #	$angle = _parse_angle ($string)
 
@@ -2734,9 +2743,7 @@ $rslt;
 #	We die on any error.
 
 sub _simbad {
-die <<eod if $simbad_unavailable;
-Error - Astro::SIMBAD::Query is not installed.
-eod
+_load_module ('Astro::SIMBAD::Query');
 my $query = shift;
 my $qo = Astro::SIMBAD::Query->new (Target => $query, Error => 0,
     Frame => 'FK5', Epoch => 2000, Equinox => 2000, URL => $parm{simbad_url});
