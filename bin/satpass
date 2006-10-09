@@ -35,6 +35,7 @@ my (
 	$io_string_unavailable,
     );
 $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
+my $xml_parser;
 
 
 ########################################################################
@@ -42,7 +43,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.010_02';
+our $VERSION = '0.010_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -786,8 +787,23 @@ foreach my $url (qw{http://geocoder.ca/ http://backup-geocoder.ca/}) {
     my $rslt = $ua->post  ($url,
 	{locate => $loc, geoit => 'XML'});
     next unless $rslt->is_success ();
-    my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'GeocoderCA');
-    my @rslt = $psr->parse ($rslt->content);
+    $cmdopt{debug} and warn "Debug - Parsing ", $rslt->content;
+
+    my @xml = _parse_xml ($rslt->content, 'geocode_ca');
+    @xml = @{_find_first_tag (\@xml, 'geodata')};
+    my @rslt;
+    my $point = {};
+    foreach (@xml) {
+	next unless ref $_ eq 'ARRAY';
+	next unless $_->[0] eq 'latt' || $_->[0] eq 'longt';
+	$point->{$_->[0]} = $_->[2];
+	if (exists $point->{latt} && exists $point->{longt}) {
+	    push @rslt, [$point->{latt}, $point->{longt}];
+	    $point = {};
+	}
+    }
+
+
     if (@rslt == 1) {
 	$parm{location} = $loc if $set_loc;
 	@parm{qw{latitude longitude}} = @{$rslt[0]};
@@ -954,7 +970,6 @@ goto \&height_us;
 
 sub height_us {
 _load_module ('SOAP::Lite', 'geocode_us');
-_load_module ('XML::Parser', 'height_us');
 
 my $set_pos = @_;
 my $lat = @_ ? shift @_ : $parm{latitude};
@@ -967,7 +982,6 @@ Debug - Getting elevation for latitude $lat, longitude $lon
         -source_layer $cmdopt{source_layer}
 	-retry_on_zero $cmdopt{retry_on_zero}
 eod
-local $USGSElevationData::debug = 1 if $cmdopt{debug};
 
 #	Manufacture a SOAP::Lite object appropriate to the installed
 #	version of SOAP::Lite.
@@ -990,19 +1004,27 @@ while (--$tries >= 0) {
     if ($cmdopt{all}) {
 	$rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
 		{xmlns => $xmlns}) =>
-	    SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
-	    SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
-	    SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
+	    SOAP::Data->new (name => 'X_Value', type => 'string',
+		value => $lon),
+	    SOAP::Data->new (name => 'Y_Value', type => 'string',
+		value => $lat),
+	    SOAP::Data->new (name => 'Elevation_Units', type => 'string',
+		value => 'METERS'),
 	    )->result;
 	}
       else {
 	$rslt = $soap->call (SOAP::Data->name ('getElevation')->attr (
 		{xmlns => $xmlns}) =>
-	    SOAP::Data->new (name => 'X_Value', type => 'string',  value => $lon),
-	    SOAP::Data->new (name => 'Y_Value', type => 'string', value => $lat),
-	    SOAP::Data->new (name => 'Source_Layer', type => 'string',  value => $cmdopt{source_layer} || -1),
-	    SOAP::Data->new (name => 'Elevation_Units', type => 'string', value => 'METERS'),
-	    SOAP::Data->new (name => 'Elevation_Only', type => 'string', value => 'false'),
+	    SOAP::Data->new (name => 'X_Value', type => 'string',
+		value => $lon),
+	    SOAP::Data->new (name => 'Y_Value', type => 'string',
+		value => $lat),
+	    SOAP::Data->new (name => 'Source_Layer', type => 'string', 
+		value => $cmdopt{source_layer} || -1),
+	    SOAP::Data->new (name => 'Elevation_Units', type => 'string',
+		value => 'METERS'),
+	    SOAP::Data->new (name => 'Elevation_Only', type => 'string',
+		value => 'false'),
 	    )->result;
 	}
 
@@ -1027,13 +1049,26 @@ while (--$tries >= 0) {
 	    }
 	if (my $endtag = join '', @endtag) {
 	    $cmdopt{debug} and
-		print "Warning - Supplying missing end tag $endtag\n";
+		warn "Warning - Supplying missing end tag $endtag\n";
 	    $rslt .= $endtag;
 	    }
 	$cmdopt{debug} and print 'Parsing: ', $rslt, "\n";
-	my $psr = XML::Parser->new (Style => 'Stream', Pkg => 'USGSElevationData');
-	$rslt = $psr->parse ($rslt);
-	last unless $rslt == 0;
+	my @data = _parse_xml ($rslt, 'height_us');
+	@data and do {
+	    @data = @{_find_first_tag (\@data, qw{
+		USGS_Elevation_Web_Service_Query
+		Elevation_Query})};
+	    $rslt = 0;
+	    foreach (@data) {
+		next unless ref $_ eq 'ARRAY';
+		next unless $_->[0] eq 'Elevation';
+		next unless looks_like_number ($_->[2]);
+		next if $_->[2] < -1e100;
+		$rslt = $_->[2];
+		last;
+	    }
+	    last unless $rslt == 0;
+	};
 	sleep 2 if $tries;
 	}
       else {
@@ -2295,6 +2330,27 @@ eod
     }
 }
 
+
+#	$subtree = _find_first_tag (\@tree, $tag, ...)
+#
+#	descends through the given parse tree, recursively finding the
+#	given tags, and returning the subtree thus identified. It dies
+#	if a tag cannot be found.
+
+sub _find_first_tag {
+    my $tree = shift;
+    TAG_LOOP:
+    foreach my $tag (@_) {
+	foreach my $branch (@$tree) {
+	    next unless ref $branch eq 'ARRAY' && $branch->[0] eq $tag;
+	    $tree = $branch;
+	    next TAG_LOOP;
+	}
+	die "Error - Tag <$tag> not found.\n";
+    }
+    $tree;
+}
+
 #	@suff = _find_suffixes ($prefix, $package)
 
 #	This subroutine traverses the symbol table of the given
@@ -2328,7 +2384,7 @@ sort @rslt;
 #	as seen from the station. If called with no arguments, it
 #	returns a suitable heading for this information.
 
-use Carp;
+## use Carp;
 sub _format_local_azel {
 @_ or return ' elev  azim   ';
 @_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
@@ -2589,30 +2645,35 @@ eod
     }
 
     sub _load_module {
-	my $module = shift or
+	my @module = ref $_[0] eq 'ARRAY' ? @{shift ()} : shift ||
 	    die "Programming error - No module specified";
-	unless (exists $tried{$module}) {
+	my @probs;
+	foreach my $module (@module) {
+	    $tried{$module} and do {
+		push @probs, $tried{$module};
+		next;
+	    };
+	    return $module if exists $tried{$module};
 	    eval "use $module";
 	    if ($@) {
-		$tried{$module} = "$module must be installed";
+		push @probs, (
+		    $tried{$module} = "$module must be installed");
 	    } elsif ($version{$module} &&
 		    (my $modver = $module->VERSION)) {
 		$modver =~ s/_//g;
 		if ($modver < $version{$module}) {
-		    $tried{$module} =
-			"$module version must be at least $version{$module}";
+		    push @probs, ($tried{$module} =
+			"$module version must be at least $version{$module}");
 		}
 	    }
-	    $tried{$module} = undef unless $tried{$module};
+	    unless ($tried{$module}) {
+		$tried{$module} = undef;
+		return $module;
+	    }
 	}
-	if ($tried{$module}) {
-	    die @_ ? <<eod : <<eod;
-Error - $tried{$module}
-        if you wish to use command @_.
-eod
-Error - $tried{$module}.
-eod
-	}
+	push @probs, "if you wish to use command @_" if @_;
+	my $pfx = 'Error -';
+	die map {my $x = "$pfx $_\n"; $pfx = ' ' x 7; $x} @probs;
     }
 
 }	# end local symbol block.
@@ -2699,9 +2760,64 @@ eod
     }
 }
 
+
 #	Reset the last time set.
+
 sub _parse_time_reset {$last_time_set = $initial_time_set}
+
 }	# End local symbol block.
+
+
+#	@tree = _parse_xml ($data, $command_name)
+
+#	Parses the given $data as XML, using either XML::Parser or
+#	XML::Parser::Lite, whichever is the first one that can be
+#	loaded. The $command_name argument is optional, and is used
+#	only for _load_module's error reporting.
+
+sub _parse_xml {
+    my $data = shift;
+
+    my $xml_parser = _load_module (
+	['XML::Parser', 'XML::Parser::Lite'], @_);
+
+    my $root;
+    my @tree;
+
+    my $psr = $xml_parser->new (
+	Handlers => {
+	    Init => sub {
+		$root = [];
+		@tree = ($root);
+	    },
+	    Start => sub {
+		shift;
+		my $tag = shift;
+		my $item = [$tag, {@_}];
+		push @{$tree[$#tree]}, $item;
+		push @tree, $item;
+	    },
+	    Char => sub {
+		push @{$tree[$#tree]}, $_[1];
+	    },
+	    End => sub {
+		my $tag = $_[1];
+		die <<eod unless @tree > 1;
+Error - Unmatched end tag </$tag>
+eod
+		die <<eod unless $tag eq $tree[$#tree][0];
+Error - End tag </$tag> does not match start tag <$tree[$#tree][0]>
+eod
+		pop @tree;
+	    },
+	    Final => sub {
+		_strip_empty_xml ($root);
+		@$root;
+	    },
+	});
+
+    $psr->parse ($data);
+}
 
 
 #	$quoted = _quoter ($string)
@@ -2821,6 +2937,27 @@ my $fn = shift or die <<eod;
 Error - No file name specified.
 eod
 _tilde_expand ($fn);
+}
+
+#	_strip_empty_xml (\@tree)
+#
+#	splices out anything in the tree that is not a reference and
+#	does not match m/\S/. It would be more natural to do this in
+#	the Char handler, but I can't figure out how to preserve the
+#	regular expression context XML::Parser::Lite needs.
+
+sub _strip_empty_xml {
+    my $ref = shift;
+    my $inx = @$ref;
+    while (--$inx >= 0) {
+	my $val = $ref->[$inx];
+	my $typ = ref $val;
+	if ($typ eq 'ARRAY') {
+	    _strip_empty_xml ($val);
+	} elsif (!$typ) {
+	    splice @$ref, $inx, 1 unless $val =~ m/\S/ms;
+	}
+    }
 }
 
 
@@ -3075,115 +3212,7 @@ $attr->{last_line};
 
 ########################################################################
 
-#	The parser code for the USGS data gets its own namespace
-#	to avoid conflicts with the main code.
-
-package USGSElevationData;
-
-use Scalar::Util qw{looks_like_number};
-
-our $debug;
-
-{	# Establish variable context
-
-my @data;
-my $current = {};
-my $tag;
-my $text = '';
-my %interest;
-BEGIN {
-    %interest = (
-	data_source => sub {$current = {}},
-	data_id => sub {},
-	elevation => sub {push @data, $current
-		if looks_like_number ($_[1]) && $_[1] > -1e6},
-	units => sub {}
-	);
-    }
-
-sub EndDocument {
-@data ? $data[0]{elevation} : undef;
-}
-
-sub EndTag {
-my ($tag) = $_ =~ m|</(.*)>|;
-my $hdlr = $interest{lc $tag} or return;
-$debug and print "Debug EndTag -- <$tag>$text</$tag>\n";
-$hdlr->($tag, $text);
-$current->{lc $tag} = $text;
-}
-
-sub StartDocument {@data = ()}
-
-sub StartTag {}
-
-sub Text {
-$text = $_;
-}
-
-}	# End of variable context
-
-########################################################################
-
-#	The parser code for the geocoder.ca data gets its own namespace
-#	to avoid conflicts with the main code.
-
-package GeocoderCA;
-
-use Scalar::Util qw{looks_like_number};
-
-our $debug;
-
-{	# Establish variable context
-my @data;
-my $current = {};
-my $tag;
-my $text = '';
-my %interest;
-my ($error, $description);
-$current = {};
-BEGIN {
-    %interest = (
-	code => sub {$error = $_[1]},
-	description => sub {$description = $_[1]},
-	latt => sub {},
-	longt => sub {push @data, $current
-		if looks_like_number ($_[1]);
-		$current = {};
-		}
-	);
-    }
-
-sub EndDocument {
-die <<eod if $error;
-Error - geocoder.ca error code $error
-        $description
-eod
-map {[$_->{latt}, $_->{longt}]} @data;
-}
-
-sub EndTag {
-my ($tag) = $_ =~ m|</(.*)>|;
-$tag = lc $tag;
-my $hdlr = $interest{$tag} or return;
-$debug and print "Debug EndTag -- <$tag>$text</$tag>\n";
-$current->{$tag} = $text;
-$hdlr->($tag, $text);
-}
-
-sub StartDocument {@data = ()}
-
-sub StartTag {}
-
-sub Text {
-$text = $_;
-}
-
-}	# End variable context
-
-########################################################################
-
-#	Ugly hack to the geocoder results, to hide the ugliness of
+#	Ugly hack to the geocoder.us results, to hide the ugliness of
 #	formatting them. I'm hoping this is fairly safe, since there
 #	is no mechanism that I know of to load methods into a namespace
 #	over a SOAP link. But I still confess the bad form of hammering
