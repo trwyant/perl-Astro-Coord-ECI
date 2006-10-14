@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.010_03';
+our $VERSION = '0.010_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2319,7 +2319,7 @@ eod
 #	if present, and clears it afterwards.
 
 sub _display_timing {
-if ($frame[$#frame]{timing}) {
+if (@frame && $frame[$#frame]{timing}) {
     my $end = time ();
     my $delta = $end - $frame[$#frame]{timing}{start};
     print <<eod;
