@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.010_05';
+our $VERSION = '0.010_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3034,7 +3034,11 @@ $rslt;
 	$1 ?
 	    ($crippled{$^O}) ?
 		die "Error - '~user' does not work under $^O\n" :
-		(getpwnam ($1))[7] :
+		do {
+		    my @info = getpwnam ($1) or
+			die "Error - No such user as '$1'.\n";
+		    $info[7]
+		} :
 	    $^O eq 'VMS' ? '/sys$login' : ($ENV{HOME} || $ENV{LOGDIR})%e;
     $rslt
     }
