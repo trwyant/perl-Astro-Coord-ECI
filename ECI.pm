@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.010';
+our $VERSION = '0.010_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -115,6 +115,7 @@ my %static = (	# The geoid, etc. Geoid get set later.
     angularvelocity => 7.292114992e-5,	# Of surface of Earth, 1998. Meeus, p.83
     debug => 0,
     diameter => 0,
+    horizon => deg2rad (20),
     refraction => 1,
     twilight => deg2rad (-6),
     );
@@ -1725,6 +1726,7 @@ $self;
     diameter => \&_set_value,
     ellipsoid => \&_set_reference_ellipsoid,
     flattening => \&_set_custom_ellipsoid,
+    horizon => \&_set_value,
     id => \&_set_id,
     inertial => undef,
     name => \&_set_value,
@@ -2051,6 +2053,15 @@ set to the flattening factor for the named ellipsoid. If you set this
 attribute, the ellipsoid attribute will become undefined.
 
 The default is appropriate to the default ellipsoid.
+
+=item horizon (numeric, radians)
+
+This attribute represents the distance the effective horizon is above
+the geometric horizon. It was added for the
+B<Astro::Coord::ECI::TLE::Iridium> class, on the same dubious logic
+that the L<twilight|/twilight> attribute was added.
+
+The default is the equivalent of 20 degrees.
 
 =item id (string)
 

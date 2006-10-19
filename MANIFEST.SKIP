@@ -7,6 +7,7 @@
 ^Changes_Development$
 CVS/
 ^foo$
+^iss.dat$
 ^Makefile$
 ^MANIFEST\.
 ^pm_to_blib$

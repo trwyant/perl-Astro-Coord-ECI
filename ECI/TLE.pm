@@ -102,15 +102,35 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 
-use base qw{Astro::Coord::ECI};
+use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{mod2pi thetag};
+use Astro::Coord::ECI::Utils qw{deg2rad mod2pi SECSPERDAY thetag};
 use Carp;
 use Data::Dumper;
-use POSIX qw{floor};
+use POSIX qw{floor strftime};
 use Time::Local;
+
+{	# Local symbol block.
+    my @const = qw{
+	PASS_EVENT_NONE
+	PASS_EVENT_SHADOWED
+	PASS_EVENT_LIT
+	PASS_EVENT_DAY
+	PASS_EVENT_RISE
+	PASS_EVENT_MAX
+	PASS_EVENT_SET
+	PASS_EVENT_APPULSE
+    };
+    our @EXPORT_OK = @const;
+    our %EXPORT_TAGS = (
+	all => \@EXPORT_OK,
+	constants => \@const
+    );
+}
+
+
 
 # The following constants are from section 12 (Users Guide, Constants,
 # and Symbols) of SpaceTrack Report No. 3, Models for Propagation of
@@ -199,11 +219,23 @@ eod
     meanmotion => 1,
     revolutionsatepoch => 0,
     debug => 0,
+    geometric => 0,	# Use geometric horizon for pass rise/set.
+    limb => 0,		# Whether lit when upper limb above horizon.
+    visible => 0,	# Pass() reports only illuminated passes.
+    appulse => 0,	# Maximum appulse to report.
+    interval => 0,	# Interval for pass() positions, if positive.
     ds50 => undef,	# Read-only
     tle => undef,	# Read-only
+    illum => \&_set_illum,	# Source of illumination.
     );
 my %static = (
+    appulse => deg2rad (10),	# Report appulses < 10 degrees.
+    geometric => 0,	# Use geometric horizon for pass rise/set.
     model => 'model',
+    illum => 'sun',
+    interval => 0,
+    limb => 1,
+    visible => 1,
     );
 my %model_attrib = (	# For the benefit of is_model_attrib()
     ds50 => 1,		# Read-only, but it fits the definition.
@@ -505,6 +537,447 @@ return @rslt;
 # implementation in FORTRAN, is available at
 # http://celestrak.com/NORAD/documentation/spacetrk.pdf
 
+=item @passes = $tle->pass ($station, $start, $end, \@sky)
+
+This method returns passes of the body over the given station between
+the given start end end times. The \@sky argument is background bodies
+to compute appulses with.
+
+All arguments except $station are optional, the defaults being
+
+ $start = time()
+ $end = $start + 7 days
+ \@sky = []
+
+The return is a list of passes, which may be empty. Each pass is
+represented by an anonymous hash containing the following keys:
+
+  {body} => Reference to body making pass;
+  {time} => Time of pass (culmination);
+  {events} => [the individual events of the pass].
+
+The individual events are also anonymous hashes, with each hash
+containing the following keys:
+
+  {azimuth} => Azimuth of event in radians;
+  {appulse} => {  # This is present only for PASS_EVENT_APPULSE;
+      {angle} => minimum separation in radians;
+      {body} => other body involved in appulse;
+      }
+  {elevation} => Elevation of event in radians;
+  {event} => Event code (PASS_EVENT_xxxx);
+  {illumination} => Illumination at time of event (PASS_EVENT_xxxx);
+  {range} => Distance to event in kilometers;
+  {time} => Time of event;
+
+The events are coded by the following manifest constants:
+
+  PASS_EVENT_NONE => dualvar (0, '');
+  PASS_EVENT_SHADOWED => dualvar (1, 'shdw');
+  PASS_EVENT_LIT => dualvar (2, 'lit');
+  PASS_EVENT_DAY => dualvar (3, 'day');
+  PASS_EVENT_RISE => dualvar (4, 'rise');
+  PASS_EVENT_MAX => dualvar (5, 'max');
+  PASS_EVENT_SET => dualvar (6, 'set');
+  PASS_EVENT_APPULSE => dualvar (7, 'apls');
+
+The dualvar function comes from Scalar::Util, and generates values
+which are numeric in numeric context and strings in string context. If
+Scalar::Util cannot be loaded the numeric values are returned.
+
+Illumination is represented by one of PASS_EVENT_SHADOWED,
+PASS_EVENT_LIT, or PASS_EVENT_DAY. The first two are calculated based on
+whether the illuminating body (i.e. the body specified by the 'illum'
+attribute) is above the horizon; the third is based on whether the Sun
+is higher than specified by the 'twilight' attribute, and trumps the
+other two (i.e. if it's day it doesn't matter whether the satellite is
+illuminated).
+
+Time resolution of the events is typically to the nearest second, except
+for appulses, which need to be calculated more closely to detect
+transits. The time reported for the event is the time B<after> the event
+occurred. For example, the time reported for rise is the earliest time
+the body is found above the horizon, and the time reported for set is
+the earliest time the body is found below the horizon.
+
+The operation of this method is affected by the following attributes,
+in addition to its arguments and the orbital elements associated with
+the object:
+
+  * appulse	# Maximum appulse to report
+  * geometric	# Use geometric horizon for pass rise/set
+  * horizon	# Effective horizon
+  * interval	# Interval for pass() positions, if positive
+  * illum	# Source of illumination.
+  * limb	# Whether lit when upper limb above horizon
+  * twilight	# Distance of illuminator below horizon
+  * visible	# Pass() reports only illuminated passes
+
+=cut
+
+BEGIN {
+    eval "use Scalar::Util qw{dualvar}";
+    $@ and *dualvar = sub {$_[0]};
+}
+
+use constant PASS_EVENT_NONE => dualvar (0, '');	# Guaranteed false.
+use constant PASS_EVENT_SHADOWED => dualvar (1, 'shdw');
+use constant PASS_EVENT_LIT => dualvar (2, 'lit');
+use constant PASS_EVENT_DAY => dualvar (3, 'day');
+use constant PASS_EVENT_RISE => dualvar (4, 'rise');
+use constant PASS_EVENT_MAX => dualvar (5, 'max');
+use constant PASS_EVENT_SET => dualvar (6, 'set');
+use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
+
+# *****	Promise Astro::Coord::ECI::TLE::Set that pass() only uses the
+# *****	public interface. That way pass() will get the Set object,
+# *****	and will work if we have more than one set of elements for the
+# *****	body, even if we switch element sets in the middle of a pass.
+
+*_nodelegate_pass = \&pass;
+
+sub pass {
+
+    my @sky = @{pop @_} if ref $_[$#_] eq 'ARRAY';
+    my $tle = shift;
+    my $sta = shift;
+    my $pass_start = shift || time ();
+    my $pass_end = shift || $pass_start + 7 * SECSPERDAY;
+    croak <<eod unless $pass_end >= $pass_start;
+Error - End time must be after start time.
+eod
+
+    my @lighting = (
+	PASS_EVENT_SHADOWED,
+	PASS_EVENT_LIT,
+	PASS_EVENT_DAY,
+    );
+    my $verbose = $tle->get ('interval');
+    my $pass_step = $verbose || 60;
+    my $horizon = $tle->get ('horizon');
+    my $effective_horizon = $tle->get ('geometric') ? 0 : $horizon;
+    my $twilight = $tle->get ('twilight');
+    my $want_lit = $tle->get ('limb');
+    my $want_visible = $tle->get ('visible');
+    my $want_exact = 1;			# Always want exact event timings.
+    my $appulse_dist = $tle->get ('appulse');
+    my $debug = $tle->get ('debug');
+
+#	We need the sun at some point.
+
+    my $sun = Astro::Coord::ECI::Sun->new ();
+    my $illum = $tle->get ('illum');
+
+#	Foreach body to be modelled
+
+    my $id = $tle->get ('id');
+    my $name = $tle->get ('name');
+    $name = $name ? " - $name" : '';
+
+    my $bm_start = time ();
+
+
+#	For each time to be covered
+
+    my $step = $pass_step;
+    my $bigstep = 5 * $step;
+    my $littlestep = $step;
+    my $end = $pass_end;
+    my $day = '';
+    my ($suntim, $rise) =
+	$sta->universal ($pass_start)->next_elevation ($sun, $twilight);
+    my @info;	# Information on an individual pass.
+    my @passes;	# Accumulated informtion on all passes.
+    my $visible;
+    my $culmination;	# Time of maximum elevation.
+    for (my $time = $pass_start; $time <= $end; $time += $step) {
+
+
+#	If the current sun event has occurred, handle it and calculate
+#	the next one.
+
+	if ($time >= $suntim) {
+	    ($suntim, $rise) =
+		$sta->universal ($suntim)->next_elevation ($sun, $twilight);
+	    }
+
+
+#	Skip if the sun is up.
+
+	next if $want_visible && !@info && !$rise && $time < $suntim;
+
+
+#	Calculate azimuth and elevation.
+
+	my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
+
+
+#	Adjust the step size based on how far the body is below the
+#	horizon.
+
+	$step = $elev < -.4 ? $bigstep : $littlestep;
+
+
+#	If the body is below the horizon, we check for accumulated data,
+#	handle it if any, clear it, and on to the next iteration.
+
+	if ($elev < $effective_horizon) {
+	    @info = () unless $visible;
+	    next unless @info;
+
+
+#	    We may have skipped part of the pass because it began in
+#	    daylight. Pick up that part now.
+
+	    while ($want_visible) {
+		my $time = $info[0]{time} - $step;
+		last if $elev < $effective_horizon;
+		my ($lat, $long, $alt) = $tle->geodetic;
+##!!		my $litup = ($tle->azel ($sun->universal ($time), 1))[1]
+##!!		    < $tle->dip () ? 0 :
+##!!		    $rise ? 1 : 2;
+		my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
+		$litup = 0 if $litup == 1 &&
+		    ($tle->azel ($illum->universal ($time), $want_lit))[1]
+		    < $tle->dip ();
+		unshift @info, {
+		    azimuth => $azm,
+		    elevation => $elev,
+		    event => PASS_EVENT_NONE,
+		    illumination => $lighting[$litup],
+		    range => $rng,
+		    time => $time,
+		    };
+		}
+
+
+#	    If we want the exact times of the events, compute them.
+
+	    if ($want_exact) {
+
+
+#		Compute exact rise, max, and set.
+
+		my @time = (
+		    [_pass_zero_in ($info[0]{time} - $step, $info[0]{time},
+			sub {($sta->azel ($tle->universal ($_[0])))[1] >=
+			$effective_horizon}), PASS_EVENT_RISE],
+		    [_pass_zero_in ($info[$#info]{time}, $info[$#info]{time}
+			    + $step,
+			sub {($sta->azel ($tle->universal ($_[0])))[1] <
+			$effective_horizon}), PASS_EVENT_SET],
+		    [_pass_zero_in ($info[0]{time}, $info[$#info]{time},
+			sub {($sta->azel ($tle->universal ($_[0])))[1] >
+				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
+				PASS_EVENT_MAX],
+		    );
+		$culmination = $time[2][0];
+		warn <<eod if $debug;
+
+Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]]} $time[0][1]
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[1][0]]} $time[1][1]
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
+eod
+
+#		Compute visibility changes.
+
+		my $last;
+		foreach my $evt (@info) {
+		    $last or next;
+		    $evt->{illumination} == $last->{illumination} and next;
+		    my ($suntim, $rise) =
+			$sta->universal ($last->{time})->
+			next_elevation ($sun, $twilight);
+		    push @time, [_pass_zero_in ($last->{time}, $evt->{time},
+			sub {
+##!!			    my $litup = ($tle->universal ($_[0])->
+##!!			    	azel ($sun->universal ($_[0]), $want_lit))[1] <
+##!!			    	$tle->dip () ? PASS_EVENT_SHADOWED :
+##!!				$_[1]{rise} ?
+##!!				    $_[0] < $_[1]{suntim} ?
+##!!					PASS_EVENT_LIT : PASS_EVENT_DAY :
+##!!				    $_[0] < $_[1]{suntim} ?
+##!!					PASS_EVENT_DAY : PASS_EVENT_LIT;
+##!!			    $litup == $evt->{illumination}
+			    my $litup = $_[0] < $suntim ?
+				2 - $rise : 1 + $rise;
+			    $litup = 0 if $litup == 1 &&
+				($tle->azel ($illum->universal ($_[0]),
+					$want_lit))[1] < $tle->dip ();
+			    $lighting[$litup] == $evt->{illumination}
+##!!			    }, {suntim => $suntim, rise => $rise}),
+			    }),
+			    $evt->{illumination}];
+			warn <<eod if $debug;
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]} $evt->{illumination}
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
+eod
+		    }
+		  continue {
+		    $last = $evt;
+		    }
+
+
+#		Compute nearest approach to background bodies
+
+#		Note (fortuitous discovery) the ISS travels 1.175
+#		degrees per second at the zenith, so I need better
+#		than 1 second resolution to detect a transit.
+
+		foreach my $body (@sky) {
+		    my $when = _pass_zero_in ($time[0][0], $time[1][0],
+			sub {$sta->angle ($body->universal ($_[0]),
+					$tle->universal ($_[0])) <
+				$sta->angle ($body->universal ($_[0] + 1),
+					$tle->universal ($_[0] + 1))},
+			undef, .1);
+		    my $angle = 
+			$sta->angle ($body->universal ($when),
+				$tle->universal ($when));
+		    next if $angle > $appulse_dist;
+		    push @time, [$when, PASS_EVENT_APPULSE,
+			appulse => {angle => $angle, body => $body}];
+		    warn <<eod if $debug;
+                $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]}
+eod
+		    }
+
+
+#		Clear the original data unless we're verbose.
+
+		@info = () unless $verbose;
+
+
+#		Generate the full data for the exact events.
+
+		my ($suntim, $rise);
+		warn "Contents of \@time: ", Dumper (\@time) if $debug;
+		foreach (sort {$a->[0] <=> $b->[0]} @time) {
+		    my @event = @$_;
+		    my $time = shift @event;
+		    ($suntim, $rise) =
+			$sta->universal ($time)->next_elevation ($sun, $twilight)
+			if !$suntim || $time >= $suntim;
+		    my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
+##!!		    my $litup = ($tle->azel ($sun->universal ($time),
+##!!			    $want_lit))[1] < $tle->dip () ? 0 :
+##!!			$rise ? 1 : 2;
+		    my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
+		    $litup = 0 if $litup == 1 &&
+			($tle->azel ($illum->universal ($time),
+				$want_lit))[1] < $tle->dip ();
+		    push @info, {
+			azimuth => $azm,
+			elevation => $elev,
+			event => @event,
+			illumination => $lighting[$litup],
+			range => $rng,
+			time => $time,
+			};
+		    }
+
+
+#		Sort the data, and eliminate duplicates.
+
+		my @foo = sort {$a->{time} <=> $b->{time}} @info;
+		$last = undef;
+		@info = ();
+		foreach my $evt (@foo) {
+		    push @info, $evt unless defined $last &&
+			$evt->{time} == $last->{time} &&
+			$evt->{event} != PASS_EVENT_APPULSE;
+		    $last = $evt;
+		    }
+		}
+
+
+#	    Figure out what the events are.
+
+	    unless ($want_exact) {
+		$info[0]{event} = PASS_EVENT_RISE;
+		$info[$#info]{event} = PASS_EVENT_SET;
+		$info[$#info]{elevation} = 0 if $info[$#info]{elevation} < 0;
+					# Because -.6 degrees (which we
+					# get because no atmospheric
+					# refraction below the horizon)
+					# looks funny.
+		my ($last, $max);
+		foreach my $pt (@info) {
+		    $last or next;
+		    $last->{elevation} > $pt->{elevation} and $max ||= $last;
+		    $last->{illumination} != $pt->{illumination} and
+			$pt->{event} ||= $pt->{illumination};
+		    }
+		continue {
+		    $last = $pt;
+		    }
+		$max and do {
+		    $max->{event} = PASS_EVENT_MAX;
+		    $culmination = $max->{time};
+		    };
+		}
+
+
+#	    Record the data for the pass.
+
+	    confess <<eod unless defined $culmination;
+Programming error - \$culmination undefined at end of pass calculation.
+eod
+	    push @passes, {
+		body => $tle,
+		events => [@info],
+		time => $culmination,
+		};
+
+#	    Clear out the data.
+
+	    @info = ();
+	    $visible = 0;
+	    $culmination = undef;
+	    next;
+	    }
+
+
+#	Calculate whether the body is illuminated.
+
+##!!	my $litup = ($tle->azel ($sun->universal ($time), $want_lit))[1] <
+##!!	    $tle->dip () ? 0 :
+##!!	    $rise ? 1 : 2;
+	my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
+	$litup = 0 if $litup == 1 &&
+	    ($tle->azel ($illum->universal ($time),
+		    $want_lit))[1] < $tle->dip ();
+	$visible ||= ($litup == 1 || !$want_visible) && $elev > $horizon;
+
+
+#	Accumulate results.
+
+	push @info, {
+	    azimuth => $azm,
+	    elevation => $elev,
+	    event => PASS_EVENT_NONE,
+	    illumination => $lighting[$litup],
+	    range => $rng,
+	    time => $time,
+	    };
+
+	}
+    @passes;
+
+}
+
+sub _pass_zero_in {
+my ($begin, $end, $test, $usrdat, $limit) = @_;
+$limit ||= 1;
+while ($end - $begin > $limit) {
+    my $mid = $limit >= 1 ?
+	floor (($begin + $end) / 2) :
+	($begin + $end) / 2;
+    my $rslt = $test->($mid, $usrdat);
+    ($begin, $end) = $rslt ? ($begin, $mid) : ($mid, $end);
+    }
+$end;
+}
 
 =item $seconds = $tle->period ();
 
@@ -2908,6 +3381,40 @@ $self->universal (pop @_);
 $self->eci (@_);
 }
 
+#	_set_illum
+
+#	Setting the {illum} attribute is complex enough that the code
+#	got pulled out into its own subroutine. As with all mutators,
+#	the arguments are the object reference, the attribute name, and
+#	the new value. The values 'sun' and 'moon' are special-cased.
+{	# Begin local symbol block.
+    my %special = (
+	sun => 'Astro::Coord::ECI::Sun',
+	moon => 'Astro::Coord::ECI::Moon',
+	);
+    my %loaded;
+    sub _set_illum {
+    my $body = $_[2];
+    $body = $special{$body} if $special{$body};
+    ref $body or $loaded{$body} or do {
+	eval "use $body";
+	$@ && croak <<eod; 
+Error - Can not load $body.
+$@;
+eod
+	$loaded{$body} = 1;
+	};
+    UNIVERSAL::isa ($body, 'Astro::Coord::ECI') or croak <<eod;
+Error - The illuminating body must be an Astro::Coord::ECI, or a
+        subclass thereof, or the words 'sun' or 'moon', which are
+	handled as special cases. You tried to use a
+	'@{[ref $body || $body]}'.
+eod
+    ref $body or $body = $body->new ();
+    $_[0]->{$_[1]} = $body;
+    }
+}	# End local symbol block.
+
 1;
 
 __END__
@@ -2924,7 +3431,7 @@ parse - if the attribute is set by the parse() method;
 
 read-only - if the attribute is read-only;
 
-static - if the attribute may be set on the class.
+static - if the attribute may be set on the class as well as an object.
 
 Note that the orbital elements provided by NORAD are tweaked for use by
 the models implemented by this class. If you plug them in to the
@@ -2932,6 +3439,13 @@ same-named parameters of other models, your mileage may vary
 significantly.
 
 =over
+
+=item appulse (numeric, static)
+
+This attribute contains the angle of the widest appulse to be reported
+by the pass() method, in radians.
+
+The default is equivalent to 10 degrees.
 
 =item argumentofperigee (numeric, parse)
 
@@ -2979,9 +3493,40 @@ also modifies the ds50 attribute.
 This attribute contains the first time derivative of the mean
 motion, in radians per minute squared.
 
+=item geometric (boolean, static)
+
+Tells the pass() method whether to calculate rise and set relative
+to the geometric horizon (if true) or the horizon attribute (if
+false)
+
+The default is 0 (i.e. false).
+
 =item id (numeric, parse)
 
 This attribute contains the NORAD SATCAT catalog ID.
+
+=item illum (string, static)
+
+This attribute specifies the source of illumination for the body.
+You may specify the class name 'Astro::Coord::ECI' or the name
+of any subclass, or you may specify an object of the appropriate
+class. When you access this attribute, you get an object.
+
+In addition to the full class names, you may specify 'sun' or
+'moon' instead of 'Astro::Coord::ECI::Sun' or
+'Astro::Coord::ECI::Moon'. The value 'sun' (or something equivalent)
+is probably the only useful value, but I know people have looked into
+Iridium 'Moon flares', so I exposed the attribute.
+
+The default is 'sun'.
+
+=item interval (numeric, static)
+
+If positive, this attribute specifies that the pass() method return
+positions at this interval (in seconds) across the sky. The associated
+event code of these will be PASS_EVENT_NONE.
+
+The default is 0.
 
 =item inclination (numeric, parse)
 
@@ -2996,6 +3541,14 @@ needed) giving the last two digits of the launch year (in the range
 the order of the launch within the year, and one to three letters
 designating the "part" of the launch, with payload(s) getting the
 first letters, and spent boosters, debris, etc getting the rest.
+
+=item limb (boolean, static)
+
+This attribute tells the parse() method how to compute illumination
+of the body. If true, it is computed based on the upper limb of the
+source of illumination; if false, it is based on the center.
+
+The default is 1 (i.e. true).
 
 =item meananomaly (numeric, parse)
 
@@ -3044,6 +3597,12 @@ motion, in radians per minute cubed.
 This attribute contains the input data used by the parse() method to
 generate this object.
 
+=item visible (boolean, static)
+
+This attribute tells the pass() method whether to report only passes
+which are illuminated (if true) or all passes (if false).
+
+The default is 1 (i.e. true).
 
 =back
 

@@ -9,6 +9,7 @@ ECI/TLE.pm
 ECI/TLE/Set.pm
 ECI/Utils.pm
 eg/almanac
+eg/iss
 eg/README
 eg/sh_data
 eg/sh_script

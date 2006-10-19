@@ -9,7 +9,7 @@ use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Star;
-use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE qw{:constants};
 use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::Utils qw{:all};
 
@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.010_06';
+our $VERSION = '0.010_07';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1312,13 +1312,154 @@ if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
 
 }
 
+########################################################################
+#
+#	pass () - Predict passes over the observer's location, using
+#		the Astro::Coord::ECI::TLE->pass() method.
+#
+
+
+{	# Begin local symbol block
+
+    my @event_name;
+    BEGIN {
+	foreach my $code (PASS_EVENT_NONE, PASS_EVENT_SHADOWED,
+	    PASS_EVENT_LIT, PASS_EVENT_DAY, PASS_EVENT_RISE,
+	    PASS_EVENT_MAX, PASS_EVENT_SET) {
+	    my $val = ucfirst $code;
+	    $event_name[$code] = sub {$val};
+	}
+    $event_name[PASS_EVENT_APPULSE] =
+	sub {sprintf '%.1f from %s', rad2deg ($_[0]{appulse}{angle}),
+	    $_[0]{appulse}{body}->get ('name') ||
+	    $_[0]{appulse}{body}->get ('id')};
+    }
+
+    sub pass {
+
+#	Initialize.
+
+    my $lcfmt = \&{"_format_local_$parm{local_coord}"};
+
+    my $pass_start = _parse_time (shift || 'today noon');
+    my $pass_end = _parse_time (shift || '+7');
+    $pass_start >= $pass_end and die <<eod;
+Error - End time must be after start time.
+eod
+    _check_station ();
+    @bodies or die <<eod;
+Error - Can not calculate satellite pass without loading at least one
+        body.
+eod
+    my $pass_step = shift || 60;
+    my $timlen = max (
+	length (strftime ($parm{time_format}, 59, 59, 23, 31, 11, 2000)),
+	length (strftime ($parm{time_format}, 59, 59, 11, 31, 11, 2000)),
+	);
+my $header = <<eod;
+
+%s%s
+
+time@{[' ' x ($timlen - 4)]} @{[$lcfmt->()]} latitude longitude altitude
+
+eod
+
+
+#	Decide which model to use.
+
+    my $model = $parm{model};
+
+
+#	Define the observing station.
+
+    my $sta = Astro::Coord::ECI->new (
+	    refraction => 1,
+	    name => 'Station',
+	    )
+	->geodetic (
+	    deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
+	    $parm{height} / 1000);
+    my $horizon = deg2rad ($parm{horizon});
+    my $appulse = deg2rad ($parm{appulse});
+
+#	Print the header
+
+    print _format_location ();
+
+#	Tell aggregate() how to work.
+
+    local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
+    if ($cmdopt{debug}) {
+	foreach my $tle (_aggregate ()) {
+	    print join ("\t", $tle->get ('id'), $tle->get ('name'),
+		ref $tle), "\n";
+	    }
+	}
+
+#	Foreach body to be modelled
+
+    foreach my $tle (_aggregate ()) {
+
+	$tle->set (
+	    appulse => $appulse,
+	    debug => $parm{debug},
+	    geometric => $parm{geometric},
+	    horizon => $horizon,
+	    interval => $opt{verbose} ? $pass_step : 0,
+	    limb => $parm{lit},
+	    model => $model,
+	    twilight => $parm{_twilight},
+	    visible => $parm{visible},
+	);
+
+	my @passes = $tle->pass (
+	    $sta, $pass_start, $pass_end, \@sky) or next;
+
+	my $id = $tle->get ('id');
+	my $name = $tle->get ('name') || '';
+	$name = " - $name" if $name;
+	my $hdrdone;
+	my $last_date = '';
+	foreach my $pass (@passes) {
+	    if ($hdrdone++) {print "\n"} else {printf $header, $id, $name};
+	    foreach my $event (@{$pass->{events}}) {
+		my $time = $event->{time};
+		my $date = strftime ($parm{date_format}, localtime $time);
+		if ($date ne $last_date) {
+		    print "$date\n";
+		    $last_date = $date;
+		}
+		$tle->universal ($time);
+		my ($lat, $long, $alt) = $tle->geodetic ();
+		printf LINFMT, strftime ($parm{time_format}, localtime (
+			floor ($time + .5))),
+		    $lcfmt->($sta, $tle),
+		    rad2deg ($lat), rad2deg ($long), $alt,
+		    $event_name[$event->{illumination}]->($event),
+		    $event_name[$event->{event}]->($event),
+		    ;
+		if ($event->{appulse} && $parm{background}) {
+		    my $body = $event->{appulse}{body};
+		    my ($lat, $long, $alt) = $body->geodetic;
+		    printf BGFMT, strftime ($parm{time_format}, localtime $time),
+			$lcfmt->($sta, $body),
+			rad2deg ($lat), rad2deg ($long),
+			$body->get ('name') || $body->get ('id') || '';
+		    }
+		}
+	    }
+	}
+    }
+}	# End local symbol block
+
 
 ########################################################################
 #
-#	pass () - Predict passes over the observer's location.
+#	pass_old () - Predict passes over the observer's location.
+#			(original version).
 #
 
-sub pass {
+sub pass_old {
 
 #	Initialize.
 
@@ -1682,7 +1823,6 @@ while ($end - $begin > $limit) {
     }
 $end;
 }
-
 
 ########################################################################
 #

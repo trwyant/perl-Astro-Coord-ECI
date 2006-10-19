@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.005';
+our $VERSION = '0.005_02';
 
 if ($skip) {
     skip ($skip, 1);
@@ -30,6 +30,7 @@ altazimuth
 angulardiameter
 angularvelocity
 appulse
+appulses
 argumentofperigee
 Astro
 au
@@ -60,6 +61,7 @@ distsq
 Dominik
 ds
 du
+dualvar
 ECEF
 ECI
 eci

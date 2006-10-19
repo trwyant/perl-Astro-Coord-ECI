@@ -10,6 +10,12 @@ almanac
     and height (meters) on the command. The option -help gets you
     brief help.
 
+iss
+    This Perl script uses Astro::SpaceTrack (not included) to download
+    orbital data from http://spaceflight.nasa.gov/realdata/elements/ and
+    predict visibility for the next week from the given location, which
+    is hard-coded as 80 Wellington Street Ottawa Ontario.
+
 sh_script
     This shell script executes the satpass Perl script (which comes with
     this distribution) passing it the commands in sh_data, which is
