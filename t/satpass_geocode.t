@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 use t::Satpass;
 
@@ -53,6 +53,8 @@ at latitude 38.898748 (Y_value) longitude -77.037684 (X_value) by hand.
 eod
 -data set height 16.68
 -test fetch height in continental U.S. from http://gisdata.usgs.gov/
+# Make the above -todo since fails for server errors sometimes.
+-todo
 
 set country ca
 set location '80 Wellington Street Ottawa ON'
@@ -74,7 +76,5 @@ eod
 -test fetch height in Canada from http://gisdata.usgs.gov/
 # Make the above -todo since it seems to fail so often.
 -todo
-
-# -todo	# This applies to the previous test.
 
 -skip ''
