@@ -14,16 +14,12 @@ iss
     This Perl script uses Astro::SpaceTrack (not included) to download
     orbital data from http://spaceflight.nasa.gov/realdata/elements/ and
     predict visibility for the next week from the given location, which
-    is hard-coded as 80 Wellington Street Ottawa Ontario.
+    is hard-coded as 80 Wellington Street Ottawa Ontario Canada.
 
 sh_script
     This shell script executes the satpass Perl script (which comes with
-    this distribution) passing it the commands in sh_data, which is
-    described below.
-
-sh_data
-    This file contains the commands fed to the satpass script by
-    sh_script. It downloads International Space Station data from
-    NASA's manned spaceflight center and predicts visibility
-    of the ISS from 1600 Pennsylvania Avenue, Washington DC, USA.
-
+    this distribution) passing it commands from a 'here document.' These
+    commands download International Space Station data from
+    http://spaceflight.nasa.gov/realdata/elements/ and predict
+    visibility at the current time from 1600 Pennsylvania Avenue,
+    Washington DC, USA.
