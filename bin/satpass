@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.010_08';
+our $VERSION = '0.010_09';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3163,26 +3163,16 @@ $rslt;
 
 #	Perform tilde expansion on the given filename if needed.
 
-{	# Begin local symbol block;
-
-    my %crippled;
-    BEGIN {
-	%crippled = map {$_ => 1} qw{MSWin32 dos MacOS};
-    }
-
-    sub _tilde_expand {
+sub _tilde_expand {
     (my $rslt = $_[0] || '') =~ s%^~(\w*)%
-	$1 ?
-	    ($crippled{$^O}) ?
-		die "Error - '~user' does not work under $^O\n" :
-		do {
-		    my @info = getpwnam ($1) or
-			die "Error - No such user as '$1'.\n";
-		    $info[7]
-		} :
-	    $^O eq 'VMS' ? '/sys$login' : ($ENV{HOME} || $ENV{LOGDIR})%e;
+	$1 ? do {
+	    my @info = eval {getpwnam ($1)} or die $@ ?
+		"Error - '~user' does not work under $^O.\n" :
+		"Error - No such user as '$1'.\n";
+	    $info[7]
+	} :
+	$^O eq 'VMS' ? '/sys$login' : ($ENV{HOME} || $ENV{LOGDIR})%e;
     $rslt
-    }
 }
 
 #	$time = _time ()
