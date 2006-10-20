@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.010_07';
+our $VERSION = '0.010_08';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -172,6 +172,7 @@ $inifil = $^O eq 'VMS' ? "SYS\$LOGIN:$inifil" :
 
 
 sub _format_location;	# Predeclare, so I do not need explicit STDOUT.
+sub _time ();		# Predeclare, since I intend to redefine.
 
 #	The problem we're solving with the following is that
 #	Date::Manip assumes an epoch of midnight January 1 1970, but
@@ -433,7 +434,7 @@ eod
 
     $frame[$#frame]{timing} = {
 	command => $buffer,
-	start => time (),
+	start => _time (),
     } if $cmdopt{time};
 
 #	If our command is a macro, build an input stream from it, and
@@ -1534,7 +1535,7 @@ foreach my $tle (_aggregate ()) {
     $name = $name ? " - $name" : '';
     my $hdrdone = 0;
 
-    my $bm_start = time ();
+    my $bm_start = _time ();
 
 
 #	For each time to be covered
@@ -1794,14 +1795,14 @@ eod
 
 #	Compute and display stats.
 
-    my $bm_end = time ();
+    my $bm_end = _time ();
     $parm{timing} and print <<eod;
 
 Benchmark info:
       Body: $id$name
      Start: @{[strftime '%d-%b-%Y %H:%M:%S', localtime $bm_start]}
        End: @{[strftime '%d-%b-%Y %H:%M:%S', localtime $bm_end]}
-   Elapsed: @{[$bm_end - $bm_start]} seconds
+   Elapsed: @{[_time_trim ($bm_end - $bm_start)]} seconds
 Full iterations: $full_iter
   Time per: @{[$full_iter ? ($bm_end - $bm_start) / $full_iter : 'undefined']}
 Iterations: $iterations
@@ -2460,8 +2461,8 @@ eod
 
 sub _display_timing {
 if (@frame && $frame[$#frame]{timing}) {
-    my $end = time ();
-    my $delta = $end - $frame[$#frame]{timing}{start};
+    my $end = _time ();
+    my $delta = _time_trim ($end - $frame[$#frame]{timing}{start});
     print <<eod;
 Information - $frame[$#frame]{timing}{command}
         elapsed time is $delta seconds.
@@ -3184,6 +3185,25 @@ $rslt;
     }
 }
 
+#	$time = _time ()
+
+#	The first time this is called, it attempts to load Time::HiRes.
+#	If it succeeds it redefines itself to Time::HiRes::time if that
+#	exists. Otherwise it redefines itself to CORE::time. Either
+#	way it then transfers control to its redefined self.
+
+sub _time () {
+    eval "use Time::HiRes";
+    no warnings qw{redefine};
+    if (my $code = Time::HiRes->can ('time')) {
+	*_time = $code;
+	*_time_trim = sub {sprintf '%.3f', $_[0]};
+    } else {
+	*_time = \&CORE::time;
+	*_time_trim = sub {$_[0]};
+    }
+    goto &_time;
+}
 
 ########################################################################
 
