@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.006_01';
+our $VERSION = '0.006_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -320,13 +320,11 @@ sub get {
 my $self = shift;
 my $name = shift;
 if (ref $self) {
-##    exists $attrib{$name} or croak "Attribute $name does not exist.";
     exists $attrib{$name} or return $self->SUPER::get ($name);
     return $self->{$name};
     }
   else {
     exists $static{$name} or
-##	croak "Static attribute $name does not exist.";
 	return $self->SUPER::get ($name);
     return $static{$name};
     }
@@ -733,9 +731,6 @@ eod
 		my $time = $info[0]{time} - $step;
 		last if $elev < $effective_horizon;
 		my ($lat, $long, $alt) = $tle->geodetic;
-##!!		my $litup = ($tle->azel ($sun->universal ($time), 1))[1]
-##!!		    < $tle->dip () ? 0 :
-##!!		    $rise ? 1 : 2;
 		my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
 		$litup = 0 if $litup == 1 &&
 		    ($tle->azel ($illum->universal ($time), $want_lit))[1]
@@ -774,9 +769,12 @@ eod
 		$culmination = $time[2][0];
 		warn <<eod if $debug;
 
-Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]]} $time[0][1]
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[1][0]]} $time[1][1]
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
+Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
+		    ]} $time[0][1]
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[1][0]
+		    ]} $time[1][1]
+                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]
+		    ]} $time[2][1]
 eod
 
 #		Compute visibility changes.
@@ -790,22 +788,12 @@ eod
 			next_elevation ($sun, $twilight);
 		    push @time, [_pass_zero_in ($last->{time}, $evt->{time},
 			sub {
-##!!			    my $litup = ($tle->universal ($_[0])->
-##!!			    	azel ($sun->universal ($_[0]), $want_lit))[1] <
-##!!			    	$tle->dip () ? PASS_EVENT_SHADOWED :
-##!!				$_[1]{rise} ?
-##!!				    $_[0] < $_[1]{suntim} ?
-##!!					PASS_EVENT_LIT : PASS_EVENT_DAY :
-##!!				    $_[0] < $_[1]{suntim} ?
-##!!					PASS_EVENT_DAY : PASS_EVENT_LIT;
-##!!			    $litup == $evt->{illumination}
 			    my $litup = $_[0] < $suntim ?
 				2 - $rise : 1 + $rise;
 			    $litup = 0 if $litup == 1 &&
 				($tle->azel ($illum->universal ($_[0]),
 					$want_lit))[1] < $tle->dip ();
 			    $lighting[$litup] == $evt->{illumination}
-##!!			    }, {suntim => $suntim, rise => $rise}),
 			    }),
 			    $evt->{illumination}];
 			warn <<eod if $debug;
@@ -859,9 +847,6 @@ eod
 			$sta->universal ($time)->next_elevation ($sun, $twilight)
 			if !$suntim || $time >= $suntim;
 		    my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
-##!!		    my $litup = ($tle->azel ($sun->universal ($time),
-##!!			    $want_lit))[1] < $tle->dip () ? 0 :
-##!!			$rise ? 1 : 2;
 		    my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
 		    $litup = 0 if $litup == 1 &&
 			($tle->azel ($illum->universal ($time),
@@ -940,9 +925,6 @@ eod
 
 #	Calculate whether the body is illuminated.
 
-##!!	my $litup = ($tle->azel ($sun->universal ($time), $want_lit))[1] <
-##!!	    $tle->dip () ? 0 :
-##!!	    $rise ? 1 : 2;
 	my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
 	$litup = 0 if $litup == 1 &&
 	    ($tle->azel ($illum->universal ($time),
@@ -2535,30 +2517,6 @@ goto &_convert_out;
 }
 
 
-##=item $value = $tle->thetag($time);
-
-##This method returns the Greenwich hour angle of the mean equinox
-##at the given time. The time defaults to the epoch of the given
-##object. The object itself is unaffected - this method is exposed
-##for convenience and for testing purposes.
-
-##This method can also be called as a "static" method (i.e. as
-##Astro::Coord::ECI::TLE->thetag (time)). In this case the time may NOT be
-##defaulted, and no effort has been made to make the error pretty.
-
-##=cut
-
-##sub thetag {
-##my $self = shift;
-##my $rslt = mod2pi (1.72944494 + 6.3003880987 * (@_ ?
-##	$self->ds50 ($_[0]) :
-##	($self->{ds50} ||= $self->ds50 ())));
-##ref $self && $self->{debug} and print <<eod;
-##Debug thetag (@{[@_ ? $_[0] : $self->{epoch}]}) = $rslt
-##eod
-##$rslt;
-##}
-
 =item $self->time_set();
 
 This method sets the coordinate of the object to whatever is
@@ -2621,7 +2579,6 @@ sub _dpinit {
 my ($self, $eqsq, $siniq, $cosiq, $rteqsq, $a0, $cosq2, $sinomo,
 	$cosomo, $bsq, $xlldot, $omgdt, $xnodot, $xnodp) = @_;
 
-##my $thgr = $self->thetag ($self->{epoch});
 my $thgr = thetag ($self->{epoch});
 my $eq  =  $self->{eccentricity};
 my $xnq  =  $xnodp;
@@ -2631,7 +2588,6 @@ my $xmao = $self->{meananomaly};
 my $xpidot = $omgdt + $xnodot;
 my $sinq  =  sin ($self->{rightascension});
 my $cosq  =  cos ($self->{rightascension});
-###	my $omegaq  =  $self->{argumentofperigee};
 
 
 #*	Initialize lunar & solar terms
@@ -3194,7 +3150,6 @@ if ($dpsp->{isynfl}) {
 	3 * $dpsp->{del3} * cos (3 * ($dpsp->{xli} - $dpsp->{fasx6}));
     }
   else {
-###    my $xomi = $omegaq + $omgdt * $dpsp->{atime};
     my $xomi = $self->{argumentofperigee} +
 	$dpsp->{omgdt} * $dpsp->{atime};
     my $x2omi = $xomi + $xomi;
