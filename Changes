@@ -191,4 +191,23 @@
     Makefile.PL
       Add explicit PL_FILES => {}, to prevent old versions from
         trying to execute 'perl Build.PL Build'.
-
+0.011
+  ECI.pm 0.011
+    Add horizon attribute.
+  ECI/TLE.pm
+    Add pass() method and supporting attributes.
+  bin/satpass
+    Add check_version()
+    Defer loading of optional modules to speed startup.
+    Rewrite XML parsing to use either XML::Parser or XML::Parser::Lite,
+      with XML::Parser being preferred.
+    Fix fatal error when running off the end of the top-level command
+      script.
+    Support ~user in filenames.
+    Convert pass() to use Astro::Coord::ECI::TLE->pass(). Old code
+      remains as pass_old(), strongly deprecated.
+    Use Time::HiRes for timing, if that is available.
+    Document status of pass_old, 'timing' parameter (strongly
+      deprecated) and the SIMBAD situation.
+  eg/iss
+    New example to demonstrate Astro::Coord::ECI::TLE->pass().

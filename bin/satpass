@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.010_10';
+our $VERSION = '0.011';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -4295,7 +4295,7 @@ Alasdair Allan (the author of Astro::SIMBAD), this module will not be
 updated, with future work going into Astro::Catalog. The latter is a
 much heavier-weight module, and I am reluctant to use it for this
 application. I am corresponding with both Dr. Allan and the University
-of Strasburg to try to come to a mutually satisfactory resolution, but
+of Strasbourg to try to come to a mutually satisfactory resolution, but
 there may well be a hiatus in functionality. Possibly a long one.
 B<Caveat user.>
 
@@ -5087,18 +5087,32 @@ or even
 =head1 CHANGES
 
 The following changes have been introduced into this script since
-version 0.009:
+version 0.010:
 
-- 'macro' command options -brief, -delete, and -list added. The
--delete option is the preferred way to delete macros; doing this
-by giving the name but no definition is deprecated.
+- Add the check_version command, in preparation for perhaps splitting
+the Astro::Coord::ECI modules off into their own package.
 
-- The -time option now works on macro and source commands.
+- Defer loading of optional modules to speed startup. This was good for
+about a 25-30% reduction on my machine.
 
-- By setting the error_out parameter true, you can now cause
-macros and source scripts to abort on error. This will return
-you to the command prompt if standard in is a terminal, or
-terminate the script otherwise.
+- Rewrite XML parsing to use either XML::Parser or XML::Parser::Lite,
+with XML::Parser being preferred. This way people who don't have
+XML::Parser can still get their XML parsed.
+
+- Fix fatal error when running off the end of the top-level command
+script. Top-level end-of-file is not completely equivalent to 'exit'.
+
+- Support ~user in filenames, providing the underlying operating system
+supports getpwnam() (which MSWin32 does not, at least according to
+perlport.) An invalid user name is an error.
+
+- Convert the pass command to use Astro::Coord::ECI::TLE->pass(). Old
+code remains as pass_old, strongly deprecated.
+
+- Use Time::HiRes for timing, if that is available.
+
+- Document status of pass_old, 'timing' parameter (strongly deprecated)
+and the SIMBAD situation.
 
 For prior changes, see F<Changes>.
 
