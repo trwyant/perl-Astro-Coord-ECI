@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.010_09';
+our $VERSION = '0.010_10';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3444,6 +3444,20 @@ macros can be defined to issue frequently-used commands.
  satpass> # We're done
  satpass> exit
 
+=head1 NOTICE
+
+With the creation of Astro::Coord::ECI::TLE->pass (), this script
+delegates the pass calculations to that method. The old pass calculation
+is still present as pass_old, but use of this is strongly deprecated as
+it will disappear very soon, perhaps in the next release.
+
+The use of the L<timing|/timing> parameter is deprecated in favor of the
+-timing command qualifier. The parameter will probably disappear when
+pass_old does, since this is the only use.
+
+The 'sky lookup' functionality will probably stop working shortly. See
+the L<sky|/sky> documentation for explanation, status, and prognosis.
+
 =for comment help syntax-highlighting editor "
 
 =head1 DETAILS
@@ -4275,11 +4289,14 @@ For example,
  sky add 'Theta Orionis' 05:35.3 -05d24 10000.00 0 0 0
 
 B<The 'lookup' function should be considered experimental.> SIMBAD 4
-was scheduled to be out January 2006, and (according to its
-announcement at L<http://simbad.u-strasbg.fr/simbad4.htx>) B<will
-probably break this function.> If this function gets broken, it may be
-upgraded, replaced with a more expeditious data source, or retracted
-completely; the author makes no promises of which, or of timing.
+is in public beta (see L<http://simbad.u-strasbg.fr/simbad4.htx>) and
+B<will break this function.> As I understand the position of Dr.
+Alasdair Allan (the author of Astro::SIMBAD), this module will not be
+updated, with future work going into Astro::Catalog. The latter is a
+much heavier-weight module, and I am reluctant to use it for this
+application. I am corresponding with both Dr. Allan and the University
+of Strasburg to try to come to a mutually satisfactory resolution, but
+there may well be a hiatus in functionality. Possibly a long one.
 B<Caveat user.>
 
 =for html <a name="source"></a>
