@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.011';
+our $VERSION = '0.011_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1880,7 +1880,7 @@ $self->{debug} and do {
 
 {
     my $inx = 0;
-    $Data::Dumper::Terse = 1;
+    local $Data::Dumper::Terse = 1;
     foreach (@$args) {
 	croak <<eod unless defined $_;
 Error - @{[ (caller (1))[3] ]} argument $inx is undefined.
