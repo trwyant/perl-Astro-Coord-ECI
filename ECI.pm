@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.011_01';
+our $VERSION = '0.011_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -313,7 +313,7 @@ if ($self->{inertial}) {
 
     $azimuth = mod2pi (atan2 ($lcly, -$lclx));
     $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] + $delta[2] * $delta[2]);
-    $elevation = asin ($lclz / $range);
+    $elevation = $range ? asin ($lclz / $range) : 0;
 
     }
 
