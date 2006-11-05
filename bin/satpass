@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011';
+our $VERSION = '0.011_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -254,6 +254,8 @@ Getopt::Long::Configure (qw{pass_through});	# Need because of relative time form
 
 push @frame, {
 	args => [],
+	cntind => '',
+	lines => [],
 	parm => {},
 	stdin => $fh,
 	stdout => select (),
@@ -281,8 +283,6 @@ eod
 
 $inifil && -e $inifil and source ($inifil);
 
-my @line;
-my $cntind = '';
 while (1) {
 
 
@@ -293,6 +293,7 @@ while (1) {
 
 #	Get the next command, wherever it comes from.
 
+    my $cntind = $frame[$#frame]{cntind} || '';
     my $buffer = @frame > 1 ? $fh->getline () :
 	-t $fh ?
 	    $rl ? $rl->readline ("$cntind$parm{prompt} ") :
@@ -323,14 +324,17 @@ while (1) {
 #	buffer and redo the loop.
 
     $buffer =~ s/\\$// and do {
-	push @line, $buffer; $cntind = '_'; next};
+	push @{$frame[$#frame]{lines}}, $buffer;
+	$frame[$#frame]{cntind} = '_';
+	next
+    };
 
 #	Prepend all saved continuations (if any) to the line.
 
-    @line and do {
-	$buffer = join ' ', @line, $buffer;
-	@line = ();
-	$cntind = '';
+    @{$frame[$#frame]{lines}} and do {
+	$buffer = join ' ', @{$frame[$#frame]{lines}}, $buffer;
+	@{$frame[$#frame]{lines}} = ();
+	$frame[$#frame]{cntind} = '';
 	};
 
 #	Interpolate positional parameters. This is not done if we
@@ -2252,6 +2256,8 @@ Error - Can not open $fn for input.
 eod
 push @frame, {
 	args => [@_],
+	cntind => '',
+	lines => [],
 	stdin => $fh,
 	stdout => select (),
 	};
@@ -2625,6 +2631,9 @@ eod
 
 sub _frame_pop {
 my $info = pop @frame;
+@{$info->{lines}} and warn <<eod;
+Warning - Continued line not completed at end-of-file or abort.
+eod
 select ($info->{stdout});
 set (%{$info->{local_parm}}) if exists $info->{local_parm};
 _get_spacetrack ()->set (%{$info->{local_st}})
