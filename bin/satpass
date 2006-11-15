@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_01';
+our $VERSION = '0.011_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1444,9 +1444,11 @@ eod
 		    $event_name[$event->{event}]->($event),
 		    ;
 		if ($event->{appulse} && $parm{background}) {
-		    my $body = $event->{appulse}{body};
+		    my $body = $event->{appulse}{body}
+			->universal ($time);
 		    my ($lat, $long, $alt) = $body->geodetic;
-		    printf BGFMT, strftime ($parm{time_format}, localtime $time),
+		    printf BGFMT, strftime (
+			    $parm{time_format}, localtime $time),
 			$lcfmt->($sta, $body),
 			rad2deg ($lat), rad2deg ($long),
 			$body->get ('name') || $body->get ('id') || '';
