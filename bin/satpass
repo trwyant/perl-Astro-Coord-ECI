@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_03';
+our $VERSION = '0.011_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -520,19 +520,12 @@ my $almanac_end = _parse_time (shift || '+1');
 $almanac_start >= $almanac_end and die <<eod;
 Error - End time must be after start time.
 eod
-_check_station ();
 
 my $all = 1 unless grep{$cmdopt{$_}} qw{horizon transit twilight quarter};
 
 #	Build an object representing our ground location.
 
-my $sta = Astro::Coord::ECI->new (
-	refraction => 1,
-	name => 'Station',
-	)
-    ->geodetic (
-	deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
-	$parm{height} / 1000);
+my $sta = _get_station ();
 
 my $id = $parm{twilight} =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ ?
     "twilight ($parm{twilight} degrees)" :
@@ -1351,7 +1344,7 @@ if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
     $pass_start >= $pass_end and die <<eod;
 Error - End time must be after start time.
 eod
-    _check_station ();
+    my $sta = _get_station ();
     @bodies or die <<eod;
 Error - Can not calculate satellite pass without loading at least one
         body.
@@ -1374,16 +1367,8 @@ eod
 
     my $model = $parm{model};
 
+#	Pick up horizon and appulse distance.
 
-#	Define the observing station.
-
-    my $sta = Astro::Coord::ECI->new (
-	    refraction => 1,
-	    name => 'Station',
-	    )
-	->geodetic (
-	    deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
-	    $parm{height} / 1000);
     my $horizon = deg2rad ($parm{horizon});
     my $appulse = deg2rad ($parm{appulse});
 
@@ -1879,21 +1864,13 @@ my $endtm = _parse_time (shift ||
 my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
-_check_station ();
-
 my @lighting = qw{Shdw Lit Day};	# Duped from pass()
 my $twilight = $parm{_twilight};
 
 
 #	Define the observing station.
 
-my $sta = Astro::Coord::ECI->new (
-	refraction => 1,
-	name => 'Station',
-	)
-    ->geodetic (
-	deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
-	$parm{height} / 1000);
+my $sta = _get_station ();
 
 my $sun = Astro::Coord::ECI::Sun->new ();
 
@@ -2454,6 +2431,8 @@ Astro::Coord::ECI::TLE::Set->aggregate (@bodies);
 #	This subroutine throws an exception if the height, latitude, and
 #	longitude are not defined.
 
+#	TODO get rid of this once pass_old goes away.
+
 sub _check_station {
 defined $parm{height} && defined $parm{latitude} &&
     defined $parm{longitude} or die <<eod;
@@ -2698,6 +2677,30 @@ unless (@names) {
 }
 }	# end local symbol block;
 
+
+#	_get_station ();
+
+#	This subroutine manufactures and returns a station object
+#	appropriate to the current parameter settings. It throws an
+#	exception if the height, latitude, and longitude are not
+#	defined.
+
+sub _get_station {
+defined $parm{height} && defined $parm{latitude} &&
+    defined $parm{longitude} or die <<eod;
+Error - You must set height, latitude, and longitude to use this
+        function.
+eod
+    Astro::Coord::ECI->new (
+	    refraction => 1,
+	    name => $parm{location} || 'Station',
+	    )
+	->geodetic (
+	    deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
+	    $parm{height} / 1000);
+}
+
+
 #	$suf = _get_suffix ($prefix, $backoff);
 
 #	Gets the suffix of the caller's name. All that this really does
@@ -2837,6 +2840,7 @@ eod
 
 sub _parse_angle {
 my $angle = shift;
+defined $angle or return;
 if ($angle =~ m/:/) {
     my ($h, $m, $s) = split ':', $angle;
     $s ||= 0;
