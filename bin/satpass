@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_04';
+our $VERSION = '0.011_05';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2694,6 +2694,7 @@ eod
     Astro::Coord::ECI->new (
 	    refraction => 1,
 	    name => $parm{location} || 'Station',
+	    id => 'station',
 	    )
 	->geodetic (
 	    deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
