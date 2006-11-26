@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_02';
+our $VERSION = '0.011_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1875,7 +1875,7 @@ $cmdlgl{position} = [qw{realtime}];
 sub position {
 my $time = _parse_time (shift);
 my $endtm = _parse_time (shift ||
-	$cmdopt{realtime} ? '+10' : '+0');
+	($cmdopt{realtime} ? '+10' : '+0'));
 my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
 my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
