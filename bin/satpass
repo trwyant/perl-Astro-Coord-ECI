@@ -43,7 +43,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_05';
+our $VERSION = '0.011_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2196,8 +2196,13 @@ eod
     my $name = $_[0];
     my $lcn = lc $_[0];
     foreach my $body (@sky) {
-	return if $body->isa ('Astro::Coord::ECI::Star') &&
+	next unless $body->isa ('Astro::Coord::ECI::Star') &&
 		$lcn eq lc $body->get ('name');
+	die <<eod;
+Error - The sky already contains $_[0]. If you want to
+        replace it you must first drop it.
+eod
+	return;
 	}
     my ($ra, $dec, $rng, $pmra, $pmdec, $pmrec) = _simbad ($name);
     $rng = sprintf '%.2f', $rng;
@@ -2768,10 +2773,6 @@ $types{iridium} = [sort {$a->{id} <=> $b->{id}} @ids];
 
 BEGIN {
 
-=for comment keep a parenthesis-matching editor happy: [
-
-=cut
-
 *_memio = $] >= 5.008 ?
     sub {my $hdl; open ($hdl, $_[0], $_[1]) || die <<eod; $hdl} :
 Failed to open @_
@@ -3001,12 +3002,25 @@ my $hr = floor ($sec);
 $sec = ($sec - $hr) * 60;
 my $min = floor ($sec);
 $sec = ($sec - $min) * 60;
-my $rslt = sprintf '%2d:%02d:%02d', $hr, $min, $sec;
+my $rslt = sprintf '%2d:%02d:%02d', $hr, $min, floor ($sec + .5);
 $rslt;
 }
 
+#	@coordinates = _simbad ($query);
 
-#	@coordinates = _simbad ($query)
+#	Looks up the given star in the SIMBAD catalog. If the
+#	'simbad_url' parameter is set to 'simbad.u-strasbg.fr' we use
+#	SIMBAD 4; otherwise we use SIMBAD 3.
+
+sub _simbad {
+    if ($parm{simbad_url} eq 'simbad.u-strasbg.fr') {
+	goto &_simbad4;
+    } else {
+	goto &_simbad3;
+    }
+}
+
+#	@coordinates = _simbad3 ($query)
 
 #	Look up the given star in the SIMBAD catalog. This assumes
 #	SIMBAD 3, and SIMBAD 4 is already late and is known to affect
@@ -3015,7 +3029,7 @@ $rslt;
 
 #	We die on any error.
 
-sub _simbad {
+sub _simbad3 {
 _load_module ('Astro::SIMBAD::Query');
 my $query = shift;
 my $qo = Astro::SIMBAD::Query->new (Target => $query, Error => 0,
@@ -3050,6 +3064,40 @@ $pmdec ||= 0;
 $vrec ||= 0;
 my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec + 0);
 wantarray ? @temp : join ' ', @temp;
+}
+
+
+#	@coordinates = _simbad4 ($query)
+
+#	Look up the given star in the SIMBAD catalog. This assumes
+#	SIMBAD 4.
+
+#	We die on any error.
+
+sub _simbad4 {
+_load_module ('Astro::SIMBAD::Client');
+my $query = shift;
+my $simbad = Astro::SIMBAD::Client->new (
+    format => {txt => 'FORMAT_TXT_SIMPLE_BASIC'},
+    parser => {txt => 'Parse_TXT_Simple'},
+    server => $parm{simbad_url},
+    type => 'txt',
+);
+my @rslt = $simbad->query (id => $query) or die <<eod;
+Error - No entry found for $query.
+eod
+@rslt > 1 and die <<eod;
+Error - More than one entry found for $query.
+eod
+@rslt = map {$rslt[0]{$_} eq '~' ? 0 : $rslt[0]{$_} || 0} qw{
+    ra dec plx pmra pmdec radial};
+$rslt[0] && $rslt[1] or die <<eod;
+Error - No position returned by $query.
+eod
+$rslt[2] = $rslt[2] ? 1000 / $rslt[2] : 10000;
+$rslt[3] and $rslt[3] /= 1000;
+$rslt[4] and $rslt[4] /= 1000;
+wantarray ? @rslt : join ' ', @rslt;
 }
 
 
@@ -3288,10 +3336,6 @@ Error - Clipboard unavailable. Can not find xclip. For xclip,
         see http://freshmeat.net/projects/xclip
 eod
 
-=for comment For parenthesis-matching editor: [
-
-=cut
-
 $memio = $] >= 5.008 && $Config{useperlio} ?
     sub {my $fh = gensym; open ($fh, $_[0], $_[1]); $fh} :
     do {
@@ -3333,10 +3377,6 @@ use Carp;
 use Config;
 
 our @ISA;
-
-=for comment For parenthesis-matching editor: [
-
-=cut
 
 our $noios;
 
@@ -3471,10 +3511,12 @@ The use of the L<timing|/timing> parameter is deprecated in favor of the
 -timing command qualifier. The parameter will probably disappear when
 pass_old does, since this is the only use.
 
-The 'sky lookup' functionality will probably stop working shortly. See
-the L<sky|/sky> documentation for explanation, status, and prognosis.
-
-=for comment help syntax-highlighting editor "
+The 'sky lookup' functionality is in transition. Currently, it uses
+Astro::SIMBAD::Client if the simbad_url parameter is
+'simbad.u-strasbg.fr', and Astro::SIMBAD otherwise. When the Harvard
+mirror upgrades to SIMBAD 4, the 'otherwise' functionality will break.
+The SIMBAD 4 functionality uses the web services interface, which may be
+a work in progress.
 
 =head1 DETAILS
 
@@ -3506,7 +3548,10 @@ need to install B<SOAP::Lite>, and maybe B<XML::Parser>, to get this
 functionality.
 
 * The ability to look up star positions in the SIMBAD catalog. You will
-need to install B<Astro::SIMBAD> to get this functionality.
+need to install B<Astro::SIMBAD> (if using the Harvard mirror) or
+B<Astro::SIMBAD::Client> (if using U. Strasbourg) to get this
+functionality. At some point Harvard will go to SIMBAD 4 and require
+Astro::SIMBAD::Client also, but I am not privy to the timing.
 
 * The ability to produce solar and lunar almanac data (rise and set,
 meridian transit, and so forth).
@@ -3521,8 +3566,6 @@ named satpass.ini under MacOS (meaning OS 9 - OS X is Darwin to Perl),
 MSWin32 and VMS, and .satpass under any other operating system. Any
 command may be placed in the initialization file. It is a good place to
 set the observer's location and define any macros you want.
-
-=for comment help editor that does not understand POD '
 
 =head1 COMMANDS
 
@@ -4015,8 +4058,6 @@ and put its latitude, longitude and height in the initialization
 file. You can use macros to define alternate locations if you
 want.
 
-=for comment ' help syntax-highlighting editor that does not understand POD
-
 =for html <a name="height_vi"></a>
 
 =item height_vi latitude longitude
@@ -4052,8 +4093,6 @@ package, and any arguments will be ignored.
 This command displays the observing list. Each body's NORAD ID, name
 (if available), dataset epoch, and orbital period are displayed. If
 the observing list is empty, you get a message to that effect.
-
-=for comment ' help syntax-highlighting editor that does not understand POD
 
 =for html <a name="load"></a>
 
@@ -4304,16 +4343,12 @@ For example,
  satpass> sky lookup 'Theta Orionis'
  sky add 'Theta Orionis' 05:35.3 -05d24 10000.00 0 0 0
 
-B<The 'lookup' function should be considered experimental.> SIMBAD 4
-is in public beta (see L<http://simbad.u-strasbg.fr/simbad4.htx>) and
-B<will break this function.> As I understand the position of Dr.
-Alasdair Allan (the author of Astro::SIMBAD), this module will not be
-updated, with future work going into Astro::Catalog. The latter is a
-much heavier-weight module, and I am reluctant to use it for this
-application. I am corresponding with both Dr. Allan and the University
-of Strasbourg to try to come to a mutually satisfactory resolution, but
-there may well be a hiatus in functionality. Possibly a long one.
-B<Caveat user.>
+If the 'simbad_url' parameter is set to 'simbad.u-strasbg.fr', SIMBAD 4
+is used, and you need to have module Astro::SIMBAD::Client installed.
+Otherwise, you need Astro::SIMBAD installed. I am not sure how  stable
+the SIMBAD 4 interface is (I am using the SOAP interface, which appears
+to be a work in progress), so B<The 'lookup' function should be
+considered experimental.>
 
 =for html <a name="source"></a>
 
