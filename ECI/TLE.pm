@@ -102,7 +102,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -558,6 +558,7 @@ The individual events are also anonymous hashes, with each hash
 containing the following keys:
 
   {azimuth} => Azimuth of event in radians;
+  {body} => Referency to body making pass;
   {appulse} => {  # This is present only for PASS_EVENT_APPULSE;
       {angle} => minimum separation in radians;
       {body} => other body involved in appulse;
@@ -566,7 +567,12 @@ containing the following keys:
   {event} => Event code (PASS_EVENT_xxxx);
   {illumination} => Illumination at time of event (PASS_EVENT_xxxx);
   {range} => Distance to event in kilometers;
+  {station} => Reference to observing station;
   {time} => Time of event;
+
+Note that the time set in the various {body} and {station} objects is
+B<not> guaranteed to be anything in particular. Specifically, it is
+almost certainly not the time of the event.
 
 The events are coded by the following manifest constants:
 
@@ -853,10 +859,12 @@ eod
 				$want_lit))[1] < $tle->dip ();
 		    push @info, {
 			azimuth => $azm,
+			body => $tle,
 			elevation => $elev,
 			event => @event,
 			illumination => $lighting[$litup],
 			range => $rng,
+			station => $sta,
 			time => $time,
 			};
 		    }
