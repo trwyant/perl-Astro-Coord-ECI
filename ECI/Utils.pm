@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -80,7 +80,15 @@ value.
 
 =cut
 
-sub acos {atan2 (sqrt (1 - $_[0] * $_[0]), $_[0])}
+sub acos {
+
+    abs ($_[0]) > 1 and confess <<eod;
+Programming error - Trying to take the arc cosine of a number greater
+        than 1.
+eod
+
+    atan2 (sqrt (1 - $_[0] * $_[0]), $_[0])
+}
 
 
 =item $angle = asin ($value)
