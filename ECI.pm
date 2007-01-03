@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.011_02';
+our $VERSION = '0.011_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -146,32 +146,58 @@ $self;
 =item $angle = $coord->angle ($coord2, $coord3);
 
 This method calculates the angle between the $coord2 and $coord3
-objects, as seen from $coord. The calculation uses the law of cosines,
-and does not take atmospheric refraction into account. The return is
-a number of radians between 0 and pi.
+objects, as seen from $coord. The calculation uses the law of
+haversines, and does not take atmospheric refraction into account. The
+return is a number of radians between 0 and pi.
+
+The algorithm comes from "Ask Dr. Math" on Drexel's Math Forum,
+L<http://mathforum.org/library/drmath/view/51879.html>, which attributes
+it to the Geographic Information Systems FAQ,
+L<http://www.faqs.org/faqs/geography/infosystems-faq/>, which in turn
+attributes it to R. W. Sinnott, "Virtues of the Haversine," Sky and
+Telescope, volume 68, number 2, 1984, page 159.
+
+Prior to version 0.011_03 the law of cosines was used, but this produced
+errors on extremely small angles. The haversine law was selected based
+on Jean Meeus, "Astronomical Algorithms", 2nd edition, chapter 17
+"Angular Separation".
 
 =cut
 
 sub angle {
-my $self = shift;
-my $B = shift;
-my $C = shift;
-ref $B && $B->represents (__PACKAGE__)
-    && ref $C && $C->represents (__PACKAGE__)
-    or croak <<eod;
+    my $self = shift;
+    my $B = shift;
+    my $C = shift;
+    ref $B && $B->represents (__PACKAGE__)
+	&& ref $C && $C->represents (__PACKAGE__)
+	or croak <<eod;
 Error - Both arguments must represent @{[__PACKAGE__]} objects.
 eod
+    my ($ra1, $dec1) = $self->{inertial} ?
+	$B->equatorial ($self) : $self->_angle_non_inertial ($B);
+    my ($ra2, $dec2) = $self->{inertial} ?
+	$C->equatorial ($self) : $self->_angle_non_inertial ($C);
+    my $sindec = sin (($dec2 - $dec1)/2);
+    my $sinra = sin (($ra2 - $ra1)/2);
+    my $a = $sindec * $sindec +
+	cos ($dec1) * cos ($dec2) * $sinra * $sinra;
+    2 * atan2 (sqrt ($a), sqrt (1 - $a));
 
-my $method = $self->{inertial} ? 'eci' : 'ecef';
-my $cA = [$self->$method ()];
-my $cB = [$B->$method ()];
-my $cC = [$C->$method ()];
-my $a = distsq ($cB, $cC);
-my $b = distsq ($cA, $cC);
-my $c = distsq ($cA, $cB);
-
-acos (($b + $c - $a) / sqrt (4 * $b * $c));
 }
+
+sub _angle_non_inertial {
+    my $self = shift;
+    my $other = shift;
+    my ($x1, $y1, $z1) = $self->ecef ();
+    my ($x2, $y2, $z2) = $other->ecef ();
+    my $X = $x2 - $x1;
+    my $Y = $y2 - $y1;
+    my $Z = $z2 - $z1;
+    my $lon = atan2 ($Y, $X);
+    my $lat = mod2pi (atan2 ($Z, sqrt ($X * $X + $Y * $Y)));
+    ($lon, $lat);
+}
+
 
 
 =item $which = $coord->attribute ($name);
@@ -301,9 +327,11 @@ if ($self->{inertial}) {
 #	|  cos(lambda)cos(phi)  sin(lambda)cos(phi)  sin(phi) |
 #	+-                                                 -+
 
-    my $lclx = $coslamda * $sinphi * $delta[0] + $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
+    my $lclx = $coslamda * $sinphi * $delta[0] +
+	$sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
     my $lcly = - $sinlamda * $delta[0] + $coslamda * $delta[1];
-    my $lclz = $coslamda * $cosphi * $delta[0] + $sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
+    my $lclz = $coslamda * $cosphi * $delta[0] +
+	$sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
 
 #	We end with a Cartesian coordinate system with the observer at
 #	the origin, with X pointing to the South, Y to the East, and Z
@@ -312,7 +340,8 @@ if ($self->{inertial}) {
 #	in the computation of azimuth, since azimuth is from the North.
 
     $azimuth = mod2pi (atan2 ($lcly, -$lclx));
-    $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] + $delta[2] * $delta[2]);
+    $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
+	$delta[2] * $delta[2]);
     $elevation = $range ? asin ($lclz / $range) : 0;
 
     }
