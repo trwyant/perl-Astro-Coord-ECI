@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 
 if ($skip) {
     skip ($skip, 1);
@@ -89,6 +89,9 @@ GMT
 Goran
 Green's
 harvard
+Haversine
+haversine
+haversines
 IDs
 illum
 illuminator
@@ -171,6 +174,7 @@ sgp
 SIGINT
 SIMBAD
 simbad
+Sinnott
 SKYSAT
 skysat
 SLALIB
