@@ -14,9 +14,9 @@ Astro::Coord::ECI::Sun - Compute the position of the Sun.
 
 =head1 DESCRIPTION
 
-This module implements the position of the Sun as a function of time,
-as described in Jean Meeus' "Astronomical Algorithms," second edition.
-It is a subclass of Astro::Coord::ECI, with the id, name, and diameter
+This module implements the position of the Sun as a function of time, as
+described in Jean Meeus' "Astronomical Algorithms," second edition. It
+is a subclass of B<Astro::Coord::ECI>, with the id, name, and diameter
 attributes initialized appropriately, and the time_set() method
 overridden to compute the position of the Sun at the given time.
 
@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.004';
+our $VERSION = '0.004_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -154,8 +154,8 @@ foreach (
 		['Sunset', 'Sunrise']],
 	[$location, next_meridian => [$self], 'transit',
 		['local midnight', 'local noon']],
-	[$location, next_elevation => [$self, $self->get ('twilight'), 0], 'twilight',
-		['end twilight', 'begin twilight']],
+	[$location, next_elevation => [$self, $self->get ('twilight'), 0],
+		'twilight', ['end twilight', 'begin twilight']],
 	[$self, next_quarter => [], 'quarter',
 		[@quarters]],
 	) {
@@ -172,10 +172,10 @@ return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
 
-=item $longitude = $sun->ecliptic_longitude();
+=item $longitude = $sun->ecliptic_longitude ();
 
 This method returns the ecliptic longitude of the sun at its current
-time setting, in radians. It's really just a convenience method, since
+time setting, in radians. It is really just a convenience method, since
 it is equivalent to ($sun->ecliptic)[1], and in fact that is how it is
 implemented.
 
@@ -187,7 +187,7 @@ my $self = shift;
 }
 
 
-=item $long = $sun->geometric_longitude()
+=item $long = $sun->geometric_longitude ()
 
 This method returns the geometric longitude of the Sun in radians at
 the last time set.
@@ -204,6 +204,71 @@ eod
 $self->{_sun_geometric_longitude};
 }
 
+
+=item ($point, $intens, $central) = magnitude ($theta, $omega);
+
+This method returns the magnitude of the Sun at a point $theta radians
+from the center of its disk, given that the disk's angular radius
+(B<not> diameter) is $omega radians. The returned $point is the
+magnitude at the given point (undef if $theta > $omega), $intens is the
+ratio of the intensity at the given point to the central intensity (0
+if $theta > $omega), and $central is the central magnitude.
+
+If this method is called in scalar context, it returns $point, the point
+magnitude.
+
+If the $omega argument is omitted or undefined, it is calculated based
+on the geocentric range to the Sun at the current time setting of the
+object.
+
+If the $theta argument is omitted or undefined, the method returns
+the average magnitude of the Sun, which is taken to be -26.8.
+
+The limb-darkening algorithm and the associated constants come from
+L<http://en.wikipedia.org/wiki/Limb_darkening>.
+
+=cut
+
+{	# Begin local symbol block
+
+    my $central_mag;
+    my @limb_darkening = (.3, .93, -.23);
+    my $mean_mag = -26.8;
+
+    sub magnitude {
+    my ($self, $theta, $omega) = @_;
+    return $mean_mag unless defined $theta;
+    unless (defined $omega) {
+	my @eci = $self->eci ();
+	$omega = $self->get ('diameter') / 2 /
+	    sqrt (distsq (\@eci[0 .. 2], [0, 0, 0]));
+	}
+    unless (defined $central_mag) {
+	my $sum = 0;
+	my $quotient = 2;
+	foreach my $a (@limb_darkening) {
+	    $sum += $a / $quotient++;
+	    }
+	$central_mag = $mean_mag - intensity_to_magnitude (2 * $sum);
+	}
+    my $intens = 0;
+    my $point;
+    if ($theta < $omega) {
+	my $costheta = cos ($theta);
+	my $cosomega = cos ($omega);
+	my $sinomega = sin ($omega);
+	my $cospsi = sqrt ($costheta * $costheta -
+		$cosomega * $cosomega) / $sinomega;
+	my $psiterm = 1;
+	foreach my $a (@limb_darkening) {
+	    $intens += $a * $psiterm;
+	    $psiterm *= $cospsi;
+	    }
+	$point = $central_mag + intensity_to_magnitude ($intens);
+	}
+    return wantarray ? ($point, $intens, $central_mag) : $point;
+    }
+}	# End local symbol block.
 
 =item ($time, $quarter, $desc) = $sun->next_quarter($want);
 
@@ -257,7 +322,7 @@ wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal
 }
 
 
-=item $period = $sun->period()
+=item $period = $sun->period ()
 
 Although this method is attached to an object that represents the
 Sun, what it actually returns is the sidereal period of the Earth,
