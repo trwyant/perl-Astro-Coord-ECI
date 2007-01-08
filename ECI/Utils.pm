@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.006_01';
+our $VERSION = '0.006_02';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -52,19 +52,23 @@ use UNIVERSAL qw{can isa};
 
 our @EXPORT;
 our @EXPORT_OK = qw{
-	AU LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI
-	acos asin atmospheric_extinction deg2rad distsq dynamical_delta
-	equation_of_time intensity_to_magnitude jcent2000 jday2000
-	julianday mod2pi nutation_in_longitude nutation_in_obliquity
-	obliquity omega rad2deg tan theta0 thetag};
+	AU LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI acos
+	asin atmospheric_extinction deg2rad distsq dynamical_delta
+	equation_of_time find_first_true intensity_to_magnitude
+	jcent2000 jday2000 julianday mod2pi nutation_in_longitude
+	nutation_in_obliquity obliquity omega rad2deg tan theta0
+	thetag};
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
     );
 
-use constant AU => 149597870;		# 1 astronomical unit, per Meeus, Appendix I pg 407.
-use constant LIGHTYEAR => 9.4607e12;	# 1 light-year, per Meeus, Appendix I pg 407.
-use constant PARSEC => 30.8568e12;	# 1 parsec, per Meeus, Appendix I pg 407.
+use constant AU => 149597870;		# 1 astronomical unit, per
+					# Meeus, Appendix I pg 407.
+use constant LIGHTYEAR => 9.4607e12;	# 1 light-year, per Meeus,
+					# Appendix I pg 407.
+use constant PARSEC => 30.8568e12;	# 1 parsec, per Meeus,
+					# Appendix I pg 407.
 use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant PI => atan2 (0, -1);
 use constant PIOVER2 => PI / 2;
@@ -240,6 +244,54 @@ my $E = $y * sin (2 * $L0) - 2 * $e * sin ($M) +
 
 $E * SECSPERDAY / TWOPI;	# The formula gives radians.
 }
+
+
+=item $time = find_first_true ($start, $end, \&test, $limit);
+
+This function finds the first time between $start and $end for which
+test ($time) is true. The resolution is $limit, which defaults to 1 if
+not specified. If the times are reversed (i.e. the start time is after
+the end time) the time returned is the last time test ($time) is true.
+
+The test () function is assumed to be false for the first part of the
+interval, and true for the rest. If this assumption is violated, the
+result of this subroutine should be considered meaningless.
+
+The calculation is done by, essentially, a binary search; the interval
+is repeatedly split, the function is evaluated at the midpoint, and a
+new interval selected based on whether the result is true or false.
+
+Actually, nothing in this function says the independent variable has to
+be time.
+
+=cut
+
+sub find_first_true {
+    my ($begin, $end, $test, $limit) = @_;
+    $limit ||= 1;
+    if ($limit >= 1) {
+	if ($begin <= $end) {
+	    $begin = floor ($begin);
+	    $end = floor ($end) == $end ? $end : floor ($end) + 1;
+	} else {
+	    $end = floor ($end);
+	    $begin = floor ($begin) == $begin ? $begin : floor ($begin) + 1;
+	}
+    }
+    my $iterator = (
+	$end > $begin ?
+	sub {$end - $begin > $limit} :
+	sub {$begin - $end > $limit});
+##    while ($end - $begin > $limit) {
+    while ($iterator->()) {
+	my $mid = $limit >= 1 ?
+	    floor (($begin + $end) / 2) : ($begin + $end) / 2;
+	($begin, $end) = ($test->($mid)) ?
+	    ($begin, $mid) : ($mid, $end);
+    }
+    $end;
+}
+
 
 
 =for comment help syntax-highlighting editor "

@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 my $bldr = Module::Build->new (
 	dist_author => 'Tom Wyant (wyant at cpan dot org)',
@@ -24,6 +24,7 @@ my $bldr = Module::Build->new (
 	    'ECI/Sun.pm' => 'lib/Astro/Coord/ECI/Sun.pm',
 	    'ECI/TLE.pm' => 'lib/Astro/Coord/ECI/TLE.pm',
 	    'ECI/TLE/Set.pm' => 'lib/Astro/Coord/ECI/TLE/Set.pm',
+	    'ECI/TLE/Iridium.pm' => '/lib/Astro/Coord/ECI/TLE/Iridium.pm',
 	    'ECI/Utils.pm' => 'lib/Astro/Coord/ECI/Utils.pm',
 	    },
 	dynamic_config => 1,

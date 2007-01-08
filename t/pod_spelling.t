@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.006_01';
+our $VERSION = '0.006_02';
 
 if ($skip) {
     skip ($skip, 1);
@@ -110,6 +110,7 @@ Kazimierz
 Kelso
 Kelso's
 lib
+LLC
 ls
 Lune
 ly

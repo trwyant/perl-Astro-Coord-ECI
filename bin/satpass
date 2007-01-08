@@ -10,6 +10,7 @@ use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Star;
 use Astro::Coord::ECI::TLE qw{:constants};
+use Astro::Coord::ECI::TLE::Iridium;
 use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::Utils qw{:all};
 
@@ -43,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_07';
+our $VERSION = '0.011_08';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -64,16 +65,6 @@ my %cmdconfig;	# How option parsing is to be comfigured for command.
 my %cmdopt;	# Options for individual satpass commands.
 my %cmdlgl;	# Legal options for a given command.
 my %cmdquote;	# 1 if we keep quotes when parsing the command.
-my %status;	# Status (by NORAD ID) where applicable.
-            # Each NORAD ID gets a hash ref including:
-            # {type} => 'iridium' (only valid type)
-            # {status} => false if OK, otherwise text.
-            # {name} => body name (from status query)
-            # {id} => NORAD ID of body (= key).
-            # {comment} => from status query
-my %types;	# Maintained in parallel with %status. Key
-            # is type, value is reference to list of
-            # status hashes for that type, as above.
 
 my %exported;	# True if the parameter is exported.
 my %parm = (
@@ -88,6 +79,9 @@ my %parm = (
     error_out => 0,
     exact_event => 1,
     explicit_macro_delete => 0,
+    extinction => 1,
+    flare_mag_day => -6,
+    flare_mag_night => 0,
     geometric => 1,
     horizon => 20,	# Degrees
     lit => 1,
@@ -120,6 +114,9 @@ my %mutator = (
     error_out => \&_set_unmodified,
     exact_event => \&_set_unmodified,
     explicit_macro_delete => \&_set_unmodified,
+    extinction => \&_set_unmodified,
+    flare_mag_day => \&_set_unmodified,
+    flare_mag_night => \&_set_unmodified,
     geometric => \&_set_unmodified,
     height => \&_set_unmodified,
     horizon => \&_set_angle,
@@ -162,14 +159,14 @@ my %twilight_abbr = abbrev (keys %twilight_def);
 
 set (twilight => 'civil');
 
-my $inifil = $^O eq 'MSWin32' || $^O eq 'VMS' || $^O eq 'MacOS' ?
+my $inifn = $^O eq 'MSWin32' || $^O eq 'VMS' || $^O eq 'MacOS' ?
     'satpass.ini' : '.satpass';
 
-$inifil = $^O eq 'VMS' ? "SYS\$LOGIN:$inifil" :
-    $^O eq 'MacOS' ? $inifil :
-    $ENV{HOME} ? "$ENV{HOME}/$inifil" :
-    $ENV{LOGDIR} ? "$ENV{LOGDIR}/$inifil" : undef;
-
+my $inifil = $ENV{SATPASSINI} ? $ENV{SATPASSINI} :
+    $^O eq 'VMS' ? "SYS\$LOGIN:$inifn" :
+    $^O eq 'MacOS' ? $inifn :
+    $ENV{HOME} ? "$ENV{HOME}/$inifn" :
+    $ENV{LOGDIR} ? "$ENV{LOGDIR}/$inifn" : undef;
 
 sub _format_location;	# Predeclare, so I do not need explicit STDOUT.
 sub _time ();		# Predeclare, since I intend to redefine.
@@ -238,6 +235,8 @@ eod
 	}
     }
 
+$ENV{SATPASSINI} = $inifil;
+
 $opt{clipboard} and select (IO::Clipboard->new ());
 
 ref $Astro::satpass::Test::Hook eq 'CODE' and do {
@@ -281,7 +280,17 @@ eod
 
 @ARGV and source (_memio ('<', \(join "\n", @ARGV)));
 
-$inifil && -e $inifil and source ($inifil);
+{	# Local symbol block
+    my %inodes;
+##    foreach my $fn ($inifn, $inifil) {	# Reverse of intended order
+    foreach my $fn ($inifil) {	# Reverse of intended order
+	next unless $fn && -e $fn;
+	my $inode = (stat (_))[1];
+	next if $inodes{$inode};
+	$inodes{$inode} = $fn;
+	source ($fn);
+	}
+    }	# End local symbol block
 
 while (1) {
 
@@ -339,10 +348,11 @@ while (1) {
 
 #	Interpolate positional parameters. This is not done if we
 #	have the 'macro' command, because in that case we want to
-#	defer the expansion until the macro is expanded.
+#	defer the expansion until the macro is expanded. Note that
+#	the way to pass a dollar sign is to double it.
 
     eval {$buffer =~ s/\$(?:(\w+)|\{(\w+)(?:\:(.*?))\}|(.))/
-	    $4 ? $4 : _sub_arg ($1 || $2, $3 || '',
+	    defined $4 ? $4 : _sub_arg ($1 || $2, $3 || '',
 	    $frame[$#frame]->{args} || [])/mgex
 	    unless $buffer =~ m/^\s*macro\b/};
     $@ and do {
@@ -378,9 +388,17 @@ while (1) {
 #	Parse the line, pulling off output redirection as we go.
 
     my $redout = '';
-    my @args = map {m/^>/ ? do {$redout = $_; ()} :
+    my @args = parse_line ('\s+', $cmdquote{$verb} || 0, $rest);
+    $rest && !@args and do {
+	warn <<eod;
+Error - Malformed command failed to parse:
+        $rest
+eod
+	next;
+    };
+    @args = map {m/^>/ ? do {$redout = $_; ()} :
 	$redout =~ m/^>+$/ ? do {$redout .= $_; ()} :
-	$_} parse_line ('\s+', $cmdquote{$verb} || 0, $rest);
+	$_} @args;
 
 #	Do pseudo tilde expansion.
 
@@ -503,12 +521,29 @@ print "\n";
 
 ########################################################################
 #
+#	alias () - manipulate class aliases
+#
+
+sub alias {
+    if (@_) {
+	Astro::Coord::ECI::TLE->alias (@_);
+    } else {
+	my %rslt = Astro::Coord::ECI::TLE->alias ();
+	foreach my $key (sort keys %rslt) {
+	    print "$key => $rslt{$key}\n";
+	}
+    }
+}
+
+########################################################################
+#
 #	almanac () - display almanac data for all bodies in @sky for
 #		the specified day(s)
 #
 
 BEGIN {
-$cmdlgl{almanac} = [qw{horizon|rise|set transit twilight quarter}];
+$cmdlgl{almanac} = [qw{dump flatten horizon|rise|set
+    transit twilight quarter}];
 }
 
 sub almanac {
@@ -560,12 +595,21 @@ my $last = '';
 foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
     my ($time, $event, $detail, $descr) = @$_;
     next unless $all || $cmdopt{$event};
-    $descr = ('End ', 'Begin ')[$detail] . $id if $event eq 'twilight';
-    my $day = strftime $parm{date_format}, localtime $time;
-    print "$day\n" if $day ne $last;
-    $last = $day;
-    print strftime ($parm{time_format}, localtime $time), ' ',
-	ucfirst $descr, "\n";
+    if ($cmdopt{dump}) {
+	if ($cmdopt{flatten}) {
+	    local $Data::Dumper::Terse = 1;
+	    print Dumper (_flatten ($_));
+	} else {
+	    print Dumper $_;
+	}
+    } else {
+	$descr = ('End ', 'Begin ')[$detail] . $id if $event eq 'twilight';
+	my $day = strftime $parm{date_format}, localtime $time;
+	print "$day\n" if $day ne $last;
+	$last = $day;
+	print strftime ($parm{time_format}, localtime $time), ' ',
+	    ucfirst $descr, "\n";
+	}
     }
 
 }
@@ -641,18 +685,38 @@ eod
 #		    specified bodies
 #
 
+BEGIN {
+$cmdlgl{choose} = [qw{epoch=s}];
+}
+
+=begin comment
+
 sub choose {
-my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_} @_;
-my @keep;
-foreach my $tle (@bodies) {
-    my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
-    foreach my $test (@check) {
-	next unless ref $test ? $name =~ m/$test/ : $id == $test;
-	push @keep, $tle;
-	last;
-	}
+if ($cmdopt{epoch}) {
+    @bodies = _select_observing_list (_parse_time ($cmdopt{epoch}));
     }
-@bodies = @keep;
+if (@_) {
+    my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_} @_;
+    my @keep;
+    foreach my $tle (@bodies) {
+	my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
+	foreach my $test (@check) {
+	    next unless ref $test ? $name =~ m/$test/ : $id == $test;
+	    push @keep, $tle;
+	    last;
+	    }
+	}
+    @bodies = @keep;
+    }
+}
+
+=end comment
+
+=cut
+
+sub choose {
+$cmdopt{choose} = [@_];
+@bodies = _select_observing_list ();
 }
 
 
@@ -723,6 +787,135 @@ eod
 
 ########################################################################
 #
+#	flare () - Predict satellite flares.
+
+BEGIN {
+$cmdlgl{flare} = [qw{algorithm=s am choose=s@ day dump flatten pm
+    questionable|spare}];
+}
+
+sub flare {
+my $dtfmt = "$parm{date_format} $parm{time_format}";
+my $pass_start = _parse_time (shift || 'today noon');
+my $pass_end = _parse_time (shift || '+7');
+$pass_start >= $pass_end and die <<eod;
+Error - End time must be after start time.
+eod
+my $pass_step = shift || 60;
+my $sta = _get_station ();
+
+my $horizon = deg2rad ($parm{horizon});
+my $twilight = $parm{_twilight};
+my @flare_mag = ($parm{flare_mag_night}, $parm{flare_mag_day});
+my $lcfmt = \&{"_format_local_$parm{local_coord}"};
+
+#	Decide which model to use.
+
+my $model = $parm{model};
+
+#	Tell aggregate() how to work.
+
+local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
+
+#	Select only the bodies capable of flaring. We use
+#	_select_observing_list () to eliminate duplicates,
+#	though it might be better if we could make use of
+#	any element sets relevant to the period under
+#	consideration.
+
+my @active;
+foreach my $tle (_select_observing_list ($pass_start)) {
+    $tle->can_flare ($cmdopt{questionable}) or next;
+    $tle->set (algorithm => $cmdopt{algorithm} || 'fixed',
+	horizon => $horizon, twilight => $twilight, model => $model,
+	am => !$cmdopt{am}, day => !$cmdopt{day}, pm => !$cmdopt{pm},
+	extinction => $parm{extinction});
+    push @active, $tle;
+    }
+@active or die <<eod;
+Error - Can not calculate satellite flares without loading at least one
+        flaring body.
+eod
+my $timlen = max (
+    length (strftime ($parm{time_format}, 59, 59, 23, 31, 11, 2000)),
+    length (strftime ($parm{time_format}, 59, 59, 11, 31, 11, 2000)),
+    );
+
+my $sun = Astro::Coord::ECI::Sun->new ();
+
+if ($cmdopt{debug}) {
+    foreach my $tle (@active) {
+	print join ("\t", $tle->get ('id'), $tle->get ('name'), ref $tle), "\n";
+	}
+    }
+
+my @flares;
+foreach my $tle (@active) {
+    my $bm_start = time ();
+    push @flares, $tle->flare ($sta, $pass_start, $pass_end);
+
+
+#	Compute and display stats.
+
+    my $bm_end = time ();
+    }
+
+my $last_day = '';
+my $fmt = <<eod;
+%${timlen}s %-11s  %s %4.1f %s %s
+eod
+{	# local symbol block
+    my $lchd = $lcfmt->();
+    my $lcln = length ($lchd);
+    my $cthd = _format_local_az_rng ();
+    my $ctln = length ($cthd);
+    printf <<eod, '', '    flare', '    center', 'time', $lchd, $cthd
+%-${timlen}s              %-${lcln}s       from %-${ctln}s
+%-${timlen}s name         %s  mag  Sun  %s
+eod
+	unless $cmdopt{dump}
+##printf <<eod, 'time', $lcfmt->(), _format_local_az_rng ();
+##%-${timlen}s name        MMA angle %s  mag frmSun %s
+##eod
+    }	# end local symbol block
+foreach my $fd (sort {$a->{time} <=> $b->{time}} @flares) {
+
+    next if $cmdopt{$fd->{type}};
+    next if $fd->{magnitude} > $flare_mag[$fd->{type} eq 'day'];
+
+    my $time = $fd->{time};
+
+    my $tle = $fd->{body}->universal ($time);
+
+    my $day = strftime ($parm{date_format}, localtime $time);
+    print "$day\n" if $day ne $last_day && !$cmdopt{dump};
+    $last_day = $day;
+    $time = strftime ($parm{time_format}, localtime floor ($time + .5));
+    my $name = ucfirst lc ($tle->get ('name') || $tle->get ('id'));
+    my ($ctr_azm, $ctr_ele, $ctr_rng) = $sta->azel ($fd->{center}{body}, 0);
+    if ($cmdopt{dump}) {
+	if ($cmdopt{flatten}) {
+	    local $Data::Dumper::Terse = 1;
+	    print Dumper (_flatten ($fd));
+	} else {
+	    print Dumper $fd;
+	}
+    } else {
+	printf $fmt, $time, $name,
+	    $lcfmt->($sta, $tle),
+	    $fd->{magnitude},
+	    $fd->{type} eq 'day' ?
+		sprintf '%5.0f', rad2deg ($fd->{appulse}{angle}) : 'night',
+	    _format_local_az_rng ($sta, $fd->{center}{body}),
+	    ;
+	}
+    }
+
+}
+
+
+########################################################################
+#
 #	geocode () - Get latitude and longitude.
 #
 #	The arguments are the location, and an optional country code,
@@ -753,7 +946,7 @@ $cmdlgl{geocode_us} = $cmdlgl{geocode};
 $cmdlgl{geocode_vi} = $cmdlgl{geocode};
 }
 
-#	Here is the subroutine proper. It is just a dispatcher.
+#	Here is the subroutine proper.
 
 sub geocode {
 my $cc = lc ($_[1] || $parm{country});
@@ -822,6 +1015,11 @@ eod
 	}
     }
 }
+
+=for comment help bracket-matching editor }
+
+=cut
+
 
 ########################################################################
 #
@@ -944,6 +1142,11 @@ Error - I have no idea how to get the height of a location in country
 eod
 goto \&{$handler};
 }
+
+#	Note for the future: http://gnswww.nga.mil/geonames/GNS/index.jsp
+#	(the GEOnet Names Server)
+#	is a worldwide search for city names. This may include height if
+#	you hold your tongue right.
 
 ########################################################################
 #
@@ -1126,12 +1329,14 @@ my %help_module;
 BEGIN {
 %help_module = (
     eci => 'Astro::Coord::ECI',
+    iridium => 'Astro::Coord::ECI::TLE::Iridium',
     moon => 'Astro::Coord::ECI::Moon',
     set => 'Astro::Coord::ECI::TLE::Set',
     sun => 'Astro::Coord::ECI::Sun',
     st => 'Astro::SpaceTrack',
     star => 'Astro::Coord::ECI::Star',
     tle => 'Astro::Coord::ECI::TLE',
+    utils => 'Astro::Coord::ECI::TLE::Utils',
     );
 }
 sub help {
@@ -1327,10 +1532,12 @@ if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
 	    my $val = ucfirst $code;
 	    $event_name[$code] = sub {$val};
 	}
-    $event_name[PASS_EVENT_APPULSE] =
-	sub {sprintf '%.1f from %s', rad2deg ($_[0]{appulse}{angle}),
-	    $_[0]{appulse}{body}->get ('name') ||
-	    $_[0]{appulse}{body}->get ('id')};
+	$event_name[PASS_EVENT_APPULSE] =
+	    sub {sprintf '%.1f from %s', rad2deg ($_[0]{appulse}{angle}),
+		$_[0]{appulse}{body}->get ('name') ||
+		$_[0]{appulse}{body}->get ('id')};
+
+	$cmdlgl{pass} = [qw{choose=s@ dump flatten}];
     }
 
     sub pass {
@@ -1374,7 +1581,7 @@ eod
 
 #	Print the header
 
-    print _format_location ();
+    print _format_location () unless $cmdopt{dump};
 
 #	Tell aggregate() how to work.
 
@@ -1388,7 +1595,7 @@ eod
 
 #	Foreach body to be modelled
 
-    foreach my $tle (_aggregate ()) {
+    foreach my $tle (_select_observing_list ($pass_start)) {
 
 	$tle->set (
 	    appulse => $appulse,
@@ -1411,33 +1618,50 @@ eod
 	my $hdrdone;
 	my $last_date = '';
 	foreach my $pass (@passes) {
-	    if ($hdrdone++) {print "\n"} else {printf $header, $id, $name};
+	    unless ($cmdopt{dump}) {
+		if ($hdrdone++) {
+		    print "\n"
+		} else {
+		    printf $header, $id, $name
+		};
+	    }
 	    foreach my $event (@{$pass->{events}}) {
 		my $time = $event->{time};
 		my $date = strftime ($parm{date_format}, localtime $time);
 		if ($date ne $last_date) {
-		    print "$date\n";
+		    print "$date\n" unless $cmdopt{dump};
 		    $last_date = $date;
 		}
 		$tle->universal ($time);
 		my ($lat, $long, $alt) = $tle->geodetic ();
-		printf LINFMT, strftime ($parm{time_format}, localtime (
-			floor ($time + .5))),
-		    $lcfmt->($sta, $tle),
-		    rad2deg ($lat), rad2deg ($long), $alt,
-		    $event_name[$event->{illumination}]->($event),
-		    $event_name[$event->{event}]->($event),
-		    ;
-		if ($event->{appulse} && $parm{background}) {
-		    my $body = $event->{appulse}{body}
-			->universal ($time);
-		    my ($lat, $long, $alt) = $body->geodetic;
-		    printf BGFMT, strftime (
-			    $parm{time_format}, localtime (
-				floor ($time + .5))),
-			$lcfmt->($sta, $body),
-			rad2deg ($lat), rad2deg ($long),
-			$body->get ('name') || $body->get ('id') || '';
+		if ($cmdopt{dump}) {
+		    if ($cmdopt{flatten}) {
+			$event->{body} ||= $tle;
+			$event->{station} ||= $sta;
+			local $Data::Dumper::Terse = 1;
+			print Dumper (_flatten ($event));
+		    } else {
+			print Dumper ($event);
+		    }
+		} else {
+		    printf LINFMT, strftime ($parm{time_format}, localtime (
+			    floor ($time + .5))),
+			$lcfmt->($sta, $tle),
+			rad2deg ($lat), rad2deg ($long), $alt,
+			$event_name[$event->{illumination}]->($event),
+			$event_name[$event->{event}]->($event),
+			;
+		    if ($event->{appulse} && $parm{background}) {
+			my $body = $event->{appulse}{body}
+			    ->universal ($time);
+			my ($lat, $long, $alt) = $body->geodetic;
+			printf BGFMT, strftime (
+				$parm{time_format}, localtime (
+				    floor ($time + .5))),
+			    $lcfmt->($sta, $body),
+			    rad2deg ($lat), rad2deg ($long),
+			    $body->get ('name') || $body->get ('id') || '';
+			}
 		    }
 		}
 	    }
@@ -1451,6 +1675,10 @@ eod
 #	pass_old () - Predict passes over the observer's location.
 #			(original version).
 #
+
+BEGIN {
+    $cmdlgl{pass_old} = [qw{choose=s@}];
+}
 
 sub pass_old {
 
@@ -1514,14 +1742,20 @@ print _format_location ();
 
 local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
 if ($cmdopt{debug}) {
-    foreach my $tle (_aggregate ()) {
+    foreach my $tle (_select_observing_list ($pass_start)) {
 	print join ("\t", $tle->get ('id'), $tle->get ('name'), ref $tle), "\n";
 	}
     }
 
-#	Foreach body to be modelled
+#	Foreach body to be modelled (we use _select_observing_list ()
+#	to eliminate duplicate element sets, though it would be nice
+#	if we had a way to make use of any element set relevant to the
+#	interval in question. To do that, though, we need to figure out
+#	how to do the hand-off if the epoch of the next element set is
+#	in the middle of a pass.
 
-foreach my $tle (_aggregate ()) {
+foreach my $tle (_select_observing_list ($pass_start)) {
+    $tle->set (model => $model);
     my $id = $tle->get ('id');
     my $name = $tle->get ('name');
     $name = $name ? " - $name" : '';
@@ -1855,11 +2089,11 @@ foreach my $body (@sky) {
 #
 
 BEGIN {
-$cmdlgl{position} = [qw{realtime}];
+$cmdlgl{position} = [qw{choose=s@ questionable|spare realtime}];
 }
 
 sub position {
-my $time = _parse_time (shift);
+my $time = _parse_time (shift || '+0');
 my $endtm = _parse_time (shift ||
 	($cmdopt{realtime} ? '+10' : '+0'));
 my $interval = shift || ($cmdopt{realtime} ? 10 : 60);
@@ -1887,9 +2121,10 @@ eod
 local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
 
 my $when = time ();
+my $indent;
 while ($time <= $endtm) {
     print strftime ($dtfmt, localtime $time), "\n";
-    foreach my $body (_aggregate (), @sky) {
+    foreach my $body (_select_observing_list ($time), @sky) {
 	$body->universal ($time);
 	my $name = $body->get ('name') || $body->get ('id') || 'body';
 	if ($body->represents ('Astro::Coord::ECI::TLE')) {
@@ -1899,6 +2134,30 @@ while ($time <= $endtm) {
 	    printf "%16s %s %s %s\n", $name, $lcfmt->($sta, $body),
 		strftime ($dtfmt, localtime $body->get ('epoch')),
 		$lighting[$illum] || '';
+
+	    if ($body->can_flare ($cmdopt{questionable})) {
+##		$indent ||= length (sprintf '%16s %s', $name,
+##		    $lcfmt=>($sta, $body));
+		$indent ||= 32;
+		$body->set (horizon => 0);
+		foreach my $info ($body->reflection ($sta, $time)) {
+		    if (!exists $info->{mma}) {
+			printf "%*s %s\n", $indent, '', $info->{status};
+			last;
+			}
+		      elsif ($info->{status}) {
+			printf "%*s MMA %d %s\n", $indent, '',
+			    $info->{mma}, $info->{status};
+			}
+		      else {
+			printf
+			    "%*s MMA %d mirror angle %6.1f magnitude %4.1f\n",
+			    $indent, '', $info->{mma},
+			    rad2deg ($info->{angle}), $info->{magnitude};
+			}
+		    }
+		}
+
 	    }
 	  else {
 	    printf "%16s %s\n", $name, $lcfmt->($sta, $body);
@@ -1919,37 +2178,108 @@ while ($time <= $endtm) {
 #		@sky in the given time range.
 #
 
+BEGIN {
+    $cmdlgl{quarters} = [qw{dump flatten}];
+}
+
 sub quarters {
-my $start = _parse_time ($_[0] || 'today midnight');
-my $end = _parse_time ($_[1] || '+30');
+    my $start = _parse_time ($_[0] || 'today midnight');
+    my $end = _parse_time ($_[1] || '+30');
 
-my $dtfmt = "$parm{date_format} $parm{time_format}";
+    my $dtfmt = "$parm{date_format} $parm{time_format}";
 
-my @data;
+    my @data;
 
 #	Iterate over any background objects, accumulating all
 #	quarter-phases of each until we get one after the
 #	end time. We silently ignore bodies that do not support
 #	the next_quarter() method.
 
-foreach my $body (@sky) {
-    next unless $body->can ('next_quarter');
-    $body->universal ($start);
+    foreach my $body (@sky) {
+	next unless $body->can ('next_quarter');
+	$body->universal ($start);
 
-    while (1) {
-	my ($time, undef, $quarter) = $body->next_quarter;
-	last if $time > $end;
-	push @data, [$time, $quarter];
-	}
+	while (1) {
+	    my ($time, undef, $quarter) = $body->next_quarter;
+	    last if $time > $end;
+	    push @data, [$time, $quarter];
+	    }
     }
 
 #	Sort and display the quarter-phase information.
 
-foreach (sort {$a->[0] <=> $b->[0]} @data) {
-    my ($time, $quarter) = @$_;
-    print strftime ($dtfmt, localtime $time), " $quarter\n";
+    foreach (sort {$a->[0] <=> $b->[0]} @data) {
+	if ($cmdopt{dump}) {
+	    if ($cmdopt{flatten}) {
+		local $Data::Dumper::Terse = 1;
+		print Dumper (_flatten ($_));
+	    } else {
+		print Dumper $_;
+	    }
+	} else {
+	    my ($time, $quarter) = @$_;
+	    print strftime ($dtfmt, localtime $time), " $quarter\n";
+	}
     }
 
+}
+
+
+########################################################################
+#
+#	reflection () - report flare data for given time
+#
+
+BEGIN {
+$cmdlgl{reflection} = [qw{algorithm=s choose=s@ questionable|spare}];
+}
+
+sub reflection {
+my $dtfmt = "$parm{date_format} $parm{time_format}";
+my $time = _parse_time (shift);
+
+my $debug = $cmdopt{debug} ? !$parm{debug} : $parm{debug};
+
+my $sta = _get_station ();
+
+print <<eod;
+Reflections at @{[strftime $dtfmt, localtime $time]}
+
+eod
+
+#	Tell aggregate() how to work.
+
+local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
+
+TLE:
+foreach my $tle (_select_observing_list ($time)) {
+    next unless $tle->can ('flare');
+    my $id = $tle->get ('id');
+    my $name = $tle->get ('name') || '';
+    unless ($tle->can_flare ($cmdopt{questionable})) {
+	printf "%6d %15s   Does not flare. Status: '%s'\n",
+		$id, $name, $tle->get ('status');
+	next;
+	};
+    $tle->set (algorithm => $cmdopt{algorithm} || 'fixed',
+	extinction => $parm{extinction}, horizon => 0);
+    $tle->set (debug => $debug) if $debug;
+    foreach my $info ($tle->reflection ($sta, $time)) {
+	if (!exists $info->{mma}) {
+	    printf "%6d %15s   %s\n", $id, $name, $info->{status};
+	    last;
+	    }
+	  elsif ($info->{status}) {
+	    printf "%6d %15s %d %s\n", $id, $name, $info->{mma},
+		$info->{status};
+	    }
+	  else {
+	    printf "%6d %15s %d %6.1f %4.1f\n", $id, $name, $info->{mma},
+		rad2deg ($info->{angle}), $info->{magnitude};
+	    }
+	}
+    $tle->set (debug => 0) if $debug;
+    }
 }
 
 
@@ -2256,7 +2586,7 @@ $fh = $hdl;
 #
 
 #	In addition to the usual command qualifiers, st takes -verbose,
-#	which means to display all data fetched..
+#	which means to display all data fetched.
 
 BEGIN {
 $cmdlgl{st} = [qw{end=s start=s verbose}];
@@ -2302,7 +2632,7 @@ eod
 unshift @_, -start => _parse_time ($cmdopt{start}) if $cmdopt{start};
 unshift @_, -end =>  _parse_time ($cmdopt{end}) if $cmdopt{end};
 
-my $rslt = $st->$func (@_);
+my ($rslt, @rest) = $st->$func (@_);
 my $content = $st->content_type || '';
 if (!$rslt->is_success) {
     die $rslt->status_line;
@@ -2312,7 +2642,7 @@ if (!$rslt->is_success) {
     $cmdopt{verbose} and print $rslt->content, "\n";
     }
   elsif ($content eq 'iridium-status') {
-    __PACKAGE__->_iridium_status ($rslt->content);
+    __PACKAGE__->_iridium_status (@rest);
     $cmdopt{verbose} and print $rslt->content, "\n";
     }
   elsif ($content || $cmdopt{verbose}) {
@@ -2326,26 +2656,44 @@ if (!$rslt->is_success) {
 #	status () - Show satellite status, fetching if necessary.
 #
 
+my @status_code_map;
+
 BEGIN {
-$cmdlgl{status} = [qw{reload}];
+$cmdlgl{status} = [qw{name reload}];
+@status_code_map = qw{+ S -};
 }
 
 sub status {
-@_ or @_ = qw{iridium};
-foreach my $type (sort map {lc $_} @_) {
-    $cmdopt{reload} and delete $types{$type};
-    unless ($types{$type}) {
-	my $method = "_${type}_status";
-	die <<eod unless __PACKAGE__->can ($method);
-Error - Satellite type $type is unknown.
-eod
-	__PACKAGE__->$method ();
-	}
-    print ucfirst $type, "\n";
-    foreach my $body (@{$types{$type}}) {
-	print '    ', $body->{text}, "\n";
+@_ or @_ = qw{show};
+
+my $verb = lc (shift (@_) || 'show');
+$verb = 'show' if $verb eq 'iridium';	# Cover deprecated option.
+
+if ($verb eq 'add' || $verb eq 'drop') {
+    Astro::Coord::ECI::TLE->status ($verb, @_);
+    foreach my $tle (@bodies) {
+	$tle->get ('id') == $_[0] and $tle->rebless ();
 	}
     }
+  elsif ($verb eq 'clear') {
+    Astro::Coord::ECI::TLE->status ($verb, @_);
+    foreach my $tle (@bodies) {
+	$tle->rebless ();
+	}
+    }
+  elsif ($verb eq 'show') {
+    my @data = Astro::Coord::ECI::TLE->status ('show');
+    @data = sort {$a->[3] cmp $b->[3]} @data if $cmdopt{name};
+    foreach my $tle (@data) {
+	print <<eod;
+status add $tle->[0] $tle->[1] $status_code_map[$tle->[2]] '$tle->[3]' '$tle->[4]'
+eod
+	}
+    }
+  else {
+    Astro::Coord::ECI::TLE->status ($verb, @_);
+    }
+
 }
 
 
@@ -2386,12 +2734,12 @@ $^O eq 'MSWin32' || $^O eq 'VMS' and $cmd =~ tr/'"/"'/;
 #
 
 BEGIN {
-$cmdlgl{tle} = [qw{verbose}];
+$cmdlgl{tle} = [qw{choose=s@ verbose}];
 }
 
 sub tle {
 my $dtfmt = "$parm{date_format} $parm{time_format}";
-foreach my $tle (@bodies) {
+foreach my $tle ($cmdopt{choose} ? _select_observing_list () : @bodies) {
     print $cmdopt{verbose} ? <<eod : $tle->get ('tle');
 
 NORAD ID: @{[$tle->get ('id')]}
@@ -2509,6 +2857,64 @@ use strict qw{refs};
     push @rslt, substr ($symbol, $len);
     }
 sort @rslt;
+}
+
+
+#	$hashref = _flatten ($hashref)
+#
+#	This subroutine implements 'event flattening'; the conversion
+#	of all Astro::Coord::ECI subclasses in the hash into the base
+#	class.
+
+sub _flatten {
+    my $hash = shift;
+    foreach my $key (keys %$hash) {
+	if (eval {$hash->{$key}->represents ('Astro::Coord::ECI::TLE')}) {
+	    my $old = $hash->{$key};
+	    $hash->{$key} = Astro::Coord::ECI->new ()->
+		universal ($old->universal ())->
+		eci ($old->eci ());
+	    $hash->{$key}->set (
+		name => $old->get ('name'),
+		id => $old->get ('id'),
+	    );
+	} elsif (eval {$hash->{$key}->represents ('Astro::Coord::ECI')}) {
+	    my $old = $hash->{$key};
+	    my $meth = $old->get ('inertial') ? 'eci' : 'ecef';
+	    $hash->{$key} = Astro::Coord::ECI->new ()->
+		universal ($old->universal ())->
+		$meth ($old->$meth ());
+	    $hash->{$key}->set (
+		name => $old->get ('name'),
+		id => $old->get ('id'),
+	    );
+	} elsif (ref $hash->{$key} eq 'HASH') {
+	    _flatten ($hash->{$key});
+	}
+    }
+    $hash;
+}
+
+
+#	$string = _format_local_az_rng ($station, $body)
+
+#	This subroutine formats the azimuth and range of the body
+#	as seen from the station. If called with no arguments, it
+#	returns a suitable heading for this information.
+
+sub _format_local_az_rng {
+@_ or return ' azim     range    ';
+@_ or return ' azim     range    ';
+@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
+    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
+Programming error - _format_azel () must be called with either zero
+    or two arguments. If two, both must be Astro::Coord::ECI objects.
+eod
+my ($az, $el, $rng) = $_[0]->azel ($_[1]);
+sprintf "%5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
+    rad2deg ($az),
+    $bearing[floor ($az/TWOPI * @bearing + .5) % @bearing],
+    $rng;
 }
 
 
@@ -2649,14 +3055,18 @@ _display_timing ();
 
 {	# Local symbol block.
 
-my $st;
+    my $st;
 
-sub _get_spacetrack {
-shift and return $st;
-_load_module ('Astro::SpaceTrack', @_);
-$st ||= 
-    Astro::SpaceTrack->new (webcmd => $parm{webcmd}, filter => 1);
-}
+    sub _get_spacetrack {
+	shift and return $st;
+	_load_module ('Astro::SpaceTrack', @_);
+	$st ||= 
+	    Astro::SpaceTrack->new (
+		webcmd => $parm{webcmd},
+		filter => 1,
+		iridium_status_format => 'kelso',
+	    );
+    }
 }	# End local symbol block.
 
 #	@names = _get_spacetrack_attrib_names ();
@@ -2736,34 +3146,28 @@ sub _iridium_status {
 shift;
 unless (@_) {
     my $st = _get_spacetrack ();
-    my $rslt = $st->iridium_status;
+    my ($rslt, @rest) = $st->iridium_status;
     $rslt->is_success or die $rslt->status_line;
-    push @_, $rslt->content;
+    push @_, @rest;
     }
-delete $types{iridium};
-foreach my $id (keys %status) {
-    $status{$id}{type} eq 'iridium' and delete $status{$id};
+
+if (@_ && ref $_[0] eq 'ARRAY') {
+    Astro::Coord::ECI::TLE->status (clear => 'iridium');
+    foreach (@{$_[0]}) {
+	Astro::Coord::ECI::TLE->status (add => $_->[0], iridium =>
+	    $_->[4], $_->[1], $_->[5]);
     }
-my @ids;
-foreach my $buffer (split '\n', $_[0]) {
-    next unless $buffer;
-    my ($id, $name, $status, $comment) =
-	map {s/\s+$//; s/^\s+//; $_}
-	$buffer =~ m/(.{8})(.{0,15})(.{0,9})(.*)/;
-    $status{$id} = {
-	type => 'iridium',
-	id => $id,
-	name => $name,
-	status => $status,
-	comment => $comment,
-	text => $buffer,
-	};
-#0         1         2         3         4         5         6         7
-#01234567890123456789012345678901234567890123456789012345678901234567890
-# 25777   Iridium 14     ?        Spare   was called Iridium 14A
-    push @ids, $status{$id};
+} else {
+    confess <<eod;
+Program error - Portable status not passed, and unavailable from
+        Astro::SpaceTrack->iridium_status.
+eod
+}
+
+foreach my $tle (@bodies) {
+    $tle->rebless ();
     }
-$types{iridium} = [sort {$a->{id} <=> $b->{id}} @ids];
+
 }
 
 
@@ -2899,30 +3303,35 @@ $string * $units{$units};
 #	invalid time.
 
 BEGIN {	# Begin local symbol block.
-my $last_time_set = time ();
-my $initial_time_set = $last_time_set;
-sub _parse_time {
-my $time = $_[0] or return $_[1] || time ();
-my $rslt;
-if ($time =~ m/^([\+\-])\s*(\d+)(?:\s+(\d+)(?::(\d+)(?::(\d+))?)?)?/) {
-    my $delta = ((($2 || 0) * 24 + ($3 || 0)) * 60 + ($4 || 0)) * 60 + ($5 || 0);
-    $last_time_set = $1 eq '+' ?
-	$last_time_set + $delta :
-	$last_time_set - $delta;
-    }
-  else {
-    $last_time_set = (UnixDate ($time, '%s') || die <<eod) + $date_manip_fudge;
+
+    my $last_time_set = time ();
+    my $initial_time_set = $last_time_set;
+
+    sub _parse_time {
+    my $time = $_[0] or return $_[1] || time ();
+    my $rslt;
+    if ($time =~ m/^([\+\-])\s*(\d+)(?:\s+(\d+)(?::(\d+)(?::(\d+))?)?)?/) {
+	my $delta = ((($2 || 0) * 24 + ($3 || 0)) * 60 +
+	    ($4 || 0)) * 60 + ($5 || 0);
+	$last_time_set = $1 eq '+' ?
+	    $last_time_set + $delta :
+	    $last_time_set - $delta;
+	}
+      else {
+	$last_time_set = (UnixDate ($time, '%s') || die <<eod
 Error - Invalid time '$time'
 eod
-    $parm{perltime} and $last_time_set = timelocal gmtime $last_time_set;
-    $initial_time_set = $last_time_set;
+	    ) + $date_manip_fudge;
+	$parm{perltime} and $last_time_set =
+	    timelocal gmtime $last_time_set;
+	$initial_time_set = $last_time_set;
+	}
     }
-}
 
 
 #	Reset the last time set.
 
-sub _parse_time_reset {$last_time_set = $initial_time_set}
+    sub _parse_time_reset {$last_time_set = $initial_time_set}
 
 }	# End local symbol block.
 
@@ -3005,6 +3414,104 @@ my $min = floor ($sec);
 $sec = ($sec - $min) * 60;
 my $rslt = sprintf '%2d:%02d:%02d', $hr, $min, floor ($sec + .5);
 $rslt;
+}
+
+#	@list = _select_observing_list ($time)
+
+#	This subroutine selects and returns the correct TLEs to use
+#	for calculations relevant to the given time. The algorithm
+#	is:
+#	    * If there is only one tle for a given NORAD ID, it is
+#		returned; otherwise
+#	    * If there is any tle for the given NORAD ID having an
+#		epoch less than the given time, the most recent
+#		such tle is returned; otherwise
+#	    * The earliest such tle (whose epoch is necessarily
+#		AFTER the given time) is returned.
+#	The returned list contains each NORAD ID in the observing
+#	list exactly once, in ascending order by NORAD ID.
+#
+# >>>>	Note that in the current implementation the presence of the
+# >>>>	time argument is used as a flag to determine whether we want
+# >>>>	aggregation into sets or not.
+
+=begin comment
+
+sub _select_observing_list {
+my $time = shift;
+my %wanted;
+foreach my $tle (_sort_observing_list ()) {
+    my $id = $tle->get ('id');
+    $wanted{$id} = $tle
+	unless $wanted{$id} && $tle->get ('epoch') > $time;
+    }
+return map {$wanted{$_}} sort keys %wanted;
+}
+
+sub _select_observing_list {
+my $choose = $cmdopt{choose} || [];
+my $time = defined $_[0] ? $_[0] :
+    $cmdopt{epoch} ? _parse_time ($cmdopt{epoch}) : undef;
+my $data = defined $time ? do {
+    my %wanted;
+    foreach my $tle (_sort_observing_list ()) {
+	my $id = $tle->get ('id');
+	$wanted{$id} = $tle
+	    unless $wanted{$id} && $tle->get ('epoch') > $time;
+	}
+    [map {$wanted{$_}} sort keys %wanted];
+    } : \@bodies;
+if (@$choose) {
+    my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_}
+	map {split '\s*,\s*', $_} @$choose;
+    my @keep;
+    foreach my $tle (@$data) {
+	my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
+	foreach my $test (@check) {
+	    next unless ref $test ? $name =~ m/$test/ : $id == $test;
+	    push @keep, $tle;
+	    last;
+	    }
+	}
+    $data = \@keep;
+    }
+@$data
+}
+
+=end comment
+
+=cut
+
+sub _select_observing_list {
+my $time = shift;
+my $choose = $cmdopt{choose} || [];
+my $data;
+if ($time) {
+    $data = [_aggregate (@bodies)];
+    }
+  elsif ($cmdopt{epoch}) {
+    my $time = _parse_time ($cmdopt{epoch});
+    $data = [map {UNIVERSAL::isa ($_, 'Astro::Coord::ECI::TLE::Set') ? $_->select ($time) : $_}
+	_aggregate (@bodies)];
+    }
+  else {
+    $data = \@bodies;
+    }
+if (@$choose) {
+    my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_}
+	map {split '\s*,\s*', $_} @$choose;
+    my @keep;
+    foreach my $tle (@$data) {
+	my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
+	foreach my $test (@check) {
+	    next unless ref $test ? $name =~ m/$test/ : $id == $test;
+	    push @keep, $tle;
+	    last;
+	    }
+	}
+    $data = \@keep;
+    }
+@$data
 }
 
 #	@coordinates = _simbad ($query);
@@ -3128,6 +3635,19 @@ SOAP::Lite->can ('default_ns') ?
 	->on_action (sub {join $conn, @_})
 	->uri ($_[0])
 	->proxy ($_[1], timeout => 30);
+}
+
+#	@list = _sort_observing_list ()
+
+#	This subroutine sorts the observing list into ascending order
+#	by NORAD ID, and within NORAD ID by ascending epoch, using the
+#	Schwartzian transform. The sorted list is returned, and the
+#	original list is unmodified.
+
+sub _sort_observing_list {
+map {$_->[2]}
+    sort {$a->[0] <=> $b->[0] || $a->[1] <=> $b->[1]}
+    map {[$_->get ('id'), $_->get ('epoch'), $_]} @bodies;
 }
 
 #	$fn = _storable ($file)
@@ -3566,7 +4086,11 @@ this functionality unless you are running Perl 5.8 or above.
 named satpass.ini under MacOS (meaning OS 9 - OS X is Darwin to Perl),
 MSWin32 and VMS, and .satpass under any other operating system. Any
 command may be placed in the initialization file. It is a good place to
-set the observer's location and define any macros you want.
+set the observer's location and define any macros you want. The default
+initialization file can be overridden using the SATPASSINI environment
+variable or the -initialization_file command option. Internally to
+satpass and any commands it spawns, environment variable SATPASSINI will
+be set to the name of the initialization file actually used.
 
 =head1 COMMANDS
 
@@ -3752,6 +4276,24 @@ For example:
  satpass> # Keep only the HST and the ISS
  satpass> choose hst iss
 
+The one command-specific option is -epoch. It takes as an argument any
+valid time, and retains the most recent set of elements for each object
+which are before the given time. If there are none before the given
+time for a given object, the earliest set of elements is retained.
+
+For example:
+
+ satpass> # Get some historical data
+ satpass> st search_name zarya -start 2006/04/01 \
+ _satpass> -end 2006/04/07
+ satpass> # Keep the set relevant to noon the 6th
+ satpass> choose -epoch 'Apr 7 2006 noon'
+
+Most commands that operate on the observing list choose the correct
+elements based on the time (or the start time) specified on the
+command. So barring bugs, you may not need this option unless you are
+trying to assemble and save a set of elements relevant to a given time
+in the past.
 
 =for html <a name="clear"></a>
 
@@ -3793,6 +4335,54 @@ we exit.
 If the name is the name of a parameter, the value is optional, but if
 supplied will be used to set the parameter. The environment variable
 is set from the value of the parameter, and will track changes in it.
+
+=for html <a name="flare"></a>
+
+=item flare start_time end_time
+
+This command predicts flares for any bodies in the observing list
+capable of generating them. Currently, this means Iridium satellites.
+The start_time defaults to 'today noon', and the end_time to +7.
+
+In addition to the global options, the following options are legal
+for the flare command:
+
+-am selects only morning flares -- that is, those after midnight but
+before morning twilight.
+
+-choose chooses bodies from the observing list. It works the same way
+as the L<choose|/choose> command, but does not alter the observing
+list. You can specify multiple bodies by specifying -choose multiple
+times, or by separating your choices with commas. If -choose is not
+specified, the whole observing list is used.
+
+-day selects daytime flares -- that is, those between morning
+twilight and evening twilight.
+
+-pm selects evening flares -- that is, those between evening
+twilight and midnight.
+
+-questionable requests that satellites whose status is questionable
+(i.e. 'S') be included. Typically these are spares, or moving
+between planes. You may use -spare as a synonym for this.
+
+See the L</SPECIFYING TIMES> topic below for how to specify times.
+
+For example, assuming the observers' location has already been set, you
+can predict flares for the next two days as follows:
+
+ satpass> # Get data for Iridium satellites
+ satpass> st celestrak iridium
+ satpass> # Use shorter twilight for Iridium flares
+ satpass> set twilight 3
+ satpass> # We are not interested in range to flare
+ satpass> set local_coord azel
+ satpass> # Supress date line in output, include in time
+ satpass> set date_format "" time_format "%d-%b %H:%M:%S"
+ satpass> # Not interested in night flares dimmer than -1
+ satpass> set flare_mag_night -1
+ satpass> # Finally, predict the flares. Include spares.
+ satpass> flare -spare now +2
 
 =for html <a name="geocode"></a>
 
@@ -4074,12 +4664,14 @@ displays the documentation for this script (hint: you are reading this
 now). You can get documentation for related Perl modules by specifying
 the appropriate arguments, as follows:
 
- eci -- Astro::Coord::ECI
- moon - Astro::Coord::ECI::Moon
- sun -- Astro::Coord::ECI::Sun
- st --- Astro::SpaceTrack
- star - Astro::Coord::ECI::Star
- tle -- Astro::Coord::ECI::TLE
+ eci ------ Astro::Coord::ECI
+ iridium -- Astro::Coord::ECI::TLE::Iridium
+ moon ----- Astro::Coord::ECI::Moon
+ sun ------ Astro::Coord::ECI::Sun
+ st ------- Astro::SpaceTrack
+ star ----- Astro::Coord::ECI::Star
+ tle ------ Astro::Coord::ECI::TLE
+ utils ---- Astro::Coord::ECI::Utils
 
 The viewer is whatever is the default for your system.
 
@@ -4191,6 +4783,15 @@ Example:
 
  satpass> pass 'today noon' 'tomorrow noon'
 
+In addition to the global options, the following options are legal for
+the pass command:
+
+-choose chooses bodies from the observing list. It works the same way
+as the L<choose|/choose> command, but does not alter the observing
+list. You can specify multiple bodies by specifying -choose multiple
+times, or by separating your choices with commas. If -choose is not
+specified, the whole observing list is used.
+
 =for html <a name="phase"></a>
 
 =item phase time
@@ -4201,10 +4802,10 @@ body that supports this is the Moon.
 
 The display shows the time, the phase angle in degrees (0 being new, 90
 being first quarter, and so on), and a description of the phase ('new',
-'waxing crescent', 'first quarter', 'waxing gibbous', 'full', 'waning
-gibbous', 'last quarter', or 'waning crescent'). The body is considered
-to be at quarter-phase if it is within 6.1 degrees (about 12 hours for
-the Moon) of 0, 90, 180, or 270 degrees. Otherwise you get
+'waxing crescent', 'first quarter', 'waxing gibbous', 'full',
+'waning gibbous', 'last quarter', or 'waning crescent'). The body is
+considered to be at quarter-phase if it is within 6.1 degrees (about 12
+hours for the Moon) of 0, 90, 180, or 270 degrees. Otherwise you get
 waxing|waning crescent|gibbous.
 
 The default time is the time the command was issued.
@@ -4213,7 +4814,7 @@ The default time is the time the command was issued.
 
 =item position start_time end_time interval
 
-This position gives the positions of all objects in the observing list
+This command gives the positions of all objects in the observing list
 and in the sky between the given start_time and end_time, at the given
 interval. The default for both start_time and end_time is the current
 time, and the default interval is 60 (seconds).
@@ -4222,13 +4823,27 @@ The position is given as seen by the observer, either as elevation,
 azimuth, and range, or as right ascension, declination, and range,
 depending on the setting of the L<local_coord|/local_coord> parameter.
 
-In addition to the global options, this command takes the following
-options:
+If the satellite is capable of producing flares, the status of each
+potential flare is given also.
 
--realtime causes the script to sleep between outputs, so that the
-output occurs more or less in real time. If you should wish to
-terminate output before the end time is reached, you can send the
-script a SIGINT signal, typically by typing control/C.
+In addition to the global options, the following options are legal for
+the position command:
+
+-choose chooses bodies from the observing list. It works the same way
+as the L<choose|/choose> command, but does not alter the observing
+list. You can specify multiple bodies by specifying -choose multiple
+times, or by separating your choices with commas. If -choose is not
+specified, the whole observing list is used.
+
+-questionable causes the code to consider spares (status 'S') to be
+capable of flaring. You may use -spare as a synonym for this.
+
+-realtime causes a running display in near-real-time. The default
+end_time changes to '+10' (i.e. 10 days), and the default interval to
+10 (seconds). Also, the script sleeps between outputs, so the output is
+more or less as it happens, at least to the nearest second. You can
+break out of this by sending the script a SIGINT signal (typically
+by typing control/C).
 
 The default start_time is the current time.
 
@@ -4251,6 +4866,37 @@ calculating the position of the Sun to the nearest 0.01 degree.
 See the L</SPECIFYING TIMES> topic below for how to specify times.
 
 The defaults are 'today noon' and 30 days after the start time.
+
+=for html <a name="reflection"></a>
+
+=item reflection time ...
+
+This command calculates and displays the mirror angle and reflection
+magnitude for all flaring satellites, and all Main Mission Antennae for
+each satellite.
+
+If the satellite is capable of flaring but produces no reflection, you
+get a message saying why. Typically, this is because the MMA geometry
+does not permit a reflection, the satellite is in shadow or below the
+horizon, or its status indicates that it is incapable of producing
+predictable flares.
+
+In addition to the global options, the following options are legal for
+the reflection command:
+
+-choose chooses bodies from the observing list. It works the same way
+as the L<choose|/choose> command, but does not alter the observing
+list. You can specify multiple bodies by specifying -choose multiple
+times, or by separating your choices with commas. If -choose is not
+specified, the whole observing list is used.
+
+-questionable forces reflection calculations for those satellites whose
+status is 'S'. Typically, this represents spares, or satellites moving
+between planes. You may use -spare as a synonym for this.
+
+See the L</SPECIFYING TIMES> topic below for how to specify times.
+
+The time defaults to the current time.
 
 =for html <a name="retrieve"></a>
 
@@ -4433,25 +5079,52 @@ Track login:
  satpass> # Only keep the ones we want.
  satpass> choose 20580 25544
 
+Example of retrieving predicted Space Shuttle elements from the Human
+Space Flight web site. You need -all because the elements change as the
+Shuttle maneuvers. Position (etc.) predictions will be made using
+whatever element set is current at the time. If no shuttle flight is
+impending (or in progress) you will get an error.
+
+ satpass> # Specify direct retrieval.
+ satpass> st set direct 1
+ satpass> # Get the data
+ satpass> st spaceflight shuttle -all
+
 =for html <a name="status"></a>
 
-=item status
+=item status ...
 
-This command displays the operational status of satellites, fetching
-it if necessary. You can specify one or more satellite types if
-desired, but there is not much point since the only legal type at
-the moment is 'iridium', and the specification of the type is
-deprecated anyway (see note below).
+This command displays or maintains the satellite status list. This list
+is used by the L<flare|/flare> command to predict Iridium flares. If
+given without a subcommand, it lists the known statuses. B<Note that,
+beginning with version 0.007, this list is formatted as 'status add'
+commands, and the syntax 'status iridium' is deprecated.>
 
-Normally, this command will not reload status if it is already
-available, since it does not change that often. But you can force
-a reload using the -reload qualifier.
+Initially, the status list is populated with the status as of December
+6, 2006. At that time, the date of T. S. Kelso's document was October
+17, 2006. If you have installed Astro::SpaceTrack, you can update the
+status using the 'st iridium_status' command, or you can update it using
+the 'add', 'clear', and 'drop' subcommands, which are discussed in more
+detail below.
 
-B<Note:> If Iridium flare functionality is ever released, subcommands
-to manipulate the status list will be added, and the format of the
-output of the unqualified command will change to the commands
-necessary to rebuild the list. This is the reason the 'status iridium'
-command is deprecated.
+The 'status' command also takes the following subcommands:
+
+add - adds the given body to the status list. The arguments are NORAD
+ID, satellite type ('iridium' is the only valid type at the moment),
+status ('+' for in-service, 'S' for spare, '-' for tumbling or otherwise
+unable to flare), name (e.g.  'Iridium 12'), and a comment, with the
+last three defaulting to empty. For example:
+
+ satpass> status add 12345 iridium S 'Bogus body' TRW
+
+The 'add' command can also be used to change the status of an existing
+body, with the new entry replacing the old.
+
+drop - removes the given body from the status list. You will get a
+message if the body does not exist. For example, to remove the
+previously-added bogus body,
+
+ satpass> status drop 12345
 
 =for html <a name="store"></a>
 
@@ -4499,6 +5172,15 @@ standard out. That is to say the ls command handles the -c.
 This command displays the original two- or three- line element data
 which was used to build the observation list.
 
+In addition to the global options, the following options are legal for
+the tle command:
+
+-choose chooses bodies from the observing list. It works the same way
+as the L<choose|/choose> command, but does not alter the observing
+list. You can specify multiple bodies by specifying -choose multiple
+times, or by separating your choices with commas. If -choose is not
+specified, the whole observing list is used.
+
 The -verbose qualifier causes the data to be displayed verbosely,
 one item per line, labeled and with units if applicable.
 
@@ -4532,8 +5214,8 @@ orbiting body and any of the background objects. If the body passes
 closer than this, the closest point will appear as an event in the
 pass. The intent is to capture transits or near approaches.
 
-If this parameter is set to 0, no check for close approaches to the
-Sun or Moon will be made.
+If this parameter is set to 0, no check for close approaches to
+background objects will be made.
 
 See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
@@ -4663,6 +5345,39 @@ to delete a macro. If false, 'macro foo' deletes macro foo. If true,
 
 The default is 0 (i.e. false). B<This will change>, as deletion without
 an explicit -delete is deprecated.
+
+=for html <a name="extinction"></a>
+
+=item extinction (boolean)
+
+This parameter specifies whether magnitude estimates take atmospheric
+extinction into account. It should be set true if you are interested
+in measured brightness, and false if you are interested in estimating
+magnitudes versus nearby stars.
+
+The default is 1 (i.e. true).
+
+=for html <a name="flare_mag_day"></a>
+
+=item flare_mag_day (numeric)
+
+This parameter specifies the limiting magnitude for the flare
+calculation for flares that occur during the day. For this
+purpose, it is considered to be day if the elevation of the
+Sun is above the L<twilight|/twilight> parameter.
+
+The default is -6.
+
+=for html <a name="flare_mag_day"></a>
+
+=item flare_mag_night (numeric)
+
+This parameter specifies the limiting magnitude for the flare
+calculation for flares that occur during the night. For this
+purpose, it is considered to be night if the elevation of the
+Sun is below the L<twilight|/twilight> parameter.
+
+The default is 0.
 
 =for html <a name="geometric"></a>
 
@@ -4901,6 +5616,9 @@ information, a false (i.e. 0) value does not.
 
 The default is 0 (i.e. false).
 
+B<This parameter is deprecated,> and will probably go away when
+pass_old does.
+
 =for html <a name="twilight"></a>
 
 =item twilight (string or numeric)
@@ -5090,6 +5808,10 @@ available.
 which suppresses extraneous output to make satpass behave more like a
 Unix filter. The only thing suppressed at the moment is the banner text.
 
+=item -initialization_file filename
+
+which specifies an initialization file to use in place of the default.
+
 =back
 
 These qualifiers can be abbreviated, as long as the abbreviation is
@@ -5135,6 +5857,12 @@ or (under some flavor of Unix)
 or even
 
   $ satpass `cat commands`
+
+=head1 ENVIRONMENT VARIABLES
+
+SATPASSINI can be used to specify an initialization file to use in lieu
+of the default. This can still be overridden by the
+-initialization_file command option.
 
 =head1 CHANGES
 

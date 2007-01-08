@@ -1,0 +1,109 @@
+macro iridium 'status add $1 iridium'
+macro PDM \
+    'set longitude -95.0868' \
+    'set latitude 29.5378' \
+    'set height 6' \
+    'set location PDM' \
+    'loc'
+macro EC \
+    'set longitude -97.74' \
+    'set latitude 30.29' \
+    'set height 165' \
+    'set location EC' \
+    'loc'
+macro EdC \
+    'set longitude -97.74' \
+    'set latitude 30.29' \
+    'set height 165' \
+    'set location EdC' \
+    'loc'
+macro BG \
+    'set longitude +18.22857' \
+    'set latitude 59.2237' \
+    'set height 44' \
+    'set location BG' \
+    'loc'
+macro BG2 \
+    'set longitude +18.0' \
+    'set latitude 59.4' \
+    'set height 0' \
+    'set location BG2' \
+    'loc'
+macro WH \
+    'set longitude +5.0852' \
+    'set latitude 51.6261' \
+    'set height 10' \
+    'set location WH' \
+    'loc'
+macro BD \
+    'set longitude +5.47722' \
+    'set latitude 51.2636' \
+    'set height 35' \
+    'set location BD' \
+    'loc'
+macro KJ \
+    'set longitude +4.2656' \
+    'set latitude 51.2344' \
+    'set height 0' \
+    'set location KJ' \
+    'loc'
+macro LB \
+    'set longitude +4.77' \
+    'set latitude 52.65' \
+    'set height 3' \
+    'set location LB' \
+    'loc'
+macro AS \
+    'set longitude +9.4683' \
+    'set latitude 53.5932' \
+    'set height 6' \
+    'set location AS' \
+    'loc'
+macro PW \
+    'set longitude -112.15' \
+    'set latitude 37.73' \
+    'set height 2300' \
+    'set location PW' \
+    'loc'
+macro SW \
+    'set longitude -97.7' \
+    'set latitude 30.4' \
+    'set height 150' \
+    'set location SW' \
+    'loc'
+macro JR \
+    'set longitude -118.3117' \
+    'set latitude 34.1817' \
+    'set height 0' \
+    'set location JR' \
+    'loc'
+macro RL \
+    'set longitude -104.4614' \
+    'set latitude 38.9478' \
+    'set height 2073' \
+    'set location RL' \
+    'loc'
+macro TC \
+    'set longitude +3.2478' \
+    'set latitude 51.2277' \
+    'set height 3.75' \
+    'set location TC' \
+    'loc'
+macro CC \
+    'set longitude -121.805' \
+    'set latitude 36.6862' \
+    'set height 0' \
+    'set location CC' \
+    'loc'
+macro EL \
+    'set longitude -74.2317' \
+    'set latitude 40.1072' \
+    'set height 21' \
+    'set location EL' \
+    'loc'
+macro BO \
+    'set longitude +18.455' \
+    'set latitude 59.322' \
+    'set height 15' \
+    'set location BO' \
+    'loc'

@@ -5,7 +5,7 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.001';
+our $VERSION = '0.001_01';
 
 sub new {
 my $class = shift;
@@ -19,6 +19,8 @@ $self;
 sub nodelegate {$_[0]};
 
 sub delegate {$_[0]};
+
+sub rebless {}	# No-op rebless() to defeat class changes.
 
 1;
 

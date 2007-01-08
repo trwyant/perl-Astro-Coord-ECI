@@ -1,6 +1,7 @@
 =head1 NAME
 
-Astro::Coord::ECI::TLE - Compute satellite locations using NORAD orbit propagation models
+Astro::Coord::ECI::TLE - Compute satellite locations using NORAD orbit
+propagation models
 
 =head1 SYNOPSIS
 
@@ -25,8 +26,8 @@ in their "SPACETRACK REPORT NO. 3, Models for Propagation of NORAD
 Element Sets." In other words, it turns the two- or three-line
 element sets available from such places as L<http://www.space-track.org/>
 or L<http://celestrak.com/> into predictions of where the relevant
-orbiting bodies will be. This module does B<not> implement a complete
-satellite prediction system, just the NORAD models.
+orbiting bodies will be. Additionally, the pass() method implements an
+actual visibility prediction system.
 
 The models implemented are:
 
@@ -37,41 +38,25 @@ The models implemented are:
   SDP8 - corresponds to SGP8, but for deep-space bodies.
 
 There are also some meta-models, with the smarts to run either a
-near-earth model or the corresponding deep-space model depending on
-the body the object represents:
+near-earth model or the corresponding deep-space model depending on the
+body the object represents:
 
   model - uses the preferred model (sgp4 or sdp4);
   model4 - runs sgp4 or sdp4;
   model8 = runs sgp8 or sdp8.
 
+In addition, I have on at least one occasion wanted to turn off the
+automatic calculation of position when the time was set. That is
+accomplished with this model:
+
+  null - does nothing.
+
 The models do not return the coordinates directly, they simply set the
 coordinates represented by the object (by virtue of being a subclass of
 Astro::Coord::ECI) and return the object itself. You can then call the
 appropriate inherited method to get the coordinates of the body in
-whatever coordinate system is convenient.
-
-It is also possible to run the desired model (as specified by the
-L<model|/item_model> attribute) simply by setting the time represented
-by the object.
-
-At the moment, the recommended model to use is either SGP4 or SDP4,
-depending on whether the orbital elements are for a near-earth or
-deep-space body. For the purpose of these models, any body with a
-period of at least 225 minutes is considered to be a deep-space
-body.
-
-The NORAD report claims accuracy of 5 or 6 places a day after
-the epoch of an element set for the original FORTRAN IV, which
-used (mostly) 8 place single-precision calculations. Perl
-typically uses many more places, but it does not follow that
-the models are correspondingly more accurate when implemented
-in Perl.
-
-This class is a subclass of Astro::Coord::ECI. This means
-that the models do not return results directly. Instead, you call
-the relevant Astro::Coord::ECI method to get the coordinates you want.
-For example, to find the latitude, longitude, and altitude of a body at
-a given time, you do
+whatever coordinate system is convenient. For example, to find the
+latitude, longitude, and altitude of a body at a given time, you do
 
   my ($lat, $long, $alt) = $body->model ($time)->geodetic;
 
@@ -79,6 +64,25 @@ Or, assuming the L<model|/item_model> attribute is set the way you want
 it, by
 
   my ($lat, $long, $alt) = $body->geodetic ($time);
+
+It is also possible to run the desired model (as specified by the
+L<model|/item_model> attribute) simply by setting the time represented
+by the object.
+
+At the moment, the recommended model to use is either SGP4 or SDP4,
+depending on whether the orbital elements are for a near-earth or
+deep-space body. For the purpose of these models, any body with a period
+of at least 225 minutes is considered to be a deep-space body.
+
+The NORAD report claims accuracy of 5 or 6 places a day after the epoch
+of an element set for the original FORTRAN IV, which used (mostly) 8
+place single-precision calculations. Perl typically uses many more
+places, but it does not follow that the models are correspondingly more
+accurate when implemented in Perl. My understanding is that in general
+(i.e. disregarding the characteristics of a particular implementation of
+the models involved) the total error of the predictions (including error
+in measuring the position of the satellite) runs from a few hundred
+meters to as much as a kilometer.
 
 This module is a computer-assisted translation of the FORTRAN reference
 implementation in "SPACETRACK REPORT NO. 3." That means, basically,
@@ -102,11 +106,13 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{deg2rad mod2pi SECSPERDAY thetag};
+use Astro::Coord::ECI::Utils qw{deg2rad mod2pi find_first_true
+	SECSPERDAY thetag};
+
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
@@ -197,8 +203,8 @@ my %attrib = (
     classification => 0,
     international => 0,
     epoch => sub {
-	$_[0]->{$_[1]} = $_[2];
-	$_[0]->{ds50} = $_[0]->ds50 ();
+	$_[0]{$_[1]} = $_[2];
+	$_[0]{ds50} = $_[0]->ds50 ();
 	1},
     firstderivative => 1,
     secondderivative => 1,
@@ -210,7 +216,7 @@ my %attrib = (
 	$_[0]->is_valid_model ($_[2]) || croak <<eod;
 Error - Illegal model name '$_[2]'.
 eod
-	$_[0]->{$_[1]} = $_[2];
+	$_[0]{$_[1]} = $_[2];
 	0},
     rightascension => 1,
     eccentricity => 1,
@@ -226,15 +232,21 @@ eod
     interval => 0,	# Interval for pass() positions, if positive.
     ds50 => undef,	# Read-only
     tle => undef,	# Read-only
-    illum => \&_set_illum,	# Source of illumination.
+    illum => \&_set_illum,
+    reblessable => sub {
+	my $doit = !$_[0]{$_[1]} && $_[2] && $_[0]->get ('id');
+	$_[0]{$_[1]} = $_[2];
+	$doit and $_[0]->rebless ();
+	0},
     );
 my %static = (
     appulse => deg2rad (10),	# Report appulses < 10 degrees.
     geometric => 0,	# Use geometric horizon for pass rise/set.
-    model => 'model',
     illum => 'sun',
     interval => 0,
     limb => 1,
+    model => 'model',
+    reblessable => 1,
     visible => 1,
     );
 my %model_attrib = (	# For the benefit of is_model_attrib()
@@ -244,6 +256,7 @@ my %model_attrib = (	# For the benefit of is_model_attrib()
 foreach (keys %attrib) {
     $model_attrib{$_} = 1 if $attrib{$_} && !ref $attrib{$_}
     }
+my %status;	# Subclassing data - initialized at end
 
 use constant TLE_INIT => '_init';
 
@@ -267,11 +280,99 @@ my $self = $class->SUPER::new (%static, @_);
 $self;
 }
 
+=item after_reblessing (\%possible_attributes)
+
+This method supports reblessing into a subclass, with the argument
+representing attributes that the subclass may wish to set.  It is called
+by rebless() and should not be called by the user.
+
+At this level it does nothing.
+
+=cut
+
+sub after_reblessing {}
+
+=item Astro::Coord::ECI::TLE->alias (name => class ...)
+
+This static method adds an alias for a class name, for the benefit
+of users of the status() method, and ultimately of the rebless()
+method. It is intended to be used by subclasses to register short
+names for themselves upon initialization. For example, this class
+calls
+
+ __PACKAGE__->alias (tle => __PACKAGE__);
+
+You can register more than one alias in a single call. Aliases
+can be deleted by assigning them a false value (e.g. '' or undef).
+
+If called without arguments, it returns the current aliases.
+
+You can actually call this as a normal method, but it still behaves
+like a static method.
+
+=cut
+
+my %type_map = (
+    );
+
+sub alias {
+    my $self = shift;
+    @_ % 2 and croak <<eod;
+Error - Must have even number of arguments for alias().
+eod
+    return wantarray ? %type_map : {%type_map} unless @_;
+    while (@_) {
+	my $name = shift;
+	my $class = shift or do {
+	    delete $type_map{$name};
+	    next;
+	};
+	$class = $type_map{$class} if $type_map{$class};
+	(my $file = $class) =~ s|::|/|g;
+	$file .= '.pm';
+	unless ($INC{$file}) {
+	    eval {require $file};
+	    $@ and croak <<eod;
+Error - Unable to load $class.
+eod
+	}
+	$type_map{$name} = $class;
+    }
+}
+__PACKAGE__->alias (tle => __PACKAGE__);
+
+
 #	See Astro::Coord::ECI for docs.
 
 sub attribute {
 $attrib{$_[1]} ? __PACKAGE__ : $_[0]->SUPER::attribute ($_[1])
 }
+
+
+=item before_reblessing ()
+
+This method supports reblessing into a subclass. It is intended to do
+any cleanup the old class needs before reblessing into the new class. It
+is called by rebless(), and should not be called by the user.
+
+At this level it does nothing.
+
+=cut
+
+sub before_reblessing {}
+
+
+=item can_flare ()
+
+This method returns true if the object is capable of generating flares
+(i.e. predictable bright flashes) and false otherwise. At this level
+of the inheritance hierarchy, it always returns false, but subclasses
+may return true.
+
+=cut
+
+sub can_flare {0}
+
 
 =item $value = $tle->ds50($time)
 
@@ -312,7 +413,7 @@ $rslt;
 =item $value = $tle->get('attribute')
 
 This method retrieves the value of the given attribute. See the
-L</ATTRIBUTES> section for a description of the attributes.
+L</Attributes> section for a description of the attributes.
 
 =cut
 
@@ -450,7 +551,7 @@ sub null {}
 
 This method parses a NORAD two- or three-line element set (or a
 mixture), returning a list of Astro::Coord::ECI::TLE objects. The
-L</ATTRIBUTES> section identifies those attributes which will be filled
+L</Attributes> section identifies those attributes which will be filled
 in by this method.
 
 The input will be split into individual lines, and all blank lines and
@@ -465,7 +566,11 @@ and the presence of such data will result in an exception being thrown.
 sub parse {
 my $self = shift;
 my @rslt;
-my @data = grep {$_ && $_ !~ m/^\s*#/} map {chomp; $_} map {split '\n', $_} @_;
+###!!! my $subclass = ref $_[0] eq 'HASH' ? shift : {};
+my @data = grep {$_ && $_ !~ m/^\s*#/} map {chomp; $_}
+    map {ref $_ && croak <<eod; split '\n', $_} @_;
+Error - The hash reference must be the first argument to parse ().
+eod
 while (@data) {
     my %ele = %static;
     my $line = shift @data;
@@ -508,8 +613,10 @@ while (@data) {
 	$yr += 100 if $yr < 57;
 	$ele{$_} = timegm (0, 0, 0, 1, 0, $yr) + ($day - 1) * 86400;
 	}
+
 #	From here is conversion to the units expected by the
 #	models.
+
     foreach (qw{rightascension argumentofperigee meananomaly
     		inclination}) {
 	$ele{$_} *= SGP_DE2RA;
@@ -519,7 +626,8 @@ while (@data) {
 	$temp /= SGP_XMNPDA;
 	$ele{$_} *= $temp;
 	}
-    my $body = __PACKAGE__->new (%ele);
+    my $id  = $ele{id};
+    my $body = __PACKAGE__->new (%ele);	# Note that setting the ID does the reblessing.
     $body->{tle} = $tle;
     push @rslt, $body;
     }
@@ -534,6 +642,59 @@ return @rslt;
 # The actual documentation of the algorithms, along with a reference
 # implementation in FORTRAN, is available at
 # http://celestrak.com/NORAD/documentation/spacetrk.pdf
+
+=begin comment
+
+=item Astro::Coord::ECI::TLE->parse_status ($type => $data);
+
+This method parses the status information returned by Astro::SpaceTrack
+and uses that information to update the internal status table used by
+the parse() method to rebless Iridium satellites correctly. The only
+legal $type is 'iridium', and the $data is the content of the result of
+the Astro::SpaceTrack iridium_status().
+
+See the status() method for how to manipulate this table directly.
+
+=cut
+
+=pod
+
+sub parse_status {
+shift;	# Ignore the class name.
+my $type = shift || '';
+if ($type eq 'iridium') {
+    foreach my $id (keys %status) {
+	$status{$id}{type} eq 'iridium' and delete $status{$id};
+	}
+    foreach my $buffer (split '\n', $_[0]) {
+	next unless $buffer;
+	my ($id, $name, $status, $comment) =
+	    map {s/\s+$//; s/^\s+//; $_}
+	    $buffer =~ m/(.{8})(.{0,15})(.{0,9})(.*)/;
+	$status{$id} = {
+	    type => 'iridium',
+	    class => 'Astro::Coord::ECI::TLE::Iridium',
+	    id => $id,
+	    name => $name,
+	    status => $status,
+	    comment => $comment,
+	    text => $buffer,
+	    };
+#0         1         2         3         4         5         6         7
+#01234567890123456789012345678901234567890123456789012345678901234567890
+# 25777   Iridium 14     ?        Spare   was called Iridium 14A
+	}
+    }
+  else {
+    croak <<eod;
+Error - Illegal data type '$type' in parse_status ().
+eod
+    }
+}
+
+=end comment
+
+=cut
 
 =item @passes = $tle->pass ($station, $start, $end, \@sky)
 
@@ -588,6 +749,11 @@ The events are coded by the following manifest constants:
 The dualvar function comes from Scalar::Util, and generates values
 which are numeric in numeric context and strings in string context. If
 Scalar::Util cannot be loaded the numeric values are returned.
+
+These manifest constants can be imported using the individual names, or
+the tags ':constant' or ':all'. They can also be accessed as methods
+using (e.g.) $tle->PASS_EVENT_LIT, or as static methods using (e.g.)
+Astro::Coord::ECI::TLE->PASS_EVENT_LIT.
 
 Illumination is represented by one of PASS_EVENT_SHADOWED,
 PASS_EVENT_LIT, or PASS_EVENT_DAY. The first two are calculated based on
@@ -760,14 +926,14 @@ eod
 #		Compute exact rise, max, and set.
 
 		my @time = (
-		    [_pass_zero_in ($info[0]{time} - $step, $info[0]{time},
+		    [find_first_true ($info[0]{time} - $step, $info[0]{time},
 			sub {($sta->azel ($tle->universal ($_[0])))[1] >=
 			$effective_horizon}), PASS_EVENT_RISE],
-		    [_pass_zero_in ($info[$#info]{time}, $info[$#info]{time}
+		    [find_first_true ($info[$#info]{time}, $info[$#info]{time}
 			    + $step,
 			sub {($sta->azel ($tle->universal ($_[0])))[1] <
 			$effective_horizon}), PASS_EVENT_SET],
-		    [_pass_zero_in ($info[0]{time}, $info[$#info]{time},
+		    [find_first_true ($info[0]{time}, $info[$#info]{time},
 			sub {($sta->azel ($tle->universal ($_[0])))[1] >
 				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
 				PASS_EVENT_MAX],
@@ -792,7 +958,7 @@ eod
 		    my ($suntim, $rise) =
 			$sta->universal ($last->{time})->
 			next_elevation ($sun, $twilight);
-		    push @time, [_pass_zero_in ($last->{time}, $evt->{time},
+		    push @time, [find_first_true ($last->{time}, $evt->{time},
 			sub {
 			    my $litup = $_[0] < $suntim ?
 				2 - $rise : 1 + $rise;
@@ -819,12 +985,12 @@ eod
 #		than 1 second resolution to detect a transit.
 
 		foreach my $body (@sky) {
-		    my $when = _pass_zero_in ($time[0][0], $time[1][0],
+		    my $when = find_first_true ($time[0][0], $time[1][0],
 			sub {$sta->angle ($body->universal ($_[0]),
 					$tle->universal ($_[0])) <
-				$sta->angle ($body->universal ($_[0] + 1),
-					$tle->universal ($_[0] + 1))},
-			undef, .1);
+				$sta->angle ($body->universal ($_[0] + .1),
+					$tle->universal ($_[0] + .1))},
+			.1);
 		    my $angle = 
 			$sta->angle ($body->universal ($when),
 				$tle->universal ($when));
@@ -956,18 +1122,6 @@ eod
 
 }
 
-sub _pass_zero_in {
-my ($begin, $end, $test, $usrdat, $limit) = @_;
-$limit ||= 1;
-while ($end - $begin > $limit) {
-    my $mid = $limit >= 1 ?
-	floor (($begin + $end) / 2) :
-	($begin + $end) / 2;
-    my $rslt = $test->($mid, $usrdat);
-    ($begin, $end) = $rslt ? ($begin, $mid) : ($mid, $end);
-    }
-$end;
-}
 
 =item $seconds = $tle->period ();
 
@@ -989,7 +1143,70 @@ my $a0 = $a1 * (1 - $del1 * (.5 * SGP_TOTHRD +
 	$del1 * (1 + 134/81 * $del1)));
 my $del0 = $temp / ($a0 * $a0);
 my $xnodp = $self->{meanmotion} / (1 + $del0);
-return ($self->{&TLE_INIT}{TLE_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
+return ($self->{_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
+}
+
+
+=item $tle = $tle->rebless ($class, \%possible_attributes)
+
+This method reblesses a TLE object. The class must be either
+Astro::Coord::TLE or a subclass thereof, as must the object passed in to
+be reblessed. If the $tle object has its L<reblessable|/reblessable>
+attribute false, it will not be reblessed, but will be returned
+unmodified. Before reblessing, the before_reblessing() method is called.
+After reblessing, the after_reblessing() method is called with the
+\%possible_attributes hash reference as argument.
+
+It is possible to omit the $class argument if the \%possible_attributes
+argument contains the keys {class} or {type}, taken in that order. If
+the $class argument is omitted and the \%possible_attributes hash does
+B<not> have the requisite keys, the $tle object is unmodified.
+
+It is also possible to omit both arguments, in which case the object
+will be reblessed according to the content of the internal status
+table.
+
+For convenience, you can pass a short name instead of the full class
+name. The following short names are recognized:
+
+ iridium => 'Astro::Coord::ECI::TLE::Iridium'
+ tle => 'Astro::Coord::ECI::TLE'
+
+Note that this method returns the original object (possibly reblessed).
+It does not under any circumstances manufacture another object.
+
+=cut
+
+my %loaded;	# Classes which have been loaded.
+
+sub rebless {
+my $tle = shift;
+UNIVERSAL::isa ($tle, __PACKAGE__) or croak <<eod;
+Error - You can only rebless an object of class @{[__PACKAGE__]}
+        or a subclass thereof. The object you are trying to rebless
+	is of class @{[ref $tle]}.
+eod
+$tle->get ('reblessable') or return $tle;
+@_ or do {
+    my $id = $tle->get ('id') or return $tle;
+    @_ = $status{$id} || 'tle';
+    };
+my $class = ref $_[0] eq 'HASH' ? $_[0]->{class} || $_[0]->{type} : shift
+    or return $tle;
+$class = $type_map{$class} if $type_map{$class};
+$loaded{$class} or do {
+    eval "require $class" or croak $@;
+    $loaded{$class} = 1;
+    };
+UNIVERSAL::isa ($class, __PACKAGE__) or croak <<eod;
+Error - You can only rebless an object into @{[__PACKAGE__]} or
+        a subclass thereof. You are trying to rebless the object
+	into $class.
+eod
+$tle->before_reblessing ();
+bless $tle, $class;
+$tle->after_reblessing (@_);
+$tle;
 }
 
 
@@ -998,7 +1215,7 @@ return ($self->{&TLE_INIT}{TLE_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
 This method sets the values of the various attributes. The changing of
 attributes actually used by the orbital models will cause the models to
 be reinitialized. This happens transparently, and is no big deal. For
-a description of the attributes, see L</ATTRIBUTES>.
+a description of the attributes, see L</Attributes>.
 
 Because this is a subclass of Astro::Coord::ECI, any attributes of that
 class can also be set.
@@ -1033,6 +1250,115 @@ while (@_) {
 $clear and delete $self->{&TLE_INIT};
 }
 
+
+=item Astro::Coord::ECI::TLE->status (command => arguments ...)
+
+This method maintains the internal status table, which is used by the
+parse() method to determine which subclass (if any) to bless the
+created object into. The first argument determines what is done to the
+status table; subsequent arguments depend on the first argument. Valid
+commands and arguments are:
+
+status (add => $id, $type => $status, $name, $comment) adds an item to
+the status table or modifies an existing item. The $id is the NORAD ID
+of the body. The only currently-supported $type is
+'Astro::Coord::ECI::TLE::Iridium', but any alias to this will also work
+(see alias(); 'iridium' is defined by default). The $status is
+0, 1, or 2, representing in-service, spare, or failed respectively. The
+strings '+' or '' will be interpreted as 0, 'S', 's', or '?' as 1, and
+any other non-numeric string as 2. The  $name and $comment arguments
+default to empty.
+
+status ('clear') clears the status table.
+
+status (clear => 'type') clears all entries of the given type in the
+status table. For supported types, see the discussion of 'add',
+above.
+
+status (drop => $id) removes the given NORAD ID from the status table.
+
+status ('show') returns a list of list references, representing the
+'add' commands which would be used to regenerate the status table.
+
+=cut
+
+use constant STATUS_IN_SERVICE => 0;
+use constant STATUS_SPARE => 1;
+use constant STATUS_TUMBLING => 2;
+
+my %status_map = (
+    ''	=> STATUS_IN_SERVICE,
+    '+'	=> STATUS_IN_SERVICE,
+    '?'	=> STATUS_SPARE,
+    'S' => STATUS_SPARE,
+    's' => STATUS_SPARE,
+);
+
+sub status {
+shift;	# Ignore the class name.
+my $cmd = shift;
+if ($cmd eq 'add') {
+    my $id = shift or croak <<eod;
+Error - The status ('add') call requires a NORAD ID.
+eod
+    my $type = shift or croak <<eod;
+Error - The status (add => $id) call requires a type.
+eod
+    my $class = $type_map{$type} || $type;
+    $class->isa (__PACKAGE__) or croak <<eod;
+Error - $type must specify a subclass of @{[__PACKAGE__]}.
+eod
+    my $status = shift || 0;
+    $status =~ m/\D/
+	and $status = exists $status_map{$status} ?
+	   $status_map{$status} : STATUS_TUMBLING;
+    my $name = shift || '';
+    my $comment = shift || '';
+    $status{$id} = {
+	comment => $comment,
+	status => $status,
+	name => $name,
+	id => $id,
+	type => $type,
+	class => $class,
+	};
+    }
+  elsif ($cmd eq 'clear') {
+    my $type = shift;
+    if (!defined $type) {
+	%status = ();
+	}
+      else {
+	my $class = $type_map{$type} || $type;
+	$class->isa (__PACKAGE__) or croak <<eod;
+Error - $type must specify a subclass of @{[__PACKAGE__]}.
+eod
+	foreach my $key (keys %status) {
+	    $status{$key}{class} eq $class and delete $status{$key};
+	    }
+	}
+    }
+  elsif ($cmd eq 'drop') {
+    my $id = shift or croak <<eod;
+Error - The status ('drop') call requires a NORAD ID.
+eod
+    delete $status{$id};
+    }
+  elsif ($cmd eq 'dump') {	# <<<< Undocumented!!!
+    local $Data::Dumper::Terse = 1;
+    print __PACKAGE__, " status = ", Dumper (\%status);
+    }
+  elsif ($cmd eq 'show') {
+    sort {$a->[0] <=> $b->[0]}
+        map {[$_->{id}, $_->{type}, $_->{status}, $_->{name},
+	$_->{comment}]} values %status;
+    }
+  else {
+    croak <<eod;
+Error - '$cmd' is not a legal status() command.
+eod
+    }
+}
 
 =item $tle = $tle->sgp($time)
 
@@ -1261,7 +1587,7 @@ goto &_convert_out;
 This method calculates the position of the body described by the TLE
 object at the given time, using the SGP4 model.
 
-The result is the original object reference. See the DESCRIPTION
+The result is the original object reference. See the L</DESCRIPTION>
 heading above for how to retrieve the coordinates you just calculated.
 
 "Spacetrack Report Number 3" (see "Acknowledgments") says that this
@@ -3378,17 +3704,760 @@ eod
     }
 }	# End local symbol block.
 
+#######################################################################
+
+#	Initialization
+
+%status = (	# As of 06-Dec-2006, from McCants' document dated 10-Jan-2006
+          '25432' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 76',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25432
+                     },
+          '25106' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 47',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25106
+                     },
+          '24925' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Dummy mass 1',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24925
+                     },
+          '24948' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 28',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24948
+                     },
+          '24870' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 17',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24870
+                     },
+          '27451' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 98',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 27451
+                     },
+          '25530' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 84',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25530
+                     },
+          '25273' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 57',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25273
+                     },
+          '24792' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 8',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24792
+                     },
+          '24793' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 7',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24793
+                     },
+          '25105' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 24',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25105
+                     },
+          '24966' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 35',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24966
+                     },
+          '25527' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 2',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25527
+                     },
+          '24965' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 19',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24965
+                     },
+          '25344' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 73',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25344
+                     },
+          '25276' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 60',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25276
+                     },
+          '24841' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 16',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24841
+                     },
+          '24950' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 31',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24950
+                     },
+          '25288' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 65',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25288
+                     },
+          '25531' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 83',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25531
+                     },
+          '25169' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 52',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25169
+                     },
+          '24869' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 15',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24869
+                     },
+          '25319' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 69',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25319
+                     },
+          '24872' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 18',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24872
+                     },
+          '25320' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 71',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25320
+                     },
+          '25263' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 61',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25263
+                     },
+          '25467' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 82',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25467
+                     },
+          '25262' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 51',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25262
+                     },
+          '25342' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 70',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25342
+                     },
+          '25170' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 56',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25170
+                     },
+          '25172' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 50',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25172
+                     },
+          '24871' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 920',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24871
+                     },
+          '25778' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 21',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25778
+                     },
+          '25291' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 68',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25291
+                     },
+          '25468' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 81',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25468
+                     },
+          '27376' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 96',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 27376
+                     },
+          '24969' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 34',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24969
+                     },
+          '25272' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 55',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25272
+                     },
+          '25431' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 3',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25431
+                     },
+          '25287' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 64',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25287
+                     },
+          '25578' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 11',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25578
+                     },
+          '24949' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 30',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24949
+                     },
+          '27450' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 97',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 27450
+                     },
+          '25077' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 42',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25077
+                     },
+          '25343' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 72',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25343
+                     },
+          '24926' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Dummy mass 2',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24926
+                     },
+          '25042' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 39',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25042
+                     },
+          '27374' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 94',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 27374
+                     },
+          '25471' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 77',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25471
+                     },
+          '25078' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 44',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25078
+                     },
+          '25041' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 40',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25041
+                     },
+          '24842' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 911',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24842
+                     },
+          '24904' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 25',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24904
+                     },
+          '24907' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 22',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24907
+                     },
+          '25289' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 66',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25289
+                     },
+          '25108' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 49',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25108
+                     },
+          '24906' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 23',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24906
+                     },
+          '24836' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 914',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24836
+                     },
+          '25286' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 63',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25286
+                     },
+          '25528' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 86',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25528
+                     },
+          '24795' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 5',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24795
+                     },
+          '24839' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 10',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24839
+                     },
+          '27375' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 95',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 27375
+                     },
+          '24837' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 12',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24837
+                     },
+          '24796' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 4',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24796
+                     },
+          '24905' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 46',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24905
+                     },
+          '27373' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 90',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 27373
+                     },
+          '25275' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 59',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25275
+                     },
+          '24873' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 921',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24873
+                     },
+          '24903' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 26',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24903
+                     },
+          '24794' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 6',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24794
+                     },
+          '25290' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 67',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25290
+                     },
+          '25577' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 20',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25577
+                     },
+          '27372' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 91',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 27372
+                     },
+          '24945' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 32',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24945
+                     },
+          '25274' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 58',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25274
+                     },
+          '25040' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 41',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25040
+                     },
+          '25777' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 14',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25777
+                     },
+          '24946' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 33',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24946
+                     },
+          '25469' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 80',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25469
+                     },
+          '25173' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 53',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25173
+                     },
+          '24967' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 36',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24967
+                     },
+          '25171' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 54',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25171
+                     },
+          '24968' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 37',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24968
+                     },
+          '25039' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 43',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25039
+                     },
+          '25043' => {
+                       'comment' => '',
+                       'status' => 2,
+                       'name' => 'Iridium 38',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25043
+                     },
+          '24840' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 13',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24840
+                     },
+          '24944' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 29',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 24944
+                     },
+          '25345' => {
+                       'comment' => '',
+                       'status' => 1,
+                       'name' => 'Iridium 74',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25345
+                     },
+          '25285' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 62',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25285
+                     },
+          '25104' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 45',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25104
+                     },
+          '25346' => {
+                       'comment' => '',
+                       'status' => 0,
+                       'name' => 'Iridium 75',
+                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
+                       'type' => 'iridium',
+                       'id' => 25346
+                     },
+	);
+
 1;
 
 __END__
 
 =back
 
-=head2 ATTRIBUTES
+=head2 Attributes
 
-This class has the following public attributes. The description
-gives the data type. It may also give one of the following if
-applicable:
+This class has the following additional public attributes. The
+description gives the data type. It may also give one of the following
+if applicable:
 
 parse - if the attribute is set by the parse() method;
 
@@ -3470,10 +4539,12 @@ This attribute contains the NORAD SATCAT catalog ID.
 
 =item illum (string, static)
 
-This attribute specifies the source of illumination for the body.
-You may specify the class name 'Astro::Coord::ECI' or the name
-of any subclass, or you may specify an object of the appropriate
-class. When you access this attribute, you get an object.
+This attribute specifies the source of illumination for the body.  You
+may specify the class name 'Astro::Coord::ECI' or the name of any
+subclass (though in practice only 'Astro::Coord::ECI::Sun' or
+'Astro::Coord::ECI::Moon' will do anything useful), or you may specify
+an object of the appropriate class. When you access this attribute, you
+get an object.
 
 In addition to the full class names, you may specify 'sun' or
 'moon' instead of 'Astro::Coord::ECI::Sun' or
@@ -3487,7 +4558,8 @@ The default is 'sun'.
 
 If positive, this attribute specifies that the pass() method return
 positions at this interval (in seconds) across the sky. The associated
-event code of these will be PASS_EVENT_NONE.
+event code of these will be PASS_EVENT_NONE. If zero or negative, pass()
+will only return times when some event of interest occurs.
 
 The default is 0.
 
@@ -3531,7 +4603,7 @@ minute.
 This attribute contains the name of the model to be run (i.e. the name
 of the method to be called) when the time_set() method is called, or a
 false value if no model is to be run. Legal model names are: model,
-model4, model8, sgp, sgp4, sgp8, sdp4, and sdp8.
+model4, model8, null, sgp, sgp4, sgp8, sdp4, and sdp8.
 
 The default is 'model'. Setting the value on the class changes the
 default.
@@ -3539,6 +4611,17 @@ default.
 =item name (string, parse (three-line sets only))
 
 This attribute contains the common name of the body.
+
+=item reblessable (boolean)
+
+This attribute says whether the rebless() method is allowed to rebless
+this object. If false, the object will not be reblessed when its
+id changes.
+
+Note that if this attribute is false, setting it true will cause the
+object to be reblessed.
+
+The default is true (i.e. 1).
 
 =item revolutionsatepoch (numeric, parse)
 
@@ -3558,7 +4641,8 @@ motion, in radians per minute cubed.
 =item tle (string, readonly, parse)
 
 This attribute contains the input data used by the parse() method to
-generate this object.
+generate this object. If the object was not created by the parse()
+method, this attribute will be empty.
 
 =item visible (boolean, static)
 
