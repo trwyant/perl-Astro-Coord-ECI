@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.006_02';
+our $VERSION = '0.006_03';
 
 if ($skip) {
     skip ($skip, 1);
@@ -174,6 +174,7 @@ SGP
 sgp
 SIGINT
 SIMBAD
+Simbad
 simbad
 Sinnott
 SKYSAT

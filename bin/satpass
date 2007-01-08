@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_08';
+our $VERSION = '0.011_09';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -89,6 +89,7 @@ my %parm = (
     model => 'model',
     prompt => 'satpass>',
     simbad_url => 'simbad.harvard.edu',
+    simbad_version => 3,
     singleton => 0,
     time_format => '%H:%M:%S',
     timing => 0,
@@ -129,6 +130,7 @@ my %mutator = (
     perltime => \&_set_perltime,
     prompt => \&_set_unmodified,
     simbad_url => \&_set_unmodified,
+    simbad_version => \&_set_simbad_version,
     singleton => \&_set_unmodified,
     time_format => \&_set_unmodified,
     timing => \&_set_unmodified,
@@ -266,7 +268,7 @@ satpass $VERSION - Satellite pass predictor
 based on Astro::Coord::ECI @{[Astro::Coord::ECI->VERSION]}
 Perl $Config{version} on $Config{osname}
 
-Copyright 2005, 2006 by Thomas R. Wyant, III. All rights reserved.
+Copyright 2005, 2006, 2007 by Thomas R. Wyant, III. All rights reserved.
 
 Enter 'help' for help. See the help for terms of use.
 
@@ -2345,6 +2347,31 @@ if ($_[1]) {
     }
 }
 
+sub _set_simbad_version {
+    if (__PACKAGE__->can ("_simbad$_[1]")) {
+	$parm{$_[0]} = $_[1];
+    } else {
+	my @lglver;
+	no strict qw{refs};
+	foreach (keys %{*{__PACKAGE__ . '::'}}) {
+	    m/^_simbad(\d+)/ && __PACKAGE__->can ($_)
+		and push @lglver, $1;
+	}
+	@lglver = sort {$a <=> $b} @lglver;
+	my $lastver = pop @lglver;
+	if (@lglver) {
+	    die <<eod;
+Error - Invalid SIMBAD version number $_[1]. Must be @{[
+    join ', ', @lglver]} or $lastver.
+eod
+	} else {
+	    die <<eod;
+Error - Invalid SIMBAD version number $_[1]. Must be $lastver.
+eod
+	}
+    }
+}
+
 sub _set_twilight {
 if (my $key = $twilight_abbr{lc $_[1]}) {
     $parm{$_[0]} = $key;
@@ -3516,15 +3543,18 @@ if (@$choose) {
 
 #	@coordinates = _simbad ($query);
 
-#	Looks up the given star in the SIMBAD catalog. If the
-#	'simbad_url' parameter is set to 'simbad.u-strasbg.fr' we use
-#	SIMBAD 4; otherwise we use SIMBAD 3.
+#	Looks up the given star in the SIMBAD catalog. We are actually
+#	a dispatcher based on the setting of the simbad_version
+#	parameter.
 
 sub _simbad {
-    if ($parm{simbad_url} eq 'simbad.u-strasbg.fr') {
-	goto &_simbad4;
+    if (my $code = __PACKAGE__->can ("_simbad$parm{simbad_version}")) {
+	$code->(@_);
     } else {
-	goto &_simbad3;
+	die <<eod;
+Programming Error - Parameter simbad_version set to '$parm{simbad_version}',
+        but subroutine _simbad$parm{simbad_version} does not exist.
+eod
     }
 }
 
@@ -3538,40 +3568,42 @@ sub _simbad {
 #	We die on any error.
 
 sub _simbad3 {
-_load_module ('Astro::SIMBAD::Query');
-my $query = shift;
-my $qo = Astro::SIMBAD::Query->new (Target => $query, Error => 0,
-    Frame => 'FK5', Epoch => 2000, Equinox => 2000, URL => $parm{simbad_url});
-my $rslt = eval {$qo->querydb ()};
-die <<eod if $@;
+    _load_module ('Astro::SIMBAD::Query');
+    my $query = shift;
+    my $qo = Astro::SIMBAD::Query->new (Target => $query, Error => 0,
+	Frame => 'FK5', Epoch => 2000, Equinox => 2000,
+	URL => $parm{simbad_url});
+    my $rslt = eval {$qo->querydb ()};
+    die <<eod if $@;
 Error - No entry found for $query, or
         $parm{simbad_url} unreachable.
 eod
 
-die <<eod unless $rslt->sizeof;
+    die <<eod unless $rslt->sizeof;
 Error - Can not find $query
 eod
-die <<eod if $rslt->sizeof > 1;
+    die <<eod if $rslt->sizeof > 1;
 Error - More than one match found
 eod
 
-my ($obj) = $rslt->objects;
-my ($ra, $dec, $rng, $pm, $vrec) = map {$obj->$_} qw{ra dec plx pm radial};
-defined $ra && $ra =~ m/\S/ or die <<eod;
+    my ($obj) = $rslt->objects;
+    my ($ra, $dec, $rng, $pm, $vrec) = map {$obj->$_} qw{ra dec plx pm
+	radial};
+    defined $ra && $ra =~ m/\S/ or die <<eod;
 Error - No position available for $query
 eod
-foreach ($ra, $dec) {s/^\s+//; s/\s+$//; s/\s+/ /g; s/\s+0+\.0$//;}
-$ra =~ s/\s/:/g;
-$dec =~ s/\s/d/;
-$dec =~ s/\s/m/;
-$dec =~ s/\s/s/;
-$rng = $rng ? 1000 / $rng : 10000;
-my ($pmra, $pmdec) = map {$_ ? $_ / 1000 : 0} @$pm;
-$pmra ||= 0;
-$pmdec ||= 0;
-$vrec ||= 0;
-my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec + 0);
-wantarray ? @temp : join ' ', @temp;
+    foreach ($ra, $dec) {s/^\s+//; s/\s+$//; s/\s+/ /g; s/\s+0+\.0$//;}
+    $ra =~ s/\s/:/g;
+    $dec =~ s/\s/d/;
+    $dec =~ s/\s/m/;
+    $dec =~ s/\s/s/;
+    $rng = $rng ? 1000 / $rng : 10000;
+    my ($pmra, $pmdec) = map {$_ ? $_ / 1000 : 0} @$pm;
+    $pmra ||= 0;
+    $pmdec ||= 0;
+    $vrec ||= 0;
+    my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec + 0);
+    wantarray ? @temp : join ' ', @temp;
 }
 
 
@@ -4033,11 +4065,12 @@ The use of the L<timing|/timing> parameter is deprecated in favor of the
 pass_old does, since this is the only use.
 
 The 'sky lookup' functionality is in transition. Currently, it uses
-Astro::SIMBAD::Client if the simbad_url parameter is
-'simbad.u-strasbg.fr', and Astro::SIMBAD otherwise. When the Harvard
-mirror upgrades to SIMBAD 4, the 'otherwise' functionality will break.
-The SIMBAD 4 functionality uses the web services interface, which may be
-a work in progress.
+Astro::SIMBAD::Client if the simbad_version parameter is 4 and
+Astro::SIMBAD if it is 3. Currently, either will work if simbad_url is
+simbad.u-strasbg.fr, but only 3 will work for simbad.harvard.edu. At
+some point Harvard will upgrade to SIMBAD 4, and both sources will phase
+out SIMBAD 3.  The SIMBAD 4 functionality uses the web services
+interface, which may be a work in progress.
 
 =head1 DETAILS
 
@@ -4979,10 +5012,11 @@ For example,
  sky add Spica 13:25:11.58 -11.161 10000.00 0.0000 0.00000 0
  satpass>
 
-lookup - Looks up the given object in the SIMBAD catalog, using
-the L<simbad_url|/simbad_url> parameter to determine which copy
-of the catalog is used. If the named object is found, it is
-added to the list of background objects. Range defaults to 10000
+lookup - Looks up the given object in the SIMBAD catalog, using the
+L<simbad_url|/simbad_url> parameter to determine which copy of the
+catalog is used, and the L<simbad_version|/simbad_version> parameter to
+determine which version of SIMBAD is used. If the named object is found,
+it is added to the list of background objects. Range defaults to 10000
 parsecs, and the proper motions to 0.
 
 For example,
@@ -4990,12 +5024,12 @@ For example,
  satpass> sky lookup 'Theta Orionis'
  sky add 'Theta Orionis' 05:35.3 -05d24 10000.00 0 0 0
 
-If the 'simbad_url' parameter is set to 'simbad.u-strasbg.fr', SIMBAD 4
-is used, and you need to have module Astro::SIMBAD::Client installed.
-Otherwise, you need Astro::SIMBAD installed. I am not sure how  stable
-the SIMBAD 4 interface is (I am using the SOAP interface, which appears
-to be a work in progress), so B<The 'lookup' function should be
-considered experimental.>
+If L<simbad_version|/simbad_version> is set to 3, you need to have
+Astro::SIMBAD installed. If it is 4, you need to have
+Astro::SIMBAD::Client installed. The latter uses the SOAP interface,
+which appears to be a work in progress, so I am not sure how stable it
+will be. Since SIMBAD 3 is being phased out, B<The 'lookup' function
+should be considered experimental.>
 
 =for html <a name="source"></a>
 
@@ -5577,6 +5611,23 @@ experimental,> and see the warnings on that command. Changes in the
 command may result in this parameter becoming deprecated and/or
 no-oped.
 
+Also note that the version of SIMBAD used to access the site is
+controlled by the L<simbad_version|/simbad_version> parameter.
+
+=for html <a name="simbad_version"></a>
+
+=item simbad_version (integer)
+
+This parameter specifies the version of the SIMBAD application being
+used, the valid values being 3 or 4. If you set it to 3, the
+Astro::SIMBAD package will be used for SIMBAD lookups. If you set it to
+4, Astro::SIMBAD::Client will be used. As of early January 2007,
+'simbad.u-strasbg.fr' supports both versions, though 3 is being phased
+out. 'Simbad.harvard.edu' is still at version 3.
+
+The default is 3, to be consistent with the default setting of
+L<simbad_url|/simbad_url>.
+
 =for html <a name="singleton"></a>
 
 =item singleton (boolean)
@@ -5927,7 +5978,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This script is free software; you can use it, redistribute it
