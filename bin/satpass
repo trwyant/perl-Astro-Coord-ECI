@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.011_09';
+our $VERSION = '0.012';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -92,7 +92,7 @@ my %parm = (
     simbad_version => 3,
     singleton => 0,
     time_format => '%H:%M:%S',
-    timing => 0,
+##    timing => 0,
     verbose => 0,
     visible => 1,
     webcmd => ''
@@ -133,7 +133,7 @@ my %mutator = (
     simbad_version => \&_set_simbad_version,
     singleton => \&_set_unmodified,
     time_format => \&_set_unmodified,
-    timing => \&_set_unmodified,
+##    timing => \&_set_unmodified,
     twilight => \&_set_twilight,  # 'civil', 'nautical', 'astronomical'
 				# (or a unique abbreviation thereof),
 				# or degrees below the geometric
@@ -690,31 +690,6 @@ eod
 BEGIN {
 $cmdlgl{choose} = [qw{epoch=s}];
 }
-
-=begin comment
-
-sub choose {
-if ($cmdopt{epoch}) {
-    @bodies = _select_observing_list (_parse_time ($cmdopt{epoch}));
-    }
-if (@_) {
-    my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_} @_;
-    my @keep;
-    foreach my $tle (@bodies) {
-	my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
-	foreach my $test (@check) {
-	    next unless ref $test ? $name =~ m/$test/ : $id == $test;
-	    push @keep, $tle;
-	    last;
-	    }
-	}
-    @bodies = @keep;
-    }
-}
-
-=end comment
-
-=cut
 
 sub choose {
 $cmdopt{choose} = [@_];
@@ -1494,27 +1469,6 @@ eod
     $macro{$name} = [map {s/\\(.)/$1/g; $_} @_];
     }
 
-=begin comment
-
-my $name = shift or do {
-    foreach my $name (sort keys %macro) {
-	print "macro $name ", join (" \\\n    ", map {
-		_quoter ($_)} @{$macro{$name}}), "\n";
-	}
-    return;
-    };
-$name !~ /\W/ && $name !~ /^_/ or die <<eod;
-Error - Invalid macro name '$name'. All characters must be alphanumeric
-        or underscores, and the name must not start with an underscore.
-eod
-
-if (@_) {$macro{$name} = [map {s/\\(.)/$1/g; $_} @_]}
-  else {delete $macro{$name}}
-
-=end comment
-
-=cut
-
 }
 
 ########################################################################
@@ -1671,387 +1625,6 @@ eod
     }
 }	# End local symbol block
 
-
-########################################################################
-#
-#	pass_old () - Predict passes over the observer's location.
-#			(original version).
-#
-
-BEGIN {
-    $cmdlgl{pass_old} = [qw{choose=s@}];
-}
-
-sub pass_old {
-
-#	Initialize.
-
-my @lighting = qw{Shdw Lit Day};
-my $dtfmt = "$parm{date_format} $parm{time_format}";
-my $lcfmt = \&{"_format_local_$parm{local_coord}"};
-
-my $pass_start = _parse_time (shift || 'today noon');
-my $pass_end = _parse_time (shift || '+7');
-$pass_start >= $pass_end and die <<eod;
-Error - End time must be after start time.
-eod
-_check_station ();
-@bodies or die <<eod;
-Error - Can not calculate satellite pass without loading at least one
-        body.
-eod
-my $pass_step = shift || 60;
-my $timlen = max (
-    length (strftime ($parm{time_format}, 59, 59, 23, 31, 11, 2000)),
-    length (strftime ($parm{time_format}, 59, 59, 11, 31, 11, 2000)),
-    );
-my $header = <<eod;
-
-%s%s
-
-time@{[' ' x ($timlen - 4)]} @{[$lcfmt->()]} latitude longitude altitude
-
-eod
-
-
-#	Decide which model to use.
-
-my $model = $parm{model};
-
-
-#	Define the observing station.
-
-my $sta = Astro::Coord::ECI->new (
-	refraction => 1,
-	name => 'Station',
-	)
-    ->geodetic (
-	deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
-	$parm{height} / 1000);
-my $horizon = deg2rad ($parm{horizon});
-my $effective_horizon = $parm{geometric} ? 0 : $horizon;
-my $daytrlr = $parm{verbose} > 1 ? "\n" : "\n\n";
-
-#	We need the sun at some point.
-
-my $sun = Astro::Coord::ECI::Sun->new ();
-
-#	Print the header
-
-print _format_location ();
-
-#	Tell aggregate() how to work.
-
-local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
-if ($cmdopt{debug}) {
-    foreach my $tle (_select_observing_list ($pass_start)) {
-	print join ("\t", $tle->get ('id'), $tle->get ('name'), ref $tle), "\n";
-	}
-    }
-
-#	Foreach body to be modelled (we use _select_observing_list ()
-#	to eliminate duplicate element sets, though it would be nice
-#	if we had a way to make use of any element set relevant to the
-#	interval in question. To do that, though, we need to figure out
-#	how to do the hand-off if the epoch of the next element set is
-#	in the middle of a pass.
-
-foreach my $tle (_select_observing_list ($pass_start)) {
-    $tle->set (model => $model);
-    my $id = $tle->get ('id');
-    my $name = $tle->get ('name');
-    $name = $name ? " - $name" : '';
-    my $hdrdone = 0;
-
-    my $bm_start = _time ();
-
-
-#	For each time to be covered
-
-    my $step = $pass_step;
-    my $bigstep = 5 * $step;
-    my $littlestep = $step;
-    my $end = $pass_end;
-    my $day = '';
-    my $iterations = 0;
-    my $full_iter = 0;
-    my ($suntim, $rise) =
-	$sta->universal ($pass_start)->next_elevation ($sun, $parm{_twilight});
-    my @data;
-    my $visible;
-    for (my $time = $pass_start; $time <= $end; $time += $step) {
-	$iterations++;
-
-
-#	If the current sun event has occurred, handle it and calculate the next one.
-
-	if ($time >= $suntim) {
-	    ($suntim, $rise) =
-		$sta->universal ($suntim)->next_elevation ($sun, $parm{_twilight});
-	    }
-
-
-#	Skip if the sun is up.
-
-	next if $parm{visible} && !@data && !$rise && $time < $suntim;
-
-
-#	Calculate azimuth and elevation.
-
-	my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
-
-
-#	Adjust the step size based on how far the body is below the horizon.
-
-	$step = $elev < -.4 ? $bigstep : $littlestep;
-
-
-#	If the body is below the horizon, we check for accumulated
-#	data, handle it if any, clear it, and on to the next iteration.
-
-	if ($elev < $effective_horizon) {
-	    @data = () unless $visible;
-	    next unless @data;
-
-
-#	    We may have skipped part of the pass because it began
-#	    in daylight. Pick up that part now.
-
-	    while ($parm{visible}) {
-		my $time = $data[0][0] - $step;
-		last if $elev < $effective_horizon;
-		my ($lat, $long, $alt) = $tle->geodetic;
-		my $illum = ($tle->azel ($sun->universal ($time), 1))[1] < $tle->dip () ? 0 :
-			$rise ? 1 : 2;
-		unshift @data, [$time, $elev, $azm, $rng,
-			Astro::Coord::ECI->eci ($tle->eci (), $time),
-			undef, undef, $illum];
-		}
-
-
-#	    If we want the exact times of the events, compute them.
-
-	    if ($parm{exact_event}) {
-
-
-#		Compute exact rise, max, and set.
-
-		my @time = (
-		    [_pass_zero_in ($data[0][0] - $step, $data[0][0],
-			sub {($sta->azel ($tle->universal ($_[0])))[1] >=
-			$effective_horizon}), 'Rise'],
-		    [_pass_zero_in ($data[$#data][0], $data[$#data][0] + $step,
-			sub {($sta->azel ($tle->universal ($_[0])))[1] <
-			$effective_horizon}), 'Set'],
-		    [_pass_zero_in ($data[0][0], $data[$#data][0],
-			sub {($sta->azel ($tle->universal ($_[0])))[1] >
-				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
-				'Max'],
-		    );
-		warn <<eod if $parm{debug};
-
-Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]]} $time[0][1]
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[1][0]]} $time[1][1]
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
-eod
-
-#		Compute visibility changes.
-
-		my $last;
-		foreach my $evt (@data) {
-		    $last or next;
-		    $evt->[7] == $last->[7] and next;
-		    my ($suntim, $rise) =
-			$sta->universal ($last->[0])->
-			next_elevation ($sun, $parm{_twilight});
-		    push @time, [_pass_zero_in ($last->[0], $evt->[0],
-			sub {
-			    my $illum = ($tle->universal ($_[0])->
-			    	azel ($sun->universal ($_[0]), $parm{lit}))[1] <
-			    	$tle->dip () ? 0 :
-				$_[1]{rise} ?
-				    $_[0] < $_[1]{suntim} ? 1 : 2 :
-				    $_[0] < $_[1]{suntim} ? 2 : 1;
-			    $illum == $evt->[7]
-			    }, {suntim => $suntim, rise => $rise}),
-			    $lighting[$evt->[7]]];
-			warn <<eod if $parm{debug};
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]} $lighting[$evt->[7]]
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
-eod
-		    }
-		  continue {
-		    $last = $evt;
-		    }
-
-
-#		Compute nearest approach to background bodies
-
-#		Note (fortuitous discovery) the ISS travels 1.175
-#		degrees per second at the zenith, so I need better
-#		than 1 second resolution to detect a transit.
-
-		foreach my $body (@sky) {
-		    my $when = _pass_zero_in ($time[0][0], $time[1][0],
-			sub {$sta->angle ($body->universal ($_[0]),
-					$tle->universal ($_[0])) <
-				$sta->angle ($body->universal ($_[0] + 1),
-					$tle->universal ($_[0] + 1))},
-			undef, .1);
-		    my $angle = rad2deg (
-			$sta->angle ($body->universal ($when),
-				$tle->universal ($when)));
-		    next if $angle > $parm{appulse};
-		    push @time, [$when, sprintf ('%.1f from %s', $angle,
-			$body->get ('name') || $body->get ('id')), $body];
-			warn <<eod if $parm{debug};
-                $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]}
-eod
-		    }
-
-
-#		Clear the original data unless we're verbose.
-
-		@data = () unless $parm{verbose};
-
-
-#		Generate the full data for the exact events.
-
-		my ($suntim, $rise);
-		warn "Contents of \@time: ", Dumper (\@time) if $parm{debug};
-		foreach (sort {$a->[0] <=> $b->[0]} @time) {
-		    my @event = @$_;
-		    my $time = shift @event;
-		    ($suntim, $rise) =
-			$sta->universal ($time)->next_elevation ($sun, $parm{_twilight})
-			if !$suntim || $time >= $suntim;
-		    my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
-		    my $illum = ($tle->azel ($sun->universal ($time), $parm{lit}))[1] < $tle->dip () ? 0 :
-			$rise ? 1 : 2;
-		    push @data, [$time, $elev, $azm, $rng,
-			Astro::Coord::ECI->eci ($tle->eci (), $time),
-			undef, undef, $illum, @event ? $event[0] : ()];
-		    }
-
-
-#		Sort the data, and eliminate duplicates.
-
-		my @foo = sort {$a->[0] <=> $b->[0]} @data;
-		$last = undef;
-		@data = ();
-		foreach my $evt (@foo) {
-		    push @data, $evt unless defined $last && $evt->[0] == $last->[0];
-		    $last = $evt;
-		    }
-		}
-
-
-#	    Figure out what the events are.
-
-	    unless ($parm{exact_event}) {
-		$data[0][8] = 'Rise';
-		$data[$#data][8] = 'Set';
-		$data[$#data][1] = 0 if $data[$#data][1] < 0;
-					# Because -.6 degrees
-					# (which we get because no atmospheric
-					# refraction below the horizon) looks funny.
-		my ($last, $max);
-		foreach my $pt (@data) {
-		    $last or next;
-		    $last->[1] > $pt->[1] and $max ||= $last;
-		    $last->[7] != $pt->[7] and $pt->[8] ||= $lighting[$pt->[7]];
-		    }
-		continue {
-		    $last = $pt;
-		    }
-		$max and $max->[8] = 'Max';
-		}
-
-
-#	    Print the data for the pass.
-
-	    if ($hdrdone++) {print "\n"} else {printf $header, $id, $name};
-	    foreach my $pt (@data) {
-		my $body = pop @$pt if ref $pt->[scalar @$pt - 1];
-		my $temp = strftime $parm{date_format}, localtime $pt->[0];
-		print "$temp\n" if $temp ne $day;
-		$day = $temp;
-		my ($lat, $long, $alt) = $pt->[4]->geodetic ();
-		printf LINFMT, strftime ($parm{time_format},
-			localtime floor ($pt->[0] + .5)),
-		    $lcfmt->($sta, $pt->[4]),
-		    rad2deg ($lat), rad2deg ($long), $alt,
-		    $lighting[$pt->[7]], $pt->[8] || '';
-		if ($body && $parm{background}) {
-		    my $time = $pt->[0];
-		    my ($lat, $long, $alt) = $body->geodetic;
-		    printf BGFMT, strftime ($parm{time_format}, localtime $time),
-			$lcfmt->($sta, $body),
-			rad2deg ($lat), rad2deg ($long),
-			$body->get ('name') || $body->get ('id') || '';
-		    }
-		}
-
-
-#	    Clear out the data.
-
-	    @data = ();
-	    $visible = 0;
-	    next;
-	    }
-
-
-#	Calculate whether the body is illuminated.
-
-	my $illum = ($tle->azel ($sun->universal ($time), $parm{lit}))[1] < $tle->dip () ? 0 :
-		$rise ? 1 : 2;
-	$visible ||= ($illum == 1 || !$parm{visible}) && $elev > $horizon;
-
-
-#	Accumulate results.
-
-	push @data, [$time, $elev, $azm, $rng,
-		Astro::Coord::ECI->eci ($tle->eci (), $time),
-		undef, undef, $illum];
-
-
-#	Count iterations
-
-	$full_iter++;
-	}
-
-
-#	Compute and display stats.
-
-    my $bm_end = _time ();
-    $parm{timing} and print <<eod;
-
-Benchmark info:
-      Body: $id$name
-     Start: @{[strftime '%d-%b-%Y %H:%M:%S', localtime $bm_start]}
-       End: @{[strftime '%d-%b-%Y %H:%M:%S', localtime $bm_end]}
-   Elapsed: @{[_time_trim ($bm_end - $bm_start)]} seconds
-Full iterations: $full_iter
-  Time per: @{[$full_iter ? ($bm_end - $bm_start) / $full_iter : 'undefined']}
-Iterations: $iterations
-  Time per: @{[$iterations ? ($bm_end - $bm_start) / $iterations : 'undefined']}
-eod
-
-    }
-}
-
-sub _pass_zero_in {
-my ($begin, $end, $test, $usrdat, $limit) = @_;
-$limit ||= 1;
-while ($end - $begin > $limit) {
-    my $mid = $limit >= 1 ?
-	floor (($begin + $end) / 2) :
-	($begin + $end) / 2;
-    my $rslt = $test->($mid, $usrdat);
-    ($begin, $end) = $rslt ? ($begin, $mid) : ($mid, $end);
-    }
-$end;
-}
 
 ########################################################################
 #
@@ -2224,64 +1797,6 @@ sub quarters {
 	}
     }
 
-}
-
-
-########################################################################
-#
-#	reflection () - report flare data for given time
-#
-
-BEGIN {
-$cmdlgl{reflection} = [qw{algorithm=s choose=s@ questionable|spare}];
-}
-
-sub reflection {
-my $dtfmt = "$parm{date_format} $parm{time_format}";
-my $time = _parse_time (shift);
-
-my $debug = $cmdopt{debug} ? !$parm{debug} : $parm{debug};
-
-my $sta = _get_station ();
-
-print <<eod;
-Reflections at @{[strftime $dtfmt, localtime $time]}
-
-eod
-
-#	Tell aggregate() how to work.
-
-local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
-
-TLE:
-foreach my $tle (_select_observing_list ($time)) {
-    next unless $tle->can ('flare');
-    my $id = $tle->get ('id');
-    my $name = $tle->get ('name') || '';
-    unless ($tle->can_flare ($cmdopt{questionable})) {
-	printf "%6d %15s   Does not flare. Status: '%s'\n",
-		$id, $name, $tle->get ('status');
-	next;
-	};
-    $tle->set (algorithm => $cmdopt{algorithm} || 'fixed',
-	extinction => $parm{extinction}, horizon => 0);
-    $tle->set (debug => $debug) if $debug;
-    foreach my $info ($tle->reflection ($sta, $time)) {
-	if (!exists $info->{mma}) {
-	    printf "%6d %15s   %s\n", $id, $name, $info->{status};
-	    last;
-	    }
-	  elsif ($info->{status}) {
-	    printf "%6d %15s %d %s\n", $id, $name, $info->{mma},
-		$info->{status};
-	    }
-	  else {
-	    printf "%6d %15s %d %6.1f %4.1f\n", $id, $name, $info->{mma},
-		rad2deg ($info->{angle}), $info->{magnitude};
-	    }
-	}
-    $tle->set (debug => 0) if $debug;
-    }
 }
 
 
@@ -2804,22 +2319,6 @@ eod
 
 sub _aggregate {
 Astro::Coord::ECI::TLE::Set->aggregate (@bodies);
-}
-
-
-#	_check_station ();
-
-#	This subroutine throws an exception if the height, latitude, and
-#	longitude are not defined.
-
-#	TODO get rid of this once pass_old goes away.
-
-sub _check_station {
-defined $parm{height} && defined $parm{latitude} &&
-    defined $parm{longitude} or die <<eod;
-Error - You must set height, latitude, and longitude to use this
-        function.
-eod
 }
 
 #	_display_timing ()
@@ -3462,53 +2961,6 @@ $rslt;
 # >>>>	time argument is used as a flag to determine whether we want
 # >>>>	aggregation into sets or not.
 
-=begin comment
-
-sub _select_observing_list {
-my $time = shift;
-my %wanted;
-foreach my $tle (_sort_observing_list ()) {
-    my $id = $tle->get ('id');
-    $wanted{$id} = $tle
-	unless $wanted{$id} && $tle->get ('epoch') > $time;
-    }
-return map {$wanted{$_}} sort keys %wanted;
-}
-
-sub _select_observing_list {
-my $choose = $cmdopt{choose} || [];
-my $time = defined $_[0] ? $_[0] :
-    $cmdopt{epoch} ? _parse_time ($cmdopt{epoch}) : undef;
-my $data = defined $time ? do {
-    my %wanted;
-    foreach my $tle (_sort_observing_list ()) {
-	my $id = $tle->get ('id');
-	$wanted{$id} = $tle
-	    unless $wanted{$id} && $tle->get ('epoch') > $time;
-	}
-    [map {$wanted{$_}} sort keys %wanted];
-    } : \@bodies;
-if (@$choose) {
-    my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_}
-	map {split '\s*,\s*', $_} @$choose;
-    my @keep;
-    foreach my $tle (@$data) {
-	my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
-	foreach my $test (@check) {
-	    next unless ref $test ? $name =~ m/$test/ : $id == $test;
-	    push @keep, $tle;
-	    last;
-	    }
-	}
-    $data = \@keep;
-    }
-@$data
-}
-
-=end comment
-
-=cut
-
 sub _select_observing_list {
 my $time = shift;
 my $choose = $cmdopt{choose} || [];
@@ -4055,14 +3507,11 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-With the creation of Astro::Coord::ECI::TLE->pass (), this script
-delegates the pass calculations to that method. The old pass calculation
-is still present as pass_old, but use of this is strongly deprecated as
-it will disappear very soon, perhaps in the next release.
+The major new functionality is the ability to predict Iridium flares.
+See the L<flare|/flare> command for details.
 
-The use of the L<timing|/timing> parameter is deprecated in favor of the
--timing command qualifier. The parameter will probably disappear when
-pass_old does, since this is the only use.
+The pass_old command and timing parameter, strongly deprecated in the
+last release, have been removed.
 
 The 'sky lookup' functionality is in transition. Currently, it uses
 Astro::SIMBAD::Client if the simbad_version parameter is 4 and
@@ -4071,6 +3520,12 @@ simbad.u-strasbg.fr, but only 3 will work for simbad.harvard.edu. At
 some point Harvard will upgrade to SIMBAD 4, and both sources will phase
 out SIMBAD 3.  The SIMBAD 4 functionality uses the web services
 interface, which may be a work in progress.
+
+A couple bugs in the calculation and display of position for appulsed
+bodies were corrected.
+
+The -choose qualifier on the flare, pass, position, and tle commands
+causes them to act on a subset of the observing list.
 
 =head1 DETAILS
 
@@ -4102,10 +3557,10 @@ need to install B<SOAP::Lite>, and maybe B<XML::Parser>, to get this
 functionality.
 
 * The ability to look up star positions in the SIMBAD catalog. You will
-need to install B<Astro::SIMBAD> (if using the Harvard mirror) or
-B<Astro::SIMBAD::Client> (if using U. Strasbourg) to get this
-functionality. At some point Harvard will go to SIMBAD 4 and require
-Astro::SIMBAD::Client also, but I am not privy to the timing.
+need to install B<Astro::SIMBAD> (if using SIMBAD 3) or
+B<Astro::SIMBAD::Client> (if using SIMBAD 4) to get this functionality.
+The SIMBAD version is selected using the
+L<simbad_version|/simbad_version> parameter.
 
 * The ability to produce solar and lunar almanac data (rise and set,
 meridian transit, and so forth).
@@ -4900,37 +4355,6 @@ See the L</SPECIFYING TIMES> topic below for how to specify times.
 
 The defaults are 'today noon' and 30 days after the start time.
 
-=for html <a name="reflection"></a>
-
-=item reflection time ...
-
-This command calculates and displays the mirror angle and reflection
-magnitude for all flaring satellites, and all Main Mission Antennae for
-each satellite.
-
-If the satellite is capable of flaring but produces no reflection, you
-get a message saying why. Typically, this is because the MMA geometry
-does not permit a reflection, the satellite is in shadow or below the
-horizon, or its status indicates that it is incapable of producing
-predictable flares.
-
-In addition to the global options, the following options are legal for
-the reflection command:
-
--choose chooses bodies from the observing list. It works the same way
-as the L<choose|/choose> command, but does not alter the observing
-list. You can specify multiple bodies by specifying -choose multiple
-times, or by separating your choices with commas. If -choose is not
-specified, the whole observing list is used.
-
--questionable forces reflection calculations for those satellites whose
-status is 'S'. Typically, this represents spares, or satellites moving
-between planes. You may use -spare as a synonym for this.
-
-See the L</SPECIFYING TIMES> topic below for how to specify times.
-
-The time defaults to the current time.
-
 =for html <a name="retrieve"></a>
 
 =item retrieve filename
@@ -5657,19 +5081,6 @@ The above is a long URL, and may be split across multiple lines. More
 than that, the formatter may have inserted a hyphen at the break, which
 needs to be taken out to make the URL good. I<Caveat user.>
 
-=for html <a name="timing"></a>
-
-=item timing (boolean)
-
-This parameter specifies whether timing information should be displayed
-on pass computations. A true setting (i.e. 1) displays this
-information, a false (i.e. 0) value does not.
-
-The default is 0 (i.e. false).
-
-B<This parameter is deprecated,> and will probably go away when
-pass_old does.
-
 =for html <a name="twilight"></a>
 
 =item twilight (string or numeric)
@@ -5918,32 +5329,20 @@ of the default. This can still be overridden by the
 =head1 CHANGES
 
 The following changes have been introduced into this script since
-version 0.010:
+version 0.011:
 
-- Add the check_version command, in preparation for perhaps splitting
-the Astro::Coord::ECI modules off into their own package.
+- Add the ability to predict Iridium flares. This includes the flare
+command and the addition of flare data to the position command.
 
-- Defer loading of optional modules to speed startup. This was good for
-about a 25-30% reduction on my machine.
+- Remove the pass_old command.
 
-- Rewrite XML parsing to use either XML::Parser or XML::Parser::Lite,
-with XML::Parser being preferred. This way people who don't have
-XML::Parser can still get their XML parsed.
+- Remove the timing parameter.
 
-- Fix fatal error when running off the end of the top-level command
-script. Top-level end-of-file is not completely equivalent to 'exit'.
+- Add SIMBAD 4 support, with the simbad_version parameter to select
+which version is to be used. SIMBAD 4 support needs
+Astro::SIMBAD::Client. SIMBAD 3 continues to use Astro::SIMBAD.
 
-- Support ~user in filenames, providing the underlying operating system
-supports getpwnam() (which MSWin32 does not, at least according to
-perlport.) An invalid user name is an error.
-
-- Convert the pass command to use Astro::Coord::ECI::TLE->pass(). Old
-code remains as pass_old, strongly deprecated.
-
-- Use Time::HiRes for timing, if that is available.
-
-- Document status of pass_old, 'timing' parameter (strongly deprecated)
-and the SIMBAD situation.
+- Set the time on the appulsing body before displaying its position.
 
 For prior changes, see F<Changes>.
 
