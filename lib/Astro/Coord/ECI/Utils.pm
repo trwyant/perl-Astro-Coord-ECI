@@ -41,7 +41,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.006_02';
+our $VERSION = '0.007';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -598,7 +598,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it and/or

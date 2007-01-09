@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.007_02';
+our $VERSION = '0.008';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -642,59 +642,6 @@ return @rslt;
 # The actual documentation of the algorithms, along with a reference
 # implementation in FORTRAN, is available at
 # http://celestrak.com/NORAD/documentation/spacetrk.pdf
-
-=begin comment
-
-=item Astro::Coord::ECI::TLE->parse_status ($type => $data);
-
-This method parses the status information returned by Astro::SpaceTrack
-and uses that information to update the internal status table used by
-the parse() method to rebless Iridium satellites correctly. The only
-legal $type is 'iridium', and the $data is the content of the result of
-the Astro::SpaceTrack iridium_status().
-
-See the status() method for how to manipulate this table directly.
-
-=cut
-
-=pod
-
-sub parse_status {
-shift;	# Ignore the class name.
-my $type = shift || '';
-if ($type eq 'iridium') {
-    foreach my $id (keys %status) {
-	$status{$id}{type} eq 'iridium' and delete $status{$id};
-	}
-    foreach my $buffer (split '\n', $_[0]) {
-	next unless $buffer;
-	my ($id, $name, $status, $comment) =
-	    map {s/\s+$//; s/^\s+//; $_}
-	    $buffer =~ m/(.{8})(.{0,15})(.{0,9})(.*)/;
-	$status{$id} = {
-	    type => 'iridium',
-	    class => 'Astro::Coord::ECI::TLE::Iridium',
-	    id => $id,
-	    name => $name,
-	    status => $status,
-	    comment => $comment,
-	    text => $buffer,
-	    };
-#0         1         2         3         4         5         6         7
-#01234567890123456789012345678901234567890123456789012345678901234567890
-# 25777   Iridium 14     ?        Spare   was called Iridium 14A
-	}
-    }
-  else {
-    croak <<eod;
-Error - Illegal data type '$type' in parse_status ().
-eod
-    }
-}
-
-=end comment
-
-=cut
 
 =item @passes = $tle->pass ($station, $start, $end, \@sky)
 
@@ -4688,7 +4635,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 This module is free software; you can use it, redistribute it
