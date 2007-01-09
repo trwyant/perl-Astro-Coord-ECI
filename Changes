@@ -211,3 +211,38 @@
       deprecated) and the SIMBAD situation.
   eg/iss
     New example to demonstrate Astro::Coord::ECI::TLE->pass().
+0.012
+  ECI.pm 0.012
+    Localized $Data::Dumper::Terse
+    Fixed divide-by-zero in azel() when the points coincide.
+    Convert angle() to use law of haversines rather than law of cosines,
+      for better performance on small angles.
+  ECI/Sun.pm 0.005
+    Add magnitude() method.
+  ECI/TLE.pm 0.008
+    Add {body} and {station} to hash returned by pass().
+    Add support for reblessing to Astro::Coord::ECI::TLE::Iridium if
+      appropriate. This includes rebless(), before_reblessing(),
+      after_reblessing(), alias(), can_flare(), status(), and the {reblessable}
+      attribute.
+  ECI/TLE/Iridium.pm 0.001
+    Initial release.
+  ECI/Utils.pm 0.007
+    Confess on invalid acos() argument.
+    Add find_first_true() to support finding Iridium flares.
+  bin/satpass 0.012
+    If a source file ends with a continued line, warn and abandon the
+      line.
+    Set the time on the appulsing body before obtaining its coordinates.
+    Fix error in end time parser in position().
+    Throw error if doing 'sky lookup' on a body that is already in the
+      sky.
+    Have pass() round the displayed time for the appulsing body.
+    Add flare() to calculate Iridium flares.
+    Modify position() to report flare potential for Iridium satellites.
+    Added -choose option to pass(), position(), tle().
+    Removed pass_old() and the timing parameter, strongly deprecated in
+      version 0.011.
+    Added {simbad_version} parameter to select SIMBAD software to use.
+  eg/iridium 0.001
+    New example calculating Iridium flares.
