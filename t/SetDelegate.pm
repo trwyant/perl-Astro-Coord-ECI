@@ -5,7 +5,7 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.001_01';
+our $VERSION = '0.002';
 
 sub new {
 my $class = shift;

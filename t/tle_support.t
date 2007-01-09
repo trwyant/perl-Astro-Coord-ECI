@@ -5,7 +5,7 @@ use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Iridium;
 use Test;
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.001';
 
 plan tests => 31;
 
