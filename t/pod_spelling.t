@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.006_03';
+our $VERSION = '0.007';
 
 if ($skip) {
     skip ($skip, 1);
@@ -30,6 +30,8 @@ altazimuth
 angulardiameter
 angularvelocity
 appulse
+appulsed
+appulsing
 appulses
 argumentofperigee
 Astro
