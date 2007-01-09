@@ -7,26 +7,16 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.003_01';
+our $VERSION = '0.003_02';
 
 my $bldr = Module::Build->new (
 	dist_author => 'Tom Wyant (wyant at cpan dot org)',
 	dist_abstract => 'Classes and app to compute satellite visibility',
 	module_name => 'Astro::Coord::ECI',
 	dist_name => 'Astro-satpass',
-	dist_version_from => 'ECI.pm',
+	dist_version_from => 'lib/Astro/Coord/ECI.pm',
 
 	get_options => {y => {}, n => {}},
-	pm_files => {
-	    'ECI.pm' => 'lib/Astro/Coord/ECI.pm',
-	    'ECI/Moon.pm' => 'lib/Astro/Coord/ECI/Moon.pm',
-	    'ECI/Star.pm' => 'lib/Astro/Coord/ECI/Star.pm',
-	    'ECI/Sun.pm' => 'lib/Astro/Coord/ECI/Sun.pm',
-	    'ECI/TLE.pm' => 'lib/Astro/Coord/ECI/TLE.pm',
-	    'ECI/TLE/Set.pm' => 'lib/Astro/Coord/ECI/TLE/Set.pm',
-	    'ECI/TLE/Iridium.pm' => '/lib/Astro/Coord/ECI/TLE/Iridium.pm',
-	    'ECI/Utils.pm' => 'lib/Astro/Coord/ECI/Utils.pm',
-	    },
 	dynamic_config => 1,
 	license => 'perl',
 	);

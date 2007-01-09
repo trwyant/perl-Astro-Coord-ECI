@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.004_01';
+our $VERSION = '0.004_02';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -146,7 +146,7 @@ my $vers = '';
 WriteMakefile (
 	NAME => 'Astro::Coord::ECI',
 	DISTNAME => 'Astro-satpass',
-	VERSION_FROM => 'ECI.pm',
+	VERSION_FROM => 'lib/Astro/Coord/ECI.pm',
 	PREREQ_PM => {
 			@prereq
 			},
