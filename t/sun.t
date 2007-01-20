@@ -167,6 +167,6 @@ eod
 #      Expected: $text[$expect]
 #           Got: @{[$skip ? 'skipped' : $text[$got]]}
 eod
-	skip ($skip, $got == $expect);
+	skip ($skip, $skip || $got eq $expect);
 	}
     }
