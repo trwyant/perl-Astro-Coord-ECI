@@ -10,8 +10,12 @@ CVS/
 ^iridium\.dat$
 ^iridium_observers$
 ^iss.dat$
+^kelso\.expect$
+^kelso\.got$
 ^Makefile$
 ^MANIFEST\.
+^mccants\.expect$
+^mccants\.got$
 ^pm_to_blib$
 ^scalps/
 ^t/Ctags.pm$
@@ -23,6 +27,7 @@ CVS/
 ^t/satpass.t$
 ^t/satpass_geocode.t$
 ^tags$
+^USED_BY$
 ^usual\.dat$
 \.old$
 \.swp$
