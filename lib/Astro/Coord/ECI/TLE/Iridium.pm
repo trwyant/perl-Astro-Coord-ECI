@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = 0.001;
+our $VERSION = 0.001_01;
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -740,9 +740,19 @@ while ($time < $end) {
 	my ($angle, $time, $illum_vector, $station_vector) =
 		@{$flare_approx[0]};
 
+
 #	Skip it if the mirror angle is greater than the max.
 
 	next if $angle > $max_mirror_angle;
+
+
+#	All our approximations may have left us with a satellite which
+#	is not quite lit. This happened with Iridium 32 (OID 24945) on
+#	Feb 03 2007 at 07:45:19 PM. So we check for illumination one
+#	last time.
+
+	($self->universal ($time)->azel ($illum->universal ($time)))[1] >=
+	    $self->dip () or next;
 
 
 #	Calculate all the flare data.
