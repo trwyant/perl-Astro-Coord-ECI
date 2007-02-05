@@ -26,7 +26,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new () unless $skip;
-my $asof = timegm (0, 0, 0, 19, 9, 106);
+my $asof = timegm (0, 0, 0, 04, 01, 107);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -43,7 +43,7 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of January 10, 2006
+Iridium status as of January 10, 2007
 =====================================
 
 Iridiums not listed in the following table are thought to be stable
@@ -69,6 +69,8 @@ Oct. 2005:     Iridium 91 has changed its inclination so that it will
 Jan. 2006:     Spacecom has switched the names for Iridium 91 and Iridium 90
 Jan. 10, 2006: Iridium 74 has been moved into a lower orbit and Iridium 21
                was moved to take its place.
+Jan. 10, 2007: From January 5 to January 9, 2007, Iridium 97 was moved from
+               its lower orbit to an orbit "next to" Iridium 36.
 
  NCat    Name           Status   Comment
  24836   Iridium 914    tum      Failed; was called Iridium 14
@@ -77,6 +79,7 @@ Jan. 10, 2006: Iridium 74 has been moved into a lower orbit and Iridium 21
  24870   Iridium 17     tum?     Failed in August 2005?
  24871   Iridium 920    tum      Failed; was called Iridium 20
  24873   Iridium 921    tum      Failed; was called Iridium 21
+ 24967   Iridium 36     ?        Iridium 97 moved next to it Jan. 10, 2007
  25043   Iridium 38     tum      Failed in August 2003
  25078   Iridium 44     tum      Failed
  25105   Iridium 24     tum      Failed
@@ -95,7 +98,7 @@ Jan. 10, 2006: Iridium 74 has been moved into a lower orbit and Iridium 21
  27374   Iridium 94     ?        Spare
  27375   Iridium 95     ?        Spare
  27376   Iridium 96     ?        Spare
- 27450   Iridium 97     ?        Spare
+ 27450   Iridium 97              Moved next to Iridium 36 on Jan. 10, 2007
  27451   Iridium 98     ?        Moving between planes (June 2005)
 
 Status  Meaning
