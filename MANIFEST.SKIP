@@ -5,6 +5,7 @@
 ^blib/
 ^Build$
 ^Changes_Development$
+^cover_db/
 CVS/
 ^foo$
 ^iridium\.dat$
