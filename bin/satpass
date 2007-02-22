@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.012';
+our $VERSION = '0.012_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1366,11 +1366,15 @@ eod
 #	list () - Display the observing list
 #
 
+BEGIN {
+    $cmdlgl{list} = [qw{choose=s@}];
+}
+
 sub list {
 if (@bodies) {
     my $dtfmt = "$parm{date_format} $parm{time_format}";
     print "\n";
-    foreach my $tle (@bodies) {
+    foreach my $tle (_select_observing_list ()) {
 	my $id = $tle->get ('id');
 	my $name = $tle->get ('name');
 	my $epoch = strftime "$dtfmt (local)", localtime $tle->get ('epoch');
@@ -2226,6 +2230,8 @@ if ($verb eq 'add' || $verb eq 'drop') {
   elsif ($verb eq 'show') {
     my @data = Astro::Coord::ECI::TLE->status ('show');
     @data = sort {$a->[3] cmp $b->[3]} @data if $cmdopt{name};
+    @_ and @data = _select_matching_data (
+	[map {[$_->[1], $_->[3], $_]} @data], \@_);
     foreach my $tle (@data) {
 	print <<eod;
 status add $tle->[0] $tle->[1] $status_code_map[$tle->[2]] '$tle->[3]' '$tle->[4]'
@@ -2276,7 +2282,7 @@ $^O eq 'MSWin32' || $^O eq 'VMS' and $cmd =~ tr/'"/"'/;
 #
 
 BEGIN {
-$cmdlgl{tle} = [qw{choose=s@ verbose}];
+    $cmdlgl{tle} = [qw{choose=s@ verbose}];
 }
 
 sub tle {
@@ -2942,6 +2948,55 @@ my $rslt = sprintf '%2d:%02d:%02d', $hr, $min, floor ($sec + .5);
 $rslt;
 }
 
+#	@data = _select_matching_bodies (\@data, \@choose);
+#	takes as input a reference to a list of data and a reference
+#	to a list of names or numbers to choose.
+#	The data list is composed of Astro::Coord::ECI objects.
+#	The choice list is numbers or names, the latter being rendered
+#	as case-insensitive regular expressions.
+#
+#	All this really does is to delegate to _select_matching_data,
+#	after manufacturing the correct first argument.
+
+sub _select_matching_bodies {
+    ($_[1] && @{$_[1]}) ?
+	_select_matching_data (
+	    [map {[$_->get ('id'), $_->get ('name') || '', $_]} @{$_[0]}],
+	    $_[1]) : @{$_[0]}
+}
+
+#	@data = _select_matching_data (\@data, \@choose);
+#	takes as input a reference to a list of data and a reference
+#	to a list of names or numbers to choose.
+#	The data list is composed of three-element list references:
+#	item 0 is the ID number, item 1 is the name, and item 2 is
+#	the object having that number and name.
+#	The choice list is numbers or names, the latter being rendered
+#	as case-insensitive regular expressions.
+
+sub _select_matching_data {
+    my ($data, $choose) = @_;
+    my @keep;
+    if ($choose && @$choose) {
+	my %want;
+	my @check = map {
+	    m/\D/ || length $_ < 4 || $want{$_}++;
+	    qr{$_}i}
+	    map {split '\s*,\s*', $_} @$choose;
+	foreach my $tle (@$data) {
+	    $want{$tle->[0]} and do {push @keep, $tle->[2]; last};
+	    foreach my $test (@check) {
+		$tle->[1] =~ m/$test/ or next;
+		push @keep, $tle->[2];
+		last;
+	    }
+	}
+    } else {
+	@keep = map {$_->[2]} @$data;
+    }
+    return wantarray ? @keep : \@keep;
+}
+
 #	@list = _select_observing_list ($time)
 
 #	This subroutine selects and returns the correct TLEs to use
@@ -2977,6 +3032,9 @@ if ($time) {
     $data = \@bodies;
     }
 if (@$choose) {
+
+=begin comment
+
     my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_}
 	map {split '\s*,\s*', $_} @$choose;
     my @keep;
@@ -2989,6 +3047,13 @@ if (@$choose) {
 	    }
 	}
     $data = \@keep;
+
+=end comment
+
+=cut
+
+    $data = _select_matching_bodies ($data, $choose);
+
     }
 @$data
 }
@@ -4175,6 +4240,15 @@ This command displays the observing list. Each body's NORAD ID, name
 (if available), dataset epoch, and orbital period are displayed. If
 the observing list is empty, you get a message to that effect.
 
+In addition to the global options, the following options are legal for
+the list command:
+
+-choose chooses bodies from the observing list. It works the same way
+as the L<choose|/choose> command, but does not alter the observing
+list. You can specify multiple bodies by specifying -choose multiple
+times, or by separating your choices with commas. If -choose is not
+specified, the whole observing list is displayed.
+
 =for html <a name="load"></a>
 
 =item load file ...
@@ -4583,6 +4657,15 @@ message if the body does not exist. For example, to remove the
 previously-added bogus body,
 
  satpass> status drop 12345
+
+show - is equivalent to a bare status command, and displays all known
+statuses. However, you can also specify the bodies to display as either
+NORAD IDs or names or a mixture of both. Names will be taken as regular
+expressions. For example:
+
+ satpass> status show 36 97
+
+to display the status of Iridium 36 and 97.
 
 =for html <a name="store"></a>
 
