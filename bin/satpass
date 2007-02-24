@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.012_01';
+our $VERSION = '0.012_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -192,8 +192,8 @@ my %alias = (
     quit => 'exit',
     );
 
-GetOptions (\%opt, qw{clipboard filter initialization_file=s}) or
-    die <<eod;
+GetOptions (\%opt, qw{clipboard filter initialization_file=s
+    version}) or die <<eod;
 
 Predict satellite visibility.
 
@@ -213,6 +213,10 @@ where the legal options are
   -initialization_file filename
     Initializes satpass from the named file. The default is
     $inifil.
+
+  -version
+    Display the version and exit. Overrides -filter if both are
+    specified.
 
 Option names can be abbreviated, as long as the abbreviation is unique.
 
@@ -262,6 +266,8 @@ push @frame, {
 	stdout => select (),
 	};
 
+$opt{version} and delete $opt{filter};
+
 $opt{filter} or print <<eod;
 
 satpass $VERSION - Satellite pass predictor
@@ -273,6 +279,7 @@ Copyright 2005, 2006, 2007 by Thomas R. Wyant, III. All rights reserved.
 Enter 'help' for help. See the help for terms of use.
 
 eod
+$opt{version} and exit;
 
 
 ########################################################################
@@ -5356,6 +5363,11 @@ Unix filter. The only thing suppressed at the moment is the banner text.
 =item -initialization_file filename
 
 which specifies an initialization file to use in place of the default.
+
+=item -version
+
+which causes the banner text to be displayed and the script to exit.
+This option overrides -filter if both are specified.
 
 =back
 
