@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.012_02';
+our $VERSION = '0.012_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3393,7 +3393,7 @@ $clipboard_unavailable = shift;
 
 my $err = "Can not open handle to clipboard.";
 
-$clipout = $^O eq 'MSWin32' ? _win32 || _flunk (<<eod) :
+$clipout = eval {$^O eq 'MSWin32' ? _win32 || _flunk (<<eod) :
 Error - Clipboard unavailable. Can not load Win32::Clipboard.
 eod
     $^O eq 'cygwin' ? _win32 || _xclip || _flunk (<<eod) :
@@ -3408,7 +3408,7 @@ eod
     $^O eq 'MacOS' ? _flunk (<<eod) :
 Error - Clipboard unavailable. Mac OS 9 and below not supported.
 eod
-    _xclip || _flunk (<<eod);
+    _xclip || _flunk (<<eod)};
 Error - Clipboard unavailable. Can not find xclip. For xclip,
         see http://freshmeat.net/projects/xclip
 eod
