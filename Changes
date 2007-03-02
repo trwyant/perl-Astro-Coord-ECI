@@ -246,3 +246,24 @@
     Added {simbad_version} parameter to select SIMBAD software to use.
   eg/iridium 0.001
     New example calculating Iridium flares.
+0.013
+  Astro::Coord::ECI 0.013
+    No code changes, but updated version to be visible to CPAN 'r'.
+  Astro::Coord::ECI::TLE 0.009
+    Updated canned Iridium status table for failure of Iridium 36 and
+      its replacement by Iridium 97.
+  Astro::Coord::ECI::TLE::Iridium 0.002
+    Fixed occasional borderline-case spurious flare prediction.
+  bin/satpass 0.013
+    Added -version command option, to display preamble and exit.
+    Wrap probe for clipboard helpers in eval{}. Among other things, this
+      allows the script to run in taint mode.
+    Add -choose option to list().
+    Allow extra arguments to status show, to do selective status display.
+  t/moon.t
+    Fixed cosmetic undefined value error when Scalar::Util does not
+      implement refaddr().
+  t/sun.t
+    Fixed cosmetic undefined value error when Scalar::Util does not
+      implement refaddr().
+

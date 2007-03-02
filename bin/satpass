@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.012_03';
+our $VERSION = '0.013';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3579,25 +3579,29 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-The major new functionality is the ability to predict Iridium flares.
-See the L<flare|/flare> command for details.
-
-The pass_old command and timing parameter, strongly deprecated in the
-last release, have been removed.
-
-The 'sky lookup' functionality is in transition. Currently, it uses
-Astro::SIMBAD::Client if the simbad_version parameter is 4 and
+The 'sky lookup' functionality is still in transition. It
+uses Astro::SIMBAD::Client if the simbad_version parameter is 4 and
 Astro::SIMBAD if it is 3. Currently, either will work if simbad_url is
 simbad.u-strasbg.fr, but only 3 will work for simbad.harvard.edu. At
 some point Harvard will upgrade to SIMBAD 4, and both sources will phase
 out SIMBAD 3.  The SIMBAD 4 functionality uses the web services
 interface, which may be a work in progress.
 
-A couple bugs in the calculation and display of position for appulsed
-bodies were corrected.
+The -version command option has been added. This displays the front
+matter and then exits.
 
-The -choose qualifier on the flare, pass, position, and tle commands
-causes them to act on a subset of the observing list.
+The -choose option (with the usual meaning) has been added to the
+'list' command.
+
+The 'status show' command takes arguments to determine which statuses to
+show.
+
+The underlying classes have some minor changes:
+
+* Eliminated occasional spurious Iridium flare prediction.
+
+* Updated canned Iridium status table in Astro::Coord::ECI for failure
+of Iridium 36 and its replacement by Iridium 97.
 
 =head1 DETAILS
 
