@@ -26,7 +26,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new () unless $skip;
-my $asof = timegm (0, 0, 0, 21, 01, 107);
+my $asof = timegm (0, 0, 16, 6, 02, 107);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -43,8 +43,8 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of January 10, 2007
-=====================================
+Iridium status as of March 6, 2007
+==================================
 
 Iridiums not listed in the following table are thought to be stable
 in orbit and capable of generating flares.
@@ -71,6 +71,8 @@ Jan. 10, 2006: Iridium 74 has been moved into a lower orbit and Iridium 21
                was moved to take its place.
 Jan. 10, 2007: From January 5 to January 9, 2007, Iridium 97 was moved from
                its lower orbit to an orbit "next to" Iridium 36.
+Mar. 6, 2007:  Iridium 36 has not had an orbit maintenance maneuver since
+               January and was observed to flash, so I assume it has failed.
 
  NCat    Name           Status   Comment
  24836   Iridium 914    tum      Failed; was called Iridium 14
@@ -79,7 +81,7 @@ Jan. 10, 2007: From January 5 to January 9, 2007, Iridium 97 was moved from
  24870   Iridium 17     tum?     Failed in August 2005?
  24871   Iridium 920    tum      Failed; was called Iridium 20
  24873   Iridium 921    tum      Failed; was called Iridium 21
- 24967   Iridium 36     ?        Iridium 97 moved next to it Jan. 10, 2007
+ 24967   Iridium 36     tum      Failed in January 2007
  25043   Iridium 38     tum      Failed in August 2003
  25078   Iridium 44     tum      Failed
  25105   Iridium 24     tum      Failed
