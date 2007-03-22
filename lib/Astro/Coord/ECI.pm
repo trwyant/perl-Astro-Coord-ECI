@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013';
+our $VERSION = '0.013_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -225,7 +225,7 @@ the upper limb of the object, using the 'diameter' attribute of the
 $coord2 object.
 
 As a side effect, the time of the $coord object may be set from the
-$coord object.
+$coord2 object.
 
 If the L<refraction|/refraction> attribute of the $coord object is
 true, the elevation will be corrected for atmospheric refraction using
@@ -315,17 +315,17 @@ if ($self->{inertial}) {
 #
 #	The entire rotation is therefore
 #
-#	+-                     -+   +-                        -+
+#	+-                     -+   +-                           -+
 #	|  sin(phi) 0 -cos(phi) |   |  cos(lambda)  sin(lambda) 0 |
 #	|      0    1     0     | x | -sin(lambda)  cos(lambda) 0 | =
-#	|  cos(phi) 0  sin(phi) |   |       0          0      1 |
-#	+-                     -+   +-                        -+
+#	|  cos(phi) 0  sin(phi) |   |       0          0        1 |
+#	+-                     -+   +-                           -+
 #
-#	+-                                                 -+
+#	+-                                                   -+
 #	|  cos(lambda)sin(phi)  sin(lambda)sin(phi) -cos(phi) |
 #	| -sin(lambda)          cos(lambda)             0     |
 #	|  cos(lambda)cos(phi)  sin(lambda)cos(phi)  sin(phi) |
-#	+-                                                 -+
+#	+-                                                   -+
 
     my $lclx = $coslamda * $sinphi * $delta[0] +
 	$sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
@@ -729,6 +729,8 @@ if (@_ == 3) {
     my ($beta, $lambda, $rho) = @_;
 
     $lambda = mod2pi ($lambda);
+    $beta = mod2pi ($beta);
+
     my $epsilon = obliquity ($self->dynamical);
     my $sinlamda = sin ($lambda);
     my $cosepsilon = cos ($epsilon);
@@ -739,7 +741,9 @@ if (@_ == 3) {
 	$sinbeta / $cosbeta * $sinepsilon, cos ($lambda)));
     my $delta = asin ($sinbeta * $cosepsilon +		# Meeus (13.4), pg 93.
 	$cosbeta * $sinepsilon * $sinlamda);
-    $self->{debug} and print <<eod;
+    $self->{debug} and do {
+	$beta >= PI and $beta -= TWOPI;
+	print <<eod;
 Debug ecliptic -
     beta = $beta (ecliptic latitude, radians)
          = @{[rad2deg ($beta)]} (ecliptic latitude, degrees)
@@ -750,6 +754,7 @@ Debug ecliptic -
     alpha = $alpha (right ascension, radians)
     delta = $delta (declination, radians)
 eod
+    };
     $self->equatorial ($alpha, $delta, $rho);
     $self->{_ECI_cache}{inertial}{ecliptic} = [@_];
     $self->{specified} = 'ecliptic';
@@ -793,8 +798,8 @@ This method returns the apparent equatorial coordinates of the object
 represented by $coord2, as seen from the location represented by
 $coord.
 
-As a side effect, the time of the $coord object is set from the
-$coord object.
+As a side effect, the time of the $coord object may be set from the
+$coord2 object.
 
 If the L<refraction|/refraction> attribute of the $coord object is
 true, the coordinates will be corrected for atmospheric refraction using
@@ -1244,12 +1249,18 @@ local standard time,> but the universal time plus the longitude
 of the object expressed in seconds. Another definition is mean
 solar time plus 12 hours (since the solar day begins at noon).
 You will get an exception of some sort if the position of the
-object has not been set.
+object has not been set, or if the object represents inertial
+coordinates, or on any subclass whose position depends on the time.
 
 =item $time = $coord->local_mean_time ()
 
-This method returns the civil time of the object. It will raise
+This method returns the local mean time of the object. It will raise
 an exception if the time has not been set.
+
+Note that this returns the actual local time, not the GMT equivalent.
+This means that in formatting for output, you call
+
+ strftime $format, gmtime $coord->local_mean_time ();
 
 =cut
 
@@ -1298,7 +1309,26 @@ eod
 $self;
 }
 
+=item $time = $coord->local_time ();
 
+This method returns the local time (defined as solar time plus 12 hours)
+of the given object. There is no way to set the local time.
+
+This is really just a convenience routine - the calculation is simply
+the local mean time plus the equation of time at the given time.
+
+Note that this returns the actual local time, not the GMT equivalent.
+This means that in formatting for output, you call
+
+ strftime $format, gmtime $coord->local_time ();
+
+=cut
+
+sub local_time {
+    my $self = shift;
+    my $dyntim = $self->dynamical ();
+    $self->local_mean_time + equation_of_time ($dyntim);
+}
 
 =item $value = $coord->mean_angular_velocity();
 
