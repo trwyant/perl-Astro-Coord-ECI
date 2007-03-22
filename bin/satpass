@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.013';
+our $VERSION = '0.013_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -747,6 +747,14 @@ foreach my $body (@bodies, @sky) {
     }
 }
 
+########################################################################
+#
+#	echo () - send arguments to standard out
+#
+
+sub echo {
+    print join (' ', @_), "\n";
+}
 
 ########################################################################
 #
@@ -2282,6 +2290,27 @@ $^O eq 'MSWin32' || $^O eq 'VMS' and $cmd =~ tr/'"/"'/;
 -t select() ? CORE::system ($cmd) : print `$cmd`;
 }
 
+########################################################################
+#
+#	times () - display time in a number of formats
+#
+
+sub times {
+    my $time = _parse_time (shift || '+0');
+    my $dtfmt = "$parm{date_format} $parm{time_format}";
+    my $sta = _get_station ()->universal ($time);
+    print strftime ($dtfmt, gmtime ($time)), " universal =\n";
+    print '    ', strftime ($dtfmt, gmtime ($sta->dynamical ())),
+	" dynamical\n";
+    print '    ', strftime ($dtfmt, localtime ($time)),
+	" local standard time\n";
+    print '    ', strftime ($dtfmt, gmtime (
+	    floor ($sta->local_mean_time () + .5))),
+	" local mean time\n";
+    print '    ', strftime ($dtfmt, gmtime (
+	    floor ($sta->local_time () + .5))),
+	" local time\n";
+}
 
 ########################################################################
 #
@@ -3654,7 +3683,9 @@ set the observer's location and define any macros you want. The default
 initialization file can be overridden using the SATPASSINI environment
 variable or the -initialization_file command option. Internally to
 satpass and any commands it spawns, environment variable SATPASSINI will
-be set to the name of the initialization file actually used.
+be set to the name of the initialization file actually used. See
+L</ENVIRONMENT VARIABLES> for how to find out the actual initialization
+file used.
 
 =head1 COMMANDS
 
@@ -3876,6 +3907,18 @@ or a mixture may be given. Numeric items are matched against the NORAD
 IDs of the items in the observing list; non-numeric items are made into
 case-insensitive regular expressions and matched against the names of
 the items if any.
+
+=for html <a name="echo"></a>
+
+=item echo ...
+
+This command just prints its arguments to standard output. Environment
+variable substitution and pseudo-redirection is done. You may not get
+out exactly what you put in, because the output is reconstructed from
+the tokens left after substitution and redirection.
+
+This was added on a whim, to prevent having to shell out to get some
+random text in the output.
 
 =for html <a name="exit"></a>
 
@@ -4717,6 +4760,15 @@ That is to say the satpass script handles the -c. But
 displays the status change time of the file, with output going to
 standard out. That is to say the ls command handles the -c.
 
+=for html <a name="times"></a>
+
+=item times time
+
+This command displays the universal, dynamical, local standard,
+local mean, and local time for the given input time.
+
+The time defaults to the current time.
+
 =for html <a name="tle"></a>
 
 =item tle
@@ -5423,25 +5475,16 @@ or even
 
 SATPASSINI can be used to specify an initialization file to use in lieu
 of the default. This can still be overridden by the
--initialization_file command option.
+-initialization_file command option. To see the current setting,
+
+ satpass> echo $SATPASSINI
 
 =head1 CHANGES
 
 The following changes have been introduced into this script since
-version 0.011:
+version 0.013:
 
-- Add the ability to predict Iridium flares. This includes the flare
-command and the addition of flare data to the position command.
-
-- Remove the pass_old command.
-
-- Remove the timing parameter.
-
-- Add SIMBAD 4 support, with the simbad_version parameter to select
-which version is to be used. SIMBAD 4 support needs
-Astro::SIMBAD::Client. SIMBAD 3 continues to use Astro::SIMBAD.
-
-- Set the time on the appulsing body before displaying its position.
+- Add the echo and times commands.
 
 For prior changes, see F<Changes>.
 
