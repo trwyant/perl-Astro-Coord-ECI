@@ -434,7 +434,7 @@ foreach ([41.054063, 49.227750, 36.64, PERL2000, 41.547214, 49.348483,
     my ($alpha0, $delta0, $rho, $t0, $alphae, $deltae, $time) = @$_;
     my $eci = Astro::Coord::ECI->dynamical ($t0)->equatorial (
 	deg2rad ($alpha0), deg2rad ($delta0),
-	$rho *  LIGHTYEAR2KILOMETER);
+	$rho *  LIGHTYEAR2KILOMETER)->set (equinox => $t0);
     my $utim = Astro::Coord::ECI->dynamical ($time)->universal;
     my ($alpha, $delta) = $eci->precess ($utim)->equatorial ();
     my $tolerance = 1e-6;
