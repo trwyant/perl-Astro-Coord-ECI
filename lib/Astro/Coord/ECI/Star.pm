@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -214,7 +214,9 @@ my $deltat = $end - $epoch;
 $ra += $mra * $deltat;
 $dec += $mdc * $deltat;
 $range += $mrg * $deltat;
-$self->dynamical ($epoch)->equatorial ($ra, $dec, $range);
+##!! $self->dynamical ($epoch)->equatorial ($ra, $dec, $range);
+$self->set (equinox => $epoch);
+$self->equatorial ($ra, $dec, $range);
 
 #	Precess ourselves to the correct time.
 
