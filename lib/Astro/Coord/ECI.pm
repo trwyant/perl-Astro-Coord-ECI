@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_01';
+our $VERSION = '0.013_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1510,16 +1510,19 @@ wantarray ? ($end, $above) : $end;
 
 =item $coord = $coord->precess ($time);
 
-This method precesses the equatorial coordinates of the object to the
-given universal time. The starting time is assumed to be the time
-setting of the object when the call is made. The equatorial coordinates
-of the object are set to the results of the calculation, and the
-universal time of the object is set to the value of the $time argument.
-The object itself is returned.
+B<NOTE> that starting with version 0.013_02, the start time of the
+precession is the value of the 'equinox' attribute if that is specified,
+and the time setting of the object is not affected by the operation.
 
-B<NOTE> that side effects of setting the time (i.e. in subclasses which
-define the time_set() method) B<will> take place as a result of calling
-this method.
+This method precesses the coordinates of the object to the given
+equinox. The starting equinox is the value of the 'equinox' attribute,
+or the current time setting if the 'equinox' attribute is any false
+value (i.e. undef, 0, or ''). A warning will be issued if the value
+of 'equinox' is undef, which is the default setting.
+
+As a side effect, the value of the 'equinox' attribute will be set to
+the dynamical time corresponding to the argument. The object itself is
+returned.
 
 The algorithm comes from Jean Meeus, "Astronomical Algorithms", 2nd
 Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
@@ -1532,7 +1535,10 @@ sub precess {
 my $self = shift;
 my $time = shift;
 
-my $start = $self->dynamical;
+##!! my $start = $self->dynamical;
+defined (my $start = $self->get ('equinox'))
+    or carp "Warning - Precess called with equinox attribute undefined";
+$start ||= $self->dynamical ();
 my $end = $time + dynamical_delta ($time);
 
 my ($alpha0, $delta0, $rho0) = $self->equatorial ();
@@ -1563,8 +1569,10 @@ my $C = $sintheta * $cosdelta0cosalpha0 + $costheta * $sindelta0;
 my $alpha = atan2 ($A , $B) + $z;
 my $delta = asin ($C);
 
-$self->equatorial ($alpha, $delta, $rho0, $time);
-$self->{dynamical} = $end;
+##!! $self->equatorial ($alpha, $delta, $rho0, $time);
+##!! $self->{dynamical} = $end;
+$self->equatorial ($alpha, $delta, $rho0);
+$self->set (equinox => $end);
 $self;
 }
 
@@ -1784,6 +1792,7 @@ $self;
     debug => \&_set_value,
     diameter => \&_set_value,
     ellipsoid => \&_set_reference_ellipsoid,
+    equinox => => \&_set_value,
     flattening => \&_set_custom_ellipsoid,
     horizon => \&_set_value,
     id => \&_set_id,
@@ -2103,6 +2112,21 @@ the known_ellipsoid() method for the initially-valid names, and how
 to add more.
 
 The default is 'WGS84'.
+
+=item equinox (numeric, dynamical time)
+
+This attribute represents the time of the equinox and equator to which
+the coordinate data are referred. Most calculations are assumed referred
+to the current equinox and equator, so this attribute need only be set
+if the precess() method is to be called. See that method's documentation
+for more information.
+
+Note that, unlike almost all other time arguments, this attribute is
+set in B<dynamical time>. This can be calculated, if need be, from
+universal time by adding the results of the Astro::Coord::ECI::Utils
+dynamical_delta() function.
+
+The default is undef.
 
 =item flattening (numeric)
 
