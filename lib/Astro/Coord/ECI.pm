@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_02';
+our $VERSION = '0.013_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -2241,6 +2241,33 @@ declination is negative.
 
 Declination input to and output from this module is in radians.
 
+=head2 Dynamical time
+
+A dynamical time is defined theoretically by the motion of astronomical
+bodies. In practice, it is seen to be related to Atomic Time (a.k.a.
+TAI) by a constant.
+
+There are actually two dynamical times of interest: TT (Terrestrial
+Time, a.k.a.  TDT for Terrestrial Dynamical Time), which is defined in
+terms of the geocentric ephemerides of solar system bodies, and TDB
+(Barycentric Dynamical Time), which is defined in terms of the
+barycentre (a.k.a "center of mass") of the solar system. The two differ
+by the relativistic effects of the motions of the bodies in the Solar
+system, and are generally less than 2 milliseconds different. So unless
+you are doing high-precision work they can be considered identical, as
+Jean Meeus does in "Astronomical Algorithms".
+
+For practical purposes, TT = TAI + 32.184 seconds. If I ever get the
+gumption to do a re-implementation (or alternate implementation) of time
+in terms of the DateTime object, this will be the definition of
+dynamical time. Until then, though, formula 10.2 on page 78 of Jean
+Meeus' "Astronomical Algorithms" second edition, Chapter 10 (Dynamical
+Time and Universal Time) is used.
+
+Compare and contrast this to L</Universal time>. This explanation leans
+heavily on L<http://star-www.rl.ac.uk/star/docs/sun67.htx/node226.html>,
+which contains a more fulsome but eminently readable explanation.
+
 =head2 Earth-Centered, Earth-fixed (ECEF) coordinates
 
 This is a Cartesian coodinate system whose origin is the center of the
@@ -2386,6 +2413,37 @@ Right Ascension is input to and output from this module in radians.
 In astronomical literature it is usual to report right ascension
 in hours, minutes, and seconds, with 60 seconds in a minute, 60
 minutes in an hour, and 24 hours in a circle.
+
+=head2 Universal time
+
+This term can refer to a number of scales, but the two of interest are
+UTC (Coordinated Universal Time) and UT1 (Universal Time 1, I presume).
+The latter is in effect mean solar time at Greenwich, though its
+technical definition differs in detail from GMT (Greenwich Mean Time).
+The former is a clock-based time, whose second is the SI second (defined
+in terms of atomic clocks), but which is kept within 0.9 seconds of UT1
+by the introduction of leap seconds. These are introduced (typically at
+midyear or year end) by prior agreement among the various timekeeping
+bodies based on observation; there is no formula for computing when a
+leap second will be needed, because of irregularities in the Earth's
+rotation.
+
+Jean Meeus' "Astronomical Algorithms", second edition, deals with the
+relationship between Universal time and L</Dynamical time> in Chapter 10
+(pages 77ff). His definition of "Universal time" seems to refer to UT1,
+though he does not use the term.
+
+This software considers Universal time to be equivalent to Perl time.
+Since we are interested in durations (time since a given epoch, to be
+specific), this is technically wrong in most cases, since leap seconds
+are not taken into account. But in the case of the bodies modeled by
+the Astro::Coord::ECI::TLE object, the epoch is very recent (within a
+week or so), so the error introduced is small. It is larger for
+astronomical calculations, where the epoch is typically J2000.0, but the
+angular motions involved are smaller, so it all evens out. I hope.
+
+Compare and contrast L</Dynamical time>. This explanation leans heavily
+on L<http://star-www.rl.ac.uk/star/docs/sun67.htx/node224.html>.
 
 =head2 XYZ coordinates
 
