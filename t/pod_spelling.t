@@ -13,7 +13,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 
 if ($skip) {
     skip ($skip, 1);
@@ -38,6 +38,7 @@ Astro
 au
 autoheight
 azel
+Barycentric
 barycentre
 body's
 boosters
@@ -55,6 +56,7 @@ coodinate
 Coords
 dans
 darwin
+DateTime
 de
 deg
 degreesDminutesMsecondsS
@@ -174,6 +176,7 @@ secondderivative
 semimajor
 SGP
 sgp
+SI
 SIGINT
 SIMBAD
 Simbad
@@ -190,18 +193,25 @@ Storable
 strasbg
 SunTime
 Survey's
+TAI
+TDB
+TDT
 Terre
 thetag
 Thorfinn
+timekeeping
 TIMEZONES
 TLE
 tle
+TT
 Touze
 Turbo
 TWOPI
 tz
 uk
 USGS
+UT
+UTC
 VA
 valeurs
 webcmd
