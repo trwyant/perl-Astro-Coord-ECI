@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-our $VERSION = '0.004';
+our $VERSION = '0.004_01';
 
 use t::Satpass;
 
@@ -51,7 +51,8 @@ or due to a change in the interface specification. If you want to
 distinguish between the two, visit that site and look up the height
 at latitude 38.898748 (Y_value) longitude -77.037684 (X_value) by hand.
 eod
--data set height 16.68
+-data set height 16.90
+# Above was 16.68; changed 17-Apr-2007 after it had been this way for a while
 -test fetch height in continental U.S. from http://gisdata.usgs.gov/
 # Make the above -todo since fails for server errors sometimes.
 -todo
