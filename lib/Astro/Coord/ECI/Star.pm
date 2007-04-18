@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_01';
+our $VERSION = '0.003_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -144,11 +144,12 @@ in kilometers per second.
 
 The range defaults to 1 parsec, which is too close but probably good
 enough since we do not take parallax into account when computing
-position, and since you can override it with a range (in km!) if you
-so desire. The proper motions default to 0. The time defaults to
-J2000.0. If you are not interested in proper motion but are interested
-in time, omit the proper motion arguments completely and specify time
-as the fourth argument.
+position, and since you can override it with a range (in km!) if you so
+desire. The proper motions default to 0. The time defaults to J2000.0,
+and is used to set not only the current time of the object but also the
+equinox. If you are not interested in proper motion but are interested
+in time, omit the proper motion arguments completely and specify time as
+the fourth argument.
 
 If you call this as a class method, a new Astro::Coord::ECI::Star
 object will be constructed. If you call it without arguments, the
@@ -162,19 +163,20 @@ position of the star in question.
 =cut
 
 sub position {
-my $self = shift;
-return @{$self->{_star_position}} unless @_;
-my @args = @_;
-$args[2] ||= PARSEC;
-@args < 5 and splice @args, 3, 0, 0, 0, 0;
-$args[3] ||= 0;
-$args[4] ||= 0;
-$args[5] ||= 0;
-$args[6] ||= PERL2000;
-$self = $self->new () unless ref $self;
-$self->{_star_position} = [@args];
-$self->dynamical ($args[6]);
-$self;
+    my $self = shift;
+    return @{$self->{_star_position}} unless @_;
+    my @args = @_;
+    $args[2] ||= PARSEC;
+    @args < 5 and splice @args, 3, 0, 0, 0, 0;
+    $args[3] ||= 0;
+    $args[4] ||= 0;
+    $args[5] ||= 0;
+    $args[6] ||= PERL2000;
+    $self = $self->new () unless ref $self;
+    $self->{_star_position} = [@args];
+    $self->dynamical ($args[6]);
+    $self->set (equinox => $args[6]);
+    $self;
 }
 
 =item $star->time_set()
