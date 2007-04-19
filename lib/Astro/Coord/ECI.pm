@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_03';
+our $VERSION = '0.013_05';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -497,32 +497,34 @@ Edition, Chapter 10, pages 78ff.
 =cut
 
 sub dynamical {
-my $self = shift;
-unless (@_) {
-    ref $self or croak <<eod;
+    my $self = shift;
+    unless (@_) {
+	ref $self or croak <<eod;
 Error - The dynamical() method may not be called as a class method
         unless you specify arguments.
 eod
-    return ($self->{dynamical} ||= $self->{universal} +
-	dynamical_delta ($self->{universal} || croak <<eod));
+	return ($self->{dynamical} ||= $self->{universal} +
+	    dynamical_delta ($self->{universal} || croak <<eod));
 Error - Universal time of object has not been set.
 eod
     }
 
-if (@_ == 1) {
-    $self = $self->new () unless ref $self;
-    $self->universal ($_[0] - dynamical_delta ($_[0]));
-    $self->{dynamical} = $_[0];
-    }
-  else {
-    croak <<eod;
+    if (@_ == 1) {
+	$self = $self->new () unless ref $self;
+	$self->{_no_set}++;	# Supress running the model if any
+	$self->universal ($_[0] - dynamical_delta ($_[0]));
+	$self->{dynamical} = $_[0];
+	--$self->{_no_set};	# Undo supression of model
+	$self->_call_time_set ();	# Run the model if any
+    } else {
+	croak <<eod;
 Error - The dynamical() method must be called with either zero
         arguments (to retrieve the time) or one argument (to set the
         time).
 eod
     }
 
-$self;
+    $self;
 }
 
 
@@ -574,7 +576,8 @@ if (@_ == 3) {
 
 if (@_ == 6) {
     foreach my $key (@kilatr) {delete $self->{$key}}
-    $self->{_ECI_cache}{fixed}{ecef} = [@_];
+##    $self->{_ECI_cache}{fixed}{ecef} = [@_];
+    $self->{_ECI_cache} = {fixed => {ecef => [@_]}};
     $self->{specified} = 'ecef';
     $self->{inertial} = 0;
     }
@@ -654,7 +657,8 @@ eod
 
 if (@_ == 6) {
     foreach my $key (@kilatr) {delete $self->{$key}}
-    $self->{_ECI_cache}{inertial}{eci} = [@_];
+##    $self->{_ECI_cache}{inertial}{eci} = [@_];
+    $self->{_ECI_cache} = {inertial => {eci => [@_]}};
     $self->{specified} = 'eci';
     $self->{inertial} = 1;
     }
@@ -1862,48 +1866,54 @@ This method returns the universal time previously set.
 =cut
 
 sub universal {
-my $self = shift;
-unless (@_) {
-    ref $self or croak <<eod;
+    my $self = shift;
+    unless (@_) {
+	ref $self or croak <<eod;
 Error - The universal() method may not be called as a class method
         unless you specify arguments.
 eod
-    return $self->{universal} || croak <<eod;
+	return $self->{universal} || croak <<eod;
 Error - Object's time has not been set.
 eod
-# help syntax-highlighting editor '
     }
 
-if (@_ == 1) {
-    $self = $self->new () unless ref $self;
-    return $self if defined $self->{universal} &&
-	$_[0] == $self->{universal};
-    delete $self->{local_mean_time};
-    delete $self->{dynamical};
-    $self->{universal} = shift;
-    if ($self->{specified}) {
-	if ($self->{inertial}) {
-##	    $self->{_need_purge} = 1;
-	    delete $self->{_ECI_cache}{fixed};
-	    }
-	  else {
-	    delete $self->{_ECI_cache}{inertial};
+    if (@_ == 1) {
+	$self = $self->new () unless ref $self;
+	return $self if defined $self->{universal} &&
+	    $_[0] == $self->{universal};
+	delete $self->{local_mean_time};
+	delete $self->{dynamical};
+	$self->{universal} = shift;
+	if ($self->{specified}) {
+	    if ($self->{inertial}) {
+		delete $self->{_ECI_cache}{fixed};
+	    } else {
+		delete $self->{_ECI_cache}{inertial};
 	    }
 	}
-    $self->can ('time_set') && !$self->{_no_set} and do {
-	$self->{_no_set} = 1;
-	$self->time_set ();
-	delete $self->{_no_set};
+
+=begin comment
+
+	$self->can ('time_set') && !$self->{_no_set} and do {
+	    $self->{_no_set} = 1;
+	    $self->time_set ();
+	    delete $self->{_no_set};
 	};
-    }
-  else {
-    croak <<eod;
+
+=end comment
+
+=cut
+
+	$self->_call_time_set ();	# Run the model if any
+
+    } else {
+	croak <<eod;
 Error - The universal() method must be called with either zero
         arguments (to retrieve the time) or one argument (to set the
         time).
 eod
     }
-$self;
+    $self;
 }
 
 
@@ -1912,6 +1922,18 @@ $self;
 #	Internal
 #
 
+#	$coord->_call_time_set ()
+
+#	This method calls the time_set method if it exists and if we are
+#	not already in it. It is a way to avoid endless recursion if the
+#	time_set method should happen to set the time.
+
+sub _call_time_set {
+    my $self = shift;
+    $self->can ('time_set') or return;
+    $self->{_no_set}++ or $self->time_set ();
+    --$self->{_no_set} or delete $self->{_no_set};
+}
 
 #	$coord->_check_coord (method => \@_)
 
