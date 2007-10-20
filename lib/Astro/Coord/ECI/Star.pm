@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_02';
+our $VERSION = '0.003_03';
 
 use base qw{Astro::Coord::ECI};
 
@@ -131,6 +131,22 @@ return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
 
+=item $equinox = $star->model_equinox ();
+
+This method returns the dynamical time of the equinox the output of the
+body's model is referred to. For this class, it is the equinox given to
+the position() method, which is usually J2000.0 or 01-Jan-2000 12:00:00
+dynamical.
+
+=cut
+
+sub model_equinox {
+    $_[0]->{_star_position}[6];	# If this ever changes, time_set() needs
+				# to change also, since it does not use
+				# this interface.
+}
+
+
 use constant NEVER_PASS_ELEV => 2 * __PACKAGE__->SECSPERDAY;
 
 =item $star = $star->position($ra, $dec, $range, $mra, $mdc, $mrg, $time);
@@ -175,7 +191,7 @@ sub position {
     $self = $self->new () unless ref $self;
     $self->{_star_position} = [@args];
     $self->dynamical ($args[6]);
-    $self->set (equinox => $args[6]);
+##!!    $self->set (equinox => $args[6]);
     $self;
 }
 
@@ -204,6 +220,8 @@ $self->{_star_position} or croak <<eod;
 Error - The position of the star has not been set.
 eod
 
+#	Note that $epoch is the same as $self->model_equinox.
+
 my ($ra, $dec, $range, $mra, $mdc, $mrg, $epoch) = @{$self->{_star_position}};
 
 my $time = $self->universal;
@@ -216,14 +234,18 @@ my $deltat = $end - $epoch;
 $ra += $mra * $deltat;
 $dec += $mdc * $deltat;
 $range += $mrg * $deltat;
-##!! $self->dynamical ($epoch)->equatorial ($ra, $dec, $range);
-$self->set (equinox => $epoch);
+##!! $self->set (equinox => $epoch);
 $self->equatorial ($ra, $dec, $range);
 
-#	Precess ourselves to the correct time.
+#	Precess ourselves to the correct time. We skip this if the
+#	equinox is set, since the caller will do the honors in that
+#	case.
 
-$self->precess ($time);
-
+unless ($self->get ('equinox')) {
+    $self->set (equinox => $epoch);
+    $self->precess ($time);
+    $self->set (equinox => undef);
+}
 
 #	Get ecliptic coordinates, and correct for nutation.
 
