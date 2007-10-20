@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-our $VERSION = '0.004_01';
+our $VERSION = '0.004_02';
 
 use t::Satpass;
 
@@ -63,7 +63,10 @@ set latitude 45.423388
 set longitude -75.697786
 set height 0
 height
--data set height 82.00
+# As of 17-Apr-2007
+# -data set height 82.00
+# As of 19-Oct-2007
+-data set height 89.00
 -fail <<eod
 Test %d may fail due to a database problem on http://gisdata.usgs.gov/
 or due to a change in the interface specification. If you want to
