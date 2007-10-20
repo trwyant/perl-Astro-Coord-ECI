@@ -21,6 +21,7 @@ CVS/
 ^scalps/
 ^t/Ctags.pm$
 ^t/Satpass.pm$
+^t/executable.t$
 ^t/manifest.t$
 ^t/pod_spelling.t$
 ^t/iridium.dat$
