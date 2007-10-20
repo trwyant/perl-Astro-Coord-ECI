@@ -15,13 +15,14 @@ utility subroutines used by B<Astro::Coord::ECI> and its descendents.
 What ended up here was anything that was essentially a subroutine, not
 a method.
 
-This package exports nothing by default. But all the constants and
-subroutines documented below are exportable, and the :all tag gets you
-all of them.
+This package exports nothing by default. But all the constants,
+variables, and subroutines documented below are exportable, and the :all
+tag gets you all of them.
 
-The following constants are exportable:
+=head2 The following constants are exportable:
 
  AU = number of kilometers in an astronomical unit
+ JD_OF_EPOCH = the Julian Day of Perl epoch 0
  LIGHTYEAR = number of kilometers in a light year
  PARSEC = number of kilometers in a parsec
  PERL2000 = January 1 2000, 12 noon universal, in Perl time
@@ -30,7 +31,25 @@ The following constants are exportable:
  SECSPERDAY = the number of seconds in a day
  TWOPI = twice the circle ratio
 
-In addition, the following subroutines are exportable:
+=head2 The following global variable is exportable:
+
+=head3 $JD_GREGORIAN
+
+This variable represents the Julian Day of the switch from Julian to
+Gregorian calendars. This is used by date2jd(), jd2date(), and the
+routines which depend on them, for deciding whether the date is to be
+interpreted as in the Julian or Gregorian calendar. Its initial setting
+is 2299160.5, which represents midnight October 15 1582 in the Gregorian
+calendar, which is the date that calendar was first adopted. This is
+slightly different than the value of 2299161 (noon of the same day) used
+by Jean Meeus.
+
+If you are interested in historical calculations, you may wish to reset
+this appropriately. If you use date2jd to calculate the new value, be
+aware of the effect the current setting of $JD_GREGORIAN has on the
+interpretation of the date you give.
+
+=head2 In addition, the following subroutines are exportable:
 
 =over 4
 
@@ -41,7 +60,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -52,12 +71,13 @@ use UNIVERSAL qw{can isa};
 
 our @EXPORT;
 our @EXPORT_OK = qw{
-	AU LIGHTYEAR PARSEC PERL2000 PI PIOVER2 SECSPERDAY TWOPI acos
-	asin atmospheric_extinction deg2rad distsq dynamical_delta
+	AU $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC PERL2000 PI
+	PIOVER2 SECSPERDAY TWOPI acos asin atmospheric_extinction
+	date2epoch date2jd deg2rad distsq dynamical_delta epoch2datetime
 	equation_of_time find_first_true intensity_to_magnitude
-	jcent2000 jday2000 julianday mod2pi nutation_in_longitude
-	nutation_in_obliquity obliquity omega rad2deg tan theta0
-	thetag};
+	jcent2000 jd2date jd2datetime jday2000 julianday mod2pi
+	nutation_in_longitude nutation_in_obliquity obliquity omega
+	rad2deg tan theta0 thetag};
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -146,6 +166,77 @@ my $Aaer = 0.120 * exp (-$height / 1.5);	# Green 4
 }
 
 
+=item $jd = date2jd ($yr, $mon, $day, $hr, $min, $sec)
+
+This subroutine converts the given date to the corresponding Julian day.
+The full year is given (B<not> year since 1900), and the month is based
+on 1, not 0.  The year before 1 is 0, which is equivalent to 1 BC.
+
+The date is presumed to be in the Gregorian calendar. If the resultant
+Julian Day is before $JD_GREGORIAN, the date is reinterpreted as being
+from the Julian calendar.
+
+The only validation is that the month be between 1 and 12 inclusive, and
+that the year be not less than -4712. Hours, minutes, and seconds can be
+omitted (defaulting to 0), and fractional days are accepted.
+
+The algorithm is from Jean Meeus' "Astronomical Algorithms", second
+edition, chapter 7 ("Julian Day"), pages 60ff.
+
+=cut
+
+our $JD_GREGORIAN;
+BEGIN {
+    $JD_GREGORIAN = 2299160.5;
+}
+
+sub date2jd {
+    my ($yr, $mon, $day, $hr, $min, $sec) = @_;
+    $yr < -4712 and croak "Error - Invalid year $yr";
+    $mon < 1 || $mon > 12 and croak "Error - Invalid month $mon";
+    if ($mon < 3) {
+	--$yr;
+	$mon += 12;
+    }
+    my $A = floor ($yr / 100);
+    my $B = 2 - $A + floor ($A / 4);
+    my $jd = floor (365.25 * ($yr + 4716)) +
+	floor (30.6001 * ($mon + 1)) + $day + $B - 1524.5 +
+	((($sec || 0) / 60 + ($min || 0)) / 60 + ($hr || 0)) / 24;
+    $jd < $JD_GREGORIAN and
+	$jd = floor (365.25 * ($yr + 4716)) +
+	floor (30.6001 * ($mon + 1)) + $day - 1524.5 +
+	((($sec || 0) / 60 + ($min || 0)) / 60 + ($hr || 0)) / 24;
+    $jd;
+}
+
+use constant JD_OF_EPOCH => eval {
+    my @date = gmtime (0);
+    splice @date, 6;
+    @date = reverse @date;
+    $date[0] += 1900;
+    $date[1] += 1;
+    date2jd (@date);
+};
+
+
+=item $epoch = date2epoch ($yr, $mon, $day, $hr, $min, $sec)
+
+This is a convenience routine that converts the given date to seconds
+since the epoch, going through date2jd() to do so. The arguments are the
+same as those of date2jd(). Except for the order and definition of the
+arguments, the functionality is the same as Date::Local::timegm, but
+this function lacks timegm's limited date range.
+
+=cut
+
+sub date2epoch {
+    my ($yr, $mon, $day, $hr, $min, $sec) = @_;
+    (date2jd ($yr, $mon, $day) - JD_OF_EPOCH) * SECSPERDAY +
+    (($hr || 0) * 60 + ($min || 0)) * 60 + ($sec || 0);
+}
+
+
 =item $rad = deg2rad ($degr)
 
 This subroutine converts degrees to radians.
@@ -205,6 +296,29 @@ my $t = ($year - 2000) / 100;
 my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
 (25.3 * $t + 102) * $t + 102		# Meeus (10.2)
 	+ $correction;			# Meeus' correction.
+}
+
+
+=item ($yr, $mon, $day, $hr, $min, $sec) = epoch2datetime ($epoch)
+
+This is a convenience routine that converts seconds since the epoch to
+a date, going through jd2date() to do so. The returned list is the same
+as that returned by jd2datetime(). Except for the order and definition of
+the return, the functionality is the same as gmtime, but this function
+lacks gmtime's limited date range.
+
+=cut
+
+sub epoch2datetime {
+    my $day = floor ($_[0] / SECSPERDAY);
+    my $sec = $_[0] - $day * SECSPERDAY;
+    (my $yr, my $mon, $day) = jd2date ($day + JD_OF_EPOCH);
+    $day = floor ($day + .5);
+    my $min = floor ($sec / 60);
+    $sec = $sec - $min * 60;
+    my $hr = floor ($min / 60);
+    $min = $min - $hr * 60;
+    ($yr, $mon, $day, $hr, $min, $sec);
 }
 
 
@@ -316,6 +430,68 @@ ratio greater than 1.
     sub intensity_to_magnitude {
     - ($intensity_to_mag_factor ||= 2.5 / log (10)) * log ($_[0]);
     }
+}
+
+
+=item ($yr, $mon, $day) = jd2date ($jd)
+
+This subroutine converts the given Julian day to the corresponding date.
+The full year is returned (B<not> year since 1900), and the month is based
+on 1, not 0.  The year before 1 is 0, which is equivalent to 1 BC. The
+date will probably have a fractional part (e.g. 2006 1 1.5 for noon
+January first 2006).
+
+If the $jd is before $JD_GREGORIAN, the date will be in the Julian
+calendar; otherwise it will be in the Gregorian calendar.
+
+The input may not be less than 0.
+
+The algorithm is from Jean Meeus' "Astronomical Algorithms", second
+edition, chapter 7 ("Julian Day"), pages 63ff.
+
+=cut
+
+sub jd2date {
+    my $mod_jd = $_[0] + 0.5;
+    my $Z = floor ($mod_jd);
+    my $F = $mod_jd - $Z;
+    my $A = $Z < $JD_GREGORIAN ? $Z : do {
+	my $alpha = floor (($Z - 1867216.25)/36524.25);
+	$Z + 1 + $alpha - floor ($alpha / 4);
+    };
+    my $B = $A + 1524;
+    my $C = floor (($B - 122.1) / 365.25);
+    my $D = floor (365.25 * $C);
+    my $E = floor (($B - $D) / 30.6001);
+    my $day = $B - $D - floor (30.6001 * $E) + $F;
+    my $mon = $E < 14 ? $E - 1 : $E - 13;
+    my $yr = $mon > 2 ? $C - 4716 : $C - 4715;
+    ($yr, $mon, $day);
+}
+
+
+=item ($yr, $mon, $day, $hr, $min, $sec) = jd2datetime ($jd)
+
+This convenience subroutine converts the given Julian day to the
+corresponding date and time. It is implemented in terms of jd2date (),
+with the year and month returned from that subroutine. The day is a
+whole number, with the fractional part converted to hours, minutes, and
+seconds.
+
+The input may not be less than 0.
+
+=cut
+
+sub jd2datetime {
+    my ($yr, $mon, $day) = jd2date (@_);
+    my $hr = $day;
+    $day = floor ($day);
+    my $min = $hr = ($hr - $day) * 24;
+    $hr = floor ($hr);
+    my $sec = $min = ($min - $hr) * 60;
+    $min = floor ($min);
+    $sec = ($sec - $min) * 60;
+    ($yr, $mon, $day, $hr, $min, $sec);
 }
 
 
