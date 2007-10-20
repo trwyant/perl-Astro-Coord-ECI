@@ -14,8 +14,6 @@ Astro::Coord::ECI::Moon - Compute the position of the Moon.
 
 =head1 DESCRIPTION
 
-=for comment help syntax-highlighting editor "
-
 This module implements the position of the Moon as a function of time,
 as described in Jean Meeus' "Astronomical Algorithms," second edition.
 It is a subclass of B<Astro::Coord::ECI>, with the id, name, and diameter
@@ -26,8 +24,6 @@ overridden to compute the position of the Moon at the given time.
 
 The following methods should be considered public:
 
-=for comment help syntax-highlighting editor "
-
 =over
 
 =cut
@@ -37,7 +33,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -87,8 +83,6 @@ our $Singleton = $weaken;
 
 =item $moon = Astro::Coord::ECI::Moon->new ();
 
-=for comment help syntax-highlighting editor "
-
 This method instantiates an object to represent the coordinates of the
 Moon. This is a subclass of Astro::Coord::ECI, with the id and name
 attributes set to 'Moon', and the diameter attribute set to 3476 km
@@ -106,8 +100,6 @@ exports weaken(). If it does not, the setting of
 $Astro::Coord::ECI::Moon::Singleton is silently ignored. The default
 is true if Scalar::Util can be loaded and exports weaken(), and false
 otherwise.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -131,8 +123,6 @@ if ($Singleton && $weaken && UNIVERSAL::isa ($class, __PACKAGE__)) {
 
 
 =item @almanac = $moon->almanac ($location, $start, $end);
-
-=for comment help syntax-highlighting editor "
 
 This method produces almanac data for the Moon for the given location,
 between the given start and end times. The location is assumed to be
@@ -158,8 +148,6 @@ potentially returned:
  transit: 1 = Moon transits meridian;
  quarter: 0 = new moon, 1 = first quarter,
           2 = full moon, 3 = last quarter.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -198,6 +186,19 @@ foreach (
     }
 return sort {$a->[0] <=> $b->[0]} @almanac;
 }
+
+=item $equinox = $moon->model_equinox ();
+
+This method returns the dynamical time of the equinox the output of the
+body's model is referred to. For this class, it is the current time
+setting of the object.
+
+=cut
+
+sub model_equinox {
+    $_[0]->dynamical ();
+}
+
 
 =item ($time, $quarter, $desc) = $moon->next_quarter ($want);
 
@@ -249,12 +250,8 @@ wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal
 
 =item $period = $moon->period ()
 
-=for comment help syntax-highlighting editor "
-
 This method returns the sidereal period of the Moon, per Appendix I
 (pg 408) of Jean Meeus' "Astronomical Algorithms," 2nd edition.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -262,8 +259,6 @@ sub period {2360591.5968}	# 27.321662 * 86400
 
 
 =item ($phase, $illum) = $moon->phase ($time);
-
-=for comment help syntax-highlighting editor "
 
 This method calculates the current phase of the moon in radians, and
 its illuminated fraction as a number from 0 to 1. If the time is
@@ -276,7 +271,7 @@ must be specified.
 
 Jean Meeus' "Astronomical Algorithms", 2nd Edition, Chapter 49 page
 349, defines the phases of the moon in terms of the difference between
-the geocentric longitudes of the moon and sun - specifically, that
+the geocentric longitudes of the Moon and Sun - specifically, that
 new, first quarter, full, and last quarter are the moments when this
 difference is 0, 90, 180, and 270 degrees respectively.
 
@@ -287,8 +282,6 @@ the Moon, which Meeus defines as the elongation of the Earth from the
 Sun, as seen from the Moon. Because we take the "phase angle" as just
 pi - the phase (in radians), we introduce an error of about 0.3% in
 the illumination calculation.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -315,8 +308,6 @@ wantarray ? ($phase, (1 + cos ($self->PI - $phase)) / 2) : $phase;
 
 =item $moon->time_set ()
 
-=for comment help syntax-highlighting editor "
-
 This method sets coordinates of the object to the coordinates of the
 Moon at the object's currently-set universal time.  The velocity
 components are arbitrarily set to 0, since Meeus' algorithm does not
@@ -336,8 +327,6 @@ Lunar Ephemeris ELP 2000" from I<Astronomy and Astrophysics> volume
 J. Chalpront, M. Chalpront-Touze, and G. Francou, I<Introduction dans
 ELP 2000-82B de nouvelles valeurs des parametres orbitaux de la Lune
 et du barycentre Terre-Lune>, Paris, January 1998.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
