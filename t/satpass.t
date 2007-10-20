@@ -9,7 +9,7 @@ __END__
 -skip not_available ('Astro::SpaceTrack')
 
 st get direct
--data st set direct ''
+-data st set direct 0
 -test st get direct
 
 st set direct 1
