@@ -8,7 +8,7 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 18}
+BEGIN {plan tests => 36}
 ##use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 ##use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 ##use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
@@ -261,3 +261,49 @@ foreach ([80, 0, 1.59], [45, .5, 0.34], [1, 1, 0.21]) {
 eod
     ok (abs ($got - $expect) <= .01);
     }
+
+# Tests 19 -  : Julian dates
+
+#	Based on Meeus pp60ff
+
+foreach ([date2jd => [1957, 10, 4.81], [jd => 2436116.31]],
+    [date2jd => [333, 1, 27, 12], [jd => 1842713.0]],
+    [jd2date => [2436116.31], [yr => 1957, mon => 10, day => 4.81]],
+    [jd2date => [1842713.0], [yr => 333, mon => 1, day => 27.5]],
+    [jd2date => [1507900.13], [yr => -584, mon => 5, day => 28.63]],
+    [date2epoch => [2000, 1, 1, 12], [epoch => PERL2000]],
+    [epoch2datetime => [PERL2000], [yr => 2000, mon => 1, day => 1,
+    hr => 12, min => 0, sec => 0]],
+) {
+    my ($method, $args, $want) = @$_;
+    my @want = @$want;
+    my $code = Astro::Coord::ECI::Utils->can ($method)
+	or die "Fatal - Astro::Coord::ECI::Utils::'$method' not found";
+    print <<eod;
+#
+# Testing $method (@{[join ', ', @$args]})
+eod
+    my @got = $code->(@$args);
+    foreach my $got (@got) {
+	my $name = shift @want;
+	my $want = shift @want;
+	my $tolerance = $want;
+	$tolerance =~ s/\.$//;
+	if ($want =~ m/\./) {
+	    $tolerance =~ s/.*\././;
+	    $tolerance =~ s/\d/0/g;
+	    $tolerance =~ s/0$/1/;
+	} else {
+	    $tolerance = 1;
+	}
+	$test++;
+	print <<eod;
+#
+# Test $test - $method output $name
+#      Expected: $want
+#           Got: $got
+#     Tolerance: $tolerance
+eod
+	ok (abs ($want - $got) <= $tolerance);
+    }
+}
