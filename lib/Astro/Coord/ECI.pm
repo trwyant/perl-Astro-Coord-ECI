@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_05';
+our $VERSION = '0.013_06';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -472,11 +472,14 @@ my $angle = $h >= 0 ?
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $coord = $coord->dynamical ($time);
 
 This method sets the dynamical time represented by the object.
+
+B<Note> that as of version 0.013_06, if setting the time causes the
+position to be computed B<and> the 'equinox' attribute has been set,
+precess() will be called after the position computation to precess the
+position to the given equinox.
 
 This method can also be called as a class method, in which case it
 instantiates the desired object.
@@ -1351,6 +1354,17 @@ return $self->can ('period') ?
 }
 
 
+=item $equinox = $coord->model_equinox ();
+
+This method returns the dynamical time of the equinox the output of the
+body's model is referred to. At this level of the inheritance hierarchy
+there is no model for the position of the body as a function of time, so
+we return undef.
+
+=cut
+
+sub model_equinox {undef}
+
 =for comment help syntax-highlighting editor "
 
 =item ($time, $rise) = $coord->next_elevation ($body, $elev, $upper)
@@ -1510,13 +1524,16 @@ wantarray ? ($end, $above) : $end;
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $coord = $coord->precess ($time);
 
 B<NOTE> that starting with version 0.013_02, the start time of the
 precession is the value of the 'equinox' attribute if that is specified,
 and the time setting of the object is not affected by the operation.
+
+B<NOTE also> that starting with version 0.013_06, this is called
+implicitly when the time is set if setting the time causes a position
+computation B<and> the 'equinox' attribute is set, to precess the
+position to that equinox.
 
 This method precesses the coordinates of the object to the given
 equinox. The starting equinox is the value of the 'equinox' attribute,
@@ -1525,13 +1542,12 @@ value (i.e. undef, 0, or ''). A warning will be issued if the value
 of 'equinox' is undef, which is the default setting.
 
 As a side effect, the value of the 'equinox' attribute will be set to
-the dynamical time corresponding to the argument. The object itself is
-returned.
+the dynamical time corresponding to the argument.
+
+The object itself is returned.
 
 The algorithm comes from Jean Meeus, "Astronomical Algorithms", 2nd
 Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -1539,8 +1555,7 @@ sub precess {
 my $self = shift;
 my $time = shift;
 
-##!! my $start = $self->dynamical;
-defined (my $start = $self->get ('equinox'))
+defined (my $start = $self->get ('equinox') || $self->model_equinox ())
     or carp "Warning - Precess called with equinox attribute undefined";
 $start ||= $self->dynamical ();
 my $end = $time + dynamical_delta ($time);
@@ -1856,6 +1871,11 @@ SET_ACTION_NONE;
 This method sets the time represented by the object, in universal time
 (a.k.a. CUT, a.k.a. Zulu, a.k.a. Greenwich).
 
+B<Note> that as of version 0.013_06, if setting the time causes the
+position to be computed B<and> the 'equinox' attribute has been set,
+precess() will be called after the position computation to precess the
+position to the given equinox.
+
 This method can also be called as a class method, in which case it
 instantiates the desired object.
 
@@ -1891,19 +1911,6 @@ eod
 		delete $self->{_ECI_cache}{inertial};
 	    }
 	}
-
-=begin comment
-
-	$self->can ('time_set') && !$self->{_no_set} and do {
-	    $self->{_no_set} = 1;
-	    $self->time_set ();
-	    delete $self->{_no_set};
-	};
-
-=end comment
-
-=cut
-
 	$self->_call_time_set ();	# Run the model if any
 
     } else {
@@ -1927,11 +1934,21 @@ eod
 #	This method calls the time_set method if it exists and if we are
 #	not already in it. It is a way to avoid endless recursion if the
 #	time_set method should happen to set the time.
+#
+#	This method also checks to see if the equinox attribute is set,
+#	and if so precesses the position from the model's equinox to the
+#	desired equinox.
 
 sub _call_time_set {
     my $self = shift;
     $self->can ('time_set') or return;
-    $self->{_no_set}++ or $self->time_set ();
+    unless ($self->{_no_set}++) {
+	$self->time_set ();
+	if (defined (my $equinox = $self->get ('equinox'))) {
+	    $self->set (equinox => $self->model_equinox ());
+	    $self->precess ($equinox);
+	}
+    }
     --$self->{_no_set} or delete $self->{_no_set};
 }
 
@@ -2138,10 +2155,14 @@ The default is 'WGS84'.
 =item equinox (numeric, dynamical time)
 
 This attribute represents the time of the equinox and equator to which
-the coordinate data are referred. Most calculations are assumed referred
-to the current equinox and equator, so this attribute need only be set
-if the precess() method is to be called. See that method's documentation
-for more information.
+the coordinate data are referred. Setting this attribute to a non-null,
+non-zero value will cause positions calculated as a result of setting
+the time to be precessed to the given equinox. Positions set directly,
+or set by calling the models directly, will not be affected.
+
+Most calculations are assumed referred to the current equinox and
+equator, so this attribute need only be set if you want positions
+referred to some other equinox (e.g. J2000 for use with star charts.
 
 Note that, unlike almost all other time arguments, this attribute is
 set in B<dynamical time>. This can be calculated, if need be, from
