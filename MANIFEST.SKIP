@@ -7,7 +7,7 @@
 ^Changes_Development$
 ^cover_db/
 CVS/
-^foo$
+^foo
 ^iridium\.dat$
 ^iridium_observers$
 ^iss.dat$
