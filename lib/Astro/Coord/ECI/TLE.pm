@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009';
+our $VERSION = '0.009_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -200,6 +200,7 @@ use constant SGP_RHO => .15696615;
 #		return 0 or 1, interpreted as above.
 
 my %attrib = (
+    backdate => 0,
     classification => 0,
     international => 0,
     epoch => sub {
@@ -241,6 +242,7 @@ eod
     );
 my %static = (
     appulse => deg2rad (10),	# Report appulses < 10 degrees.
+    backdate => 1,	# Use object in pass before its epoch.
     geometric => 0,	# Use geometric horizon for pass rise/set.
     illum => 'sun',
     interval => 0,
@@ -248,7 +250,7 @@ my %static = (
     model => 'model',
     reblessable => 1,
     visible => 1,
-    );
+);
 my %model_attrib = (	# For the benefit of is_model_attrib()
     ds50 => 1,		# Read-only, but it fits the definition.
     epoch => 1,		# Hand-set, since we dont want to call the code.
@@ -502,6 +504,18 @@ or equatorial ()) to retrieve the position you just calculated.
 
 sub model {
 return $_[0]->is_deep ? $_[0]->sdp4 ($_[1]) : $_[0]->sgp4 ($_[1]);
+}
+
+=item $equinox = $tle->model_equinox ()
+
+This method returns the dynamical time of the equinox the output of the
+body's model is referred to. For this class, it is the epoch of the
+orbital elements.
+
+=cut
+
+sub model_equinox {
+    $_[0]->get ('epoch');
 }
 
 =item $tle = $tle->model4 ($time)
@@ -759,8 +773,14 @@ sub pass {
     my $tle = shift;
     my $sta = shift;
     my $pass_start = shift || time ();
+    unless ($tle->get ('backdate')) {
+	my $real = $tle->isa ('Astro::Coord::ECI::TLE::Set') ?
+	    $tle->select ($pass_start) : $tle;
+	my $epoch = $real->get ('epoch');
+	$pass_start = $epoch if $pass_start < $epoch;
+    }
     my $pass_end = shift || $pass_start + 7 * SECSPERDAY;
-    croak <<eod unless $pass_end >= $pass_start;
+    $pass_end >= $pass_start or croak <<eod;
 Error - End time must be after start time.
 eod
 
@@ -4430,6 +4450,15 @@ The default is equivalent to 10 degrees.
 
 This attribute contains the argument of perigee (angular distance from
 ascending node to perigee) of the orbit, in radians.
+
+=item backdate (boolean, static)
+
+This attribute determines whether the pass() method will go back before
+the epoch of the data. If false, the pass() method will silently adjust
+its start time forward -- or not so silently if this puts the start time
+after the end time.
+
+The default is 1 (i.e. true).
 
 =item bstardrag (numeric, parse)
 
