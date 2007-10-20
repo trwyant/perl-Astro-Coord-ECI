@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.013_02';
+our $VERSION = '0.013_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3613,13 +3613,17 @@ macros can be defined to issue frequently-used commands.
 
 The L<backdate|/backdate> parameter has been added to allow the user to
 control whether orbital elements are used before their epochs. This
-defaults to 1 (i.e. true) to be consistent with the behaviour of prior
+defaults to 1 (i.e. true) to be consistent with the behavior of prior
 releases, but you may wish to set it to 0 (i.e. false) if you are
 dealing with (e.g.) predicted Space Shuttle data from
 L<http://spaceflight.nasa.gov/>, especially if you are making pass
 predictions before the launch.
 
 The underlying classes have some minor changes:
+
+* Setting the 'equinox' attribute of any object that implements a model
+causes the position to be precessed to that epoch automatically when the
+time is set.
 
 * The 'backdate' attribute has been added to Astro::Coord::ECI::TLE,
 which actually implements the functionality described above.
@@ -4843,7 +4847,7 @@ You may wish to set this to 0 (i.e. false) if you are dealing with
 future launches -- i.e. the predicted Space Shuttle data from
 L<http://spaceflight.nasa.gov/>.
 
-The default is 1 (i.e. true), which is consistent with the behaviour of
+The default is 1 (i.e. true), which is consistent with the behavior of
 the code before this attribute was added.
 
 =for html <a name="background"></a>
