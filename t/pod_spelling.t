@@ -1,5 +1,3 @@
-#!/usr/local/bin/perl
-
 use strict;
 use warnings;
 
@@ -7,21 +5,16 @@ my $skip;
 BEGIN {
     eval "use Test::Spelling";
     $@ and do {
-	eval "use Test";
-	plan (tests => 1);
-	$skip = 'Test::Spelling not available';;
+	print "1..0 # skip Test::Spelling not available.\n";
+	exit;
     };
 }
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
-if ($skip) {
-    skip ($skip, 1);
-} else {
-    add_stopwords (<DATA>);
+add_stopwords (<DATA>);
 
-    all_pod_files_spelling_ok ();
-}
+all_pod_files_spelling_ok ();
 __DATA__
 Above's
 accreted
@@ -38,8 +31,10 @@ Astro
 au
 autoheight
 azel
+backdate
 Barycentric
 barycentre
+BC
 body's
 boosters
 Borkowski
@@ -57,6 +52,7 @@ Coords
 dans
 darwin
 DateTime
+datetime
 de
 deg
 degreesDminutesMsecondsS
@@ -90,6 +86,7 @@ geocode
 Geocoder
 geocoder
 GMT
+gmtime's
 Goran
 Green's
 harvard
@@ -106,6 +103,7 @@ internet
 isa
 jan
 jcent
+jd
 jday
 Jenness
 jul
@@ -199,6 +197,7 @@ TDT
 Terre
 thetag
 Thorfinn
+timegm's
 timekeeping
 TIMEZONES
 TLE
