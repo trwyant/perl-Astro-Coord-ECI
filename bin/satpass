@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.013_03';
+our $VERSION = '0.013_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -820,10 +820,17 @@ local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
 my @active;
 foreach my $tle (_select_observing_list ($pass_start)) {
     $tle->can_flare ($cmdopt{questionable}) or next;
-    $tle->set (algorithm => $cmdopt{algorithm} || 'fixed',
-	horizon => $horizon, twilight => $twilight, model => $model,
-	am => !$cmdopt{am}, day => !$cmdopt{day}, pm => !$cmdopt{pm},
-	extinction => $parm{extinction});
+    $tle->set (
+	algorithm => $cmdopt{algorithm} || 'fixed',
+	backdate => $parm{backdate},
+	horizon => $horizon,
+	twilight => $twilight,
+	model => $model,
+	am => !$cmdopt{am},
+	day => !$cmdopt{day},
+	pm => !$cmdopt{pm},
+	extinction => $parm{extinction},
+    );
     push @active, $tle;
     }
 @active or die <<eod;
@@ -3626,7 +3633,11 @@ causes the position to be precessed to that epoch automatically when the
 time is set.
 
 * The 'backdate' attribute has been added to Astro::Coord::ECI::TLE,
-which actually implements the functionality described above.
+which actually implements the functionality described above in its
+pass() method.
+
+* The 'backdate' functionality has also been added to
+Astro::Coord::ECI::TLE::Iridium.
 
 =head1 DETAILS
 
