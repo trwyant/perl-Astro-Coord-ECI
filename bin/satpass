@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.013_04';
+our $VERSION = '0.013_05';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -407,9 +407,17 @@ Error - Malformed command failed to parse:
 eod
 	next;
     };
-    @args = map {m/^>/ ? do {$redout = $_; ()} :
-	$redout =~ m/^>+$/ ? do {$redout .= $_; ()} :
-	$_} @args;
+    {	# Local symbol block for hacking pipe off commands
+	my @pipe;
+	@args = map {
+	    (@pipe && !$redout) ? do {push @pipe, $_; ()} :
+	    m/^([>|])/ ?
+		$1 eq '|' ? do {push @pipe, $_; ()} :
+		    do {$redout = $_; ()} :
+	    $redout =~ m/^>+$/ ? do {$redout .= $_; ()} :
+	    $_} @args;
+	@pipe and $redout = join ' ', @pipe;
+    }	# End local symbol block.
 
 #	Do pseudo tilde expansion.
 
@@ -453,7 +461,7 @@ Error - Failed to redirect output to clipboard.
 eod
 	}
       elsif ($redout) {
-	my $fh = FileHandle->new ($redout) or do {warn <<eod; next};
+	open (my $fh, $redout) or do {warn <<eod; next};
 Error - Failed to open '$redout'
         $!
 eod
@@ -3613,6 +3621,10 @@ macros can be defined to issue frequently-used commands.
  satpass> choose 20580 25544
  satpass> # Predict for a week, with output to visual.txt
  satpass pass 'today noon' +7 >visual.txt
+ satpass> # Get Iridium satellites.
+ satpass> st celestrak iridium
+ satpass> # Predict flares and scroll thru output if you have 'less'.
+ satpass> flare |less
  satpass> # We're done
  satpass> exit
 
@@ -3705,7 +3717,13 @@ specified by placing a trailing '\' on the line to be continued.
 
 It also supports a pseudo output redirection, by placing '>filename'
 (for a new file) or '>>filename' (to append to an existing file)
-somewhere on the command line. See the L</SYNOPSIS> for an example.
+somewhere on the command line. It is also possible to redirect the data
+into a spawned command using the pipe character ('|'). Additional pipe
+characters may be specified on the same command line if your operating
+system supports this. Note that the redirection character B<must> be the
+first character of the token; that is, 'pass >file.txt' or 'pass |less',
+but not 'pass>file.txt' or 'pass|less'. See the L</SYNOPSIS> for
+examples.
 
 In addition, all commands support the following options:
 
