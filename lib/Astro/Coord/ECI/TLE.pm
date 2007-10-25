@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_02';
+our $VERSION = '0.009_03';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -317,30 +317,34 @@ like a static method.
 my %type_map = (
     );
 
-sub alias {
-    my $self = shift;
-    @_ % 2 and croak <<eod;
+{	# Begin local symbol block (oh, for 5.10 and state variables)
+
+    my %tried;
+
+    sub alias {
+	my $self = shift;
+	@_ % 2 and croak <<eod;
 Error - Must have even number of arguments for alias().
 eod
-    return wantarray ? %type_map : {%type_map} unless @_;
-    while (@_) {
-	my $name = shift;
-	my $class = shift or do {
-	    delete $type_map{$name};
-	    next;
-	};
-	$class = $type_map{$class} if $type_map{$class};
-	(my $file = $class) =~ s|::|/|g;
-	$file .= '.pm';
-	unless ($INC{$file}) {
-	    eval {require $file};
-	    $@ and croak <<eod;
+	return wantarray ? %type_map : {%type_map} unless @_;
+	while (@_) {
+	    my $name = shift;
+	    my $class = shift or do {
+		delete $type_map{$name};
+		next;
+	    };
+	    $class = $type_map{$class} if $type_map{$class};
+	    unless (exists $tried{$class}) {
+		eval "require $class";
+		$tried{$class} = $@;
+	    }
+	    $tried{$class} and croak <<eod;
 Error - Unable to load $class.
 eod
+	    $type_map{$name} = $class;
 	}
-	$type_map{$name} = $class;
     }
-}
+}	# End local symbol block.
 __PACKAGE__->alias (tle => __PACKAGE__);
 
 
