@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_03';
+our $VERSION = '0.009_04';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -251,7 +251,7 @@ my %static = (
     reblessable => 1,
     visible => 1,
 );
-my %model_attrib = (	# For the benefit of is_model_attrib()
+my %model_attrib = (	# For the benefit of is_model_attribute()
     ds50 => 1,		# Read-only, but it fits the definition.
     epoch => 1,		# Hand-set, since we dont want to call the code.
     );
@@ -519,7 +519,11 @@ orbital elements.
 =cut
 
 sub model_equinox {
-    $_[0]->get ('epoch');
+    unless (exists $_[0]{&TLE_INIT}{TLE_equinox}) {
+	my $epoch = $_[0]->get ('epoch');
+	$_[0]{&TLE_INIT}{TLE_equinox} = $epoch + dynamical_delta ($epoch);
+    }
+    $_[0]{&TLE_INIT}{TLE_equinox};
 }
 
 =item $tle = $tle->model4 ($time)
