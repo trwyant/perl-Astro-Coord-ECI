@@ -79,6 +79,9 @@ method is
 but nothing says the _nodelegate_xxxx method B<must> be defined this
 way.
 
+The C<universal> and C<dynamical> methods are special-cased in the
+AUTOLOAD code so that a select() is done before they are called.
+
 =head3 Calling semantics for static behaviors
 
 Some Astro::Coord::ECI methods (e.g. universal()) will instantiate an
@@ -112,7 +115,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -290,10 +293,11 @@ epochs are after the given time, the earliest epoch is chosen. If some
 epochs are on or before the given time, the latest epoch that is not
 after the given time is chosen.
 
-The 'best representative' algorithm tries select the element set that
+The 'best representative' algorithm tries to select the element set that
 would actually be current at the given time. If no element set is
 current (i.e. all are in the future at the given time) we take the
-earliest, to minimize peeking into the future.
+earliest, to minimize peeking into the future. This is done even if that
+member's 'backdate' attribute is false.
 
 =cut
 
@@ -318,10 +322,10 @@ $self->{current};
 =item $set->set ($name => $value ...);
 
 This method iterates over the individual name-value pairs. If the name
-is an attribute of Astro::Coord::ECI::TLE and is not 'debug' or
-'model', it calls set_selected($name, $value). Otherwise, it calls
-set_all($name, $value). If the set has no members, this method
-simply returns.
+is an attribute of the object's model (that is, if is_model_attribute ()
+returns true), it calls set_selected($name, $value). Otherwise, it calls
+set_all($name, $value). If the set has no members, this method simply
+returns.
 
 =cut
 
@@ -409,4 +413,31 @@ $self = undef;
 }
 
 1;
+__END__
+
+=head1 BUGS
+
+Bugs can be reported to the author by mail, or through
+L<http://rt.cpan.org/>.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III (F<wyant at cpan dot org>)
+
+=head1 COPYRIGHT
+
+Copyright 2006, 2007 by Thomas R. Wyant, III
+(F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
+
+This module is free software; you can use it, redistribute it and/or
+modify it under the same terms as Perl itself. Please see
+L<http://perldoc.perl.org/index-licence.html> for the current licenses.
+
+This software is provided without any warranty of any kind, express or
+implied. The author will not be liable for any damages of any sort
+relating in any way to this software.
+
+=cut
 
