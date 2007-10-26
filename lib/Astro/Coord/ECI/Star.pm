@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_03';
+our $VERSION = '0.003_04';
 
 use base qw{Astro::Coord::ECI};
 
@@ -209,6 +209,10 @@ time is set.
 The computation comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 23, pages 149ff.
 
+B<Note>, however, that for consistency with the Astro::Coord::ECI::Sun
+and ::Moon classes, the position is precessed to the current time
+setting if the 'equinox' attribute has not been set.
+
 =cut
 
 use constant CONSTANT_OF_ABERRATION => deg2rad (20.49552 / 3600);
@@ -237,15 +241,15 @@ $range += $mrg * $deltat;
 ##!! $self->set (equinox => $epoch);
 $self->equatorial ($ra, $dec, $range);
 
-#	Precess ourselves to the correct time. We skip this if the
-#	equinox is set, since the caller will do the honors in that
-#	case.
-
-unless ($self->get ('equinox')) {
-    $self->set (equinox => $epoch);
-    $self->precess ($time);
-    $self->set (equinox => undef);
-}
+#	NOTE: The call to precess() used to be here. I have no idea why,
+#	other than that I thought I could go back and forth between
+#	coordinates less (since I implemented in terms equatorial
+#	coordinates). It seems to me at this point (version 0.003_04,
+#	25-Oct-2007) that since precessing to a different equinox is
+#	actually just a coordinate transform that it should come last.
+#	Meeus actually gives the algorithm in ecliptic coordinates also;
+#	if the transform could be smart, I could skip a couple
+#	coordinate transforms.
 
 #	Get ecliptic coordinates, and correct for nutation.
 
@@ -272,6 +276,18 @@ $lambda += $deltalamda;
 $beta += $deltabeta;
 
 $self->ecliptic ($beta, $lambda, $range);
+
+#	Precess ourselves to the correct time. We skip this if the
+#	equinox is set, since the caller will do the honors in that
+#	case.
+
+unless ($self->get ('equinox')) {
+    $self->set (equinox => $epoch);
+    $self->precess ($time);
+    $self->set (equinox => undef);
+}
+
+$self;
 }
 
 
