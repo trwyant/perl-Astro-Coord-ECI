@@ -1,14 +1,31 @@
-#!/usr/local/bin/perl
-
-our $VERSION = '0.004_02';
+our $VERSION = '0.004_03';
 
 use t::Satpass;
+
+eval {require SOAP::Lite};
+if ($@) {
+    print "1..0 # skip Soap::Lite not available\n";
+    exit;
+}
+eval {require LWP::UserAgent};
+if ($@) {	# Shouldn't happen since SOAP::Lite loaded.
+    print "1..0 # skip LWP::UserAgent not available\n";
+    exit;
+}
+{
+    my $ua = LWP::UserAgent->new ();
+    my $rslt = $ua->get ('http://rpc.geocoder.us/');
+    unless ($rslt->is_success) {
+	print "1..0 # skip http://rpc.geocoder.us/ not reachable.\n";
+	exit;
+    }
+}
 
 t::Satpass::satpass (*DATA);
 
 __END__
 
--skip not_available ('SOAP::Lite') || not_reachable ('http://rpc.geocoder.us/')
+## -skip not_available ('SOAP::Lite') || not_reachable ('http://rpc.geocoder.us/')
 
 set country us
 set autoheight 0

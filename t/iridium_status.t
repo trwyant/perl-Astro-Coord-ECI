@@ -1,5 +1,3 @@
-#!/usr/local/bin/perl
-
 use strict;
 use warnings;
 
@@ -8,10 +6,13 @@ use POSIX qw{strftime};
 use Test;
 use Time::Local;
 
-plan tests => 4;
-
 eval {require LWP::UserAgent};
-my $skip = "LWP::UserAgent not available." if $@;
+if ($@) {
+    print "1..0 # skip LWP::UserAgent not available\n";
+    exit;
+}
+
+plan tests => 4;
 
 use constant TFMT => '%d-%b-%Y %H:%M:%S GMT';
 
@@ -25,7 +26,7 @@ my %mth;
 
 my $fail = 0;
 my $test = 0;
-my $ua = LWP::UserAgent->new () unless $skip;
+my $ua = LWP::UserAgent->new ();
 my $asof = timegm (0, 0, 19, 4, 05, 107);
 
 foreach (["Mike McCants' Iridium status",
@@ -226,8 +227,7 @@ eod
 	) {
     my ($what, $url, $expect, $file, $data) = @$_;
     $test++;
-    my ($skip, $rslt, $got, $dt) = parse_date ($url, $skip);
-    $got ||= $skip;
+    my ($skip, $rslt, $got, $dt) = parse_date ($url);
     $dt ||= 0;
     print <<eod;
 #
@@ -276,8 +276,7 @@ warn <<eod if $fail;
 eod
 
 sub parse_date {
-my ($url, $skip) = @_;
-return ($skip) if $skip;
+my ($url) = @_;
 my $rslt = $ua->get ($url);
 $rslt->is_success or return ($rslt->status_line);
 my $got = $rslt->header ('Last-Modified') or
@@ -287,6 +286,6 @@ my ($day, $mon, $yr, $hr, $min, $sec) =
     return ('Unable to parse Last-Modified header', $rslt);
 defined (my $mn = $mth{lc $mon}) or
     return ('Invalid month in Last-Modified header', $rslt);
-return ($skip, $rslt, $got, timegm ($sec, $min, $hr, $day, $mn, $yr));
+return (undef, $rslt, $got, timegm ($sec, $min, $hr, $day, $mn, $yr));
 }
 

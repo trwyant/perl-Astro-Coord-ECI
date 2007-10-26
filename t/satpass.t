@@ -1,12 +1,14 @@
-#!/usr/local/bin/perl
-
 use t::Satpass;
+
+eval {require Astro::SpaceTrack};
+if ($@) {
+    print "1..0 # skip Astro::SpaceTrack not available\n";
+    exit;
+}
 
 t::Satpass::satpass (*DATA);
 
 __END__
-
--skip not_available ('Astro::SpaceTrack')
 
 st get direct
 -data st set direct 0
