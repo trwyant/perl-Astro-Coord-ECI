@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_04';
+our $VERSION = '0.003_05';
 
 use base qw{Astro::Coord::ECI};
 
@@ -131,22 +131,6 @@ return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
 
-=item $equinox = $star->model_equinox ();
-
-This method returns the dynamical time of the equinox the output of the
-body's model is referred to. For this class, it is the equinox given to
-the position() method, which is usually J2000.0 or 01-Jan-2000 12:00:00
-dynamical.
-
-=cut
-
-sub model_equinox {
-    $_[0]->{_star_position}[6];	# If this ever changes, time_set() needs
-				# to change also, since it does not use
-				# this interface.
-}
-
-
 use constant NEVER_PASS_ELEV => 2 * __PACKAGE__->SECSPERDAY;
 
 =item $star = $star->position($ra, $dec, $range, $mra, $mdc, $mrg, $time);
@@ -190,8 +174,9 @@ sub position {
     $args[6] ||= PERL2000;
     $self = $self->new () unless ref $self;
     $self->{_star_position} = [@args];
+    # CAVEAT: time_set() picks the equinox directly out of the above
+    # hash.
     $self->dynamical ($args[6]);
-##!!    $self->set (equinox => $args[6]);
     $self;
 }
 
@@ -277,15 +262,15 @@ $beta += $deltabeta;
 
 $self->ecliptic ($beta, $lambda, $range);
 
-#	Precess ourselves to the correct time. We skip this if the
-#	equinox is set, since the caller will do the honors in that
-#	case.
+#	Set the equinox to that implied when our position was set.
 
-unless ($self->get ('equinox')) {
-    $self->set (equinox => $epoch);
-    $self->precess ($time);
-    $self->set (equinox => undef);
-}
+$self->set (equinox => $self->{_star_position}[6]);
+
+#	Precess ourselves to the correct equinox. Note that we do not do
+#	the usual bare call to precess(), since if no desired_equinox is
+#	set we want to precess to the current time.
+
+$self->precess ($self->get ('desired_equinox') || $time);
 
 $self;
 }

@@ -33,7 +33,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.003_01';
+our $VERSION = '0.003_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -185,18 +185,6 @@ foreach (
 	}
     }
 return sort {$a->[0] <=> $b->[0]} @almanac;
-}
-
-=item $equinox = $moon->model_equinox ();
-
-This method returns the dynamical time of the equinox the output of the
-body's model is referred to. For this class, it is the current time
-setting of the object.
-
-=cut
-
-sub model_equinox {
-    $_[0]->dynamical ();
 }
 
 
@@ -435,6 +423,9 @@ $lambda += nutation_in_longitude ($time);
 
 
 $self->ecliptic ($beta, $lambda, $delta);
+$self->set (equinox => $time);
+$self->precess ();
+$self;
 }
 
 

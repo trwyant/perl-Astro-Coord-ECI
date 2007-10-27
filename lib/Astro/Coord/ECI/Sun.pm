@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.005_01';
+our $VERSION = '0.005_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -270,18 +270,6 @@ L<http://en.wikipedia.org/wiki/Limb_darkening>.
     }
 }	# End local symbol block.
 
-=item $equinox = $sun->model_equinox ();
-
-This method returns the dynamical time of the equinox the output of the
-body's model is referred to. For this class, it is the current time
-setting of the object.
-
-=cut
-
-sub model_equinox {
-    $_[0]->dynamical ();
-}
-
 =item ($time, $quarter, $desc) = $sun->next_quarter($want);
 
 This method calculates the time of the next equinox or solstice
@@ -413,6 +401,9 @@ Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
 eod
 
 $self->ecliptic (0, $lambda, $R);
+$self->set (equinox => $time);
+$self->precess ();
+$self;
 }
 
 1;
