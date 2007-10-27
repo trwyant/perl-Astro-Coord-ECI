@@ -60,7 +60,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -75,9 +75,9 @@ our @EXPORT_OK = qw{
 	PIOVER2 SECSPERDAY TWOPI acos asin atmospheric_extinction
 	date2epoch date2jd deg2rad distsq dynamical_delta epoch2datetime
 	equation_of_time find_first_true intensity_to_magnitude
-	jcent2000 jd2date jd2datetime jday2000 julianday mod2pi
-	nutation_in_longitude nutation_in_obliquity obliquity omega
-	rad2deg tan theta0 thetag};
+	jcent2000 jd2date jd2datetime jday2000 julianday load_module
+	mod2pi nutation_in_longitude nutation_in_obliquity obliquity
+	omega rad2deg tan theta0 thetag};
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -547,6 +547,28 @@ Algorithms", 2nd Edition, Chapter 7, page 62.
 sub julianday {
 jday2000($_[0]) + 2_451_545.0	#   Meeus p. 62
 }
+
+=item $rslt = load_module ($module_name)
+
+This convenience method loads the named module (using 'require'),
+throwing an exception if the load fails. Results are cached, and
+subsequent attempts to load the same module simply give the cached
+results.
+
+=cut
+
+{	# Local symbol block. Oh, for 5.10 and state variables.
+    my %error;
+    my %rslt;
+    sub load_module {
+	my  ($module) = @_;
+	exists $error{$module} and croak $error{$module};
+	exists $rslt{$module} and return $rslt{$module};
+	$rslt{$module} = eval "require $module";
+	$@ and croak ($error{$module} = $@);
+	return $rslt{$module};
+    }
+}	# End local symbol block.
 
 
 =item $theta = mod2pi ($theta)
