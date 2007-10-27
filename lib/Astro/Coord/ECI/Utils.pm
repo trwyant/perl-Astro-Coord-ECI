@@ -60,7 +60,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.007_02';
+our $VERSION = '0.007_03';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -169,8 +169,9 @@ my $Aaer = 0.120 * exp (-$height / 1.5);	# Green 4
 =item $jd = date2jd ($yr, $mon, $day, $hr, $min, $sec)
 
 This subroutine converts the given date to the corresponding Julian day.
-The full year is given (B<not> year since 1900), and the month is based
-on 1, not 0.  The year before 1 is 0, which is equivalent to 1 BC.
+The full year is given (B<not> year since 1900). The year before 1 is 0,
+which is equivalent to 1 BC. The month ranges from 0 to 11, as is usual
+in Perl.
 
 The date is presumed to be in the Gregorian calendar. If the resultant
 Julian Day is before $JD_GREGORIAN, the date is reinterpreted as being
@@ -181,7 +182,8 @@ that the year be not less than -4712. Hours, minutes, and seconds can be
 omitted (defaulting to 0), and fractional days are accepted.
 
 The algorithm is from Jean Meeus' "Astronomical Algorithms", second
-edition, chapter 7 ("Julian Day"), pages 60ff.
+edition, chapter 7 ("Julian Day"), pages 60ff, but the month is
+zero-based, not 1-based.
 
 =cut
 
@@ -192,6 +194,7 @@ BEGIN {
 
 sub date2jd {
     my ($yr, $mon, $day, $hr, $min, $sec) = @_;
+    $mon++;	# Algorithm expects month 1-12.
     $yr < -4712 and croak "Error - Invalid year $yr";
     $mon < 1 || $mon > 12 and croak "Error - Invalid month $mon";
     if ($mon < 3) {
@@ -215,7 +218,6 @@ use constant JD_OF_EPOCH => eval {
     splice @date, 6;
     @date = reverse @date;
     $date[0] += 1900;
-    $date[1] += 1;
     date2jd (@date);
 };
 
@@ -436,10 +438,10 @@ ratio greater than 1.
 =item ($yr, $mon, $day) = jd2date ($jd)
 
 This subroutine converts the given Julian day to the corresponding date.
-The full year is returned (B<not> year since 1900), and the month is based
-on 1, not 0.  The year before 1 is 0, which is equivalent to 1 BC. The
-date will probably have a fractional part (e.g. 2006 1 1.5 for noon
-January first 2006).
+The full year is returned (B<not> year since 1900). The month ranges 0
+to 11, as is usual in Perl. The year before 1 is 0, which is equivalent
+to 1 BC. The date will probably have a fractional part (e.g. 2006 1 1.5
+for noon January first 2006).
 
 If the $jd is before $JD_GREGORIAN, the date will be in the Julian
 calendar; otherwise it will be in the Gregorian calendar.
@@ -447,7 +449,8 @@ calendar; otherwise it will be in the Gregorian calendar.
 The input may not be less than 0.
 
 The algorithm is from Jean Meeus' "Astronomical Algorithms", second
-edition, chapter 7 ("Julian Day"), pages 63ff.
+edition, chapter 7 ("Julian Day"), pages 63ff, but the month is
+zero-based, not 1-based.
 
 =cut
 
@@ -466,7 +469,7 @@ sub jd2date {
     my $day = $B - $D - floor (30.6001 * $E) + $F;
     my $mon = $E < 14 ? $E - 1 : $E - 13;
     my $yr = $mon > 2 ? $C - 4716 : $C - 4715;
-    ($yr, $mon, $day);
+    ($yr, $mon - 1, $day);
 }
 
 
