@@ -264,13 +264,13 @@ eod
 
 #	Based on Meeus pp60ff
 
-foreach ([date2jd => [1957, 10, 4.81], [jd => 2436116.31]],
-    [date2jd => [333, 1, 27, 12], [jd => 1842713.0]],
-    [jd2date => [2436116.31], [yr => 1957, mon => 10, day => 4.81]],
-    [jd2date => [1842713.0], [yr => 333, mon => 1, day => 27.5]],
-    [jd2date => [1507900.13], [yr => -584, mon => 5, day => 28.63]],
-    [date2epoch => [2000, 1, 1, 12], [epoch => PERL2000]],
-    [epoch2datetime => [PERL2000], [yr => 2000, mon => 1, day => 1,
+foreach ([date2jd => [1957, 9, 4.81], [jd => 2436116.31]],
+    [date2jd => [333, 0, 27, 12], [jd => 1842713.0]],
+    [jd2date => [2436116.31], [yr => 1957, mon => 9, day => 4.81]],
+    [jd2date => [1842713.0], [yr => 333, mon => 0, day => 27.5]],
+    [jd2date => [1507900.13], [yr => -584, mon => 4, day => 28.63]],
+    [date2epoch => [2000, 0, 1, 12], [epoch => PERL2000]],
+    [epoch2datetime => [PERL2000], [yr => 2000, mon => 0, day => 1,
     hr => 12, min => 0, sec => 0]],
 ) {
     my ($method, $args, $want) = @$_;
@@ -294,6 +294,7 @@ eod
 	} else {
 	    $tolerance = 1;
 	}
+	$tolerance /= 2;
 	$test++;
 	print <<eod;
 #
