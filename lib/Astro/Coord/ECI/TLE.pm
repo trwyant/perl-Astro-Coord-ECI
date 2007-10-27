@@ -106,12 +106,12 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_04';
+our $VERSION = '0.009_06';
 
 use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{deg2rad mod2pi find_first_true
-	SECSPERDAY thetag};
+use Astro::Coord::ECI::Utils qw{deg2rad find_first_true load_module
+    mod2pi SECSPERDAY thetag};
 
 use Carp;
 use Data::Dumper;
@@ -317,34 +317,23 @@ like a static method.
 my %type_map = (
     );
 
-{	# Begin local symbol block (oh, for 5.10 and state variables)
-
-    my %tried;
-
-    sub alias {
-	my $self = shift;
-	@_ % 2 and croak <<eod;
+sub alias {
+    my $self = shift;
+    @_ % 2 and croak <<eod;
 Error - Must have even number of arguments for alias().
 eod
-	return wantarray ? %type_map : {%type_map} unless @_;
-	while (@_) {
-	    my $name = shift;
-	    my $class = shift or do {
-		delete $type_map{$name};
-		next;
-	    };
-	    $class = $type_map{$class} if $type_map{$class};
-	    unless (exists $tried{$class}) {
-		eval "require $class";
-		$tried{$class} = $@;
-	    }
-	    $tried{$class} and croak <<eod;
-Error - Unable to load $class.
-eod
-	    $type_map{$name} = $class;
-	}
+    return wantarray ? %type_map : {%type_map} unless @_;
+    while (@_) {
+	my $name = shift;
+	my $class = shift or do {
+	    delete $type_map{$name};
+	    next;
+	};
+	$class = $type_map{$class} if $type_map{$class};
+	load_module ($class);
+	$type_map{$name} = $class;
     }
-}	# End local symbol block.
+}
 __PACKAGE__->alias (tle => __PACKAGE__);
 
 
@@ -508,22 +497,6 @@ or equatorial ()) to retrieve the position you just calculated.
 
 sub model {
 return $_[0]->is_deep ? $_[0]->sdp4 ($_[1]) : $_[0]->sgp4 ($_[1]);
-}
-
-=item $equinox = $tle->model_equinox ()
-
-This method returns the dynamical time of the equinox the output of the
-body's model is referred to. For this class, it is the epoch of the
-orbital elements.
-
-=cut
-
-sub model_equinox {
-    unless (exists $_[0]{&TLE_INIT}{TLE_equinox}) {
-	my $epoch = $_[0]->get ('epoch');
-	$_[0]{&TLE_INIT}{TLE_equinox} = $epoch + dynamical_delta ($epoch);
-    }
-    $_[0]{&TLE_INIT}{TLE_equinox};
 }
 
 =item $tle = $tle->model4 ($time)
@@ -755,7 +728,7 @@ the object:
 =cut
 
 BEGIN {
-    eval "use Scalar::Util qw{dualvar}";
+    eval {use Scalar::Util qw{dualvar}};
     $@ and *dualvar = sub {$_[0]};
 }
 
@@ -1152,8 +1125,6 @@ It does not under any circumstances manufacture another object.
 
 =cut
 
-my %loaded;	# Classes which have been loaded.
-
 sub rebless {
 my $tle = shift;
 UNIVERSAL::isa ($tle, __PACKAGE__) or croak <<eod;
@@ -1169,10 +1140,7 @@ $tle->get ('reblessable') or return $tle;
 my $class = ref $_[0] eq 'HASH' ? $_[0]->{class} || $_[0]->{type} : shift
     or return $tle;
 $class = $type_map{$class} if $type_map{$class};
-$loaded{$class} or do {
-    eval "require $class" or croak $@;
-    $loaded{$class} = 1;
-    };
+load_module ($class);
 UNIVERSAL::isa ($class, __PACKAGE__) or croak <<eod;
 Error - You can only rebless an object into @{[__PACKAGE__]} or
         a subclass thereof. You are trying to rebless the object
@@ -3643,6 +3611,9 @@ $_[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dy/dt
 $_[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dz/dt
 $self->universal (pop @_);
 $self->eci (@_);
+$self->set (equinox => $self->get ('epoch'));
+$self->precess ();
+$self;
 }
 
 #	_set_illum
@@ -3656,18 +3627,10 @@ $self->eci (@_);
 	sun => 'Astro::Coord::ECI::Sun',
 	moon => 'Astro::Coord::ECI::Moon',
 	);
-    my %loaded;
     sub _set_illum {
     my $body = $_[2];
     $body = $special{$body} if $special{$body};
-    ref $body or $loaded{$body} or do {
-	eval "use $body";
-	$@ && croak <<eod; 
-Error - Can not load $body.
-$@;
-eod
-	$loaded{$body} = 1;
-	};
+    ref $body or load_module ($body);
     UNIVERSAL::isa ($body, 'Astro::Coord::ECI') or croak <<eod;
 Error - The illuminating body must be an Astro::Coord::ECI, or a
         subclass thereof, or the words 'sun' or 'moon', which are
