@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_06';
+our $VERSION = '0.013_07';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -212,8 +212,6 @@ sub attribute {$mutator{$_[1]} ? __PACKAGE__ : undef}
 
 =item ($azimuth, $elevation, $range) = $coord->azel ($coord2, $upper);
 
-=for comment help syntax-highlighting editor "
-
 This method takes another coordinate object, and computes its azimuth,
 elevation, and range in reference to the object doing the computing.
 The return is azimuth in radians measured clockwise from North (always
@@ -237,8 +235,6 @@ Coordinate Systems, Part II" and available at
 F<http://celestrak.com/columns/v02n02/>. If the object represents fixed
 coordinates, the author's algorithm is used, but the author confesses
 needing to refer to Dr. Kelso's work to get the signs right.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -358,8 +354,6 @@ $self->{refraction} and
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $coord2 = $coord->clone ();
 
 This method does a deep clone of an object, producing a different
@@ -367,15 +361,11 @@ but identical object.
 
 It's really just a wrapper for Storable::dclone.
 
-=for comment help syntax-highlighting editor "
-
 =cut
 
 sub clone {
 dclone shift;
 }
-
-=for comment help syntax-highlighting editor "
 
 =item $elevation = $coord->correct_for_refraction ($elevation);
 
@@ -394,8 +384,6 @@ Saemundsson's article in "Sky and Telescope", volume 72, page 70
 (July 1986) as reported Jean Meeus' "Astronomical Algorithms",
 2nd Edition, chapter 16, page 106, and includes the adjustment
 suggested by Meeus.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -447,8 +435,6 @@ $elevation;
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $angle = $coord->dip ();
 
 This method calculates the dip angle of the horizon due to the
@@ -457,8 +443,6 @@ above the surface of the reference ellipsoid, and positive for a
 location below the surface.
 
 The algorithm is simple enough to be the author's.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -476,11 +460,6 @@ my $angle = $h >= 0 ?
 
 This method sets the dynamical time represented by the object.
 
-B<Note> that as of version 0.013_06, if setting the time causes the
-position to be computed B<and> the 'equinox' attribute has been set,
-precess() will be called after the position computation to precess the
-position to the given equinox.
-
 This method can also be called as a class method, in which case it
 instantiates the desired object.
 
@@ -494,8 +473,6 @@ universal time previously set, converted to dynamical. The algorithm
 
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 10, pages 78ff.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -533,8 +510,6 @@ eod
 
 =item $coord = $coord->ecef($x, $y, $z, $xdot, $ydot, $zdot)
 
-=for comment help syntax-highlighting editor "
-
 This method sets the coordinates represented by the object in terms
 of L</Earth-Centered, Earth-fixed (ECEF) coordinates>, with x being
 latitude 0 longitude 0, y being latitude 0 longitude 90 degrees east,
@@ -554,8 +529,6 @@ B<Caveat:> Velocities are also returned, but should not at this point
 be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
 transforms worked out.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -597,8 +570,6 @@ $self;
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $coord = $coord->eci ($x, $y, $z, $xdot, $ydot, $zdot, $time)
 
 This method sets the coordinates represented by the object in terms
@@ -636,8 +607,6 @@ B<Caveat:> Velocities are also returned, but should not at this point
 be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
 transforms worked out.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -677,8 +646,6 @@ $self;
 }
 
 
-=for comment help syntax highlighting editor "
-
 =item $coord = $coord->ecliptic ($latitude, $longitude, $range, $time);
 
 This method sets the L</Ecliptic> coordinates represented by the object
@@ -702,8 +669,6 @@ This method returns the ecliptic latitude and longitude of the
 object at the given time. The time is optional if the time represented
 by the object has already been set (e.g. by the universal() or
 dynamical() methods).
-
-=for comment help syntax highlighting editor "
 
 =cut
 
@@ -899,8 +864,6 @@ $self;
 }
 
 
-=for comment help syntax highlighting editor "
-
 =item $coord = $coord->geocentric($psiprime, $lambda, $rho);
 
 This method sets the L</Geocentric> coordinates represented by the
@@ -923,8 +886,6 @@ author's.
 
 This method returns the L</Geocentric latitude>, L</Longitude>, and
 distance to the center of the Earth.
-
-=for comment help syntax highlighting editor "
 
 =cut
 
@@ -988,8 +949,6 @@ $self;
 }
 
 
-=for comment help syntax highlighting editor "
-
 =item $coord = $coord->geodetic($psi, $lambda, $h, $ellipsoid);
 
 This method sets the L</Geodetic> coordinates represented by the object
@@ -1023,8 +982,6 @@ Borkowski's "Accurate Algorithms to Transform Geocentric to Geodetic
 Coordinates", at F<http://www.astro.uni.torun.pl/~kb/Papers/geod/Geod-BG.htm>.
 This is best viewed with Internet Explorer because of its use of Microsoft's
 Symbol font.
-
-=for comment help syntax highlighting editor "
 
 =cut
 
@@ -1354,19 +1311,6 @@ return $self->can ('period') ?
 }
 
 
-=item $equinox = $coord->model_equinox ();
-
-This method returns the dynamical time of the equinox the output of the
-body's model is referred to. At this level of the inheritance hierarchy
-there is no model for the position of the body as a function of time, so
-we return undef.
-
-=cut
-
-sub model_equinox {undef}
-
-=for comment help syntax-highlighting editor "
-
 =item ($time, $rise) = $coord->next_elevation ($body, $elev, $upper)
 
 This method calculates the next time the given body passes above or
@@ -1383,8 +1327,6 @@ body will be at its highest at meridian passage. It also assumes
 that if the body hasn't passed the given elevation in 183 days it
 never will. In this case it returns undef in scalar context, or
 an empty list in list context.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -1530,16 +1472,20 @@ B<NOTE> that starting with version 0.013_02, the start time of the
 precession is the value of the 'equinox' attribute if that is specified,
 and the time setting of the object is not affected by the operation.
 
-B<NOTE also> that starting with version 0.013_06, this is called
-implicitly when the time is set if setting the time causes a position
-computation B<and> the 'equinox' attribute is set, to precess the
-position to that equinox.
+B<NOTE also> that starting with version 0.013_07, this method may be
+called with no arguments to precess the data to the setting of the
+'desired_equinox' attribute. If this attribute is not set, this method
+does nothing. Models are expected to call this with no arguments after
+setting the 'equinox' attribute. Also as of this revision B<the argument
+is given as dynamical time.>
 
 This method precesses the coordinates of the object to the given
 equinox. The starting equinox is the value of the 'equinox' attribute,
 or the current time setting if the 'equinox' attribute is any false
 value (i.e. undef, 0, or ''). A warning will be issued if the value
 of 'equinox' is undef, which is the default setting.
+
+B<The argument is given as dynamical time.>
 
 As a side effect, the value of the 'equinox' attribute will be set to
 the dynamical time corresponding to the argument.
@@ -1553,12 +1499,13 @@ Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
 
 sub precess {
 my $self = shift;
-my $time = shift;
+my $time = shift || $self->get ('desired_equinox') or return $self;
 
-defined (my $start = $self->get ('equinox') || $self->model_equinox ())
+defined (my $start = $self->get ('equinox'))
     or carp "Warning - Precess called with equinox attribute undefined";
 $start ||= $self->dynamical ();
-my $end = $time + dynamical_delta ($time);
+### my $end = $time + dynamical_delta ($time);
+my $end = $time;
 
 my ($alpha0, $delta0, $rho0) = $self->equatorial ();
 
@@ -1809,6 +1756,7 @@ $self;
 %mutator = (
     angularvelocity => \&_set_value,
     debug => \&_set_value,
+    desired_equinox => \&_set_value,
     diameter => \&_set_value,
     ellipsoid => \&_set_reference_ellipsoid,
     equinox => => \&_set_value,
@@ -1871,11 +1819,6 @@ SET_ACTION_NONE;
 This method sets the time represented by the object, in universal time
 (a.k.a. CUT, a.k.a. Zulu, a.k.a. Greenwich).
 
-B<Note> that as of version 0.013_06, if setting the time causes the
-position to be computed B<and> the 'equinox' attribute has been set,
-precess() will be called after the position computation to precess the
-position to the given equinox.
-
 This method can also be called as a class method, in which case it
 instantiates the desired object.
 
@@ -1934,20 +1877,12 @@ eod
 #	This method calls the time_set method if it exists and if we are
 #	not already in it. It is a way to avoid endless recursion if the
 #	time_set method should happen to set the time.
-#
-#	This method also checks to see if the equinox attribute is set,
-#	and if so precesses the position from the model's equinox to the
-#	desired equinox.
 
 sub _call_time_set {
     my $self = shift;
     $self->can ('time_set') or return;
     unless ($self->{_no_set}++) {
 	$self->time_set ();
-	if (defined (my $equinox = $self->get ('equinox'))) {
-	    $self->set (equinox => $self->model_equinox ());
-	    $self->precess ($equinox);
-	}
     }
     --$self->{_no_set} or delete $self->{_no_set};
 }
@@ -2131,6 +2066,31 @@ guarantee that this behavior will not change from release to release.
 
 The default is 0.
 
+=item desired_equinox (numeric, dynamical time)
+
+This attribute represents the time of the L</Equinox> to which
+positions computed by models are to be precessed. Setting this attribute
+to a non-null, non-zero value will cause positions calculated as a
+result of setting the time to be precessed to the given L<Equinox>.
+Positions set directly will not be affected.
+
+Most calculations are assumed referred to the current L</Equinox> and
+so this attribute need only be set if you want positions
+referred to some other L</Equinox> (e.g. J2000 for use with star charts.)
+
+Note that, unlike almost all other time arguments, this attribute is
+set in B<dynamical time>. This can be calculated, if need be, from
+universal time by adding the results of the Astro::Coord::ECI::Utils
+dynamical_delta() function.
+
+Implementers of subclasses note that it is the responsibility of the
+model to implement this, by setting the equinox attribute to the
+L</Equinox> the model is referred to, and then calling precess() without
+arguments.
+
+The default is undef, meaning that model results are referred to
+whatever L</Equinox> the model generates.
+
 =item diameter (numeric, kilometers)
 
 This attribute exists to support classes/instances which represent
@@ -2154,15 +2114,13 @@ The default is 'WGS84'.
 
 =item equinox (numeric, dynamical time)
 
-This attribute represents the time of the equinox and equator to which
-the coordinate data are referred. Setting this attribute to a non-null,
-non-zero value will cause positions calculated as a result of setting
-the time to be precessed to the given equinox. Positions set directly,
-or set by calling the models directly, will not be affected.
-
-Most calculations are assumed referred to the current equinox and
-equator, so this attribute need only be set if you want positions
-referred to some other equinox (e.g. J2000 for use with star charts.
+This attribute represents the time of the L</Equinox> to which the
+coordinate data are referred. Models implemented by subclasses should
+set this to the L</Equinox> to which the model is referred. When setting
+positions directly the user should also set the desired equinox if
+conversion between inertial and Earth-fixed coordinates is of interest.
+If this is not set, these conversions will use the current time setting
+of the object as the L</Equinox>.
 
 Note that, unlike almost all other time arguments, this attribute is
 set in B<dynamical time>. This can be calculated, if need be, from
@@ -2331,7 +2289,8 @@ the position of orbiting bodies. The X axis passes through 0 hours
 L</Right Ascension> and 0 degrees L</Declination>. The Y axis passes
 through 6 hours L</Right Ascension> and 0 degrees L</Declination>. The
 Z axis passes through +90 degrees L</Declination> (a.k.a. the North
-Pole).
+Pole). By implication, these coordinates are referred to a given
+L</Equinox>.
 
 All three axes are input to and output from this module in kilometers.
 
@@ -2340,7 +2299,8 @@ All three axes are input to and output from this module in kilometers.
 The Ecliptic is the plane of the Earth's orbit, projected onto the sky.
 Ecliptic coordinates are a spherical coordinate system referred to
 the ecliptic and expressed in terms of L</Ecliptic latitude> and
-L</Ecliptic longitude>.
+L</Ecliptic longitude>. By implication, Ecliptic coordinates are also
+referred to a specific L</Equinox>.
 
 =head3 Ecliptic latitude
 
@@ -2353,7 +2313,7 @@ Ecliptic latitude is input to and output from this module in radians.
 
 Ecliptic longitude is the angular distance of a point east of the point
 where the plane of the Earth's orbit intersects the plane of the
-equator. This point is also known as the vernal equinox and the
+equator. This point is also known as the vernal L</Equinox> and the
 first point of Ares.
 
 Ecliptic longitude is input to and output from this module in radians.
@@ -2373,7 +2333,19 @@ L</Altitude> for something different.
 
 Equatorial coordinates are a spherical coordinate system referred to
 the plane of the equator projected onto the sky. Equatorial coordinates
-are specified in L</Right Ascension> and L</Declination>.
+are specified in L</Right Ascension> and L</Declination>, and implicitly
+referred to a given L</Equinox>
+
+=head2 Equinox
+
+The L</Ecliptic>, L</Equatorial>, and L</Earth-Centered Inertial (ECI)
+coordinates> are defined in terms of the location of the intersection of
+the celestial equator with the L</Ecliptic>. The actual location of this
+point changes in time due to precession of the Earth's axis, so each of
+these coordinate systems is implicitly qualified by ("referred to"
+appears to be the usual terminology) the relevant time. By a process of
+association of ideas, this time is referred to as the equinox of the
+data.
 
 =head2 Geocentric
 
