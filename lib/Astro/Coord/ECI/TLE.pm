@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_06';
+our $VERSION = '0.009_07';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -3611,7 +3611,7 @@ $_[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dy/dt
 $_[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dz/dt
 $self->universal (pop @_);
 $self->eci (@_);
-$self->set (equinox => $self->get ('epoch'));
+$self->set (equinox_universal => $self->get ('epoch'));
 $self->precess ();
 $self;
 }
