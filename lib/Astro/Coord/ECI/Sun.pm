@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.005_02';
+our $VERSION = '0.005_03';
 
 use base qw{Astro::Coord::ECI};
 
@@ -401,7 +401,7 @@ Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
 eod
 
 $self->ecliptic (0, $lambda, $R);
-$self->set (equinox => $time);
+$self->set (equinox_dynamical => $time);
 $self->precess ();
 $self;
 }
