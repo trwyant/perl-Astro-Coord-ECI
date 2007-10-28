@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_07';
+our $VERSION = '0.013_08';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1192,18 +1192,33 @@ See L</Attributes> for a list of the attributes you can get.
 
 =cut
 
-sub get {
-my $self = shift;
-ref $self or $self = \%static;
-my @rslt;
-foreach my $name (@_) {
-    exists $mutator{$name} or croak <<eod;
+{	# Begin local symbol block.
+
+    my %accessor = (
+	desired_equinox_dynamical => \&_get_paired_time,
+	desired_equinox_universal => \&_get_paired_time,
+	equinox_dynamical => \&_get_paired_time,
+	equinox_universal => \&_get_paired_time,
+    );
+
+    sub get {
+	my $self = shift;
+	ref $self or $self = \%static;
+	my @rslt;
+	foreach my $name (@_) {
+	    exists $mutator{$name} or croak <<eod;
 Error - Attribute '$name' does not exist.
 eod
-    push @rslt, $self->{$name};
+	    if ($accessor{$name}) {
+		push @rslt, $accessor{$name}->($self, $name);
+	    } else {
+		push @rslt, $self->{$name};
+	    }
+	}
+	return wantarray ? @rslt : $rslt[0];
     }
-return wantarray ? @rslt : $rslt[0];
-}
+
+}	# End local symbol block
 
 
 =item $coord = $coord->local_mean_time ($time);
@@ -1466,15 +1481,24 @@ wantarray ? ($end, $above) : $end;
 }
 
 
+# TODO clean this up before publication.
+
 =item $coord = $coord->precess ($time);
 
 B<NOTE> that starting with version 0.013_02, the start time of the
 precession is the value of the 'equinox' attribute if that is specified,
 and the time setting of the object is not affected by the operation.
 
+B<Amendment> to the above: starting with version 0.013_08, the start
+time of the precession is the value of the 'equinox_dynamical' attribute
+if that is specified. Note that setting the 'equinox_universal'
+attribute also sets 'equinox_dynamical' to the corresponding dynamical
+time.
+
 B<NOTE also> that starting with version 0.013_07, this method may be
 called with no arguments to precess the data to the setting of the
-'desired_equinox' attribute. If this attribute is not set, this method
+'desired_equinox_dynamical' attribute. If this attribute (or,
+equivalently, the 'desired_equinox_universal' attribute) is not set, this method
 does nothing. Models are expected to call this with no arguments after
 setting the 'equinox' attribute. Also as of this revision B<the argument
 is given as dynamical time.>
@@ -1484,8 +1508,6 @@ equinox. The starting equinox is the value of the 'equinox' attribute,
 or the current time setting if the 'equinox' attribute is any false
 value (i.e. undef, 0, or ''). A warning will be issued if the value
 of 'equinox' is undef, which is the default setting.
-
-B<The argument is given as dynamical time.>
 
 As a side effect, the value of the 'equinox' attribute will be set to
 the dynamical time corresponding to the argument.
@@ -1499,13 +1521,18 @@ Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
 
 sub precess {
 my $self = shift;
-my $time = shift || $self->get ('desired_equinox') or return $self;
 
-defined (my $start = $self->get ('equinox'))
-    or carp "Warning - Precess called with equinox attribute undefined";
+my $end;
+if ($end = shift) {
+    $end += dynamical_delta ($end);
+} elsif ($end = $self->get ('desired_equinox_dynamical')) {
+} else {
+    return $self;
+}
+
+defined (my $start = $self->get ('equinox_dynamical'))
+    or carp "Warning - Precess called with equinox_dynamical attribute undefined";
 $start ||= $self->dynamical ();
-### my $end = $time + dynamical_delta ($time);
-my $end = $time;
 
 my ($alpha0, $delta0, $rho0) = $self->equatorial ();
 
@@ -1535,10 +1562,8 @@ my $C = $sintheta * $cosdelta0cosalpha0 + $costheta * $sindelta0;
 my $alpha = atan2 ($A , $B) + $z;
 my $delta = asin ($C);
 
-##!! $self->equatorial ($alpha, $delta, $rho0, $time);
-##!! $self->{dynamical} = $end;
 $self->equatorial ($alpha, $delta, $rho0);
-$self->set (equinox => $end);
+$self->set (equinox_dynamical => $end);
 $self;
 }
 
@@ -1756,10 +1781,12 @@ $self;
 %mutator = (
     angularvelocity => \&_set_value,
     debug => \&_set_value,
-    desired_equinox => \&_set_value,
+    desired_equinox_dynamical => \&_set_paired_time,
+    desired_equinox_universal => \&_set_paired_time,
     diameter => \&_set_value,
     ellipsoid => \&_set_reference_ellipsoid,
-    equinox => => \&_set_value,
+    equinox_dynamical => \&_set_paired_time,
+    equinox_universal => \&_set_paired_time,
     flattening => \&_set_custom_ellipsoid,
     horizon => \&_set_value,
     id => \&_set_id,
@@ -1786,6 +1813,63 @@ sub _set_id {
 $_[0]{$_[1]} = $_[2];
 $_[0]->rebless () if $_[0]->can ('rebless');
 SET_ACTION_NONE;
+}
+
+#	_set_paired_time handles time attributes that have both a
+#	dynamical and a universal version; if the dynamical version is
+#	set, the universal version is deleted, and vice versa. If the
+#	object represents inertial coordinates, the fixed cache is
+#	cleared, and vice versa.
+#
+#	_get_paired time retrieves the attribute, converting it from the
+#	other setting if needed. It lives here so it can share lexical
+#	variables with _set_paired_time.
+
+{
+
+    my $uni2dyn = sub {$_[0] + dynamical_delta ($_[0])};
+    my $dyn2uni = sub {$_[0] - dynamical_delta ($_[0])};
+    my %pair = (
+	desired_equinox_dynamical => {
+	    action => SET_ACTION_NONE,
+	    convert => $uni2dyn,
+	    other => 'desired_equinox_universal',
+	},
+	desired_equinox_universal => {
+	    action => SET_ACTION_NONE,
+	    convert => $dyn2uni,
+	    other => 'desired_equinox_dynamical',
+	},
+	equinox_dynamical => {
+	    action => SET_ACTION_NONE,
+	    convert => $uni2dyn,
+	    other => 'equinox_universal',
+	},
+	equinox_universal => {
+	    action => SET_ACTION_NONE,
+	    convert => $dyn2uni,
+	    other => 'equinox_dynamical',
+	},
+    );
+
+    sub _get_paired_time {
+	my ($self, $name) = @_;
+	$self->{$name} and return $self->{$name};
+	my $other = $pair{$name}{other};
+	$self->{$other} and return ($self->{$name} =
+	    $pair{$name}{convert}->($self->{$other}));
+	return;
+    }
+
+    sub _set_paired_time {
+	my ($self, $name, $value) = @_;
+	delete $self->{$pair{$name}{other}};
+	$self->{$name} = $value;
+	delete $self->{_ECI_cache}{
+	    $self->{inertial} ? 'fixed' : 'inertial'};
+	return $pair{$name}{action};
+    }
+
 }
 
 #	If this is a reference ellipsoid name, check it, and if it's
@@ -2066,7 +2150,7 @@ guarantee that this behavior will not change from release to release.
 
 The default is 0.
 
-=item desired_equinox (numeric, dynamical time)
+=item desired_equinox_dynamical (numeric, dynamical time)
 
 This attribute represents the time of the L</Equinox> to which
 positions computed by models are to be precessed. Setting this attribute
@@ -2078,15 +2162,38 @@ Most calculations are assumed referred to the current L</Equinox> and
 so this attribute need only be set if you want positions
 referred to some other L</Equinox> (e.g. J2000 for use with star charts.)
 
-Note that, unlike almost all other time arguments, this attribute is
-set in B<dynamical time>. This can be calculated, if need be, from
-universal time by adding the results of the Astro::Coord::ECI::Utils
-dynamical_delta() function.
+Implementers of subclasses note that it is the responsibility of the
+model to implement this, by setting the equinox_dynamical or
+equinox_universal attribute to the L</Equinox> the model is referred to,
+and then calling precess() without arguments.
+
+Note that this attribute is paired with desired_equinox_universal, and
+setting it causes desired_equinox_universal to take on the value of the
+corresponding universal time.
+
+The default is undef, meaning that model results are referred to
+whatever L</Equinox> the model generates.
+
+=item desired_equinox_universal (numeric, universal time)
+
+This attribute represents the time of the L</Equinox> to which
+positions computed by models are to be precessed. Setting this attribute
+to a non-null, non-zero value will cause positions calculated as a
+result of setting the time to be precessed to the given L<Equinox>.
+Positions set directly will not be affected.
+
+Most calculations are assumed referred to the current L</Equinox> and
+so this attribute need only be set if you want positions
+referred to some other L</Equinox> (e.g. J2000 for use with star charts.)
 
 Implementers of subclasses note that it is the responsibility of the
-model to implement this, by setting the equinox attribute to the
-L</Equinox> the model is referred to, and then calling precess() without
-arguments.
+model to implement this, by setting the equinox_dynamical or
+equinox_universal attribute to the L</Equinox> the model is referred to,
+and then calling precess() without arguments.
+
+Note that this attribute is paired with desired_equinox_dynamical, and
+setting it causes desired_equinox_dynamical to take on the value of the
+corresponding dynamical time.
 
 The default is undef, meaning that model results are referred to
 whatever L</Equinox> the model generates.
@@ -2112,20 +2219,35 @@ to add more.
 
 The default is 'WGS84'.
 
-=item equinox (numeric, dynamical time)
+=item equinox_dynamical (numeric, dynamical time)
 
 This attribute represents the time of the L</Equinox> to which the
 coordinate data are referred. Models implemented by subclasses should
 set this to the L</Equinox> to which the model is referred. When setting
-positions directly the user should also set the desired equinox if
-conversion between inertial and Earth-fixed coordinates is of interest.
-If this is not set, these conversions will use the current time setting
-of the object as the L</Equinox>.
+positions directly the user should also set the desired
+equinox_dynamical if conversion between inertial and Earth-fixed
+coordinates is of interest.  If this is not set, these conversions will
+use the current time setting of the object as the L</Equinox>.
 
-Note that, unlike almost all other time arguments, this attribute is
-set in B<dynamical time>. This can be calculated, if need be, from
-universal time by adding the results of the Astro::Coord::ECI::Utils
-dynamical_delta() function.
+Note that this attribute is paired with equinox_universal, and setting
+it causes equinox_universal to take on the value of the corresponding
+universal time.
+
+The default is undef.
+
+=item equinox_universal (numeric, universal time)
+
+This attribute represents the time of the L</Equinox> to which the
+coordinate data are referred. Models implemented by subclasses should
+set this to the L</Equinox> to which the model is referred. When setting
+positions directly the user should also set the desired
+equinox_universal if conversion between inertial and Earth-fixed
+coordinates is of interest.  If this is not set, these conversions will
+use the current time setting of the object as the L</Equinox>.
+
+Note that this attribute is paired with equinox_dynamical, and setting
+it causes equinox_dynamical to take on the value of the corresponding
+dynamical time.
 
 The default is undef.
 
