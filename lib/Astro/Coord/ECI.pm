@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_08';
+our $VERSION = '0.013_09';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -525,6 +525,17 @@ instantiates the desired object.
 This method returns the object's L</Earth-Centered, Earth-fixed (ECEF)
 coordinates>.
 
+If the original coordinate setting was in an inertial system (e.g. eci,
+equatorial, or ecliptic) B<and> either desired_equinox_dynamical or
+desired_equinox_universal is set, the coordinates will be precessed to
+the current time before conversion.  This is done in a separate object,
+so that the inertial coordinates of this object are unaffected. Yes,
+this should be done any time the equinox is not the current time, but in
+practice all models except the satellite models are referred to the
+current equinox anyway, and I did not want to change the behavior when
+the desired equinox is not set.  B<Note> that if this exception begins
+to look like a bug, it will be changed, and noted in the documentation.
+
 B<Caveat:> Velocities are also returned, but should not at this point
 be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
@@ -602,6 +613,12 @@ If you specify a time, the time represented by the object will be set
 to that time. The net effect of specifying a time is equivalent to
 
  ($x, $y, $z, $xdot, $ydot, $zdot) = $coord->universal($time)->eci()
+
+If the original coordinate setting was in a non-inertial system (e.g.
+ECEF or geodetic), the equinox_universal attribute will be set to the
+object's universal time. Additionally, if either
+desired_equinox_dynamical or desired_equinox_universal is set, the
+coordinates will be precessed to that time.
 
 B<Caveat:> Velocities are also returned, but should not at this point
 be taken seriously unless they were originally set by the same method
@@ -1525,7 +1542,9 @@ my $self = shift;
 my $end;
 if ($end = shift) {
     $end += dynamical_delta ($end);
-} elsif ($end = $self->get ('desired_equinox_dynamical')) {
+} elsif ($self->{desired_equinox_dynamical} ||
+    $self->{desired_equinox_universal}) {
+    $end = $self->get ('desired_equinox_dynamical');
 } else {
     return $self;
 }
@@ -2060,7 +2079,13 @@ Debug eci - after rotation,
 eod
 $data[3] += $data[1] * $self->{angularvelocity};
 $data[4] -= $data[0] * $self->{angularvelocity};
-return @{$self->{_ECI_cache}{inertial}{eci} = [@data]};
+$self->set (equinox_dynamical => $self->dynamical);
+$self->{_ECI_cache}{inertial}{eci} = \@data;
+### use YAML;
+### warn "Debug - After set \$self = ", Dump $self;
+$self->precess ();
+### warn "Debug - After precess \$self = ", Dump $self;
+return @{$self->{_ECI_cache}{inertial}{eci}};
 }
 
 #	This subroutine converts the object's ECI setting to ECEF, and
@@ -2069,7 +2094,18 @@ return @{$self->{_ECI_cache}{inertial}{eci} = [@data]};
 sub _convert_eci_to_ecef {
 my $self = shift;
 my $thetag = thetag ($self->universal);
-my @ecef = $self->eci ();
+my @ecef;
+if ($self->{desired_equinox_dynamical} ||
+    $self->{desired_equinox_universal}) {
+    my $source = __PACKAGE__->new ();
+    $source->universal ($self->universal ());
+    $source->equatorial ($self->equatorial ());
+    $source->set (equinox_dynamical => $self->get ('equinox_dynamical'));
+    $source->precess ($self->get ('desired_equinox_dynamical'));
+    @ecef = $source->eci ();
+} else {
+    @ecef = $self->eci ();
+}
 $ecef[3] -= $ecef[1] * $self->{angularvelocity};
 $ecef[4] += $ecef[0] * $self->{angularvelocity};
 my $costh = cos (- $thetag);
