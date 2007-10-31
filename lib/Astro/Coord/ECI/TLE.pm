@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_07';
+our $VERSION = '0.009_08';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -296,11 +296,13 @@ sub after_reblessing {}
 
 =item Astro::Coord::ECI::TLE->alias (name => class ...)
 
-This static method adds an alias for a class name, for the benefit
-of users of the status() method, and ultimately of the rebless()
-method. It is intended to be used by subclasses to register short
-names for themselves upon initialization. For example, this class
-calls
+This static method adds an alias for a class name, for the benefit of
+users of the status() method and 'illum' attributes, and ultimately of
+the rebless() method. It is intended to be used by subclasses to
+register short names for themselves upon initialization, though of
+course you can call it yourself as well.
+
+For example, this class calls
 
  __PACKAGE__->alias (tle => __PACKAGE__);
 
@@ -314,8 +316,7 @@ like a static method.
 
 =cut
 
-my %type_map = (
-    );
+my %type_map = ();
 
 sub alias {
     my $self = shift;
@@ -3621,16 +3622,16 @@ $self;
 #	Setting the {illum} attribute is complex enough that the code
 #	got pulled out into its own subroutine. As with all mutators,
 #	the arguments are the object reference, the attribute name, and
-#	the new value. The values 'sun' and 'moon' are special-cased.
-{	# Begin local symbol block.
-    my %special = (
-	sun => 'Astro::Coord::ECI::Sun',
-	moon => 'Astro::Coord::ECI::Moon',
-	);
-    sub _set_illum {
+#	the new value.
+
+__PACKAGE__->alias (sun => 'Astro::Coord::ECI::Sun');
+__PACKAGE__->alias (moon => 'Astro::Coord::ECI::Moon');
+sub _set_illum {
     my $body = $_[2];
-    $body = $special{$body} if $special{$body};
-    ref $body or load_module ($body);
+    unless (ref $body) {
+	$type_map{$body} and $body = $type_map{$body};
+	load_module ($body);
+    }
     UNIVERSAL::isa ($body, 'Astro::Coord::ECI') or croak <<eod;
 Error - The illuminating body must be an Astro::Coord::ECI, or a
         subclass thereof, or the words 'sun' or 'moon', which are
@@ -3639,8 +3640,7 @@ Error - The illuminating body must be an Astro::Coord::ECI, or a
 eod
     ref $body or $body = $body->new ();
     $_[0]->{$_[1]} = $body;
-    }
-}	# End local symbol block.
+}
 
 #######################################################################
 
@@ -4493,11 +4493,12 @@ subclass (though in practice only 'Astro::Coord::ECI::Sun' or
 an object of the appropriate class. When you access this attribute, you
 get an object.
 
-In addition to the full class names, you may specify 'sun' or
-'moon' instead of 'Astro::Coord::ECI::Sun' or
-'Astro::Coord::ECI::Moon'. The value 'sun' (or something equivalent)
-is probably the only useful value, but I know people have looked into
-Iridium 'Moon flares', so I exposed the attribute.
+In addition to the full class names, 'sun' and 'moon' are set up as
+aliases for Astro::Coord::ECI::Sun and Astro::Coord::ECI::Moon
+respectively. Other aliases can be set up using the alias() mechanism.
+The value 'sun' (or something equivalent) is probably the only useful
+value, but I know people have looked into Iridium 'Moon flares', so I
+exposed the attribute.
 
 The default is 'sun'.
 
