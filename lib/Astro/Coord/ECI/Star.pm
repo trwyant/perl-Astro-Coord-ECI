@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_06';
+our $VERSION = '0.003_07';
 
 use base qw{Astro::Coord::ECI};
 
@@ -270,7 +270,8 @@ $self->set (equinox_dynamical => $epoch);
 #	the usual bare call to precess(), since if no desired_equinox is
 #	set we want to precess to the current time.
 
-$self->precess ($self->get ('desired_equinox_universal') || $time);
+$self->precess (
+    $self->get ('desired_equinox_dynamical') ? () : ($time));
 
 $self;
 }

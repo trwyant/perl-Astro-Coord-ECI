@@ -106,12 +106,12 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_08';
+our $VERSION = '0.009_09';
 
 use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{deg2rad find_first_true load_module
-    mod2pi SECSPERDAY thetag};
+use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta find_first_true
+    load_module mod2pi SECSPERDAY thetag};
 
 use Carp;
 use Data::Dumper;
@@ -3612,7 +3612,10 @@ $_[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dy/dt
 $_[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dz/dt
 $self->universal (pop @_);
 $self->eci (@_);
-$self->set (equinox_universal => $self->get ('epoch'));
+{
+    my $epoch = $self->get ('epoch');
+    $self->set (equinox_dynamical => $epoch + dynamical_delta ($epoch));
+}
 $self->precess ();
 $self;
 }
