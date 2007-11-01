@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_10';
+our $VERSION = '0.013_11';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1497,32 +1497,18 @@ wantarray ? ($end, $above) : $end;
 
 =item $coord = $coord->precess ($time);
 
-B<NOTE> that starting with version 0.013_02, the start time of the
-precession is the value of the 'equinox_dynamical' attribute if that is
-specified, and the time setting of the object is not affected by the
-operation.
-
-B<Amendment> to the above: starting with version 0.013_08, the start
-time of the precession is the value of the 'equinox_dynamical' attribute
-if that is set.
-
-B<NOTE also> that starting with version 0.013_07, this method may be
-called with no arguments to precess the data to the setting of the
-'desired_equinox_dynamical' attribute. If this attribute  is not set,
-this method does nothing. Models are expected to call this with no
-arguments after setting the 'equinox_dynamical' attribute.
-
 This method precesses the coordinates of the object to the given
 equinox, B<specified in universal time.> The starting equinox is the
 value of the 'equinox_dynamical' attribute, or the current time setting
 if the 'equinox_dynamical' attribute is any false value (i.e. undef, 0,
 or ''). A warning will be issued if the value of 'equinox_dynamical' is
-undef, which is the default setting.
+undef, which is the default setting. As of version 0.013_02, B<the time
+setting of the object is unaffected by this operation.>
 
-If called with no argument, the precession is to
-'desired_equinox_dynamical' if that attribute is set; otherwise we do
-nothing but return. Models implemented by subclasses are expected to
-call this method in this way.
+Starting with version 0.013_007, if precess() is called with no
+argument, the precession is to 'desired_equinox_dynamical' if that
+attribute is set; otherwise we do nothing but return. Models implemented
+by subclasses are expected to call this method in this way.
 
 As a side effect, the value of the 'equinox_dynamical' attribute will be
 set to the dynamical time corresponding to the argument.
