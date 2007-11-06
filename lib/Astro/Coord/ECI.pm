@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_11';
+our $VERSION = '0.013_12';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1493,17 +1493,33 @@ wantarray ? ($end, $above) : $end;
 }
 
 
-# TODO clean this up before publication.
-
 =item $coord = $coord->precess ($time);
+
+This method is a convenience wrapper for precess_dynamical(). The
+functionality is the same except that B<the time is specified in
+universal time.>
+
+=cut
+
+sub precess {
+    my $self = shift;
+    if (@_ && $_[0]) {
+	$_[0] += dynamical_delta ($_[0]);
+    }
+    $self->precess_dynamical (@_);
+}
+
+
+=item $coord = $coord->precess_dynamical ($time);
 
 This method precesses the coordinates of the object to the given
 equinox, B<specified in universal time.> The starting equinox is the
 value of the 'equinox_dynamical' attribute, or the current time setting
 if the 'equinox_dynamical' attribute is any false value (i.e. undef, 0,
 or ''). A warning will be issued if the value of 'equinox_dynamical' is
-undef, which is the default setting. As of version 0.013_02, B<the time
-setting of the object is unaffected by this operation.>
+undef (which is the default setting) and the object represents inertial
+coordinates. As of version 0.013_02, B<the time setting of the object is
+unaffected by this operation.>
 
 Starting with version 0.013_007, if precess() is called with no
 argument, the precession is to 'desired_equinox_dynamical' if that
@@ -1520,7 +1536,7 @@ Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
 
 =cut
 
-sub precess {
+sub precess_dynamical {
 my $self = shift;
 
 my $end;
@@ -1532,6 +1548,7 @@ if ($end = shift) {
 }
 
 defined (my $start = $self->get ('equinox_dynamical'))
+    or !$self->get ('inertial')
     or carp "Warning - Precess called with equinox_dynamical attribute undefined";
 $start ||= $self->dynamical ();
 
@@ -2036,7 +2053,8 @@ my $sinth = sin (- $thetag);
 	$ecef[0] * $sinth + $ecef[1] * $costh);
 @ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
 	$ecef[3] * $sinth + $ecef[4] * $costh);
-return @{$self->{_ECI_cache}{fixed}{ecef} = [@ecef]};
+$self->{_ECI_cache}{fixed}{ecef} = \@ecef;
+return @ecef;
 }
 
 #	$value = _local_mean_delta ($coord)
