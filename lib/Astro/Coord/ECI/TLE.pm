@@ -106,14 +106,14 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_09';
+our $VERSION = '0.009_10';
 
 use base qw{Astro::Coord::ECI Exporter};
 
 use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta find_first_true
     load_module mod2pi SECSPERDAY thetag};
 
-use Carp;
+use Carp qw{carp croak confess};
 use Data::Dumper;
 use POSIX qw{floor strftime};
 use Time::Local;
@@ -206,6 +206,7 @@ my %attrib = (
     epoch => sub {
 	$_[0]{$_[1]} = $_[2];
 	$_[0]{ds50} = $_[0]->ds50 ();
+	$_[0]{epoch_dynamical} = $_[2] + dynamical_delta ($_[2]);
 	1},
     firstderivative => 1,
     secondderivative => 1,
@@ -232,6 +233,7 @@ eod
     appulse => 0,	# Maximum appulse to report.
     interval => 0,	# Interval for pass() positions, if positive.
     ds50 => undef,	# Read-only
+    epoch_dynamical => undef,	# Read-only
     tle => undef,	# Read-only
     illum => \&_set_illum,
     reblessable => sub {
@@ -254,6 +256,7 @@ my %static = (
 my %model_attrib = (	# For the benefit of is_model_attribute()
     ds50 => 1,		# Read-only, but it fits the definition.
     epoch => 1,		# Hand-set, since we dont want to call the code.
+    epoch_dynamical => 1,	# Read-only, but fits the definition.
     );
 foreach (keys %attrib) {
     $model_attrib{$_} = 1 if $attrib{$_} && !ref $attrib{$_}
@@ -3612,10 +3615,11 @@ $_[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dy/dt
 $_[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dz/dt
 $self->universal (pop @_);
 $self->eci (@_);
-{
-    my $epoch = $self->get ('epoch');
-    $self->set (equinox_dynamical => $epoch + dynamical_delta ($epoch));
-}
+
+## $self->set (equinox_dynamical => $self->get ('epoch_dynamical'));
+## $self->{equinox_dynamical} = $self->{epoch_dynamical};
+$self->set (equinox_dynamical => $self->{epoch_dynamical});
+
 $self->precess ();
 $self;
 }
