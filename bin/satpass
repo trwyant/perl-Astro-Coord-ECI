@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.013_05';
+our $VERSION = '0.013_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -75,6 +75,7 @@ my %parm = (
     country => 'us',
     date_format => '%a %d-%b-%Y',
     debug => 0,
+    desired_equinox => 0,
     echo => 0,
     ellipsoid => Astro::Coord::ECI->get ('ellipsoid'),
     error_out => 0,
@@ -111,6 +112,7 @@ my %mutator = (
     background => \&_set_unmodified,
     country => \&_set_unmodified,
     date_format => \&_set_unmodified,
+    desired_equinox => \&_set_time,
     debug => \&_set_unmodified,
     echo => \&_set_unmodified,
     ellipsoid => \&_set_ellipsoid,
@@ -149,7 +151,8 @@ my %mutator = (
     );
 
 my %accessor = (
-    );
+    desired_equinox => \&_get_time,
+);
 foreach (keys %mutator) {$accessor{$_} ||= \&_show_unmodified};
 
 my @bearing = qw{N NE E SE S SW W NW};
@@ -604,7 +607,9 @@ Warning - @{[ref $body]} does not support the almanac method.
 eod
 	next;
 	};
-    $body->set (twilight => $parm{_twilight});
+    $body->set (
+	twilight => $parm{_twilight},
+    );
     push @almanac, $body->almanac ($sta, $almanac_start, $almanac_end);
     }
 
@@ -1553,7 +1558,7 @@ eod
 	length (strftime ($parm{time_format}, 59, 59, 23, 31, 11, 2000)),
 	length (strftime ($parm{time_format}, 59, 59, 11, 31, 11, 2000)),
 	);
-my $header = <<eod;
+    my $header = <<eod;
 
 %s%s
 
@@ -1591,8 +1596,8 @@ eod
 
 	$tle->set (
 	    appulse => $appulse,
-	    debug => $parm{debug},
 	    backdate => $parm{backdate},
+	    debug => $parm{debug},
 	    geometric => $parm{geometric},
 	    horizon => $horizon,
 	    interval => $opt{verbose} ? $pass_step : 0,
@@ -1921,6 +1926,15 @@ eod
 Error - Invalid SIMBAD version number $_[1]. Must be $lastver.
 eod
 	}
+    }
+}
+
+sub _set_time {
+    my ($name, $val) = @_;
+    if ($val) {
+	$parm{$name} = _parse_time ($val);
+    } else {
+	$parm{$name} = 0;
     }
 }
 
@@ -2561,7 +2575,7 @@ Programming error - _format_local_equatorial () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
 eod
-my ($ra, $dec, $rng) = $_[0]->equatorial ($_[1]);
+my ($ra, $dec, $rng) = _get_equatorial_coordinates (@_);
 sprintf "%s %5.1f",
     _rad2hms ($ra), rad2deg ($dec);
 }
@@ -2580,7 +2594,7 @@ Programming error - _format_local_equatorial_rng () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
 eod
-my ($ra, $dec, $rng) = $_[0]->equatorial ($_[1]);
+my ($ra, $dec, $rng) = _get_equatorial_coordinates (@_);
 sprintf "%s %5.1f @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
     _rad2hms ($ra), rad2deg ($dec), $rng;
 }
@@ -2629,6 +2643,21 @@ if (exists $info->{macro}) {
     }
 _display_timing ();
 @frame ? $info->{stdin} : undef;
+}
+
+#	my ($ra, $dec, $rng) = _get_equatorial_coordinates ($body);
+#    or my ($ra, $dec, $rng) = _get_equatorial_coordinates ($station,
+#								$body);
+
+#	Get the required equatorial coordinates, precessed to
+#	desired_equinox if that is set.
+
+sub _get_equatorial_coordinates {
+    if (my $equinox = $parm{desired_equinox}) {
+	@_ = map {$_->clone ()->precess_dynamical ($equinox)} @_;
+    }
+    my $station = shift;
+    $station->equatorial (@_);
 }
 
 
@@ -2718,6 +2747,21 @@ my $rtn = (caller ($_[1] || 1))[3];
 $rtn =~ s/.*:://;
 $rtn = substr ($rtn, length ($_[0]));
 $rtn;
+}
+
+#	$string = _get_time ($name);
+
+#	Accessor for a time attribute. Returns '0' if the attribute is
+#	not set, or a string representing the attribute in GMT if it is
+#	set.
+
+sub _get_time {
+    my ($name) = @_;
+    if ($parm{$name}) {
+	return strftime '%d-%b-%Y %H:%M:%S UT', gmtime $parm{$name};
+    } else {
+	return 0;
+    }
 }
 
 #	__PACKAGE__->_iridium_status ($text)
@@ -3638,11 +3682,11 @@ dealing with (e.g.) predicted Space Shuttle data from
 L<http://spaceflight.nasa.gov/>, especially if you are making pass
 predictions before the launch.
 
-The underlying classes have some minor changes:
+The L<desired_equinox|/desired_equinox> parameter has been added to
+cause displayed equatorial coordinates to be referred to the equinox of
+your choice.
 
-* Setting the 'equinox' attribute of any object that implements a model
-causes the position to be precessed to that epoch automatically when the
-time is set.
+The underlying classes have some minor changes:
 
 * The 'backdate' attribute has been added to Astro::Coord::ECI::TLE,
 which actually implements the functionality described above in its
@@ -3650,6 +3694,14 @@ pass() method.
 
 * The 'backdate' functionality has also been added to
 Astro::Coord::ECI::TLE::Iridium.
+
+* Setting the 'desired_equinox_dynamical' attribute of any object that
+implements a model causes the position to be precessed to that epoch
+automatically when the time is set.
+
+* The 'equinox_dynamical' attribute has been added to
+Astro::Coordinate::ECI. This records the equinox produced by any models
+implemented by subclasses, or can be set by hand.
 
 =head1 DETAILS
 
@@ -4934,6 +4986,27 @@ is 0, which is the default. The author makes no representation of
 what will happen if a non-zero value is set, not does he promise
 that the behavior for a given non-zero value will not change from
 release to release.
+
+The default is 0.
+
+=for html <a name="desired_equinox"></a>
+
+=item desired_equinox (time)
+
+This parameter specifies the desired equinox for equatorial and ecliptic
+coordinates.  It is specified as a time, or as 0, '', or undef if you
+want whatever the various models give (generally the current equinox, or
+something reasonably close to this).
+
+This parameter is used to precess equatorial coordinates to the correct
+equinox for display. Any legal satpass time specification will parse,
+but you probably want to specify an absolute time in the UT zone, e.g.
+'1-Jan-2000 12:00 UT' for J2000.0. Yes, technically UT is universal, but
+values specified for this setting are handled as dynamical.
+
+The only reason I can think of to set this is if you are displaying
+equatorial coordinates for the 'flare', 'pass', or 'position' commands,
+and want the coordinates for a given epoch.
 
 The default is 0.
 
