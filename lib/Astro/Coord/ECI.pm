@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_12';
+our $VERSION = '0.013_13';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -526,15 +526,16 @@ This method returns the object's L</Earth-Centered, Earth-fixed (ECEF)
 coordinates>.
 
 If the original coordinate setting was in an inertial system (e.g. eci,
-equatorial, or ecliptic) B<and> desired_equinox_dynamical is set, the
-coordinates will be precessed to the current time before conversion.
-This is done in a separate object, so that the inertial coordinates of
-this object are unaffected. Yes, this should be done any time the
-equinox is not the current time, but in practice all models except the
-satellite models are referred to the current equinox anyway, and I did
-not want to change the behavior when the desired equinox is not set.
-B<Note> that if this exception begins to look like a bug, it will be
-changed, and noted in the documentation.
+equatorial, or ecliptic) B<and> the absolute difference between the
+current value of 'equinox_dynamical' and the current dynamical() setting
+is greater than the value of $Astro::Coord::ECI::equinox_tolerance, the
+coordinates will be precessed to the current dynamical time before
+conversion.  Yes, this should be done any time the equinox is not the
+current time, but for satellite prediction small precession by a year or
+so does not seem to make much difference in practice. The default value
+of $Astro::Coord:ECI::equinox_tolerance is 365 days.  B<Note> that if
+this behavior or the default value of $equinox_tolerance begins to look
+like a bug, it will be changed, and noted in the documentation.
 
 B<Caveat:> Velocities are also returned, but should not at this point
 be taken seriously unless they were originally set by the same method
@@ -616,8 +617,7 @@ to that time. The net effect of specifying a time is equivalent to
 
 If the original coordinate setting was in a non-inertial system (e.g.
 ECEF or geodetic), the equinox_dynamical attribute will be set to the
-object's dynamical time. Additionally, if desired_equinox_dynamical is
-set, the coordinates will be precessed to that time.
+object's dynamical time.
 
 B<Caveat:> Velocities are also returned, but should not at this point
 be taken seriously unless they were originally set by the same method
@@ -1513,18 +1513,13 @@ sub precess {
 =item $coord = $coord->precess_dynamical ($time);
 
 This method precesses the coordinates of the object to the given
-equinox, B<specified in universal time.> The starting equinox is the
+equinox, B<specified in dynamical time.> The starting equinox is the
 value of the 'equinox_dynamical' attribute, or the current time setting
 if the 'equinox_dynamical' attribute is any false value (i.e. undef, 0,
 or ''). A warning will be issued if the value of 'equinox_dynamical' is
 undef (which is the default setting) and the object represents inertial
 coordinates. As of version 0.013_02, B<the time setting of the object is
 unaffected by this operation.>
-
-Starting with version 0.013_007, if precess() is called with no
-argument, the precession is to 'desired_equinox_dynamical' if that
-attribute is set; otherwise we do nothing but return. Models implemented
-by subclasses are expected to call this method in this way.
 
 As a side effect, the value of the 'equinox_dynamical' attribute will be
 set to the dynamical time corresponding to the argument.
@@ -1539,13 +1534,8 @@ Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
 sub precess_dynamical {
 my $self = shift;
 
-my $end;
-if ($end = shift) {
-    $end += dynamical_delta ($end);
-} elsif ($end = $self->get ('desired_equinox_dynamical')) {
-} else {
-    return $self;
-}
+my $end = shift
+    or croak "No equinox time specified";
 
 defined (my $start = $self->get ('equinox_dynamical'))
     or !$self->get ('inertial')
@@ -1799,10 +1789,11 @@ $self;
 %mutator = (
     angularvelocity => \&_set_value,
     debug => \&_set_value,
-    desired_equinox_dynamical => \&_set_value,
     diameter => \&_set_value,
     ellipsoid => \&_set_reference_ellipsoid,
-    equinox_dynamical => \&_set_value,
+    equinox_dynamical => \&_set_value,	# CAVEAT: _convert_eci_to_ecef
+					# accesses this directly for
+					# speed.
     flattening => \&_set_custom_ellipsoid,
     horizon => \&_set_value,
     id => \&_set_id,
@@ -2020,31 +2011,27 @@ eod
 $data[3] += $data[1] * $self->{angularvelocity};
 $data[4] -= $data[0] * $self->{angularvelocity};
 $self->set (equinox_dynamical => $self->dynamical);
-$self->{_ECI_cache}{inertial}{eci} = \@data;
-### use YAML;
-### warn "Debug - After set \$self = ", Dump $self;
-$self->precess ();
-### warn "Debug - After precess \$self = ", Dump $self;
-return @{$self->{_ECI_cache}{inertial}{eci}};
+return @{$self->{_ECI_cache}{inertial}{eci} = \@data};
 }
 
 #	This subroutine converts the object's ECI setting to ECEF, and
 #	both caches and returns the result.
 
+our $equinox_tolerance = 365 * SECSPERDAY;
+
 sub _convert_eci_to_ecef {
 my $self = shift;
 my $thetag = thetag ($self->universal);
-my @ecef;
-if ($self->get ('desired_equinox_dynamical')) {
-    my $source = __PACKAGE__->new ();
-    $source->universal ($self->universal ());
-    $source->equatorial ($self->equatorial ());
-    $source->set (equinox_dynamical => $self->get ('equinox_dynamical'));
-    $source->precess ($self->get ('desired_equinox_dynamical'));
-    @ecef = $source->eci ();
-} else {
-    @ecef = $self->eci ();
+
+my $dyn = $self->dynamical;
+## my $equi = $self->get ('equinox_dynamical') || do {
+##     $self->set (equinox_dynamical => $dyn); $dyn};
+my $equi = $self->{equinox_dynamical} ||= $dyn;
+if (abs ($equi - $dyn) > $equinox_tolerance) {
+    $self->precess_dynamical ($dyn);
 }
+
+my @ecef = $self->eci ();
 $ecef[3] -= $ecef[1] * $self->{angularvelocity};
 $ecef[4] += $ecef[0] * $self->{angularvelocity};
 my $costh = cos (- $thetag);
@@ -2126,31 +2113,6 @@ guarantee that this behavior will not change from release to release.
 
 The default is 0.
 
-=item desired_equinox_dynamical (numeric, dynamical time)
-
-This attribute represents the time of the L</Equinox> to which
-positions computed by models are to be precessed. Setting this attribute
-to a non-null, non-zero value will cause positions calculated as a
-result of setting the time to be precessed to the given L<Equinox>.
-Positions set directly will not be affected.
-
-Unlike most times in this package, B<this attribute is specified in
-dynamical time.> If your desired equinox is universal time $uni, set
-this attribute to $uni + dynamical_delta ($uni). The dynamical_delta
-subroutine is found in Astro::Coord::ECI::Utils.
-
-Most calculations are assumed referred to the current L</Equinox> and
-so this attribute need only be set if you want positions
-referred to some other L</Equinox> (e.g. J2000 for use with star charts.)
-
-Implementers of subclasses note that it is the responsibility of the
-model to implement this, by setting the equinox_dynamical attribute to
-the L</Equinox> the model is referred to, and then calling precess()
-without arguments.
-
-The default is undef, meaning that model results are referred to
-whatever L</Equinox> the model generates.
-
 =item diameter (numeric, kilometers)
 
 This attribute exists to support classes/instances which represent
@@ -2184,9 +2146,7 @@ use the current time setting of the object as the L</Equinox>.
 
 In addition, if you have a position specified in earth-fixed coordinates
 and convert it to inertial coordinates, this attribute will be set to
-the dynamical time of the object -- unless the desired_equinox_dynamical
-attribute is also set, in which case the coordinates will be precessed
-to the desired_equinox_dynamical.
+the dynamical time of the object.
 
 Unlike most times in this package, B<this attribute is specified in
 dynamical time.> If your equinox is universal time $uni, set this
