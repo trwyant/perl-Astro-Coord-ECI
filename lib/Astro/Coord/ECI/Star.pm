@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_07';
+our $VERSION = '0.003_08';
 
 use base qw{Astro::Coord::ECI};
 
@@ -196,7 +196,7 @@ Edition, Chapter 23, pages 149ff.
 
 B<Note>, however, that for consistency with the Astro::Coord::ECI::Sun
 and ::Moon classes, the position is precessed to the current time
-setting if the 'equinox' attribute has not been set.
+setting.
 
 =cut
 
@@ -208,8 +208,6 @@ my $self = shift;
 $self->{_star_position} or croak <<eod;
 Error - The position of the star has not been set.
 eod
-
-#	Note that $epoch is the same as $self->model_equinox.
 
 my ($ra, $dec, $range, $mra, $mdc, $mrg, $epoch) = @{$self->{_star_position}};
 
@@ -266,12 +264,9 @@ $self->ecliptic ($beta, $lambda, $range);
 
 $self->set (equinox_dynamical => $epoch);
 
-#	Precess ourselves to the correct equinox. Note that we do not do
-#	the usual bare call to precess(), since if no desired_equinox is
-#	set we want to precess to the current time.
+#	Precess ourselves to the current equinox.
 
-$self->precess (
-    $self->get ('desired_equinox_dynamical') ? () : ($time));
+$self->precess_dynamical ($end);
 
 $self;
 }
