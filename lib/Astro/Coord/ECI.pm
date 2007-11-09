@@ -94,7 +94,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_13';
+our $VERSION = '0.013_14';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -877,6 +877,29 @@ Error - The equatorial() method must be called with either zero or one
 eod
     }
 $self;
+}
+
+=item $coord = $coord->equinox_dynamical ($value);
+
+This method sets the value of the equinox_dynamical attribute, and
+returns the modified object. If called without an argument, it returns
+the current value of the equinox_dynamical attribute.
+
+Yes, it is equivalent to $coord->set (equinox_dynamical => $value) and
+$coord->get ('equinox_dynamical'). But there seems to be a significant
+performance penalty in the $self->SUPER::set () needed to get this
+attribute set from a subclass. It is possible that more methods like
+this will be added, but I do not plan to eliminate the set() interface.
+
+=cut
+
+sub equinox_dynamical {
+    if (@_ > 1) {
+	$_[0]{equinox_dynamical} = $_[1];
+	$_[0];
+    } else {
+	$_[0]{equinox_dynamical};
+    }
 }
 
 
@@ -1846,7 +1869,6 @@ sub _set_value {
 $_[0]->{$_[1]} = $_[2];
 SET_ACTION_NONE;
 }
-
 
 =item $coord->universal ($time)
 
