@@ -33,7 +33,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.003_04';
+our $VERSION = '0.003_05';
 
 use base qw{Astro::Coord::ECI};
 
@@ -423,7 +423,8 @@ $lambda += nutation_in_longitude ($time);
 
 
 $self->ecliptic ($beta, $lambda, $delta);
-$self->set (equinox_dynamical => $time);
+## $self->set (equinox_dynamical => $time);
+$self->equinox_dynamical ($time);
 $self;
 }
 

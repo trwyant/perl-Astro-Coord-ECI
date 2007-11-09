@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_11';
+our $VERSION = '0.009_12';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -3617,10 +3617,13 @@ $self->universal (pop @_);
 $self->eci (@_);
 
 ## $self->set (equinox_dynamical => $self->get ('epoch_dynamical'));
-$self->set (equinox_dynamical => $self->{epoch_dynamical});
+## $self->set (equinox_dynamical => $self->{epoch_dynamical});
+$self->equinox_dynamical ($self->{epoch_dynamical});
 
 $self;
 }
+
+# *equinox_dynamical = \&Astro::Coord::ECI::equinox_dynamical;
 
 #	_set_illum
 

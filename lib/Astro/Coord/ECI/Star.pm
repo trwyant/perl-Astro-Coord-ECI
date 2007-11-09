@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_08';
+our $VERSION = '0.003_09';
 
 use base qw{Astro::Coord::ECI};
 
@@ -262,7 +262,8 @@ $self->ecliptic ($beta, $lambda, $range);
 
 #	Set the equinox to that implied when our position was set.
 
-$self->set (equinox_dynamical => $epoch);
+## $self->set (equinox_dynamical => $epoch);
+$self->equinox_dynamical ($epoch);
 
 #	Precess ourselves to the current equinox.
 
