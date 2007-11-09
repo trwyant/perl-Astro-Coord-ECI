@@ -33,6 +33,13 @@ tag gets you all of them.
 
 =head2 The following global variable is exportable:
 
+=head3 $DATETIMEFORMAT
+
+This variable represents the POSIX::strftime format used to convert
+times to strings. The default value is '%a %b %d %Y %H:%M:%S' to be
+consistent with the behavior of gmtime (or, to be precise, the
+behavior of ctime as documented on my system).
+
 =head3 $JD_GREGORIAN
 
 This variable represents the Julian Day of the switch from Julian to
@@ -60,24 +67,25 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.007_03';
+our $VERSION = '0.007_04';
 our @ISA = qw{Exporter};
 
 use Carp;
 use Data::Dumper;
-use POSIX qw{floor};
+use POSIX qw{floor strftime};
 use Time::Local;
 use UNIVERSAL qw{can isa};
 
 our @EXPORT;
 our @EXPORT_OK = qw{
-	AU $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC PERL2000 PI
-	PIOVER2 SECSPERDAY TWOPI acos asin atmospheric_extinction
-	date2epoch date2jd deg2rad distsq dynamical_delta epoch2datetime
-	equation_of_time find_first_true intensity_to_magnitude
-	jcent2000 jd2date jd2datetime jday2000 julianday load_module
-	mod2pi nutation_in_longitude nutation_in_obliquity obliquity
-	omega rad2deg tan theta0 thetag};
+	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
+	PERL2000 PI PIOVER2 SECSPERDAY TWOPI acos asin
+	atmospheric_extinction date2epoch date2jd deg2rad distsq
+	dynamical_delta epoch2datetime equation_of_time find_first_true
+	intensity_to_magnitude jcent2000 jd2date jd2datetime jday2000
+	julianday load_module mod2pi nutation_in_longitude
+	nutation_in_obliquity obliquity omega rad2deg tan theta0
+	thetag};
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -125,8 +133,6 @@ value.
 sub asin {atan2 ($_[0], sqrt (1 - $_[0] * $_[0]))}
 
 
-=for comment help syntax-highlighting editor "
-
 =item $magnitude = atmospheric_extinction ($elevation, $height);
 
 This subroutine calculates the typical atmospheric extinction in
@@ -141,8 +147,6 @@ L<http://www.cfa.harvard.edu/icq/ICQExtinct.html>. The text of
 this article makes it clear that the actual value of the
 atmospheric extinction can vary greatly from the typical
 values given even in the absence of cloud cover.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -166,35 +170,43 @@ my $Aaer = 0.120 * exp (-$height / 1.5);	# Green 4
 }
 
 
-=item $jd = date2jd ($yr, $mon, $day, $hr, $min, $sec)
+=item $jd = date2jd ($sec, $min, $hr, $day, $mon, $yr)
 
 This subroutine converts the given date to the corresponding Julian day.
-The full year is given (B<not> year since 1900). The year before 1 is 0,
-which is equivalent to 1 BC. The month ranges from 0 to 11, as is usual
-in Perl.
+The inputs are as for Time::timegm; $mon is in the range 0 - 11, and $yr
+is from 1900, with earlier years being negative. The year 1 BC is
+represented as -1900.
+
+If less than 6 arguments are provided, zeroes will be prepended to the
+argument list as needed.
 
 The date is presumed to be in the Gregorian calendar. If the resultant
 Julian Day is before $JD_GREGORIAN, the date is reinterpreted as being
 from the Julian calendar.
 
-The only validation is that the month be between 1 and 12 inclusive, and
-that the year be not less than -4712. Hours, minutes, and seconds can be
-omitted (defaulting to 0), and fractional days are accepted.
+The only validation is that the month be between 0 and 11 inclusive, and
+that the year be not less than -6612 (4713 BC). Fractional days are
+accepted. If there are less than 6 arguments, leading zeroes are
+assumed.
 
 The algorithm is from Jean Meeus' "Astronomical Algorithms", second
 edition, chapter 7 ("Julian Day"), pages 60ff, but the month is
-zero-based, not 1-based.
+zero-based, not 1-based, and years are 1900-based.
 
 =cut
 
+our $DATETIMEFORMAT;
 our $JD_GREGORIAN;
 BEGIN {
+    $DATETIMEFORMAT = '%a %b %d %Y %H:%M:%S';
     $JD_GREGORIAN = 2299160.5;
 }
 
 sub date2jd {
-    my ($yr, $mon, $day, $hr, $min, $sec) = @_;
-    $mon++;	# Algorithm expects month 1-12.
+    unshift @_, 0 while @_ < 6;
+    my ($sec, $min, $hr, $day, $mon, $yr) = @_;
+    $mon++;		# Algorithm expects month 1-12.
+    $yr += 1900;	# Algorithm expects zero-based year.
     $yr < -4712 and croak "Error - Invalid year $yr";
     $mon < 1 || $mon > 12 and croak "Error - Invalid month $mon";
     if ($mon < 3) {
@@ -213,28 +225,27 @@ sub date2jd {
     $jd;
 }
 
-use constant JD_OF_EPOCH => eval {
-    my @date = gmtime (0);
-    splice @date, 6;
-    @date = reverse @date;
-    $date[0] += 1900;
-    date2jd (@date);
-};
+use constant JD_OF_EPOCH => date2jd (gmtime (0));
 
 
-=item $epoch = date2epoch ($yr, $mon, $day, $hr, $min, $sec)
+=item $epoch = date2epoch ($sec, $min, $hr, $day, $mon, $yr)
 
 This is a convenience routine that converts the given date to seconds
 since the epoch, going through date2jd() to do so. The arguments are the
-same as those of date2jd(). Except for the order and definition of the
-arguments, the functionality is the same as Date::Local::timegm, but
-this function lacks timegm's limited date range.
+same as those of date2jd().
+
+If less than 6 arguments are provided, zeroes will be prepended to the
+argument list as needed.
+
+The functionality is the same as Time::Local::timegm, but this function
+lacks timegm's limited date range.
 
 =cut
 
 sub date2epoch {
-    my ($yr, $mon, $day, $hr, $min, $sec) = @_;
-    (date2jd ($yr, $mon, $day) - JD_OF_EPOCH) * SECSPERDAY +
+    unshift @_, 0 while @_ < 6;
+    my ($sec, $min, $hr, $day, $mon, $yr) = @_;
+    (date2jd ($day, $mon, $yr) - JD_OF_EPOCH) * SECSPERDAY +
     (($hr || 0) * 60 + ($min || 0)) * 60 + ($sec || 0);
 }
 
@@ -276,8 +287,6 @@ $sum
 
 =item $seconds = dynamical_delta ($time);
 
-=for comment help syntax-highlighting editor "
-
 This method returns the difference between dynamical and universal time
 at the given universal time. That is,
 
@@ -287,8 +296,6 @@ if $time is universal time.
 
 The algorithm is from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 10, page 78.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -301,26 +308,49 @@ my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
 }
 
 
-=item ($yr, $mon, $day, $hr, $min, $sec) = epoch2datetime ($epoch)
+=item ($sec, $min, $hr, $day, $mon, $yr, $wday, $yday, 0) = epoch2datetime ($epoch)
 
-This is a convenience routine that converts seconds since the epoch to
-a date, going through jd2date() to do so. The returned list is the same
-as that returned by jd2datetime(). Except for the order and definition of
-the return, the functionality is the same as gmtime, but this function
-lacks gmtime's limited date range.
+This convenience subroutine converts the given time in seconds from the
+system epoch to the corresponding date and time. It is implemented in
+terms of jd2date (), with the year and month returned from that
+subroutine. The day is a whole number, with the fractional part
+converted to hours, minutes, and seconds. The $wday is the day of the
+week, with Sunday being 0. The $yday is the day of the year, with
+January 1 being 0. The trailing 0 is the summer time (or daylight saving
+time) indicator which is always 0 to be consistent with gmtime.
+
+If called in scalar context, it returns the date formatted by
+POSIX::strftime, using the format string in $DATETIMEFORMAT.
+
+The functionality is similar to gmtime, but lacks gmtime's limited date
+range.
+
+The input must convert to a non-negative Julian date. The exact lower
+limit depends on the system, but is computed by -(JD_OF_EPOCH * 86400).
+For Unix systems with an epoch of January 1 1970, this is -210866760000.
+
+Additional algorithms for day of week and day of year come from Meeus,
+chapter 7 (Julian Day), page 65.
 
 =cut
 
 sub epoch2datetime {
     my $day = floor ($_[0] / SECSPERDAY);
     my $sec = $_[0] - $day * SECSPERDAY;
-    (my $yr, my $mon, $day) = jd2date ($day + JD_OF_EPOCH);
+    ($day, my $mon, my $yr, my $greg, my $leap) = jd2date (
+	my $jd = $day + JD_OF_EPOCH);
     $day = floor ($day + .5);
     my $min = floor ($sec / 60);
     $sec = $sec - $min * 60;
     my $hr = floor ($min / 60);
     $min = $min - $hr * 60;
-    ($yr, $mon, $day, $hr, $min, $sec);
+    my $wday = ($jd + 1.5) % 7;
+    my $yd = floor (275 * ($mon + 1) / 9) - (2 - $leap) * floor (($mon +
+	10) / 12) + $day - 31;
+    wantarray and return ($sec, $min, $hr, $day, $mon, $yr, $wday, $yd,
+	0);
+    return strftime ($DATETIMEFORMAT, $sec, $min, $hr, $day, $mon, $yr,
+	$wday, $yd, 0);
 }
 
 
@@ -409,9 +439,6 @@ sub find_first_true {
 }
 
 
-
-=for comment help syntax-highlighting editor "
-
 =item $difference = intensity_to_magnitude ($ratio)
 
 This method converts a ratio of light intensities to a difference in
@@ -423,8 +450,6 @@ represents a brighter star) you get back a positive result for an
 intensity ratio less than 1, and a negative result for an intensity
 ratio greater than 1.
 
-=for comment help syntax-highlighting editor "
-
 =cut
 
 {	# Begin local symbol block
@@ -435,13 +460,16 @@ ratio greater than 1.
 }
 
 
-=item ($yr, $mon, $day) = jd2date ($jd)
+=item ($day, $mon, $yr, $greg, $leap) = jd2date ($jd)
 
 This subroutine converts the given Julian day to the corresponding date.
-The full year is returned (B<not> year since 1900). The month ranges 0
-to 11, as is usual in Perl. The year before 1 is 0, which is equivalent
-to 1 BC. The date will probably have a fractional part (e.g. 2006 1 1.5
-for noon January first 2006).
+The returns are year - 1900, month (0 to 11), day (which may have a
+fractional part), a Gregorian calendar indicator which is true if the
+date is in the Gregorian calendar and false if it is in the Julian
+calendar, and a leap (or bissextile) year indicator which is true if the
+year is a leap year and false otherwise. The year 1 BC is returned as
+-1900 (i.e. as year 0), and so on. The date will probably have a
+fractional part (e.g. 2006 1 1.5 for noon January first 2006).
 
 If the $jd is before $JD_GREGORIAN, the date will be in the Julian
 calendar; otherwise it will be in the Gregorian calendar.
@@ -450,7 +478,7 @@ The input may not be less than 0.
 
 The algorithm is from Jean Meeus' "Astronomical Algorithms", second
 edition, chapter 7 ("Julian Day"), pages 63ff, but the month is
-zero-based, not 1-based.
+zero-based, not 1-based, and the year is 1900-based.
 
 =cut
 
@@ -458,7 +486,7 @@ sub jd2date {
     my $mod_jd = $_[0] + 0.5;
     my $Z = floor ($mod_jd);
     my $F = $mod_jd - $Z;
-    my $A = $Z < $JD_GREGORIAN ? $Z : do {
+    my $A = (my $julian = $Z < $JD_GREGORIAN) ? $Z : do {
 	my $alpha = floor (($Z - 1867216.25)/36524.25);
 	$Z + 1 + $alpha - floor ($alpha / 4);
     };
@@ -469,24 +497,28 @@ sub jd2date {
     my $day = $B - $D - floor (30.6001 * $E) + $F;
     my $mon = $E < 14 ? $E - 1 : $E - 13;
     my $yr = $mon > 2 ? $C - 4716 : $C - 4715;
-    ($yr, $mon - 1, $day);
+    ($day, $mon - 1, $yr - 1900, !$julian, ($julian ? !($yr % 4) : (
+		$yr % 400 ? $yr % 100 ? !($yr % 4) : 0 : 1)));
+##	% 400 ? 1 : $yr % 100 ? 0 : !($yr % 4))));
 }
 
 
-=item ($yr, $mon, $day, $hr, $min, $sec) = jd2datetime ($jd)
+=item ($sec, $min, $hr, $day, $mon, $yr) = jd2datetime ($jd)
 
 This convenience subroutine converts the given Julian day to the
-corresponding date and time. It is implemented in terms of jd2date (),
-with the year and month returned from that subroutine. The day is a
-whole number, with the fractional part converted to hours, minutes, and
-seconds.
+corresponding date and time. All this really does is converts its
+argument to seconds since the system epoch, and pass off to
+epoch2datetime().
 
 The input may not be less than 0.
 
 =cut
 
 sub jd2datetime {
-    my ($yr, $mon, $day) = jd2date (@_);
+
+=begin comment
+
+    my ($day, $mon, $yr) = jd2date (@_);
     my $hr = $day;
     $day = floor ($day);
     my $min = $hr = ($hr - $day) * 24;
@@ -494,11 +526,17 @@ sub jd2datetime {
     my $sec = $min = ($min - $hr) * 60;
     $min = floor ($min);
     $sec = ($sec - $min) * 60;
-    ($yr, $mon, $day, $hr, $min, $sec);
+    wantarray and return ($sec, $min, $hr, $day, $mon, $yr);
+    return strftime ($DATETIMEFORMAT, $yr, $mon, $day, $hr, $min, $sec);
+
+=end comment
+
+=cut
+
+    $_[0] = ($_[0] - JD_OF_EPOCH) * SECSPERDAY;
+    goto &epoch2datetime;
 }
 
-
-=for comment help syntax-highlighting editor "
 
 =item $century = jcent2000 ($time);
 
@@ -506,9 +544,6 @@ Several of the algorithms in Jean Meeus' "Astronomical Algorithms"
 are expressed in terms of the number of Julian centuries from epoch
 J2000.0 (e.g equations 12.1, 22.1). This subroutine encapsulates
 that calculation.
-
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -534,16 +569,12 @@ sub jday2000 {
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $jd = julianday ($time);
 
 This subroutine converts a Perl date to a Julian day number.
 
 The computation makes use of information from Jean Meeus' "Astronomical
 Algorithms", 2nd Edition, Chapter 7, page 62.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -586,8 +617,6 @@ $_[0] - floor ($_[0] / TWOPI) * TWOPI;
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $delta_psi = nutation_in_longitude ($time)
 
 This subroutine calculates the nutation in longitude (delta psi) for
@@ -596,8 +625,6 @@ the given B<dynamical> time.
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 0.5 seconds of arc.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -618,8 +645,6 @@ $delta_psi;
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $delta_epsilon = nutation_in_obliquity ($time)
 
 This subroutine calculates the nutation in obliquity (delta epsilon)
@@ -628,8 +653,6 @@ for the given B<dynamical> time.
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 0.1 seconds of arc.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -650,8 +673,6 @@ $delta_epsilon;
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $epsilon = obliquity ($time)
 
 This subroutine calculates the obliquity of the ecliptic in radians at
@@ -660,8 +681,6 @@ the given B<dynamical> time.
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff. The conversion from universal to
 dynamical time comes from chapter 10, equation 10.2  on page 78.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -680,7 +699,6 @@ my $epsilon0 = deg2rad (((0.001813 * $T - 0.00059) * $T - 46.8150)
 $epsilon0 + $delta_epsilon;
 }
 
-=for comment help syntax-highlighting editor "
 
 =item $radians = omega ($time);
 
@@ -689,8 +707,6 @@ of the Moon's mean orbit at the given B<dynamical> time.
 
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 22, pages 143ff.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
@@ -751,8 +767,6 @@ thetag (timegm (0, 0, 0, (gmtime $_[0])[3 .. 5]));
 }
 
 
-=for comment help syntax-highlighting editor "
-
 =item $value = thetag ($time);
 
 This subroutine returns the Greenwich hour angle of the mean equinox at
@@ -760,8 +774,6 @@ the given time.
 
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, equation 12.4, page 88.
-
-=for comment help syntax-highlighting editor "
 
 =cut
 
