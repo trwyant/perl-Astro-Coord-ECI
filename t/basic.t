@@ -6,7 +6,7 @@ use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
-BEGIN {plan tests => 36}
+BEGIN {plan tests => 57}
 ##use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 ##use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 ##use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
@@ -264,17 +264,80 @@ eod
 
 #	Based on Meeus pp60ff
 
-foreach ([date2jd => [1957, 9, 4.81], [jd => 2436116.31]],
-    [date2jd => [333, 0, 27, 12], [jd => 1842713.0]],
-    [jd2date => [2436116.31], [yr => 1957, mon => 9, day => 4.81]],
-    [jd2date => [1842713.0], [yr => 333, mon => 0, day => 27.5]],
-    [jd2date => [1507900.13], [yr => -584, mon => 4, day => 28.63]],
-    [date2epoch => [2000, 0, 1, 12], [epoch => PERL2000]],
-    [epoch2datetime => [PERL2000], [yr => 2000, mon => 0, day => 1,
-    hr => 12, min => 0, sec => 0]],
+foreach (
+    [date2jd => [
+	4.81,
+	9,
+	57,		# 1957
+    ], [jd => 2436116.31]],
+    [date2jd => [
+	12,
+	27,
+	0,
+	-1567,		# 333
+    ], [jd => 1842713.0]],
+    [jd2date => [2436116.31], [
+	day => 4.81,
+	mon => 9,
+	yr => 57,	# 1957
+    ]],
+    [jd2date => [1842713.0], [
+	day => 27.5,
+	mon => 0,
+	yr => -1567,	# 333
+    ]],
+    [jd2date => [1507900.13], [
+	day => 28.63,
+	mon => 4,
+	yr => -2484,	# -584
+    ]],
+    [date2epoch => [
+	12,
+	1,
+	0,
+	100,		# 2000
+    ], [epoch => PERL2000]],
+    [epoch2datetime => [PERL2000], [
+	sec => 0,
+	min => 0,
+	hr => 12,
+	day => 1,
+	mon => 0,
+	yr => 100,	# 2000
+    ]],
+    [jd2datetime => [2434923.5], [	# Meeus example 7.e.
+	sec => 0,
+	min => 0,
+	hr => 0,
+	day => 30,
+	mon => 5,
+	yr => 54,	# 1954
+	wday => 3,	# Wednesday
+    ]],
+    [jd2datetime => [2443826.5], [	# Meeus example 7.f.
+	sec => 0,
+	min => 0,
+	hr => 0,
+	day => 14,
+	mon => 10,
+	yr => 78,	# 1978
+	wday => undef,	# Not specified in example.
+	yday => 317,	# 1 less because 0-based.
+    ]],
+    [jd2datetime => [2447273.5], [	# Meeus example 7.g.
+	sec => 0,
+	min => 0,
+	hr => 0,
+	day => 22,
+	mon => 3,
+	yr => 88,	# 1978
+	wday => undef,	# Not specified in example.
+	yday => 112,	# 1 less because 0-based.
+    ]],
 ) {
     my ($method, $args, $want) = @$_;
     my @want = @$want;
+    my $items = @want / 2;
     my $code = Astro::Coord::ECI::Utils->can ($method)
 	or die "Fatal - Astro::Coord::ECI::Utils::'$method' not found";
     print <<eod;
@@ -282,9 +345,10 @@ foreach ([date2jd => [1957, 9, 4.81], [jd => 2436116.31]],
 # Testing $method (@{[join ', ', @$args]})
 eod
     my @got = $code->(@$args);
+    @got > $items and splice @got, $items;
     foreach my $got (@got) {
 	my $name = shift @want;
-	my $want = shift @want;
+	defined (my $want = shift @want) or next;
 	my $tolerance = $want;
 	$tolerance =~ s/\.$//;
 	if ($want =~ m/\./) {
