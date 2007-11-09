@@ -10,7 +10,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.007_02';
+our $VERSION = '0.007_03';
 
 add_stopwords (<DATA>);
 
@@ -35,6 +35,7 @@ backdate
 Barycentric
 barycentre
 BC
+bissextile
 body's
 boosters
 Borkowski
@@ -89,6 +90,7 @@ GMT
 gmtime's
 Goran
 Green's
+Gregorian
 harvard
 Haversine
 haversine
