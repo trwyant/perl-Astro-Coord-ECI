@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.013_07';
+our $VERSION = '0.013_08';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2073,7 +2073,7 @@ eod
     unless ($special) {
 	$body->set (name => $name);
 	@_ >= 2 or die <<eod;
-Error - You must specify a name, a right ascencion (in either
+Error - You must specify a name, a right ascension (in either
         hours:minutes:seconds or degrees) and a declination
         (in either degreesDminutesMseconds or degrees, with
         south declination negative). The distance in parsecs
@@ -2668,6 +2668,7 @@ _display_timing ();
 
 sub _get_equatorial_coordinates {
     if (my $equinox = $parm{desired_equinox}) {
+	$_[0]->universal ($_[1]->universal);
 	@_ = map {$_->clone ()->precess_dynamical ($equinox)} @_;
     }
     my $station = shift;
