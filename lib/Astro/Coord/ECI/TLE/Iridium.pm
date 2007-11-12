@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.002_01';
+our $VERSION = '0.002_02';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -1579,6 +1579,8 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 Copyright 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This module is free software; you can use it, redistribute it and/or
 modify it under the same terms as Perl itself. Please see

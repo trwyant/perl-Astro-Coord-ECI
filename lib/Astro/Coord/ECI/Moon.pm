@@ -33,7 +33,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.003_05';
+our $VERSION = '0.003_06';
 
 use base qw{Astro::Coord::ECI};
 
@@ -299,7 +299,8 @@ wantarray ? ($phase, (1 + cos ($self->PI - $phase)) / 2) : $phase;
 This method sets coordinates of the object to the coordinates of the
 Moon at the object's currently-set universal time.  The velocity
 components are arbitrarily set to 0, since Meeus' algorithm does not
-provide this information.
+provide this information. The 'equinox_dynamical' attribute is set to
+the currently-set dynamical time.
 
 Although there's no reason this method can't be called directly, it
 exists to take advantage of the hook in the B<Astro::Coord::ECI>
@@ -451,8 +452,10 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This module is free software; you can use it, redistribute it
 and/or modify it under the same terms as Perl itself. Please see

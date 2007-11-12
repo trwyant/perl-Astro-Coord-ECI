@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.003_09';
+our $VERSION = '0.003_10';
 
 use base qw{Astro::Coord::ECI};
 
@@ -147,9 +147,9 @@ enough since we do not take parallax into account when computing
 position, and since you can override it with a range (in km!) if you so
 desire. The proper motions default to 0. The time defaults to J2000.0,
 and is used to set not only the current time of the object but also the
-equinox. If you are not interested in proper motion but are interested
-in time, omit the proper motion arguments completely and specify time as
-the fourth argument.
+equinox_dynamical. If you are not interested in proper motion but are
+interested in time, omit the proper motion arguments completely and
+specify time as the fourth argument.
 
 If you call this as a class method, a new Astro::Coord::ECI::Star
 object will be constructed. If you call it without arguments, the
@@ -300,8 +300,10 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This module is free software; you can use it, redistribute it
 and/or modify it under the same terms as Perl itself. Please see

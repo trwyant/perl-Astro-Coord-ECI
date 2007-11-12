@@ -67,7 +67,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.007_04';
+our $VERSION = '0.007_05';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -173,9 +173,9 @@ my $Aaer = 0.120 * exp (-$height / 1.5);	# Green 4
 =item $jd = date2jd ($sec, $min, $hr, $day, $mon, $yr)
 
 This subroutine converts the given date to the corresponding Julian day.
-The inputs are as for Time::timegm; $mon is in the range 0 - 11, and $yr
-is from 1900, with earlier years being negative. The year 1 BC is
-represented as -1900.
+The inputs are as for B<Time::Local::timegm>; $mon is in the range 0 -
+11, and $yr is from 1900, with earlier years being negative. The year 1
+BC is represented as -1900.
 
 If less than 6 arguments are provided, zeroes will be prepended to the
 argument list as needed.
@@ -186,8 +186,7 @@ from the Julian calendar.
 
 The only validation is that the month be between 0 and 11 inclusive, and
 that the year be not less than -6612 (4713 BC). Fractional days are
-accepted. If there are less than 6 arguments, leading zeroes are
-assumed.
+accepted.
 
 The algorithm is from Jean Meeus' "Astronomical Algorithms", second
 edition, chapter 7 ("Julian Day"), pages 60ff, but the month is
@@ -237,8 +236,8 @@ same as those of date2jd().
 If less than 6 arguments are provided, zeroes will be prepended to the
 argument list as needed.
 
-The functionality is the same as Time::Local::timegm, but this function
-lacks timegm's limited date range.
+The functionality is the same as B<Time::Local::timegm>, but this
+function lacks timegm's limited date range.
 
 =cut
 
@@ -329,8 +328,9 @@ The input must convert to a non-negative Julian date. The exact lower
 limit depends on the system, but is computed by -(JD_OF_EPOCH * 86400).
 For Unix systems with an epoch of January 1 1970, this is -210866760000.
 
-Additional algorithms for day of week and day of year come from Meeus,
-chapter 7 (Julian Day), page 65.
+Additional algorithms for day of week and day of year come from Jean
+Meeus' "Astronomical Algorithms", 2nd Edition, Chapter 7 (Julian Day),
+page 65.
 
 =cut
 
@@ -503,7 +503,7 @@ sub jd2date {
 }
 
 
-=item ($sec, $min, $hr, $day, $mon, $yr) = jd2datetime ($jd)
+=item ($sec, $min, $hr, $day, $mon, $yr, $wday, $yday, 0) = jd2datetime ($jd)
 
 This convenience subroutine converts the given Julian day to the
 corresponding date and time. All this really does is converts its
@@ -813,6 +813,8 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This module is free software; you can use it, redistribute it and/or
 modify it under the same terms as Perl itself. Please see

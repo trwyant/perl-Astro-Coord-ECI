@@ -60,20 +60,17 @@ whatever.
 All distances are in kilometers, and all angles are in radians
 (including right ascension, which is usually measured in hours).
 
-Times are normal Perl times except for the Julian Day routines, which
-convert Perl time into things like Julian Day or days since Julian
-2000.0 (i.e. the aforementioned support routines), and for a few
-support routines which take or return dynamical times. Time is
-specified and returned in universal time unless the documentation of
-the method explicitly states otherwise. In practice, universal time is
-approximated by normal Perl time.
+Times are normal Perl times, whether used as universal or dynamical
+time. Universal time is what is usually meant, unless otherwise stated.
 
 Known subclasses include B<Astro::Coord::ECI::Moon> to predict the
 position of the Moon, B<Astro::Coord::ECI::Star> to predict the
 position of a star, or anything else that can be considered fixed on
 the celestial sphere, B<Astro::Coord::ECI::Sun> to predict the position
-of the Sun, and B<Astro::Coord::ECI::TLE> to predict the position of a
-satellite given the NORAD orbital parameters.
+of the Sun, B<Astro::Coord::ECI::TLE> to predict the position of a
+satellite given the NORAD orbital parameters, and
+B<Astro::Corod::ECI::TLE::Iridium> (a subclass of
+Astro::Coord::ECI::TLE) to predict Iridium flares.
 
 B<Caveat user:> This class and its subclasses should probably be
 considered alpha code, meaning that the public interface may not be
@@ -94,7 +91,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_14';
+our $VERSION = '0.013_15';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -469,7 +466,7 @@ Meeus' "Astronomical Algorithms", 2nd Edition, Chapter 10, pages 78ff.
 =item $time = $coord->dynamical ();
 
 This method returns the dynamical time previously set, or the
-universal time previously set, converted to dynamical. The algorithm
+universal time previously set, converted to dynamical.
 
 The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 10, pages 78ff.
@@ -510,12 +507,13 @@ eod
 
 =item $coord = $coord->ecef($x, $y, $z, $xdot, $ydot, $zdot)
 
-This method sets the coordinates represented by the object in terms
-of L</Earth-Centered, Earth-fixed (ECEF) coordinates>, with x being
-latitude 0 longitude 0, y being latitude 0 longitude 90 degrees east,
-and z being latitude 90 degrees north. The velocities are optional, and
-will default to the rotational velocity at the point being set. The
-object itself is returned.
+This method sets the coordinates represented by the object in terms of
+L</Earth-Centered, Earth-fixed (ECEF) coordinates> in kilometers, with
+the x axis being latitude 0 longitude 0, the y axis being latitude 0
+longitude 90 degrees east, and the z axis being latitude 90 degrees
+north. The velocities in kilometers per second are optional, and will
+default to the rotational velocity at the point being set. The object
+itself is returned.
 
 This method can also be called as a class method, in which case it
 instantiates the desired object.
@@ -531,7 +529,7 @@ current value of 'equinox_dynamical' and the current dynamical() setting
 is greater than the value of $Astro::Coord::ECI::equinox_tolerance, the
 coordinates will be precessed to the current dynamical time before
 conversion.  Yes, this should be done any time the equinox is not the
-current time, but for satellite prediction small precession by a year or
+current time, but for satellite prediction precession by a year or
 so does not seem to make much difference in practice. The default value
 of $Astro::Coord:ECI::equinox_tolerance is 365 days.  B<Note> that if
 this behavior or the default value of $equinox_tolerance begins to look
@@ -584,11 +582,13 @@ $self;
 
 =item $coord = $coord->eci ($x, $y, $z, $xdot, $ydot, $zdot, $time)
 
-This method sets the coordinates represented by the object in terms
-of L</Earth-Centered Inertial (ECI) coordinates>, time being universal
-time, x being 0 L</Right Ascension> 0 L</Declination>, y being 6 hours
-L</Right Ascension> 0 L</Declination>, and z being 90 degrees north
-L</Declination>. The velocities are optional, and will default to zero.
+This method sets the coordinates represented by the object in terms of
+L</Earth-Centered Inertial (ECI) coordinates> in kilometers, time being
+universal time, the x axis being 0 hours L</Right Ascension> 0 degrees
+L</Declination>, y being 6 hours L</Right Ascension> 0 degrees
+L</Declination>, and z being 90 degrees north L</Declination>. The
+velocities in kilometers per second are optional, and will default to
+zero.
 
 The time argument is optional if the time represented by the object
 has already been set (e.g. by the universal() or dynamical() methods).
@@ -2117,11 +2117,11 @@ This class has the following attributes:
 
 =item angularvelocity (radians per second)
 
-This attribute represents the angular velocity of the Earth' surface in
-radians per second. The initial value is 7.292114992e-5, which
-according to Jean Meeus is the value for 1996.5. He cites the
-International Earth Rotation Service's Annual Report for 1996
-(Published at the Observatoire de Paris, 1997).
+This attribute represents the angular velocity of the Earth's surface in
+radians per second. The initial value is 7.292114992e-5, which according
+to Jean Meeus is the value for 1996.5. He cites the International Earth
+Rotation Service's Annual Report for 1996 (Published at the Observatoire
+de Paris, 1997).
 
 Subclasses may place appropriate values here, or provide a period()
 method.
@@ -2581,6 +2581,8 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This module is free software; you can use it, redistribute it and/or
 modify it under the same terms as Perl itself. Please see

@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.013_08';
+our $VERSION = '0.013_09';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -75,7 +75,7 @@ my %parm = (
     country => 'us',
     date_format => '%a %d-%b-%Y',
     debug => 0,
-    desired_equinox => 0,
+    desired_equinox_dynamical => 0,
     echo => 0,
     ellipsoid => Astro::Coord::ECI->get ('ellipsoid'),
     error_out => 0,
@@ -90,8 +90,10 @@ my %parm = (
     local_coord => 'azel_rng',
     model => 'model',
     prompt => 'satpass>',
-    simbad_url => 'simbad.harvard.edu',
-    simbad_version => 3,
+##    simbad_url => 'simbad.harvard.edu',
+##    simbad_version => 3,
+    simbad_url => 'simbad.u-strasbg.fr',
+    simbad_version => 4,
     singleton => 0,
     time_format => '%H:%M:%S',
 ##    timing => 0,
@@ -112,7 +114,7 @@ my %mutator = (
     background => \&_set_unmodified,
     country => \&_set_unmodified,
     date_format => \&_set_unmodified,
-    desired_equinox => \&_set_time,
+    desired_equinox_dynamical => \&_set_time,
     debug => \&_set_unmodified,
     echo => \&_set_unmodified,
     ellipsoid => \&_set_ellipsoid,
@@ -151,7 +153,7 @@ my %mutator = (
     );
 
 my %accessor = (
-    desired_equinox => \&_get_time,
+    desired_equinox_dynamical => \&_get_time,
 );
 foreach (keys %mutator) {$accessor{$_} ||= \&_show_unmodified};
 
@@ -2664,10 +2666,10 @@ _display_timing ();
 #								$body);
 
 #	Get the required equatorial coordinates, precessed to
-#	desired_equinox if that is set.
+#	desired_equinox_dynamical if that is set.
 
 sub _get_equatorial_coordinates {
-    if (my $equinox = $parm{desired_equinox}) {
+    if (my $equinox = $parm{desired_equinox_dynamical}) {
 	$_[0]->universal ($_[1]->universal);
 	@_ = map {$_->clone ()->precess_dynamical ($equinox)} @_;
     }
@@ -3713,9 +3715,14 @@ dealing with (e.g.) predicted Space Shuttle data from
 L<http://spaceflight.nasa.gov/>, especially if you are making pass
 predictions before the launch.
 
-The L<desired_equinox|/desired_equinox> parameter has been added to
-cause displayed equatorial coordinates to be referred to the equinox of
-your choice.
+The L<desired_equinox_dynamical|/desired_equinox_dynamical> parameter
+has been added to cause displayed equatorial coordinates to be referred
+to the equinox of your choice.
+
+Since it looks to me like the old Harvard SIMBAD mirror is redirected to
+the University of Strasbourg these days, the default setting of
+'simbad_url' is now 'simbad.u-strasbg.fr', and the default setting of
+'simbad_version' is now 4.
 
 The underlying classes have some minor changes:
 
@@ -3723,12 +3730,8 @@ The underlying classes have some minor changes:
 which actually implements the functionality described above in its
 pass() method.
 
-* The 'backdate' functionality has also been added to
-Astro::Coord::ECI::TLE::Iridium.
-
-* Setting the 'desired_equinox_dynamical' attribute of any object that
-implements a model causes the position to be precessed to that epoch
-automatically when the time is set.
+* The 'backdate' functionality has also been added to the
+Astro::Coord::ECI::TLE::Iridium flare() method.
 
 * The 'equinox_dynamical' attribute has been added to
 Astro::Coordinate::ECI. This records the equinox produced by any models
@@ -4456,7 +4459,12 @@ the string 'core.' to its name, e.g. 'core.quarters', whether or
 not you have overridden the built_in with a macro.
 
 If you specify a macro name with no definition, it deletes the current
-definition of that macro, if any. Macros can also be redefined.
+definition of that macro, if any. You can change this behavior by
+setting the L<explicit_macro_delete|/explicit_macro_delete> parameter
+true; this will cause 'macro name' to list the named macro, and require
+an explicit -delete to delete it. Macros can also be redefined, simply
+by issuing the 'macro' command, naming the macro, and giving its
+definition.
 
 The macro command takes the following options in addition to the
 global ones:
@@ -4717,12 +4725,12 @@ This command uses the B<Astro::SpaceTrack> package to acquire orbital
 data directly from the Space Track web site (assuming it is available).
 It can also retrieve them from the Celestrak web site for as long as
 Dr. Kelso retains his authorization to redistribute the orbital
-elements.
+elements, or any other location supported by Astro::SpaceTrack.
 
-What comes after the 'st' is the name of an B<Astro::SpaceTrack>
-method. If the method returns orbital elements,
-those elements will be added to the observing list. You can use
-'st help' to get brief help, or see L<Astro::SpaceTrack>.
+What comes after the 'st' is the name of an B<Astro::SpaceTrack> method,
+followed by any arguments to that method. If the method returns orbital
+elements, those elements will be added to the observing list. You can
+use 'st help' to get brief help, or see L<Astro::SpaceTrack>.
 
 In addition to the legal B<Astro::SpaceTrack> methods, 'show' has been
 made a synonym to 'get', for consistency. Also, as of satpass 0.006_13,
@@ -4807,7 +4815,7 @@ add - adds the given body to the status list. The arguments are NORAD
 ID, satellite type ('iridium' is the only valid type at the moment),
 status ('+' for in-service, 'S' for spare, '-' for tumbling or otherwise
 unable to flare), name (e.g.  'Iridium 12'), and a comment, with the
-last three defaulting to empty. For example:
+status defaulting to '+', and name and comment to ''. For example:
 
  satpass> status add 12345 iridium S 'Bogus body' TRW
 
@@ -4951,16 +4959,17 @@ The default is 1 (i.e. true).
 
 This parameter determines whether the 'pass' command will attempt to use
 orbital elements before their epoch. It is actually simply propagated to
-the individual TLE objects, and so takes effect on a per-object basis.
-If it is false, the pass () method will silently move the start of the
-pass prediction to the epoch of the data if it is earlier.
+the 'backdate' attribute of the individual TLE objects, and so takes
+effect on a per-object basis.  If it is false, the pass () method will
+silently move the start of the pass prediction to the epoch of the data
+if the specified pass start is earlier than the epoch.
 
 You may wish to set this to 0 (i.e. false) if you are dealing with
 future launches -- i.e. the predicted Space Shuttle data from
 L<http://spaceflight.nasa.gov/>.
 
 The default is 1 (i.e. true), which is consistent with the behavior of
-the code before this attribute was added.
+the code before this parameter was added.
 
 =for html <a name="background"></a>
 
@@ -5020,20 +5029,22 @@ release to release.
 
 The default is 0.
 
-=for html <a name="desired_equinox"></a>
+=for html <a name="desired_equinox_dynamical"></a>
 
-=item desired_equinox (time)
+=item desired_equinox_dynamical (time)
 
 This parameter specifies the desired equinox for equatorial and ecliptic
-coordinates.  It is specified as a time, or as 0, '', or undef if you
-want whatever the various models give (generally the current equinox, or
-something reasonably close to this).
+coordinates. It is specified as a dynamical time, or as 0, '', or undef
+if you want whatever the various models give (generally the current
+equinox, or something reasonably close to this).
 
 This parameter is used to precess equatorial coordinates to the correct
 equinox for display. Any legal satpass time specification will parse,
 but you probably want to specify an absolute time in the UT zone, e.g.
 '1-Jan-2000 12:00 UT' for J2000.0. Yes, technically UT is universal, but
-values specified for this setting are handled as dynamical.
+values specified for this setting are handled as dynamical. See
+L<SPECIFYING TIMES|/SPECIFYING TIMES> for the full story on how to
+specify times.
 
 The only reason I can think of to set this is if you are displaying
 equatorial coordinates for the 'flare', 'pass', or 'position' commands,
@@ -5196,6 +5207,8 @@ This parameter determines what local coordinates of the object are
 displayed by the L<pass|/pass> and L<position|/position> commands.
 The only legal values are:
 
+az_rng - displays azimuth and range;
+
 azel - displays elevation and azimuth;
 
 azel_rng - displays elevation, azimuth, and range;
@@ -5320,7 +5333,8 @@ subcommand of the L<sky|/sky> command). Currently-legal values are
 'simbad.u-strasbg.fr' (the original site) and 'simbad.harvard.edu'
 (Harvard University's mirror).
 
-The default is 'simbad.harvard.edu'.
+B<As of satpass 0.013_09,> the default is 'simbad.u-strasbg.fr', since
+Harvard seems to be redirected to Strasbourg these days.
 
 B<Please note that the command this parameter supports is
 experimental,> and see the warnings on that command. Changes in the
@@ -5339,10 +5353,10 @@ used, the valid values being 3 or 4. If you set it to 3, the
 Astro::SIMBAD package will be used for SIMBAD lookups. If you set it to
 4, Astro::SIMBAD::Client will be used. As of early January 2007,
 'simbad.u-strasbg.fr' supports both versions, though 3 is being phased
-out. 'Simbad.harvard.edu' is still at version 3.
+out. 'Simbad.harvard.edu' appears to me to be phasing out, and
+redirected to simbad.u-strasbg.fr.
 
-The default is 3, to be consistent with the default setting of
-L<simbad_url|/simbad_url>.
+B<As of satpass 0.013_09,> the default is 4.
 
 =for html <a name="singleton"></a>
 
@@ -5625,6 +5639,8 @@ of the default. This can still be overridden by the
 
  satpass> echo $SATPASSINI
 
+which reports the name of the file actually used to initialize.
+
 =head1 CHANGES
 
 The following changes have been introduced into this script since
@@ -5632,13 +5648,15 @@ version 0.013:
 
 - Add the echo and times commands.
 
+- Add the backdate and desired_equinox_dynamical parameters.
+
 For prior changes, see F<Changes>.
 
 =head1 ACKNOWLEDGMENTS
 
-The L<Astro::Coord::ECI> module acknowledges those without whom this
-code would not exist. But the script has its own issues, and I would
-like to acknowledge here those who made this script better:
+L<Astro::Coord::ECI> acknowledges those without whom this code would not
+exist. But the script has its own issues, and I would like to
+acknowledge here those who made this script better:
 
 Goran Gasparovic of MIT, who asked for (and supplied information for)
 the ability to display results in apparent equatorial coordinates,
@@ -5667,6 +5685,8 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This script is free software; you can use it, redistribute it
 and/or modify it under the same terms as Perl itself. Please see

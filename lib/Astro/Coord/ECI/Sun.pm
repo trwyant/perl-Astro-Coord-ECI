@@ -34,7 +34,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.005_05';
+our $VERSION = '0.005_06';
 
 use base qw{Astro::Coord::ECI};
 
@@ -338,7 +338,8 @@ sub period {31558149.7632}	# 365.256363 * 86400
 
 This method sets coordinates of the object to the coordinates of the
 Sun at the object's currently-set universal time.  The velocity
-components are arbitrarily set to 0.
+components are arbitrarily set to 0. The 'equinox_dynamical' attribute
+is set to the object's currently-set dynamical time.
 
 Although there's no reason this method can't be called directly, it
 exists to take advantage of the hook in the B<Astro::Coord::ECI>
@@ -436,6 +437,8 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This module is free software; you can use it, redistribute it
 and/or modify it under the same terms as Perl itself. Please see

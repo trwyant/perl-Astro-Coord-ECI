@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_12';
+our $VERSION = '0.009_13';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -285,7 +285,7 @@ my $self = $class->SUPER::new (%static, @_);
 $self;
 }
 
-=item after_reblessing (\%possible_attributes)
+=item $tle->after_reblessing (\%possible_attributes)
 
 This method supports reblessing into a subclass, with the argument
 representing attributes that the subclass may wish to set.  It is called
@@ -348,7 +348,7 @@ $attrib{$_[1]} ? __PACKAGE__ : $_[0]->SUPER::attribute ($_[1])
 }
 
 
-=item before_reblessing ()
+=item $tle->before_reblessing ()
 
 This method supports reblessing into a subclass. It is intended to do
 any cleanup the old class needs before reblessing into the new class. It
@@ -361,7 +361,7 @@ At this level it does nothing.
 sub before_reblessing {}
 
 
-=item can_flare ()
+=item $tle->can_flare ()
 
 This method returns true if the object is capable of generating flares
 (i.e. predictable bright flashes) and false otherwise. At this level
@@ -447,7 +447,7 @@ return ($_[0]->{&TLE_INIT}{TLE_isdeep} = $_[0]->period () >= 13500);
 
 This method returns true if the named attribute is an attribute of
 the model - i.e. it came from the TLE data and actually affects the
-computations. It is really for the benefit of
+model computations. It is really for the benefit of
 Astro::Coord::ECI::TLE::Set, so that class can determine how its
 set() method should handle the attribute.
 
@@ -484,7 +484,7 @@ my %valid = map {$_ => UNIVERSAL::can (__PACKAGE__, $_)}
 
 This method calculates the position of the body described by the TLE
 object at the given time, using the preferred model. Currently this is
-either SGP4 for near-earth objects, and SDP4 for deep-space objects.
+SGP4 for near-earth objects, or SDP4 for deep-space objects.
 
 The intent is that this method will use whatever model is currently
 preferred. If the preferred model changes, this method will use the
@@ -665,7 +665,7 @@ The individual events are also anonymous hashes, with each hash
 containing the following keys:
 
   {azimuth} => Azimuth of event in radians;
-  {body} => Referency to body making pass;
+  {body} => Reference to body making pass;
   {appulse} => {  # This is present only for PASS_EVENT_APPULSE;
       {angle} => minimum separation in radians;
       {body} => other body involved in appulse;
@@ -1118,11 +1118,13 @@ It is also possible to omit both arguments, in which case the object
 will be reblessed according to the content of the internal status
 table.
 
-For convenience, you can pass a short name instead of the full class
-name. The following short names are recognized:
+For convenience, you can pass an alias instead of the full class name. The
+following aliases are recognized:
 
  iridium => 'Astro::Coord::ECI::TLE::Iridium'
  tle => 'Astro::Coord::ECI::TLE'
+
+Other aliases may be defined with the alias() static method.
 
 Note that this method returns the original object (possibly reblessed).
 It does not under any circumstances manufacture another object.
@@ -1310,7 +1312,9 @@ eod
 =item $tle = $tle->sgp($time)
 
 This method calculates the position of the body described by the TLE
-object at the given time, using the SGP model.
+object at the given time, using the SGP model. The universal time of the
+object is set to $time, and the 'equinox_dynamical' attribute is set to
+to the current value of the 'epoch_dynamical' attribute.
 
 The result is the original object reference. You need to call one of
 the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
@@ -1532,7 +1536,9 @@ goto &_convert_out;
 =item $tle = $tle->sgp4($time)
 
 This method calculates the position of the body described by the TLE
-object at the given time, using the SGP4 model.
+object at the given time, using the SGP4 model. The universal time of
+the object is set to $time, and the 'equinox_dynamical' attribute is set
+to the current value of the 'epoch_dynamical' attribute.
 
 The result is the original object reference. See the L</DESCRIPTION>
 heading above for how to retrieve the coordinates you just calculated.
@@ -1875,7 +1881,9 @@ goto &_convert_out;
 =item $tle = $tle->sdp4($time)
 
 This method calculates the position of the body described by the TLE
-object at the given time, using the SDP4 model.
+object at the given time, using the SDP4 model. The universal time of
+the object is set to $time, and the 'equinox_dynamical' attribute is set
+to the current value of the 'epoch_dynamical' attribute.
 
 The result is the original object reference. You need to call one of
 the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
@@ -2158,7 +2166,9 @@ goto &_convert_out;
 =item $tle = $tle->sgp8($time)
 
 This method calculates the position of the body described by the TLE
-object at the given time, using the SGP8 model.
+object at the given time, using the SGP8 model. The universal time of
+the object is set to $time, and the 'equinox_dynamical' attribute is set
+to the current value of the 'epoch_dynamical' attribute.
 
 The result is the original object reference. You need to call one of
 the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
@@ -2550,7 +2560,9 @@ goto &_convert_out;
 =item $tle = $tle->sdp8($time)
 
 This method calculates the position of the body described by the TLE
-object at the given time, using the SDP8 model.
+object at the given time, using the SDP8 model. The universal time of
+the object is set to $time, and the 'equinox_dynamical' attribute is set
+to the current value of the 'epoch_dynamical' attribute.
 
 The result is the original object reference. You need to call one of
 the Astro::Coord::ECI methods (e.g. geodetic () or equatorial ()) to
@@ -2800,8 +2812,10 @@ goto &_convert_out;
 
 =item $self->time_set();
 
-This method sets the coordinate of the object to whatever is
-computed by the model specified by the model attribute.
+This method sets the coordinates of the object to whatever is
+computed by the model specified by the model attribute. The
+'equinox_dynamical' attribute is set to the current value of the
+'epoch_dynamical' attribute.
 
 Although there is no reason this method can not be called directly, it
 exists to take advantage of the hook in the B<Astro::Coord::ECI>
@@ -4451,7 +4465,7 @@ expect to see only the value 'U', for 'Unclassified.'
 =item ds50 (numeric, readonly, parse)
 
 This attribute contains the L<epoch|/item_epoch>, in days since 1950.
-Setting the L<epoch|/item_epoch> also modified this attribute.
+Setting the L<epoch|/item_epoch> also modifies this attribute.
 
 =item eccentricity (numeric, parse)
 
@@ -4473,7 +4487,13 @@ always to be zero.
 
 This attribute contains the epoch of the orbital elements - that is,
 the 'as-of' date and time - as a Perl date. Setting this attribute
-also modifies the ds50 attribute.
+also modifies the epoch_dynamical and ds50 attributes.
+
+=item epoch_dynamical (numeric, readonly, parse)
+
+This attribute contains the dynamical time corresponding to the
+L<epoch|/item_epoch>. Setting the L<epoch|/item_epoch> also modifies
+this attribute.
 
 =item firstderivative (numeric, parse)
 
@@ -4497,9 +4517,9 @@ This attribute contains the NORAD SATCAT catalog ID.
 This attribute specifies the source of illumination for the body.  You
 may specify the class name 'Astro::Coord::ECI' or the name of any
 subclass (though in practice only 'Astro::Coord::ECI::Sun' or
-'Astro::Coord::ECI::Moon' will do anything useful), or you may specify
-an object of the appropriate class. When you access this attribute, you
-get an object.
+'Astro::Coord::ECI::Moon' will do anything useful), or an alias()
+thereof, or you may specify an object of the appropriate class. When you
+access this attribute, you get an object.
 
 In addition to the full class names, 'sun' and 'moon' are set up as
 aliases for Astro::Coord::ECI::Sun and Astro::Coord::ECI::Moon
@@ -4535,7 +4555,7 @@ first letters, and spent boosters, debris, etc getting the rest.
 
 =item limb (boolean, static)
 
-This attribute tells the parse() method how to compute illumination
+This attribute tells the pass() method how to compute illumination
 of the body. If true, it is computed based on the upper limb of the
 source of illumination; if false, it is based on the center.
 
@@ -4646,6 +4666,8 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
+
+=head1 LICENSE
 
 This module is free software; you can use it, redistribute it
 and/or modify it under the same terms as Perl itself. Please see
