@@ -91,7 +91,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.013_15';
+our $VERSION = '0.013_16';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -526,13 +526,13 @@ coordinates>.
 If the original coordinate setting was in an inertial system (e.g. eci,
 equatorial, or ecliptic) B<and> the absolute difference between the
 current value of 'equinox_dynamical' and the current dynamical() setting
-is greater than the value of $Astro::Coord::ECI::equinox_tolerance, the
+is greater than the value of $Astro::Coord::ECI::EQUINOX_TOLERANCE, the
 coordinates will be precessed to the current dynamical time before
 conversion.  Yes, this should be done any time the equinox is not the
 current time, but for satellite prediction precession by a year or
 so does not seem to make much difference in practice. The default value
-of $Astro::Coord:ECI::equinox_tolerance is 365 days.  B<Note> that if
-this behavior or the default value of $equinox_tolerance begins to look
+of $Astro::Coord:ECI::EQUINOX_TOLERANCE is 365 days.  B<Note> that if
+this behavior or the default value of $EQUINOX_TOLERANCE begins to look
 like a bug, it will be changed, and noted in the documentation.
 
 B<Caveat:> Velocities are also returned, but should not at this point
@@ -2039,7 +2039,7 @@ return @{$self->{_ECI_cache}{inertial}{eci} = \@data};
 #	This subroutine converts the object's ECI setting to ECEF, and
 #	both caches and returns the result.
 
-our $equinox_tolerance = 365 * SECSPERDAY;
+our $EQUINOX_TOLERANCE = 365 * SECSPERDAY;
 
 sub _convert_eci_to_ecef {
 my $self = shift;
@@ -2049,7 +2049,7 @@ my $dyn = $self->dynamical;
 ## my $equi = $self->get ('equinox_dynamical') || do {
 ##     $self->set (equinox_dynamical => $dyn); $dyn};
 my $equi = $self->{equinox_dynamical} ||= $dyn;
-if (abs ($equi - $dyn) > $equinox_tolerance) {
+if (abs ($equi - $dyn) > $EQUINOX_TOLERANCE) {
     $self->precess_dynamical ($dyn);
 }
 
