@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.002_02';
+our $VERSION = '0.003';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};

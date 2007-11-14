@@ -1,6 +1,4 @@
-BEGIN {
-    require 5.006  # for 'our'. Incantation from http://cpantest.grango.org/
-}
+use 5.006;	# for 'our'.
 
 use strict;
 use warnings;
@@ -10,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.006_01';
+our $VERSION = '0.007';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
