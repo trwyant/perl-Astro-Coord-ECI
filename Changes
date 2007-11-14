@@ -266,4 +266,49 @@
   t/sun.t
     Fixed cosmetic undefined value error when Scalar::Util does not
       implement refaddr().
-
+0.014
+  Astro::Coord::ECI 0.014
+    Add equinox_dynamical attribute; precess() now uses this as start
+      point and leaves the time alone. It is also used when going from
+      ECI to ECEF, and set to the current time when going from ECEF to
+      ECI.
+    Add global $EQUINOX_TOLERANCE to determine minimum precession when
+      converting from ECI to ECEF.
+    Add method equinox_dynamical for performance.
+    Document dynamical and universal times.
+    Add method precess_dynamical() to precess to the given dynamical
+      time. The precess() method simply converts its argument to
+      dynamical and delegates to this.
+  Astro::Coord::ECI::Moon 0.004
+    Have model set equinox_dynamical attribute to modeled dynamical
+      time.
+  Astro::Coord::ECI::Star 0.004
+    Set equinox_dynamical attribute before precessing to current
+      equinox.
+    Precess coordinates at end of time_set(), not in middle.
+  Astro::Coord::ECI::Sun 0.006
+    Have model set equinox_dynamical attribute to modeled dynamical
+      time.
+  Astro::Coord::ECI::TLE 0.10
+    Add backdate attribute (default: true) to control whether pass()
+      uses elements before their epoch.
+    Use the alias() mechanism for special-case settings of the
+      illum attribute.
+    Have models set equinox_dynamical to the dynamical epoch.
+  Astro::Coord::ECI::TLE::Iridium 0.003
+    Have backdate attribute control whether flare() uses elements
+      before their epoch.
+  Astro::Coord::ECI::TLE::Set 0.003
+    Minor documentation tweaks and POD fixes.
+  Astro::Coord::ECI::Utils 0.008
+    Add constant JD_OF_EPOCH, globals $DATEFORMAT and $JD_GREGORIAN,
+      and subroutines date2jd, date2epoch, epoch2datetime, jd2date,
+      jd2datetime.
+    Add subroutine load_module and centralize all on-the-fly loading
+      here, for support of .pmc modules.
+  bin/satpass 0.014
+    Add 'echo' and 'times' commands.
+    Add 'backdate' parameter, propagate to pass() and flare().
+    Add 'desired_equinox' parameter, use it when displaying inertial
+      coordinates (only equatorial, at the moment).
+    Allow pseudo-redirection of command output into a pipe.
