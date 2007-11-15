@@ -312,3 +312,14 @@
     Add 'desired_equinox' parameter, use it when displaying inertial
       coordinates (only equatorial, at the moment).
     Allow pseudo-redirection of command output into a pipe.
+0.015
+  Astro::Coord::ECI 0.015
+    Bump version number. No other changes.
+  bin/satpass 0.015
+    Document pod coverage test change, intent to and plans for
+      implementing "Revisiting Spacetrack Report #3".
+    Bump version.
+  t/pod_coverage.t
+    Specify all-caps routines as private, since some testers are
+      getting failures on 'use constant' declarations. I don't get
+      these, so the change is kind of blind.
