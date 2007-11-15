@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.014';
+our $VERSION = '0.015';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3706,6 +3706,22 @@ macros can be defined to issue frequently-used commands.
  satpass> exit
 
 =head1 NOTICE
+
+The only code change from version 0.014 to 0.015 is an attempt to make
+the pod coverage test ignore declared constants.
+
+B<Heads up:> I am looking at incorporating the material from
+B<Revisiting Spacetrack Report #3>
+(L<http://celestrak.com/publications/AIAA/2006-6753/>) into
+Astro::Coord::ECI::TLE. When (or if) this happens, I anticipate making
+the 'model' meta-model of Astro::Coord::ECI::TLE (which is documented as
+being the 'preferred' model) execute the new model, whatever I decide to
+call it. The functionality of 'model4', 'sgp4', and 'sdp4' will remain
+unchanged.
+
+The following paragraphs deal with the changes from version 0.013 to
+0.014. I hesitate to remove them since version 0.015 followed so quickly
+on 0.014.
 
 The L<backdate|/backdate> parameter has been added to allow the user to
 control whether orbital elements are used before their epochs. This
