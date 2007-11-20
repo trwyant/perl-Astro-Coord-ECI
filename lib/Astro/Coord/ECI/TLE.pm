@@ -106,12 +106,12 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.010';
+our $VERSION = '0.010_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
 use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta find_first_true
-    load_module mod2pi SECSPERDAY thetag};
+    load_module mod2pi PI PIOVER2 SECSPERDAY TWOPI thetag};
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
@@ -145,7 +145,9 @@ use Time::Local;
 # in the original are defined without the "SGP_" prefix. Were there
 # are duplicates (with one commented out), the commented-out version is
 # the one in the NORAD report, and the replacement has greater
-# precision.
+# precision. If there are two commented out, the second was a greater
+# precision constant, and the third is (ultimately) calculated based
+# on pi = atan2 (0, -1).
 
 use constant SGP_CK2 => 5.413080E-4;
 use constant SGP_CK4 => .62098875E-6;
@@ -160,15 +162,20 @@ use constant SGP_XMNPDA => 1440.0;	# Time units per day.
 use constant SGP_XSCPMN => 60;		# Seconds per time unit.
 use constant SGP_AE => 1.0;		# Distance units / earth radii.
 ## use constant SGP_DE2RA => .174532925E-1;	# radians/degree.
-use constant SGP_DE2RA => 0.0174532925199433;	# radians/degree.
+## use constant SGP_DE2RA => 0.0174532925199433;	# radians/degree.
+use constant SGP_DE2RA => PI / 180;		# radians/degree.
 ## use constant SGP_PI => 3.14159265;	# Pi.
-use constant SGP_PI => 3.14159265358979;	# Pi.
+## use constant SGP_PI => 3.14159265358979;	# Pi.
+use constant SGP_PI => PI;			# Pi.
 ## use constant SGP_PIO2 => 1.57079633;	# Pi/2.
-use constant SGP_PIO2 => 1.5707963267949;	# Pi/2.
+## use constant SGP_PIO2 => 1.5707963267949;	# Pi/2.
+use constant SGP_PIO2 => PIOVER2;		# Pi/2.
 ## use constant SGP_TWOPI => 6.2831853;	# 2 * Pi.
-use constant SGP_TWOPI => 6.28318530717959;	# 2 * Pi.
+## use constant SGP_TWOPI => 6.28318530717959;	# 2 * Pi.
+use constant SGP_TWOPI => TWOPI;		# 2 * Pi.
 ## use constant SGP_X3PIO2 => 4.71238898;	# 3 * Pi / 2.
-use constant SGP_X3PIO2 => 4.71238898038469;	# 3 * Pi / 2.
+## use constant SGP_X3PIO2 => 4.71238898038469;	# 3 * Pi / 2.
+use constant SGP_X3PIO2 => 3 * PIOVER2;
 
 use constant SGP_RHO => .15696615;
 
