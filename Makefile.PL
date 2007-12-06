@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -143,6 +143,7 @@ eod
 ##my $vers = $] >= 5.008 ? '-5.8' : '';
 my $vers = '';
 
+(my $mmv = ExtUtils::MakeMaker->VERSION) =~ s/_//g;
 WriteMakefile (
 	NAME => 'Astro::Coord::ECI',
 	DISTNAME => 'Astro-satpass',
@@ -159,7 +160,7 @@ WriteMakefile (
 		AUTHOR => 'Tom Wyant (wyant at cpan dot org)',
 		ABSTRACT => 'Classes and app to compute satellite visibility',
 		BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
-		(ExtUtils::MakeMaker->VERSION >= 6.31 ?
+		($mmv >= 6.31 ?
 		    (LICENSE => 'perl') : ())
 		) : (),
 	);
