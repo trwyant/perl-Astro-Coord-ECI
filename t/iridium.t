@@ -42,13 +42,12 @@ my $skip = -e $datafile ? '' : 'Must provide iridium.dat';
 $skip and warn <<eod;
 
 
-Flare prediction tests require file t/iridium.dat.
-This needs to contain NORAD IDs 24905, 24965, 25104, 25285,
-25288, and 25577 for June 5, 2006. You can obtain these
-yourself using the SpaceTrack command-line utility from the
-Astro::SpaceTrack package, or with this package. Assuming
-you have not installed this package yet, set your default to
-your, working directory, and proceed as follows:
+Flare prediction tests require file t/iridium.dat. This needs to
+contain NORAD IDs 24905, 24965, 25104, 25285, 25288, and 25577 for June
+5, 2006. If you have the Astro::SpaceTrack package installed, you can
+obtain these yourself using the SpaceTrack command-line utility, or with
+this package. Assuming you have not installed this package yet, set your
+default to your, working directory, and proceed as follows:
 
 \$ perl -Mblib bin/satpass
     (front matter printed here)
