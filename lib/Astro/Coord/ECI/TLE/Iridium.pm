@@ -112,7 +112,7 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -437,8 +437,10 @@ B<NOTE also> that as of version 0.002_01 of this class, the 'backdate'
 attribute determines whether a set of orbital elements can be used for
 computations of flares before the epoch of the elements. If 'backdate'
 is false and the start time passed to flare() is earlier than the epoch,
-the start time is silently moved forward to the epoch -- or not so
-silently if this places the start time after the end time.
+the start time is silently moved forward to the epoch. The initial
+version of this functionality raised an exception if this adjustment
+placed the start time after the end time, but as of version 0.003_01 of
+this class, you simply get no flares if this happens.
 
 =cut
 
@@ -466,16 +468,17 @@ Error - The station must be a subclass of Astro::Coord::ECI.
 eod
 }
 my $start = shift || time ();
+my $end = shift || $start + 86400;
+$end >= $start or croak <<eod;
+Error - End time must be after start time.
+eod
 unless ($self->get ('backdate')) {
     my $real = $self->isa ('Astro::Coord::ECI::TLE::Set') ?
 	$self->select ($start) : $self;
     my $epoch = $real->get ('epoch');
     $start = $epoch if $start < $epoch;
+    $start > $end and return ();
 }
-my $end = shift || $start + 86400;
-$end >= $start or croak <<eod;
-Error - End time must be after start time.
-eod
 
 my @flares;
 my $illum = $self->get ('illum');

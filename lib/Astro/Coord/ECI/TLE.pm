@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.010_01';
+our $VERSION = '0.010_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -765,16 +765,17 @@ sub pass {
     my $tle = shift;
     my $sta = shift;
     my $pass_start = shift || time ();
+    my $pass_end = shift || $pass_start + 7 * SECSPERDAY;
+    $pass_end >= $pass_start or croak <<eod;
+Error - End time must be after start time.
+eod
     unless ($tle->get ('backdate')) {
 	my $real = $tle->isa ('Astro::Coord::ECI::TLE::Set') ?
 	    $tle->select ($pass_start) : $tle;
 	my $epoch = $real->get ('epoch');
 	$pass_start = $epoch if $pass_start < $epoch;
+	$pass_start <= $pass_end or return ();
     }
-    my $pass_end = shift || $pass_start + 7 * SECSPERDAY;
-    $pass_end >= $pass_start or croak <<eod;
-Error - End time must be after start time.
-eod
 
     my @lighting = (
 	PASS_EVENT_SHADOWED,
@@ -4455,8 +4456,12 @@ ascending node to perigee) of the orbit, in radians.
 
 This attribute determines whether the pass() method will go back before
 the epoch of the data. If false, the pass() method will silently adjust
-its start time forward -- or not so silently if this puts the start time
-after the end time.
+its start time forward. If this places the start time after the end
+time, an empty list is returned.
+
+B<Note> that this is a change from the behavior of
+Astro::Coord::ECI::TLE version 0.010, which threw an exception if the
+backdate adjustment placed the start time after the end time.
 
 The default is 1 (i.e. true).
 
