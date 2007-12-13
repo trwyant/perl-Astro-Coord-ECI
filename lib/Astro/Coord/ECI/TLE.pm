@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.010_02';
+our $VERSION = '0.010_10';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -115,7 +115,7 @@ use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta find_first_true
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
-use POSIX qw{floor strftime};
+use POSIX qw{floor fmod strftime};
 use Time::Local;
 
 {	# Local symbol block.
@@ -154,7 +154,8 @@ use constant SGP_CK4 => .62098875E-6;
 use constant SGP_E6A => 1.0E-6;
 use constant SGP_QOMS2T => 1.88027916E-9;
 use constant SGP_S => 1.01222928;
-use constant SGP_TOTHRD => .66666667;
+## use constant SGP_TOTHRD => .66666667;
+use constant SGP_TOTHRD => 2 / 3;
 use constant SGP_XJ3 => -.253881E-5;
 use constant SGP_XKE => .743669161E-1;
 use constant SGP_XKMPER => 6378.135;	# Earth radius, KM.
@@ -216,6 +217,11 @@ my %attrib = (
 	$_[0]{epoch_dynamical} = $_[2] + dynamical_delta ($_[2]);
 	1},
     firstderivative => 1,
+    gravconst_r => sub {
+	$_[2] == 72 || $_[2] == 721 || $_[2] == 84
+	    or croak "Error - Illegal gravconst_r; must be 72, 721, or 84";
+	$_[0]{$_[1]} = $_[2];
+	1},		# sgp4r needs reinit if this changes.
     secondderivative => 1,
     bstardrag => 1,
     ephemeristype => 0,
@@ -227,6 +233,7 @@ Error - Illegal model name '$_[2]'.
 eod
 	$_[0]{$_[1]} = $_[2];
 	0},
+    model_error => 0,
     rightascension => 1,
     eccentricity => 1,
     argumentofperigee => 1,
@@ -253,6 +260,7 @@ my %static = (
     appulse => deg2rad (10),	# Report appulses < 10 degrees.
     backdate => 1,	# Use object in pass before its epoch.
     geometric => 0,	# Use geometric horizon for pass rise/set.
+    gravconst_r => 72,	# Specify geodetic data set for sgp4r.
     illum => 'sun',
     interval => 0,
     limb => 1,
@@ -478,7 +486,12 @@ can select the correct member object before running the model.
 {	# Begin local symbol block
 
 my %valid = map {$_ => UNIVERSAL::can (__PACKAGE__, $_)}
-    qw{model model4 model8 null sdp4 sdp8 sgp sgp4 sgp8};
+    qw{model model4 model4r model8 null sdp4 sdp8 sgp sgp4 sgp4r sgp8};
+
+    #>>>	NOTE WELL
+    #>>>	If a model is added, the period method must change
+    #>>>	as well, to calculate using the new model. I really
+    #>>>	ought to do all this with code attributes.
 
     sub is_valid_model {
     $valid{$_[1]}
@@ -490,8 +503,9 @@ my %valid = map {$_ => UNIVERSAL::can (__PACKAGE__, $_)}
 =item $tle = $tle->model($time)
 
 This method calculates the position of the body described by the TLE
-object at the given time, using the preferred model. Currently this is
-SGP4 for near-earth objects, or SDP4 for deep-space objects.
+object at the given time, using the preferred model. As of
+Astro::Coord::ECI::TLE 0.010_10 this is sgp4r; previously it was sgp4 or
+sdp4, whichever was appropriate.
 
 The intent is that this method will use whatever model is currently
 preferred. If the preferred model changes, this method will use the
@@ -506,17 +520,25 @@ or equatorial ()) to retrieve the position you just calculated.
 
 =cut
 
+=begin comment
+
 sub model {
 return $_[0]->is_deep ? $_[0]->sdp4 ($_[1]) : $_[0]->sgp4 ($_[1]);
+}
+
+=end comment
+
+=cut
+
+BEGIN {
+    *model = \&sgp4r;
 }
 
 =item $tle = $tle->model4 ($time)
 
 This method calculates the position of the body described by the TLE
 object at the given time, using either the SGP4 or SDP4 model,
-whichever is appropriate. If the preferred model becomes S*P8,
-this method will still use S*P4.
-
+whichever is appropriate.
 
 You need to call one of the Astro::Coord::ECI methods (e.g. geodetic ()
 or equatorial ()) to retrieve the position you just calculated.
@@ -525,6 +547,24 @@ or equatorial ()) to retrieve the position you just calculated.
 
 sub model4 {
 return $_[0]->is_deep ? $_[0]->sdp4 ($_[1]) : $_[0]->sgp4 ($_[1]);
+}
+
+=item $tle = $tle->model4r ($time)
+
+This method calculates the position of the body described by the TLE
+object at the given time, using the "Revisiting Spacetrack Report #3"
+model (sgp4r). It is really just a synonym for sgp4r, which covers both
+near-earth and deep space bodies, but is provided for consistency's
+sake. If some other model becomes preferred, this method will still call
+sgp4r.
+
+You need to call one of the Astro::Coord::ECI methods (e.g. geodetic ()
+or equatorial ()) to retrieve the position you just calculated.
+
+=cut
+
+BEGIN {
+    *model4r = \&sgp4r;
 }
 
 =item $tle = $tle->model8 ($time)
@@ -1083,27 +1123,74 @@ eod
 }
 
 
-=item $seconds = $tle->period ();
+=item $seconds = $tle->period ($model);
 
-This method returns the orbital period of the object in seconds.
+This method returns the orbital period of the object in seconds using
+the given model. If the model is unspecified (or specified as a false
+value), the current setting of the 'model' attribute is used.
 
-=for comment help parenthesis-matching editor }
+There are actually only two period calculations available. If the model
+is 'sgp4r' (or its equivalents 'model' and 'model4r'), the sgp4r
+calculation will be used. Otherwise the calculation from the original
+Space Track Report Number 3 will be used. 'Otherwise' includes the case
+where the model is 'null'.
+
+The difference between using the original and the revised algorithm is
+minimal. For the objects in the sgp4-ver.tle file provided with the
+'Revisiting Spacetrack Report #3' code, the largest is about 50
+nanoseconds for OID 23333, which is in a highly eccentric orbit.
+
+The difference between using the various values of gravconst_r with
+sgp4r is somewhat more pronounced. Among the objects in sgp4-ver.tle the
+largest difference was about a millisecond, again for OID 23333.
+
+Neither of these differences seems to me significant, but I thought it
+would be easier to take the model into account than to explain why I did
+not.
 
 =cut
 
-sub period {
-return $_[0]->{&TLE_INIT}{TLE_period} if exists $_[0]->{&TLE_INIT}{TLE_period};
-my $self = shift;
+{
+    my %model_map = (
+	model => \&_period_r,
+	model4r => \&_period_r,
+	sgp4r => \&_period_r,
+    );
+    sub period {
+	my $self = shift;
+	my $code = $model_map{shift || $self->{model}} || \&_period;
+	$code->($self);
+    }
+}
 
-my $a1 = (SGP_XKE / $self->{meanmotion}) ** SGP_TOTHRD;
-my $temp = 1.5 * SGP_CK2 * (3 * cos ($self->{inclination}) ** 2 - 1) /
-	(1 - $self->{eccentricity} * $self->{eccentricity}) ** 1.5;
-my $del1 = $temp / ($a1 * $a1);
-my $a0 = $a1 * (1 - $del1 * (.5 * SGP_TOTHRD +
-	$del1 * (1 + 134/81 * $del1)));
-my $del0 = $temp / ($a0 * $a0);
-my $xnodp = $self->{meanmotion} / (1 + $del0);
-return ($self->{_period} = SGP_TWOPI / $xnodp * SGP_XSCPMN);
+#	Original period calculation, recast to remove an equivocation on
+#	where the period was cached, which caused the cache to be
+#	ineffective.
+
+sub _period {
+    my $self = shift;
+    $self->{&TLE_INIT}{TLE_period} ||= do {
+	my $a1 = (SGP_XKE / $self->{meanmotion}) ** SGP_TOTHRD;
+	my $temp = 1.5 * SGP_CK2 * (3 * cos ($self->{inclination}) ** 2 - 1) /
+		(1 - $self->{eccentricity} * $self->{eccentricity}) ** 1.5;
+	my $del1 = $temp / ($a1 * $a1);
+	my $a0 = $a1 * (1 - $del1 * (.5 * SGP_TOTHRD +
+		$del1 * (1 + 134/81 * $del1)));
+	my $del0 = $temp / ($a0 * $a0);
+	my $xnodp = $self->{meanmotion} / (1 + $del0);
+	SGP_TWOPI / $xnodp * SGP_XSCPMN;
+    };
+}
+
+#	Compute period using sgp4r's adjusted mean motion. Yes, I took
+#	the coward's way out and initialized the model, but we use this
+#	only if the model is sgp4r (implying that it will be initialized
+#	anyway) or if the user explicitly asked for it.
+
+sub _period_r {
+    my ($self) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r} ||= $self->_r_sgp4init ();
+    &SGP_TWOPI/$parm->{meanmotion} * 60;
 }
 
 
@@ -1339,6 +1426,7 @@ implementation.
 sub sgp {
 my $self = shift;
 my $time = shift;
+$self->{model_error} = undef;
 my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
 
@@ -1559,6 +1647,7 @@ model can be used only for near-earth orbits.
 sub sgp4 {
 my $self = shift;
 my $time = shift;
+$self->{model_error} = undef;
 my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
 
@@ -1905,6 +1994,7 @@ model can be used only for deep-space orbits.
 sub sdp4 {
 my $self = shift;
 my $time = shift;
+$self->{model_error} = undef;
 my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
 
@@ -2190,6 +2280,7 @@ model can be used only for near-earth orbits.
 sub sgp8 {
 my $self = shift;
 my $time = shift;
+$self->{model_error} = undef;
 my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
 
@@ -2584,6 +2675,7 @@ model can be used only for near-earth orbits.
 sub sdp8 {
 my $self = shift;
 my $time = shift;
+$self->{model_error} = undef;
 my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
 
@@ -3609,6 +3701,2159 @@ eod
 return;
 }
 
+#######################################################################
+
+#	All "Revisiting Spacetrack Report #3" code
+
+
+=item $tle = $tle->sgp4r($time)
+
+This method calculates the position of the body described by the TLE
+object at the given time, using the revised SGP4 model. The universal
+time of the object is set to $time, and the 'equinox_dynamical'
+attribute is set to the current value of the 'epoch_dynamical'
+attribute.
+
+The result is the original object reference. See the L</DESCRIPTION>
+heading above for how to retrieve the coordinates you just calculated.
+
+The algorithm for this model comes from "Revisiting Spacetrack Report
+Number 3" (see L<ACKNOWLEDGMENTS|/ACKNOWLEDGMENTS>). That report
+considers the algorithm to be a correction and extension of SGP4
+(merging it with SDP4), and simply calls the algorithm SGP4. I have
+appended the "r" (for 'revised' or 'revisited', take your pick) because
+I have preserved the original algorithm as well.
+
+B<Note well> that this algorithm depends on the setting of the
+'gravconst_r' attribute. The default setting of that attribute in this
+module is 84, but the test data that comes with "Revisiting Spacetrack
+Report #3" uses 72.
+
+This algorithm is also (currently) the only one that returns a useful
+value in the model_error attribute, as follows:
+
+ 0 = success
+ 1 = mean eccentricity < 0 or > 1, or a < .95
+ 2 = mean motion < 0.0
+ 3 = instantaneous eccentricity < 0 or > 1
+ 4 = semi-latus rectum < 0
+ 5 = epoch elements are sub-orbital
+ 6 = satellite has decayed
+
+These errors are dualvars if your Scalar::Util supports these. That is,
+they are interpreted as numbers in numeric context and the
+corresponding string in string context. The string is generally the
+explanation, except for 0, which is '' in string context. If your
+Scalar::Util does not support dualvar, the numeric value is returned.
+
+Currently, errors 1 through 4 cause an explicit exception to be thrown
+after setting the model_error attribute. Exceptions will also be thrown
+if the TLE eccentricity is negative or greater than one, or the TLE mean
+motion is negative.
+
+Errors 5 and 6 look more like informational errors to me. Error 5
+indicates that the perigee is less than the radius of the earth. This
+could very well happen if the TLE represents a coasting arc of a
+spacecraft being launched or preparing for re-entry. Error 6 means the
+actual computed position was underground. Maybe this should be an
+exception, though I have never needed this kind of exception previously.
+
+B<Note> that this first release of the 'Revisiting Spacetrack Report #3'
+functionality should be considered alpha code. That is to say, I may
+need to change the way it behaves, especially in the matter of what is
+an exception and what is not.
+
+=cut
+
+#	What follows (down to, but not including, the 'end sgp4unit.for'
+#	comment) is the Fortran code from sgp4unit.for, translated into
+#	Perl by the custom for2pl script, with conversion specification
+#	sgp4unit.spec. No hand-edits have been applied. The preferred
+#	way to modify this code is to enhance for2pl (which is _not_
+#	included in the CPAN kit) or to modify sgp4unit.for (ditto),
+#	since that way further modifications can be easily incorporated
+#	into this module.
+#
+#	Comments in the included file are those from the original
+#	Fortran unless preceded by '>>>>trw'. The latter are comments
+#	introduced by the conversion program to remove unwanted Fortran.
+#
+#	IMPLEMENTATION NOTES:
+#
+#	The original Space Track Report Number 3 code used a custom
+#	function called FMOD2P to reduce an angle to the range 0 <=
+#	angle < 2*PI. This is translated to Astro::Coord::ECI::Utils
+#	function mod2pi. But the Revisiting Spacetrack Report #3 code
+#	used the Fortran intrinsic function DMOD, which produces
+#	negative results for a negative divisor. So instead of using
+#	mod2pi, sgp4r() and related code use the POSIX fmod function,
+#	which has the same behaviour.
+#
+#	Similarly, the original code used a custom function ACTAN to
+#	produce an arc in the range 0 <= arc < 2*PI from its two
+#	arguments and the single-argument ATAN intrinsic. The
+#	translation into Perl ended up with an _actan function at that
+#	point. But the revised code simply uses atan2.
+#
+#	The included file processed from sgp4unit.for begins here.
+
+use constant SGP4R_ERROR_0 => dualvar (0, '');  # guaranteed false
+use constant SGP4R_ERROR_MEAN_ECCEN =>
+    'Sgp4r 1: Mean eccentricity < 0 or > 1, or a < .95';
+use constant SGP4R_ERROR_1 => dualvar (1, SGP4R_ERROR_MEAN_ECCEN);
+use constant SGP4R_ERROR_MEAN_MOTION =>
+    'Sgp4r 2: Mean motion < 0.0';
+use constant SGP4R_ERROR_2 => dualvar (2, SGP4R_ERROR_MEAN_MOTION);
+use constant SGP4R_INST_ECCEN =>
+    'Sgp4r 3: Instantaneous eccentricity < 0 or > 1';
+use constant SGP4R_ERROR_3 => dualvar (3, SGP4R_INST_ECCEN);
+use constant SGP4R_ERROR_LATUSRECTUM =>
+    'Sgp4r 4: Semi-latus rectum < 0';
+use constant SGP4R_ERROR_4 => dualvar (4, SGP4R_ERROR_LATUSRECTUM);
+use constant SGP4R_ERROR_5 => dualvar (5,
+    'Sgp4r 5: Epoch elements are sub-orbital');
+use constant SGP4R_ERROR_6 => dualvar (6,
+    'Sgp4r 6: Satellite has decayed');
+
+#*   -------------------------------------------------------------------
+#*
+#*                               sgp4unit.for
+#*
+#*    this file contains the sgp4 procedures for analytical propagation
+#*    of a satellite. the code was originally released in the 1980 and 1986
+#*    spacetrack papers. a detailed discussion of the theory and history
+#*    may be found in the 2006 aiaa paper by vallado, crawford, hujsak,
+#*    and kelso.
+#*
+#*                            companion code for
+#*               fundamentals of astrodynamics and applications
+#*                                    2007
+#*                              by david vallado
+#*
+#*       (w) 719-573-2600, email dvallado@agi.com
+#*
+#*    current :
+#*               2 apr 07  david vallado
+#*                           misc fixes for constants
+#*    changes :
+#*              14 aug 06  david vallado
+#*                           chg lyddane choice back to strn3, constants,
+#*                           separate debug and writes, misc doc
+#*              26 jul 05  david vallado
+#*                           fixes for paper
+#*                           note that each fix is preceded by a
+#*                           comment with "sgp4fix" and an explanation of
+#*                           what was changed
+#*              10 aug 04  david vallado
+#*                           2nd printing baseline working
+#*              14 may 01  david vallado
+#*                           2nd edition baseline
+#*                     80  norad
+#*                           original baseline
+#*
+#*     *****************************************************************
+#*  Files         :
+#*    Unit 14     - sgp4test.dbg    debug output file
+
+
+#* -----------------------------------------------------------------------------
+#*
+#*                           SUBROUTINE DPPER
+#*
+#*  This Subroutine provides deep space long period periodic contributions
+#*    to the mean elements.  by design, these periodics are zero at epoch.
+#*    this used to be dscom which included initialization, but it's really a
+#*    recurring function.
+#*
+#*  author        : david vallado                  719-573-2600   28 jun 2005
+#*
+#*  inputs        :
+#*    e3          -
+#*    ee2         -
+#*    peo         -
+#*    pgho        -
+#*    pho         -
+#*    pinco       -
+#*    plo         -
+#*    se2 , se3 , Sgh2, Sgh3, Sgh4, Sh2, Sh3, Si2, Si3, Sl2, Sl3, Sl4 -
+#*    t           -
+#*    xh2, xh3, xi2, xi3, xl2, xl3, xl4 -
+#*    zmol        -
+#*    zmos        -
+#*    ep          - eccentricity                           0.0 - 1.0
+#*    inclo       - inclination - needed for lyddane modification
+#*    nodep       - right ascension of ascending node
+#*    argpp       - argument of perigee
+#*    mp          - mean anomaly
+#*
+#*  outputs       :
+#*    ep          - eccentricity                           0.0 - 1.0
+#*    inclp       - inclination
+#*    nodep       - right ascension of ascending node
+#*    argpp       - argument of perigee
+#*    mp          - mean anomaly
+#*
+#*  locals        :
+#*    alfdp       -
+#*    betdp       -
+#*    cosip  , sinip  , cosop  , sinop  ,
+#*    dalf        -
+#*    dbet        -
+#*    dls         -
+#*    f2, f3      -
+#*    pe          -
+#*    pgh         -
+#*    ph          -
+#*    pinc        -
+#*    pl          -
+#*    sel   , ses   , sghl  , sghs  , shl   , shs   , sil   , sinzf , sis   ,
+#*    sll   , sls
+#*    xls         -
+#*    xnoh        -
+#*    zf          -
+#*    zm          -
+#*
+#*  coupling      :
+#*    none.
+#*
+#*  references    :
+#*    hoots, roehrich, norad spacetrack report #3 1980
+#*    hoots, norad spacetrack report #6 1986
+#*    hoots, schumacher and glover 2004
+#*    vallado, crawford, hujsak, kelso  2006
+#*------------------------------------------------------------------------------
+
+sub _r_dpper {
+    my ($self, $t, $eccp, $inclp, $nodep, $argpp, $mp) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
+        or croak "Error - Sgp4r not initialized";
+
+#* -------------------------- Local Variables --------------------------
+    my ($alfdp, $betdp, $cosip, $cosop, $dalf, $dbet, $dls, $f2, $f3,
+        $pe, $pgh, $ph, $pinc, $pl, $sel, $ses, $sghl, $sghs, $shl,
+        $shs, $sil, $sinip, $sinop, $sinzf, $sis, $sll, $sls, $xls,
+        $xnoh, $zf, $zm);
+    my ($zel, $zes, $znl, $zns);
+#>>>>trw	INCLUDE 'ASTMATH.CMN'
+
+#* ----------------------------- Constants -----------------------------
+    $zes= 0.01675;
+    $zel= 0.0549;
+    $zns= 1.19459e-05;
+
+    $znl= 0.00015835218;
+#* ------------------- CALCULATE TIME VARYING PERIODICS ----------------
+
+    $zm= $parm->{zmos}+ $zns*$t;
+    if ($parm->{init}) {
+        $zm= $parm->{zmos}
+    }
+    $zf= $zm+ 2*$zes*sin($zm);
+    $sinzf= sin($zf);
+    $f2=  0.5*$sinzf*$sinzf- 0.25;
+    $f3= -0.5*$sinzf*cos($zf);
+    $ses= $parm->{se2}*$f2+ $parm->{se3}*$f3;
+    $sis= $parm->{si2}*$f2+ $parm->{si3}*$f3;
+    $sls= $parm->{sl2}*$f2+ $parm->{sl3}*$f3+ $parm->{sl4}*$sinzf;
+    $sghs= $parm->{sgh2}*$f2+ $parm->{sgh3}*$f3+ $parm->{sgh4}*$sinzf;
+    $shs= $parm->{sh2}*$f2+ $parm->{sh3}*$f3;
+
+    $zm= $parm->{zmol}+ $znl*$t;
+    if ($parm->{init}) {
+        $zm= $parm->{zmol}
+    }
+    $zf= $zm+ 2*$zel*sin($zm);
+    $sinzf= sin($zf);
+    $f2=  0.5*$sinzf*$sinzf- 0.25;
+    $f3= -0.5*$sinzf*cos($zf);
+    $sel= $parm->{ee2}*$f2+ $parm->{e3}*$f3;
+    $sil= $parm->{xi2}*$f2+ $parm->{xi3}*$f3;
+    $sll= $parm->{xl2}*$f2+ $parm->{xl3}*$f3+ $parm->{xl4}*$sinzf;
+    $sghl= $parm->{xgh2}*$f2+ $parm->{xgh3}*$f3+ $parm->{xgh4}*$sinzf;
+    $shl= $parm->{xh2}*$f2+ $parm->{xh3}*$f3;
+    $pe= $ses+ $sel;
+    $pinc= $sis+ $sil;
+    $pl= $sls+ $sll;
+    $pgh= $sghs+ $sghl;
+
+    $ph= $shs+ $shl;
+    if ( !  $parm->{init}) {
+        $pe= $pe- $parm->{peo};
+        $pinc= $pinc- $parm->{pinco};
+        $pl= $pl- $parm->{plo};
+        $pgh= $pgh- $parm->{pgho};
+        $ph= $ph- $parm->{pho};
+        $$inclp= $$inclp+ $pinc;
+        $$eccp= $$eccp+ $pe;
+        $sinip= sin($$inclp);
+
+        $cosip= cos($$inclp);
+#* ------------------------- APPLY PERIODICS DIRECTLY ------------------
+#c    sgp4fix for lyddane choice
+#c    strn3 used original inclination - this is technically feasible
+#c    gsfc used perturbed inclination - also technically feasible
+#c    probably best to readjust the 0.2 limit value and limit discontinuity
+#c    0.2 rad = 11.45916 deg
+#c    use next line for original strn3 approach and original inclination
+#c            IF (inclo.ge.0.2D0) THEN
+#c    use next line for gsfc version and perturbed inclination
+
+        if ($$inclp >= 0.2) {
+            $ph= $ph/$sinip;
+            $pgh= $pgh- $cosip*$ph;
+            $$argpp= $$argpp+ $pgh;
+            $$nodep= $$nodep+ $ph;
+            $$mp= $$mp+ $pl;
+
+        } else {
+#* ----------------- APPLY PERIODICS WITH LYDDANE MODIFICATION ---------
+            $sinop= sin($$nodep);
+            $cosop= cos($$nodep);
+            $alfdp= $sinip*$sinop;
+            $betdp= $sinip*$cosop;
+            $dalf=  $ph*$cosop+ $pinc*$cosip*$sinop;
+            $dbet= -$ph*$sinop+ $pinc*$cosip*$cosop;
+            $alfdp= $alfdp+ $dalf;
+            $betdp= $betdp+ $dbet;
+            $$nodep= fmod($$nodep, &SGP_TWOPI);
+            $xls= $$mp+ $$argpp+ $cosip*$$nodep;
+            $dls= $pl+ $pgh- $pinc*$$nodep*$sinip;
+            $xls= $xls+ $dls;
+            $xnoh= $$nodep;
+            $$nodep= atan2($alfdp, $betdp);
+            if (abs($xnoh-$$nodep)  >  &SGP_PI) {
+                if ($$nodep <  $xnoh) {
+                    $$nodep= $$nodep+&SGP_TWOPI;
+                } else {
+                    $$nodep= $$nodep-&SGP_TWOPI;
+                }
+            }
+            $$mp= $$mp+ $pl;
+            $$argpp=  $xls- $$mp- $cosip*$$nodep;
+        }
+
+    }
+#c        INCLUDE 'debug1.for'
+
+    return;
+
+
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                           SUBROUTINE DSCOM
+#*
+#*  This Subroutine provides deep space common items used by both the secular
+#*    and periodics subroutines.  input is provided as shown. this routine
+#*    used to be called dpper, but the functions inside weren't well organized.
+#*
+#*  author        : david vallado                  719-573-2600   28 jun 2005
+#*
+#*  inputs        :
+#*    epoch       -
+#*    ep          - eccentricity
+#*    argpp       - argument of perigee
+#*    tc          -
+#*    inclp       - inclination
+#*    nodep      - right ascension of ascending node
+#*    np          - mean motion
+#*
+#*  outputs       :
+#*    sinim  , cosim  , sinomm , cosomm , snodm  , cnodm
+#*    day         -
+#*    e3          -
+#*    ee2         -
+#*    em          - eccentricity
+#*    emsq        - eccentricity squared
+#*    gam         -
+#*    peo         -
+#*    pgho        -
+#*    pho         -
+#*    pinco       -
+#*    plo         -
+#*    rtemsq      -
+#*    se2, se3         -
+#*    sgh2, sgh3, sgh4        -
+#*    sh2, sh3, si2, si3, sl2, sl3, sl4         -
+#*    s1, s2, s3, s4, s5, s6, s7          -
+#*    ss1, ss2, ss3, ss4, ss5, ss6, ss7, sz1, sz2, sz3         -
+#*    sz11, sz12, sz13, sz21, sz22, sz23, sz31, sz32, sz33        -
+#*    xgh2, xgh3, xgh4, xh2, xh3, xi2, xi3, xl2, xl3, xl4         -
+#*    nm          - mean motion
+#*    z1, z2, z3, z11, z12, z13, z21, z22, z23, z31, z32, z33         -
+#*    zmol        -
+#*    zmos        -
+#*
+#*  locals        :
+#*    a1, a2, a3, a4, a5, a6, a7, a8, a9, a10         -
+#*    betasq      -
+#*    cc          -
+#*    ctem, stem        -
+#*    x1, x2, x3, x4, x5, x6, x7, x8          -
+#*    xnodce      -
+#*    xnoi        -
+#*    zcosg  , zsing  , zcosgl , zsingl , zcosh  , zsinh  , zcoshl , zsinhl ,
+#*    zcosi  , zsini  , zcosil , zsinil ,
+#*    zx          -
+#*    zy          -
+#*
+#*  coupling      :
+#*    none.
+#*
+#*  references    :
+#*    hoots, roehrich, norad spacetrack report #3 1980
+#*    hoots, norad spacetrack report #6 1986
+#*    hoots, schumacher and glover 2004
+#*    vallado, crawford, hujsak, kelso  2006
+#*------------------------------------------------------------------------------
+
+sub _r_dscom {
+    my ($self, $tc) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
+        or croak "Error - Sgp4r not initialized";
+    my $init = $parm->{init}
+        or croak "Error - Sgp4r initialization not in progress";
+
+#* -------------------------- Local Variables --------------------------
+    my ($c1ss, $c1l, $zcosis, $zsinis, $zsings, $zcosgs, $zes, $zel);
+    my ($lsflg);
+
+    my ($a1, $a2, $a3, $a4, $a5, $a6, $a7, $a8, $a9, $a10, $betasq, $cc,
+        $ctem, $stem, $x1, $x2, $x3, $x4, $x5, $x6, $x7, $x8, $xnodce,
+        $xnoi, $zcosg, $zcosgl, $zcosh, $zcoshl, $zcosi, $zcosil,
+        $zsing, $zsingl, $zsinh, $zsinhl, $zsini, $zsinil, $zx, $zy);
+#>>>>trw	INCLUDE 'ASTMATH.CMN'
+
+#* ------------------------------ Constants ----------------------------
+    $zes=  0.01675;
+    $zel=  0.0549;
+    $c1ss=  2.9864797e-06;
+    $c1l=  4.7968065e-07;
+    $zsinis=  0.39785416;
+    $zcosis=  0.91744867;
+    $zcosgs=  0.1945905;
+
+    $zsings= -0.98088458;
+#* ----------------- DEEP SPACE PERIODICS INITIALIZATION ---------------
+    $init->{xn}= $parm->{meanmotion};
+    $init->{eccm}= $parm->{eccentricity};
+    $init->{snodm}= sin($parm->{rightascension});
+    $init->{cnodm}= cos($parm->{rightascension});
+    $init->{sinomm}= sin($parm->{argumentofperigee});
+    $init->{cosomm}= cos($parm->{argumentofperigee});
+    $init->{sinim}= sin($parm->{inclination});
+    $init->{cosim}= cos($parm->{inclination});
+    $init->{emsq}= $init->{eccm}*$init->{eccm};
+    $betasq= 1-$init->{emsq};
+
+    $init->{rtemsq}= sqrt($betasq);
+#* --------------------- INITIALIZE LUNAR SOLAR TERMS ------------------
+    $parm->{peo}= 0;
+    $parm->{pinco}= 0;
+    $parm->{plo}= 0;
+    $parm->{pgho}= 0;
+    $parm->{pho}= 0;
+    $init->{day}= $self->{ds50}+ 18261.5 + $tc/1440;
+    $xnodce= fmod(4.523602 - 0.00092422029*$init->{day}, &SGP_TWOPI);
+    $stem= sin($xnodce);
+    $ctem= cos($xnodce);
+    $zcosil= 0.91375164 - 0.03568096*$ctem;
+    $zsinil= sqrt(1 - $zcosil*$zcosil);
+    $zsinhl= 0.089683511*$stem/ $zsinil;
+    $zcoshl= sqrt(1 - $zsinhl*$zsinhl);
+    $init->{gam}= 5.8351514 + 0.001944368*$init->{day};
+    $zx= 0.39785416*$stem/$zsinil;
+    $zy= $zcoshl*$ctem+ 0.91744867*$zsinhl*$stem;
+    $zx= atan2($zx, $zy);
+    $zx= $init->{gam}+ $zx- $xnodce;
+    $zcosgl= cos($zx);
+
+    $zsingl= sin($zx);
+#* ---------------------------- DO SOLAR TERMS -------------------------
+    $zcosg= $zcosgs;
+    $zsing= $zsings;
+    $zcosi= $zcosis;
+    $zsini= $zsinis;
+    $zcosh= $init->{cnodm};
+    $zsinh= $init->{snodm};
+    $cc= $c1ss;
+
+    $xnoi= 1 / $init->{xn};
+    foreach $lsflg(1 .. 2) {
+        $a1=   $zcosg*$zcosh+ $zsing*$zcosi*$zsinh;
+        $a3=  -$zsing*$zcosh+ $zcosg*$zcosi*$zsinh;
+        $a7=  -$zcosg*$zsinh+ $zsing*$zcosi*$zcosh;
+        $a8=   $zsing*$zsini;
+        $a9=   $zsing*$zsinh+ $zcosg*$zcosi*$zcosh;
+        $a10=   $zcosg*$zsini;
+        $a2=   $init->{cosim}*$a7+ $init->{sinim}*$a8;
+        $a4=   $init->{cosim}*$a9+ $init->{sinim}*$a10;
+        $a5=  -$init->{sinim}*$a7+ $init->{cosim}*$a8;
+
+        $a6=  -$init->{sinim}*$a9+ $init->{cosim}*$a10;
+        $x1=  $a1*$init->{cosomm}+ $a2*$init->{sinomm};
+        $x2=  $a3*$init->{cosomm}+ $a4*$init->{sinomm};
+        $x3= -$a1*$init->{sinomm}+ $a2*$init->{cosomm};
+        $x4= -$a3*$init->{sinomm}+ $a4*$init->{cosomm};
+        $x5=  $a5*$init->{sinomm};
+        $x6=  $a6*$init->{sinomm};
+        $x7=  $a5*$init->{cosomm};
+
+        $x8=  $a6*$init->{cosomm};
+        $init->{z31}= 12*$x1*$x1- 3*$x3*$x3;
+        $init->{z32}= 24*$x1*$x2- 6*$x3*$x4;
+        $init->{z33}= 12*$x2*$x2- 3*$x4*$x4;
+        $init->{z1}=  3* ($a1*$a1+ $a2*$a2) +
+            $init->{z31}*$init->{emsq};
+        $init->{z2}=  6* ($a1*$a3+ $a2*$a4) +
+            $init->{z32}*$init->{emsq};
+        $init->{z3}=  3* ($a3*$a3+ $a4*$a4) +
+            $init->{z33}*$init->{emsq};
+        $init->{z11}= -6*$a1*$a5+ $init->{emsq}*
+            (-24*$x1*$x7-6*$x3*$x5);
+        $init->{z12}= -6* ($a1*$a6+ $a3*$a5) + $init->{emsq}* (
+            -24*($x2*$x7+$x1*$x8) - 6*($x3*$x6+$x4*$x5) );
+        $init->{z13}= -6*$a3*$a6+ $init->{emsq}*(-24*$x2*$x8-
+            6*$x4*$x6);
+        $init->{z21}=  6*$a2*$a5+ $init->{emsq}*(24*$x1*$x5-6*$x3*$x7);
+        $init->{z22}=  6* ($a4*$a5+ $a2*$a6) + $init->{emsq}* ( 
+            24*($x2*$x5+$x1*$x6) - 6*($x4*$x7+$x3*$x8) );
+        $init->{z23}=  6*$a4*$a6+ $init->{emsq}*(24*$x2*$x6- 6*$x4*$x8);
+        $init->{z1}= $init->{z1}+ $init->{z1}+ $betasq*$init->{z31};
+        $init->{z2}= $init->{z2}+ $init->{z2}+ $betasq*$init->{z32};
+        $init->{z3}= $init->{z3}+ $init->{z3}+ $betasq*$init->{z33};
+        $init->{s3}= $cc*$xnoi;
+        $init->{s2}= -0.5*$init->{s3}/ $init->{rtemsq};
+        $init->{s4}= $init->{s3}*$init->{rtemsq};
+        $init->{s1}= -15*$init->{eccm}*$init->{s4};
+        $init->{s5}= $x1*$x3+ $x2*$x4;
+        $init->{s6}= $x2*$x3+ $x1*$x4;
+
+        $init->{s7}= $x2*$x4- $x1*$x3;
+#* ------------------------------ DO LUNAR TERMS -----------------------
+        if ($lsflg == 1) {
+            $init->{ss1}= $init->{s1};
+            $init->{ss2}= $init->{s2};
+            $init->{ss3}= $init->{s3};
+            $init->{ss4}= $init->{s4};
+            $init->{ss5}= $init->{s5};
+            $init->{ss6}= $init->{s6};
+            $init->{ss7}= $init->{s7};
+            $init->{sz1}= $init->{z1};
+            $init->{sz2}= $init->{z2};
+            $init->{sz3}= $init->{z3};
+            $init->{sz11}= $init->{z11};
+            $init->{sz12}= $init->{z12};
+            $init->{sz13}= $init->{z13};
+            $init->{sz21}= $init->{z21};
+            $init->{sz22}= $init->{z22};
+            $init->{sz23}= $init->{z23};
+            $init->{sz31}= $init->{z31};
+            $init->{sz32}= $init->{z32};
+            $init->{sz33}= $init->{z33};
+            $zcosg= $zcosgl;
+            $zsing= $zsingl;
+            $zcosi= $zcosil;
+            $zsini= $zsinil;
+            $zcosh= $zcoshl*$init->{cnodm}+$zsinhl*$init->{snodm};
+            $zsinh= $init->{snodm}*$zcoshl-$init->{cnodm}*$zsinhl;
+            $cc= $c1l;
+        }
+
+    }
+    $parm->{zmol}= fmod(4.7199672 + 0.2299715*$init->{day}-$init->{gam},
+        &SGP_TWOPI);
+
+    $parm->{zmos}= fmod(6.2565837 + 0.017201977*$init->{day},
+        &SGP_TWOPI);
+#* ---------------------------- DO SOLAR TERMS -------------------------
+    $parm->{se2}=   2*$init->{ss1}*$init->{ss6};
+    $parm->{se3}=   2*$init->{ss1}*$init->{ss7};
+    $parm->{si2}=   2*$init->{ss2}*$init->{sz12};
+    $parm->{si3}=   2*$init->{ss2}*($init->{sz13}-$init->{sz11});
+    $parm->{sl2}=  -2*$init->{ss3}*$init->{sz2};
+    $parm->{sl3}=  -2*$init->{ss3}*($init->{sz3}-$init->{sz1});
+    $parm->{sl4}=  -2*$init->{ss3}*(-21-9*$init->{emsq})*$zes;
+    $parm->{sgh2}=   2*$init->{ss4}*$init->{sz32};
+    $parm->{sgh3}=   2*$init->{ss4}*($init->{sz33}-$init->{sz31});
+    $parm->{sgh4}= -18*$init->{ss4}*$zes;
+    $parm->{sh2}=  -2*$init->{ss2}*$init->{sz22};
+
+    $parm->{sh3}=  -2*$init->{ss2}*($init->{sz23}-$init->{sz21});
+#* ---------------------------- DO LUNAR TERMS -------------------------
+    $parm->{ee2}=   2*$init->{s1}*$init->{s6};
+    $parm->{e3}=   2*$init->{s1}*$init->{s7};
+    $parm->{xi2}=   2*$init->{s2}*$init->{z12};
+    $parm->{xi3}=   2*$init->{s2}*($init->{z13}-$init->{z11});
+    $parm->{xl2}=  -2*$init->{s3}*$init->{z2};
+    $parm->{xl3}=  -2*$init->{s3}*($init->{z3}-$init->{z1});
+    $parm->{xl4}=  -2*$init->{s3}*(-21-9*$init->{emsq})*$zel;
+    $parm->{xgh2}=   2*$init->{s4}*$init->{z32};
+    $parm->{xgh3}=   2*$init->{s4}*($init->{z33}-$init->{z31});
+    $parm->{xgh4}= -18*$init->{s4}*$zel;
+    $parm->{xh2}=  -2*$init->{s2}*$init->{z22};
+
+    $parm->{xh3}=  -2*$init->{s2}*($init->{z23}-$init->{z21});
+#c        INCLUDE 'debug2.for'
+
+    return;
+
+
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                           SUBROUTINE DSINIT
+#*
+#*  This Subroutine provides Deep Space contributions to Mean Motion Dot due
+#*    to geopotential resonance with half day and one day orbits.
+#*
+#*  Inputs        :
+#*    Cosim, Sinim-
+#*    Emsq        - Eccentricity squared
+#*    Argpo       - Argument of Perigee
+#*    S1, S2, S3, S4, S5      -
+#*    Ss1, Ss2, Ss3, Ss4, Ss5 -
+#*    Sz1, Sz3, Sz11, Sz13, Sz21, Sz23, Sz31, Sz33 -
+#*    T           - Time
+#*    Tc          -
+#*    GSTo        - Greenwich sidereal time                   rad
+#*    Mo          - Mean Anomaly
+#*    MDot        - Mean Anomaly dot (rate)
+#*    No          - Mean Motion
+#*    nodeo       - right ascension of ascending node
+#*    nodeDot     - right ascension of ascending node dot (rate)
+#*    XPIDOT      -
+#*    Z1, Z3, Z11, Z13, Z21, Z23, Z31, Z33 -
+#*    Eccm        - Eccentricity
+#*    Argpm       - Argument of perigee
+#*    Inclm       - Inclination
+#*    Mm          - Mean Anomaly
+#*    Xn          - Mean Motion
+#*    nodem       - right ascension of ascending node
+#*
+#*  Outputs       :
+#*    Eccm        - Eccentricity
+#*    Argpm       - Argument of perigee
+#*    Inclm       - Inclination
+#*    Mm          - Mean Anomaly
+#*    Xn          - Mean motion
+#*    nodem       - right ascension of ascending node
+#*    IRez        - Resonance flags              0-none, 1-One day,  2-Half day
+#*    Atime       -
+#*    D2201, D2211, D3210, D3222, D4410, D4422, D5220, D5232, D5421, D5433       -
+#*    Dedt        -
+#*    Didt        -
+#*    DMDT        -
+#*    DNDT        -
+#*    DNODT       -
+#*    DOMDT       -
+#*    Del1, Del2, Del3 -
+#*    Ses  , Sghl , Sghs , Sgs  , Shl  , Shs  , Sis  , Sls
+#*    THETA       -
+#*    Xfact       -
+#*    Xlamo       -
+#*    Xli         -
+#*    Xni
+#*
+#*  Locals        :
+#*    ainv2       -
+#*    aonv        -
+#*    cosisq      -
+#*    eoc         -
+#*    f220, f221, f311, f321, f322, f330, f441, f442, f522, f523, f542, f543        -
+#*    g200, g201, g211, g300, g310, g322, g410, g422, g520, g521, g532, g533        -
+#*    sini2       -
+#*    temp, temp1 -
+#*    Theta       -
+#*    xno2        -
+#*
+#*  Coupling      :
+#*    getgravconst-
+#*
+#*  references    :
+#*    hoots, roehrich, norad spacetrack report #3 1980
+#*    hoots, norad spacetrack report #6 1986
+#*    hoots, schumacher and glover 2004
+#*    vallado, crawford, hujsak, kelso  2006
+#*------------------------------------------------------------------------------
+
+sub _r_dsinit {
+    my ($self, $t, $tc) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
+        or croak "Error - Sgp4r not initialized";
+    my $init = $parm->{init}
+        or croak "Error - Sgp4r initialization not in progress";
+
+#* -------------------------- Local Variables --------------------------
+    my ($ainv2, $aonv, $cosisq, $eoc, $f220, $f221, $f311, $f321, $f322,
+        $f330, $f441, $f442, $f522, $f523, $f542, $f543, $g200, $g201,
+        $g211, $g300, $g310, $g322, $g410, $g422, $g520, $g521, $g532,
+        $g533, $ses, $sgs, $sghl, $sghs, $shs, $shl, $sis, $sini2, $sls,
+        $temp, $temp1, $theta, $xno2);
+
+    my ($q22, $q31, $q33, $root22, $root44, $root54, $rptim, $root32,
+        $root52, $znl, $zns, $emo, $emsqo);
+#>>>>trw	INCLUDE 'ASTMATH.CMN'
+
+    $q22= 1.7891679e-06;
+    $q31= 2.1460748e-06;
+    $q33= 2.2123015e-07;
+    $root22= 1.7891679e-06;
+    $root44= 7.3636953e-09;
+    $root54= 2.1765803e-09;
+    $rptim= 0.0043752690880113;
+    $root32= 3.7393792e-07;
+    $root52= 1.1428639e-07;
+#>>>>trw	X2o3   = 2.0D0 / 3.0D0
+    $znl= 0.00015835218;
+
+
+    $zns= 1.19459e-05;
+
+#>>>>trw	CALL getgravconst( whichconst, tumin, mu, radiusearthkm, xke, j2, j3, j4, j3oj2 )
+#* ------------------------ DEEP SPACE INITIALIZATION ------------------
+    $parm->{irez}= 0;
+    if (($init->{xn} < 0.0052359877) && ($init->{xn} > 0.0034906585)) {
+        $parm->{irez}= 1;
+    }
+    if (($init->{xn} >= 0.00826) && ($init->{xn} <= 0.00924) &&
+        ($init->{eccm} >= 0.5)) {
+        $parm->{irez}= 2;
+
+    }
+#* ---------------------------- DO SOLAR TERMS -------------------------
+    $ses=  $init->{ss1}*$zns*$init->{ss5};
+    $sis=  $init->{ss2}*$zns*($init->{sz11}+ $init->{sz13});
+    $sls= -$zns*$init->{ss3}*($init->{sz1}+ $init->{sz3}- 14 -
+        6*$init->{emsq});
+    $sghs=  $init->{ss4}*$zns*($init->{sz31}+ $init->{sz33}- 6);
+    $shs= -$zns*$init->{ss2}*($init->{sz21}+ $init->{sz23});
+#c       sgp4fix for 180 deg incl
+    if (($init->{inclm} < 0.052359877) || ($init->{inclm} >
+        &SGP_PI-0.052359877)) {
+        $shs= 0;
+    }
+    if ($init->{sinim} != 0) {
+        $shs= $shs/$init->{sinim};
+    }
+
+    $sgs= $sghs- $init->{cosim}*$shs;
+#* ----------------------------- DO LUNAR TERMS ------------------------
+    $parm->{dedt}= $ses+ $init->{s1}*$znl*$init->{s5};
+    $parm->{didt}= $sis+ $init->{s2}*$znl*($init->{z11}+ $init->{z13});
+    $parm->{dmdt}= $sls- $znl*$init->{s3}*($init->{z1}+ $init->{z3}- 14
+        - 6*$init->{emsq});
+    $sghl= $init->{s4}*$znl*($init->{z31}+ $init->{z33}- 6);
+    $shl= -$znl*$init->{s2}*($init->{z21}+ $init->{z23});
+#c       sgp4fix for 180 deg incl
+    if (($init->{inclm} < 0.052359877) || ($init->{inclm} >
+        &SGP_PI-0.052359877)) {
+        $shl= 0;
+    }
+    $parm->{domdt}= $sgs+$sghl;
+    $parm->{dnodt}= $shs;
+    if ($init->{sinim} !=  0) {
+        $parm->{domdt}=
+            $parm->{domdt}-$init->{cosim}/$init->{sinim}*$shl;
+        $parm->{dnodt}= $parm->{dnodt}+$shl/$init->{sinim};
+
+    }
+#* --------------- CALCULATE DEEP SPACE RESONANCE EFFECTS --------------
+    $init->{dndt}= 0;
+    $theta= fmod($parm->{gsto}+ $tc*$rptim, &SGP_TWOPI);
+    $init->{eccm}= $init->{eccm}+ $parm->{dedt}*$t;
+    $init->{emsq}= $init->{eccm}**2;
+    $init->{inclm}= $init->{inclm}+ $parm->{didt}*$t;
+    $init->{argpm}= $init->{argpm}+ $parm->{domdt}*$t;
+    $init->{nodem}= $init->{nodem}+ $parm->{dnodt}*$t;
+    $init->{mm}= $init->{mm}+ $parm->{dmdt}*$t;
+#c   sgp4fix for negative inclinations
+#c   the following if statement should be commented out
+#c           IF(Inclm .lt. 0.0D0) THEN
+#c             Inclm  = -Inclm
+#c             Argpm  = Argpm-PI
+#c             nodem = nodem+PI
+#c           ENDIF
+
+#* ------------------ Initialize the resonance terms -------------------
+    if ($parm->{irez} !=  0) {
+
+        $aonv= ($init->{xn}/$parm->{xke})**&SGP_TOTHRD;
+#* -------------- GEOPOTENTIAL RESONANCE FOR 12 HOUR ORBITS ------------
+        if ($parm->{irez} ==  2) {
+            $cosisq= $init->{cosim}*$init->{cosim};
+            $emo= $init->{eccm};
+            $emsqo= $init->{emsq};
+            $init->{eccm}= $parm->{eccentricity};
+            $init->{emsq}= $init->{eccsq};
+            $eoc= $init->{eccm}*$init->{emsq};
+            $g201= -0.306-($init->{eccm}-0.64)*0.44;
+            if ($init->{eccm} <= 0.65) {
+                $g211=   3.616 -  13.247*$init->{eccm}+ 
+                    16.29*$init->{emsq};
+                $g310= -19.302 + 117.39*$init->{eccm}-
+                    228.419*$init->{emsq}+ 156.591*$eoc;
+                $g322= -18.9068+ 109.7927*$init->{eccm}-
+                    214.6334*$init->{emsq}+ 146.5816*$eoc;
+                $g410= -41.122 + 242.694*$init->{eccm}-
+                    471.094*$init->{emsq}+ 313.953*$eoc;
+                $g422=-146.407 + 841.88*$init->{eccm}-
+                    1629.014*$init->{emsq}+ 1083.435*$eoc;
+                $g520=-532.114 + 3017.977*$init->{eccm}-
+                    5740.032*$init->{emsq}+ 3708.276*$eoc;
+            } else {
+                $g211=  -72.099 +  331.819*$init->{eccm}- 
+                    508.738*$init->{emsq}+ 266.724*$eoc;
+                $g310= -346.844 + 1582.851*$init->{eccm}-
+                    2415.925*$init->{emsq}+ 1246.113*$eoc;
+                $g322= -342.585 + 1554.908*$init->{eccm}-
+                    2366.899*$init->{emsq}+ 1215.972*$eoc;
+                $g410=-1052.797 + 4758.686*$init->{eccm}-
+                    7193.992*$init->{emsq}+ 3651.957*$eoc;
+                $g422=-3581.69 + 16178.11*$init->{eccm}-
+                    24462.77*$init->{emsq}+ 12422.52*$eoc;
+                if ($init->{eccm} > 0.715) {
+                    $g520=-5149.66 +
+                        29936.92*$init->{eccm}-54087.36*$init->{emsq}+
+                        31324.56*$eoc;
+                } else {
+                    $g520= 1464.74 -  4664.75*$init->{eccm}+
+                        3763.64*$init->{emsq};
+                }
+            }
+            if ($init->{eccm} < 0.7) {
+                $g533= -919.2277 +
+                    4988.61*$init->{eccm}-9064.77*$init->{emsq}+
+                    5542.21*$eoc;
+                $g521= -822.71072 +
+                    4568.6173*$init->{eccm}-8491.4146*$init->{emsq}+
+                    5337.524*$eoc;
+                $g532= -853.666 +
+                    4690.25*$init->{eccm}-8624.77*$init->{emsq}+
+                    5341.4*$eoc;
+            } else {
+                $g533=-37995.78 +
+                    161616.52*$init->{eccm}-229838.2*$init->{emsq}+
+                    109377.94*$eoc;
+                $g521=-51752.104 +
+                    218913.95*$init->{eccm}-309468.16*$init->{emsq}+
+                    146349.42*$eoc;
+                $g532=-40023.88 +
+                    170470.89*$init->{eccm}-242699.48*$init->{emsq}+
+                    115605.82*$eoc;
+            }
+            $sini2=  $init->{sinim}*$init->{sinim};
+            $f220=  0.75* (1+2*$init->{cosim}+$cosisq);
+            $f221=  1.5*$sini2;
+            $f321=  1.875*$init->{sinim}*
+                (1-2*$init->{cosim}-3*$cosisq);
+            $f322= -1.875*$init->{sinim}*
+                (1+2*$init->{cosim}-3*$cosisq);
+            $f441= 35*$sini2*$f220;
+            $f442= 39.375*$sini2*$sini2;
+            $f522=  9.84375*$init->{sinim}* ($sini2*
+                (1-2*$init->{cosim}- 5*$cosisq)+0.33333333 *
+                (-2+4*$init->{cosim}+ 6*$cosisq) );
+            $f523=  $init->{sinim}* (4.92187512*$sini2*
+                (-2-4*$init->{cosim}+ 10*$cosisq) + 6.56250012*
+                (1+2*$init->{cosim}-3*$cosisq));
+            $f542=  29.53125*$init->{sinim}*
+                (2-8*$init->{cosim}+$cosisq*
+                (-12+8*$init->{cosim}+10*$cosisq) );
+
+            $f543= 29.53125*$init->{sinim}*
+                (-2-8*$init->{cosim}+$cosisq*
+                (12+8*$init->{cosim}-10*$cosisq) );
+            $xno2=  $init->{xn}* $init->{xn};
+            $ainv2=  $aonv* $aonv;
+            $temp1=  3*$xno2*$ainv2;
+            $temp=  $temp1*$root22;
+            $parm->{d2201}=  $temp*$f220*$g201;
+            $parm->{d2211}=  $temp*$f221*$g211;
+            $temp1=  $temp1*$aonv;
+            $temp=  $temp1*$root32;
+            $parm->{d3210}=  $temp*$f321*$g310;
+            $parm->{d3222}=  $temp*$f322*$g322;
+            $temp1=  $temp1*$aonv;
+            $temp=  2*$temp1*$root44;
+            $parm->{d4410}=  $temp*$f441*$g410;
+            $parm->{d4422}=  $temp*$f442*$g422;
+            $temp1=  $temp1*$aonv;
+            $temp=  $temp1*$root52;
+            $parm->{d5220}=  $temp*$f522*$g520;
+            $parm->{d5232}=  $temp*$f523*$g532;
+            $temp=  2*$temp1*$root54;
+            $parm->{d5421}=  $temp*$f542*$g521;
+            $parm->{d5433}=  $temp*$f543*$g533;
+            $parm->{xlamo}= 
+                fmod($parm->{meananomaly}+$parm->{rightascension}+$parm->{rightascension}-$theta-$theta,
+                &SGP_TWOPI);
+
+            $parm->{xfact}= $parm->{mdot}+ $parm->{dmdt}+ 2 *
+                ($parm->{nodedot}+$parm->{dnodt}-$rptim) -
+                $parm->{meanmotion};
+            $init->{eccm}= $emo;
+            $init->{emsq}= $emsqo;
+
+        }
+        if ($parm->{irez} ==  1) {
+#* -------------------- SYNCHRONOUS RESONANCE TERMS --------------------
+            $g200= 1 + $init->{emsq}* (-2.5+0.8125*$init->{emsq});
+            $g310= 1 + 2*$init->{emsq};
+            $g300= 1 + $init->{emsq}* (-6+6.60937*$init->{emsq});
+            $f220= 0.75 * (1+$init->{cosim}) * (1+$init->{cosim});
+            $f311= 0.9375*$init->{sinim}*$init->{sinim}*
+                (1+3*$init->{cosim}) - 0.75*(1+$init->{cosim});
+            $f330= 1+$init->{cosim};
+            $f330= 1.875*$f330*$f330*$f330;
+            $parm->{del1}= 3*$init->{xn}*$init->{xn}*$aonv*$aonv;
+            $parm->{del2}= 2*$parm->{del1}*$f220*$g200*$q22;
+            $parm->{del3}= 3*$parm->{del1}*$f330*$g300*$q33*$aonv;
+            $parm->{del1}= $parm->{del1}*$f311*$g310*$q31*$aonv;
+            $parm->{xlamo}=
+                fmod($parm->{meananomaly}+$parm->{rightascension}+$parm->{argumentofperigee}-$theta,
+                &SGP_TWOPI);
+            $parm->{xfact}= $parm->{mdot}+ $init->{xpidot}- $rptim+
+                $parm->{dmdt}+ $parm->{domdt}+ $parm->{dnodt}-
+                $parm->{meanmotion};
+
+        }
+#* ---------------- FOR SGP4, INITIALIZE THE INTEGRATOR ----------------
+        $parm->{xli}= $parm->{xlamo};
+        $parm->{xni}= $parm->{meanmotion};
+        $parm->{atime}= 0;
+        $init->{xn}= $parm->{meanmotion}+ $init->{dndt};
+
+    }
+#c        INCLUDE 'debug3.for'
+
+    return;
+
+
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                           SUBROUTINE DSPACE
+#*
+#*  This Subroutine provides deep space contributions to mean elements for
+#*    perturbing third body.  these effects have been averaged over one
+#*    revolution of the sun and moon.  for earth resonance effects, the
+#*    effects have been averaged over no revolutions of the satellite.
+#*    (mean motion)
+#*
+#*  author        : david vallado                  719-573-2600   28 jun 2005
+#*
+#*  inputs        :
+#*    d2201, d2211, d3210, d3222, d4410, d4422, d5220, d5232, d5421, d5433       -
+#*    dedt        -
+#*    del1, del2, del3  -
+#*    didt        -
+#*    dmdt        -
+#*    dnodt       -
+#*    domdt       -
+#*    irez        - flag for resonance           0-none, 1-one day, 2-half day
+#*    argpo       - argument of perigee
+#*    argpdot     - argument of perigee dot (rate)
+#*    t           - time
+#*    tc          -
+#*    gsto        - gst
+#*    xfact       -
+#*    xlamo       -
+#*    no          - mean motion
+#*    atime       -
+#*    em          - eccentricity
+#*    ft          -
+#*    argpm       - argument of perigee
+#*    inclm       - inclination
+#*    xli         -
+#*    mm          - mean anomaly
+#*    xni         - mean motion
+#*    nodem       - right ascension of ascending node
+#*
+#*  outputs       :
+#*    atime       -
+#*    em          - eccentricity
+#*    argpm       - argument of perigee
+#*    inclm       - inclination
+#*    xli         -
+#*    mm          - mean anomaly
+#*    xni         -
+#*    nodem       - right ascension of ascending node
+#*    dndt        -
+#*    nm          - mean motion
+#*
+#*  locals        :
+#*    delt        -
+#*    ft          -
+#*    theta       -
+#*    x2li        -
+#*    x2omi       -
+#*    xl          -
+#*    xldot       -
+#*    xnddt       -
+#*    xndt        -
+#*    xomi        -
+#*
+#*  coupling      :
+#*    none        -
+#*
+#*  references    :
+#*    hoots, roehrich, norad spacetrack report #3 1980
+#*    hoots, norad spacetrack report #6 1986
+#*    hoots, schumacher and glover 2004
+#*    vallado, crawford, hujsak, kelso  2006
+#*------------------------------------------------------------------------------
+
+sub _r_dspace {
+    my ($self, $t, $tc, $atime, $eccm, $argpm, $inclm, $xli, $mm, $xni,
+        $nodem, $dndt, $xn) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
+        or croak "Error - Sgp4r not initialized";
+
+#* -------------------------- Local Variables --------------------------
+    my ($iretn, $iret);
+    my ($delt, $ft, $theta, $x2li, $x2omi, $xl, $xldot, $xnddt, $xndt,
+        $xomi);
+
+    my ($g22, $g32, $g44, $g52, $g54, $fasx2, $fasx4, $fasx6, $rptim,
+        $step2, $stepn, $stepp);
+#>>>>trw	INCLUDE 'ASTMATH.CMN'
+
+#* ----------------------------- Constants -----------------------------
+    $fasx2= 0.13130908;
+    $fasx4= 2.8843198;
+    $fasx6= 0.37448087;
+    $g22= 5.7686396;
+    $g32= 0.95240898;
+    $g44= 1.8014998;
+    $g52= 1.050833;
+    $g54= 4.4108898;
+    $rptim= 0.0043752690880113;
+    $stepp=    720;
+    $stepn=   -720;
+
+    $step2= 259200;
+#* --------------- CALCULATE DEEP SPACE RESONANCE EFFECTS --------------
+    $$dndt= 0;
+    $theta= fmod($parm->{gsto}+ $tc*$rptim, &SGP_TWOPI);
+
+    $$eccm= $$eccm+ $parm->{dedt}*$t;
+    $$inclm= $$inclm+ $parm->{didt}*$t;
+    $$argpm= $$argpm+ $parm->{domdt}*$t;
+    $$nodem= $$nodem+ $parm->{dnodt}*$t;
+
+    $$mm= $$mm+ $parm->{dmdt}*$t;
+#c   sgp4fix for negative inclinations
+#c   the following if statement should be commented out
+#c        IF(Inclm .lt. 0.0D0) THEN
+#c            Inclm  = -Inclm
+#c            Argpm  = Argpm-PI
+#c            nodem = nodem+PI
+#c          ENDIF
+
+#c   sgp4fix for propagator problems
+#c   the following integration works for negative time steps and periods
+#c   the specific changes are unknown because the original code was so convoluted
+    $ft= 0;
+
+    $$atime= 0;
+    if ($parm->{irez} !=  0) {
+#* ----- UPDATE RESONANCES : NUMERICAL (EULER-MACLAURIN) INTEGRATION ---
+#* ---------------------------- EPOCH RESTART --------------------------
+        if ( ($$atime == 0)   ||  (($t >= 0)  &&  ($$atime < 0))  || 
+            (($t < 0)  &&  ($$atime >= 0)) ) {
+            if ($t >= 0) {
+                $delt= $stepp;
+            } else {
+                $delt= $stepn;
+            }
+            $$atime= 0;
+            $$xni= $parm->{meanmotion};
+            $$xli= $parm->{xlamo};
+        }
+        $iretn= 381;
+        $iret=   0;
+        while ($iretn == 381) {
+            if ( (abs($t) < abs($$atime)) || ($iret == 351) ) {
+                if ($t >= 0) {
+                    $delt= $stepn;
+                } else {
+                    $delt= $stepp;
+                }
+                $iret= 351;
+                $iretn= 381;
+            } else {
+                if ($t > 0) {
+                    $delt= $stepp;
+                } else {
+                    $delt= $stepn;
+                }
+                if (abs($t-$$atime) >= $stepp) {
+                    $iret= 0;
+                    $iretn= 381;
+                } else {
+                    $ft= $t-$$atime;
+                    $iretn= 0;
+                }
+
+            }
+#* --------------------------- DOT TERMS CALCULATED --------------------
+#* ------------------- NEAR - SYNCHRONOUS RESONANCE TERMS --------------
+            if ($parm->{irez} !=  2) {
+                $xndt= $parm->{del1}*sin($$xli-$fasx2) +
+                    $parm->{del2}*sin(2*($$xli-$fasx4)) +
+                    $parm->{del3}*sin(3*($$xli-$fasx6));
+                $xldot= $$xni+ $parm->{xfact};
+                $xnddt= $parm->{del1}*cos($$xli-$fasx2) +
+                    2*$parm->{del2}*cos(2*($$xli-$fasx4)) +
+                    3*$parm->{del3}*cos(3*($$xli-$fasx6));
+                $xnddt= $xnddt*$xldot;
+
+            } else {
+#* --------------------- NEAR - HALF-DAY RESONANCE TERMS ---------------
+                $xomi= $parm->{argumentofperigee}+
+                    $parm->{argpdot}*$$atime;
+                $x2omi= $xomi+ $xomi;
+                $x2li= $$xli+ $$xli;
+                $xndt= $parm->{d2201}*sin($x2omi+$$xli-$g22) +
+                    $parm->{d2211}*sin($$xli-$g22) +
+                    $parm->{d3210}*sin($xomi+$$xli-$g32) +
+                    $parm->{d3222}*sin(-$xomi+$$xli-$g32) +
+                    $parm->{d4410}*sin($x2omi+$x2li-$g44)+
+                    $parm->{d4422}*sin($x2li-$g44)+
+                    $parm->{d5220}*sin($xomi+$$xli-$g52) +
+                    $parm->{d5232}*sin(-$xomi+$$xli-$g52) +
+                    $parm->{d5421}*sin($xomi+$x2li-$g54)+
+                    $parm->{d5433}*sin(-$xomi+$x2li-$g54);
+                $xldot= $$xni+$parm->{xfact};
+                $xnddt= $parm->{d2201}*cos($x2omi+$$xli-$g22) +
+                    $parm->{d2211}*cos($$xli-$g22)+
+                    $parm->{d3210}*cos($xomi+$$xli-$g32) +
+                    $parm->{d3222}*cos(-$xomi+$$xli-$g32) +
+                    $parm->{d5220}*cos($xomi+$$xli-$g52) +
+                    $parm->{d5232}*cos(-$xomi+$$xli-$g52) +
+                    2*($parm->{d4410}*cos($x2omi+$x2li-$g44) +
+                    $parm->{d4422}*cos($x2li-$g44) +
+                    $parm->{d5421}*cos($xomi+$x2li-$g54) +
+                    $parm->{d5433}*cos(-$xomi+$x2li-$g54));
+                $xnddt= $xnddt*$xldot;
+
+            }
+#* ------------------------------- INTEGRATOR --------------------------
+            if ($iretn == 381) {
+                $$xli= $$xli+ $xldot*$delt+ $xndt*$step2;
+                $$xni= $$xni+ $xndt*$delt+ $xnddt*$step2;
+                $$atime= $$atime+ $delt;
+
+            }
+
+        }
+        $$xn= $$xni+ $xndt*$ft+ $xnddt*$ft*$ft*0.5;
+        $xl= $$xli+ $xldot*$ft+ $xndt*$ft*$ft*0.5;
+        if ($parm->{irez} !=  1) {
+            $$mm= $xl-2*$$nodem+2*$theta;
+            $$dndt= $$xn-$parm->{meanmotion};
+        } else {
+            $$mm= $xl-$$nodem-$$argpm+$theta;
+            $$dndt= $$xn-$parm->{meanmotion};
+
+        }
+        $$xn= $parm->{meanmotion}+ $$dndt;
+
+    }
+#c        INCLUDE 'debug4.for'
+
+    return;
+
+
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                           SUBROUTINE INITL
+#*
+#*  this subroutine initializes the spg4 propagator. all the initialization is
+#*    consolidated here instead of having multiple loops inside other routines.
+#*
+#*  author        : david vallado                  719-573-2600   28 jun 2005
+#*
+#*  inputs        :
+#*    ecco        - eccentricity                           0.0 - 1.0
+#*    epoch       - epoch time in days from jan 0, 1950. 0 hr
+#*    inclo       - inclination of satellite
+#*    no          - mean motion of satellite
+#*    satn        - satellite number
+#*
+#*  outputs       :
+#*    ainv        - 1.0 / a
+#*    ao          - semi major axis
+#*    con41       -
+#*    con42       - 1.0 - 5.0 cos(i)
+#*    cosio       - cosine of inclination
+#*    cosio2      - cosio squared
+#*    eccsq       - eccentricity squared
+#*    method      - flag for deep space                    'd', 'n'
+#*    omeosq      - 1.0 - ecco * ecco
+#*    posq        - semi-parameter squared
+#*    rp          - radius of perigee
+#*    rteosq      - square root of (1.0 - ecco*ecco)
+#*    sinio       - sine of inclination
+#*    gsto        - gst at time of observation               rad
+#*    no          - mean motion of satellite
+#*
+#*  locals        :
+#*    ak          -
+#*    d1          -
+#*    del         -
+#*    adel        -
+#*    po          -
+#*
+#*  coupling      :
+#*    getgravconst-
+#*
+#*  references    :
+#*    hoots, roehrich, norad spacetrack report #3 1980
+#*    hoots, norad spacetrack report #6 1986
+#*    hoots, schumacher and glover 2004
+#*    vallado, crawford, hujsak, kelso  2006
+#*------------------------------------------------------------------------------
+
+sub _r_initl {
+    my ($self) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
+        or croak "Error - Sgp4r not initialized";
+    my $init = $parm->{init}
+        or croak "Error - Sgp4r initialization not in progress";
+
+
+#* -------------------------- Local Variables --------------------------
+#cdav old way
+#c        integer ids70
+#c        real*8 ts70, ds70, tfrac, c1, thgr70, fk5r, c1p2p, thgr, thgro,
+#c     &     twopi
+#>>>>trw	INCLUDE 'ASTMATH.CMN'
+
+#* ------------------------ WGS-72 EARTH CONSTANTS ---------------------
+
+#>>>>trw	X2o3   = 2.0D0/3.0D0
+
+#>>>>trw	CALL getgravconst( whichconst, tumin, mu, radiusearthkm, xke, j2, j3, j4, j3oj2 )
+#* ----------------- CALCULATE AUXILLARY EPOCH QUANTITIES --------------
+    $init->{eccsq}= $parm->{eccentricity}*$parm->{eccentricity};
+    $init->{omeosq}= 1 - $init->{eccsq};
+    $init->{rteosq}= sqrt($init->{omeosq});
+    $init->{cosio}= cos($parm->{inclination});
+
+    $init->{cosio2}= $init->{cosio}*$init->{cosio};
+#* ---------------------- UN-KOZAI THE MEAN MOTION ---------------------
+    my $ak=  ($parm->{xke}/$parm->{meanmotion})**&SGP_TOTHRD;
+    my $d1=  0.75*$parm->{j2}* (3*$init->{cosio2}-1) /
+        ($init->{rteosq}*$init->{omeosq});
+    my $del=  $d1/($ak*$ak);
+    my $adel=  $ak* ( 1 - $del*$del- $del* (1/3 + 134*$del*$del/ 81) );
+    $del=  $d1/($adel*$adel);
+
+    $parm->{meanmotion}=  $parm->{meanmotion}/(1 + $del);
+    $init->{ao}=  ($parm->{xke}/$parm->{meanmotion})**&SGP_TOTHRD;
+    $init->{sinio}=  sin($parm->{inclination});
+    my $po=  $init->{ao}*$init->{omeosq};
+    $init->{con42}=  1-5*$init->{cosio2};
+    $parm->{con41}=  -$init->{con42}-$init->{cosio2}-$init->{cosio2};
+    $init->{ainv}=  1/$init->{ao};
+    $init->{posq}=  $po*$po;
+    $init->{rp}=  $init->{ao}*(1-$parm->{eccentricity});
+
+    $parm->{deep_space}=0;
+#* ----------------- CALCULATE GREENWICH LOCATION AT EPOCH -------------
+#cdav new approach using JD
+    my $radperday= &SGP_TWOPI* 1.0027379093508;
+
+    my $temp= $self->{ds50}+ 2433281.5;
+    my $tut1= ( int($temp-0.5) + 0.5 - 2451545 ) / 36525;
+
+
+    $parm->{gsto}= 1.75336855923327 + 628.331970688841*$tut1+
+        6.77071394490334e-06*$tut1*$tut1-
+        4.50876723431868e-10*$tut1*$tut1*$tut1+ $radperday*(
+        $temp-0.5-int($temp-0.5) );
+    $parm->{gsto}= fmod($parm->{gsto}, &SGP_TWOPI);
+    if ( $parm->{gsto} <  0 ) {
+        $parm->{gsto}= $parm->{gsto}+ &SGP_TWOPI;
+
+    }
+#*     CALCULATE NUMBER OF INTEGER DAYS SINCE 0 JAN 1970.
+#cdav    old way
+#c      TS70 =EPOCH-7305.D0
+#c      IDS70=TS70 + 1.D-8
+#c      DS70 =IDS70
+#c      TFRAC=TS70-DS70
+#*     CALCULATE GREENWICH LOCATION AT EPOCH
+#c      C1    = 1.72027916940703639D-2
+#c      THGR70= 1.7321343856509374D0
+#c      FK5R  = 5.07551419432269442D-15
+#c      twopi = 6.283185307179586D0
+#c      C1P2P = C1+TWOPI
+#c      THGR  = DMOD(THGR70+C1*DS70+C1P2P*TFRAC+TS70*TS70*FK5R,twopi)
+#c      THGRO = DMOD(THGR,twopi)
+#c      gsto  = thgro
+#c      write(*,*) Satn,'  gst delta ', gsto-gsto1
+
+#c        INCLUDE 'debug5.for'
+
+    return;
+
+
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                             SUBROUTINE SGP4INIT
+#*
+#*  This subroutine initializes variables for SGP4.
+#*
+#*  author        : david vallado                  719-573-2600   28 jun 2005
+#*
+#*  inputs        :
+#*    satn        - satellite number
+#*    bstar       - sgp4 type drag coefficient              kg/m2er
+#*    ecco        - eccentricity
+#*    epoch       - epoch time in days from jan 0, 1950. 0 hr
+#*    argpo       - argument of perigee (output if ds)
+#*    inclo       - inclination
+#*    mo          - mean anomaly (output if ds)
+#*    no          - mean motion
+#*    nodeo      - right ascension of ascending node
+#*
+#*  outputs       :
+#*    satrec      - common block values for subsequent calls
+#*    return code - non-zero on error.
+#*                   1 - mean elements, ecc >= 1.0 or ecc < -0.001 or a < 0.95 er
+#*                   2 - mean motion less than 0.0
+#*                   3 - pert elements, ecc < 0.0  or  ecc > 1.0
+#*                   4 - semi-latus rectum < 0.0
+#*                   5 - epoch elements are sub-orbital
+#*                   6 - satellite has decayed
+#*
+#*  locals        :
+#*    CNODM  , SNODM  , COSIM  , SINIM  , COSOMM , SINOMM
+#*    Cc1sq  , Cc2    , Cc3
+#*    Coef   , Coef1
+#*    cosio4      -
+#*    day         -
+#*    dndt        -
+#*    em          - eccentricity
+#*    emsq        - eccentricity squared
+#*    eeta        -
+#*    etasq       -
+#*    gam         -
+#*    argpm       - argument of perigee
+#*    ndem        -
+#*    inclm       - inclination
+#*    mm          - mean anomaly
+#*    nm          - mean motion
+#*    perige      - perigee
+#*    pinvsq      -
+#*    psisq       -
+#*    qzms24      -
+#*    rtemsq      -
+#*    s1, s2, s3, s4, s5, s6, s7          -
+#*    sfour       -
+#*    ss1, ss2, ss3, ss4, ss5, ss6, ss7         -
+#*    sz1, sz2, sz3
+#*    sz11, sz12, sz13, sz21, sz22, sz23, sz31, sz32, sz33        -
+#*    tc          -
+#*    temp        -
+#*    temp1, temp2, temp3       -
+#*    tsi         -
+#*    xpidot      -
+#*    xhdot1      -
+#*    z1, z2, z3          -
+#*    z11, z12, z13, z21, z22, z23, z31, z32, z33         -
+#*
+#*  coupling      :
+#*    getgravconst-
+#*    initl       -
+#*    dscom       -
+#*    dpper       -
+#*    dsinit      -
+#*
+#*  references    :
+#*    hoots, roehrich, norad spacetrack report #3 1980
+#*    hoots, norad spacetrack report #6 1986
+#*    hoots, schumacher and glover 2004
+#*    vallado, crawford, hujsak, kelso  2006
+#* ---------------------------------------------------------------------------- }
+
+sub _r_sgp4init {
+    my ($self) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r} = {};
+    my $init = $parm->{init} = {};
+    # The following is modified in _r_initl
+    $parm->{meanmotion} = $self->{meanmotion};
+    # The following may be modified for deep space
+    $parm->{eccentricity} = $self->{eccentricity};
+    $parm->{inclination} = $self->{inclination};
+    $parm->{rightascension} = $self->{rightascension};
+    $parm->{argumentofperigee} = $self->{argumentofperigee};
+    $parm->{meananomaly} = $self->{meananomaly};
+
+    my ($t, @r, @v);
+#>>>>trw	INCLUDE 'SGP4.CMN'
+
+
+#* -------------------------- Local Variables --------------------------
+
+    my ($cc1sq, $cc2, $cc3, $coef, $coef1, $cosio4, $eeta, $etasq,
+        $perige, $pinvsq, $psisq, $qzms24, $sfour, $tc, $temp, $temp1,
+        $temp2, $temp3, $tsi, $xhdot1);
+    my ($qzms2t, $ss, $temp4);
+#>>>>trw	INCLUDE 'ASTMATH.CMN'
+
+#* ---------------------------- INITIALIZATION -------------------------
+    $parm->{deep_space}=0;
+#c       clear sgp4 flag
+
+    $self->{model_error}= &SGP4R_ERROR_0;
+#c      sgp4fix - note the following variables are also passed directly via sgp4 common.
+#c      it is possible to streamline the sgp4init call by deleting the "x"
+#c      variables, but the user would need to set the common values first. we
+#c      include the additional assignment in case twoline2rv is not used.
+
+#>>>>trw	bstar  = xbstar
+#>>>>trw	ecco   = xecco
+#>>>>trw	argpo  = xargpo
+#>>>>trw	inclo  = xinclo
+#>>>>trw	mo     = xmo
+#>>>>trw	no     = xno
+
+
+#>>>>trw	nodeo  = xnodeo
+
+    $self->_r_getgravconst();
+    $ss= 78/$parm->{radiusearthkm}+ 1;
+    $qzms2t= ((120-78)/$parm->{radiusearthkm}) ** 4;
+#>>>>trw	X2o3   =  2.0D0 / 3.0D0
+
+    $temp4=  1 + cos(&SGP_PI-1e-09);
+#>>>>trw	Init = 'y'
+
+    $t= 0;
+
+    $self->{eccentricity} > 1
+        and croak 'Error - Sgp4r TLE eccentricity > 1';
+    $self->{eccentricity} < 0
+        and croak 'Error - Sgp4r TLE eccentricity < 0';
+    $self->{meanmotion} < 0
+        and croak 'Error - Sgp4r TLE mean motion < 0';
+    $self->_r_initl();
+    if ($init->{rp} <  1) {
+#c            Write(*,*) '# *** SATN',Satn,' EPOCH ELTS SUB-ORBITAL *** '
+        $self->{model_error}= &SGP4R_ERROR_5;
+
+    }
+    if ($init->{omeosq} >=  0  ||  $parm->{meanmotion} >=  0) {
+        $parm->{isimp}= 0;
+        if ($init->{rp} <  (220/$parm->{radiusearthkm}+1)) {
+            $parm->{isimp}= 1;
+        }
+        $sfour= $ss;
+        $qzms24= $qzms2t;
+
+        $perige= ($init->{rp}-1)*$parm->{radiusearthkm};
+#* ----------- For perigees below 156 km, S and Qoms2t are altered -----
+        if ($perige <  156) {
+            $sfour= $perige-78;
+            if ($perige <=  98) {
+                $sfour= 20;
+            }
+            $qzms24= ( (120-$sfour)/$parm->{radiusearthkm})**4;
+            $sfour= $sfour/$parm->{radiusearthkm}+ 1;
+        }
+
+        $pinvsq= 1/$init->{posq};
+        $tsi= 1/($init->{ao}-$sfour);
+        $parm->{eta}= $init->{ao}*$parm->{eccentricity}*$tsi;
+        $etasq= $parm->{eta}*$parm->{eta};
+        $eeta= $parm->{eccentricity}*$parm->{eta};
+        $psisq= abs(1-$etasq);
+        $coef= $qzms24*$tsi**4;
+        $coef1= $coef/$psisq**3.5;
+        $cc2= $coef1*$parm->{meanmotion}* ($init->{ao}*
+            (1+1.5*$etasq+$eeta* (4+$etasq) )+0.375*
+            $parm->{j2}*$tsi/$psisq*$parm->{con41}*(8+3*$etasq*(8+$etasq)));
+        $parm->{cc1}= $self->{bstardrag}*$cc2;
+        $cc3= 0;
+        if ($parm->{eccentricity} >  0.0001) {
+            $cc3=
+                -2*$coef*$tsi*$parm->{j3oj2}*$parm->{meanmotion}*$init->{sinio}/$parm->{eccentricity};
+        }
+        $parm->{x1mth2}= 1-$init->{cosio2};
+        $parm->{cc4}=
+            2*$parm->{meanmotion}*$coef1*$init->{ao}*$init->{omeosq}*($parm->{eta}*(2+0.5*$etasq)
+            +$parm->{eccentricity}*(0.5 + 2*$etasq) - $parm->{j2}*$tsi/
+            ($init->{ao}*$psisq)* (-3*$parm->{con41}*(1-2*
+            $eeta+$etasq*(1.5-0.5*$eeta))+0.75*$parm->{x1mth2}*(2*$etasq-$eeta*(1+$etasq))*cos(2*$parm->{argumentofperigee})));
+        $parm->{cc5}= 2*$coef1*$init->{ao}*$init->{omeosq}* (1 + 2.75*
+            ($etasq+ $eeta) + $eeta*$etasq);
+        $cosio4= $init->{cosio2}*$init->{cosio2};
+        $temp1= 1.5*$parm->{j2}*$pinvsq*$parm->{meanmotion};
+        $temp2= 0.5*$temp1*$parm->{j2}*$pinvsq;
+        $temp3=
+            -0.46875*$parm->{j4}*$pinvsq*$pinvsq*$parm->{meanmotion};
+        $parm->{mdot}= $parm->{meanmotion}+
+            0.5*$temp1*$init->{rteosq}*$parm->{con41}+ 0.0625*$temp2*
+            $init->{rteosq}*(13 - 78*$init->{cosio2}+ 137*$cosio4);
+        $parm->{argpdot}= -0.5*$temp1*$init->{con42}+ 0.0625*$temp2* (7
+            - 114*$init->{cosio2}+
+            395*$cosio4)+$temp3*(3-36*$init->{cosio2}+49*$cosio4);
+        $xhdot1= -$temp1*$init->{cosio};
+        $parm->{nodedot}= $xhdot1+(0.5*$temp2*(4-19*$init->{cosio2})+
+            2*$temp3*(3 - 7*$init->{cosio2}))*$init->{cosio};
+        $init->{xpidot}= $parm->{argpdot}+$parm->{nodedot};
+        $parm->{omgcof}=
+            $self->{bstardrag}*$cc3*cos($parm->{argumentofperigee});
+        $parm->{xmcof}= 0;
+        if ($parm->{eccentricity} >  0.0001) {
+            $parm->{xmcof}= -&SGP_TOTHRD*$coef*$self->{bstardrag}/$eeta;
+        }
+        $parm->{xnodcf}= 3.5*$init->{omeosq}*$xhdot1*$parm->{cc1};
+        $parm->{t2cof}= 1.5*$parm->{cc1};
+#c           sgp4fix for divide by zero with xinco = 180 deg
+        if (abs($init->{cosio}+1) >  1.5e-12) {
+            $parm->{xlcof}= -0.25*$parm->{j3oj2}*$init->{sinio}*
+                (3+5*$init->{cosio})/(1+$init->{cosio});
+        } else {
+            $parm->{xlcof}= -0.25*$parm->{j3oj2}*$init->{sinio}*
+                (3+5*$init->{cosio})/$temp4;
+        }
+        $parm->{aycof}= -0.5*$parm->{j3oj2}*$init->{sinio};
+        $parm->{delmo}= (1+$parm->{eta}*cos($parm->{meananomaly}))**3;
+        $parm->{sinmao}= sin($parm->{meananomaly});
+
+        $parm->{x7thm1}= 7*$init->{cosio2}-1;
+#* ------------------------ Deep Space Initialization ------------------
+        if ((&SGP_TWOPI/$parm->{meanmotion})  >=  225) {
+            $parm->{deep_space}=1;
+            $parm->{isimp}= 1;
+            $tc= 0;
+            $init->{inclm}= $parm->{inclination};
+            $self->_r_dscom ($tc);
+
+            $self->_r_dpper ($t, \$parm->{eccentricity},
+                \$parm->{inclination}, \$parm->{rightascension},
+                \$parm->{argumentofperigee}, \$parm->{meananomaly});
+            $init->{argpm}= 0;
+            $init->{nodem}= 0;
+
+            $init->{mm}= 0;
+            $self->_r_dsinit ($t, $tc);
+
+        }
+#* ------------ Set variables if not deep space or rp < 220 -------------
+        if ( !  $parm->{isimp}) {
+            $cc1sq= $parm->{cc1}*$parm->{cc1};
+            $parm->{d2}= 4*$init->{ao}*$tsi*$cc1sq;
+            $temp= $parm->{d2}*$tsi*$parm->{cc1}/ 3;
+            $parm->{d3}= (17*$init->{ao}+ $sfour) * $temp;
+            $parm->{d4}= 0.5*$temp*$init->{ao}*$tsi* (221*$init->{ao}+
+                31*$sfour)*$parm->{cc1};
+            $parm->{t3cof}= $parm->{d2}+ 2*$cc1sq;
+            $parm->{t4cof}= 0.25*
+                (3*$parm->{d3}+$parm->{cc1}*(12*$parm->{d2}+10*$cc1sq)
+                );
+            $parm->{t5cof}= 0.2* (3*$parm->{d4}+
+                12*$parm->{cc1}*$parm->{d3}+ 6*$parm->{d2}*$parm->{d2}+
+                15*$cc1sq* (2*$parm->{d2}+ $cc1sq) );
+
+        }
+
+    }
+
+#>>>>trw	init = 'n'
+
+#>>>>trw	CALL SGP4(whichconst, 0.0D0, r, v, error)
+#c        INCLUDE 'debug6.for'
+
+#>>>>trw	RETURN
+
+
+    delete $parm->{init};
+    $ENV{DEVELOPER_TEST} and $self->_r_dump ();
+    return $parm;
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                             SUBROUTINE SGP4
+#*
+#*  this procedure is the sgp4 prediction model from space command. this is an
+#*    updated and combined version of sgp4 and sdp4, which were originally
+#*    published separately in spacetrack report #3. this version follows the
+#*    methodology from the aiaa paper (2006) describing the history and
+#*    development of the code.
+#*
+#*  author        : david vallado                  719-573-2600   28 jun 2005
+#*
+#*  inputs        :
+#*    satrec      - initialised structure from sgp4init() call.
+#*    tsince      - time eince epoch (minutes)
+#*
+#*  outputs       :
+#*    r           - position vector                     km
+#*    v           - velocity                            km/sec
+#*  return code - non-zero on error.
+#*                   1 - mean elements, ecc >= 1.0 or ecc < -0.001 or a < 0.95 er
+#*                   2 - mean motion less than 0.0
+#*                   3 - pert elements, ecc < 0.0  or  ecc > 1.0
+#*                   4 - semi-latus rectum < 0.0
+#*                   5 - epoch elements are sub-orbital
+#*                   6 - satellite has decayed
+#*
+#*  locals        :
+#*    am          -
+#*    axnl, aynl        -
+#*    betal       -
+#*    COSIM   , SINIM   , COSOMM  , SINOMM  , Cnod    , Snod    , Cos2u   ,
+#*    Sin2u   , Coseo1  , Sineo1  , Cosi    , Sini    , Cosip   , Sinip   ,
+#*    Cosisq  , Cossu   , Sinsu   , Cosu    , Sinu
+#*    Delm        -
+#*    Delomg      -
+#*    Dndt        -
+#*    Eccm        -
+#*    EMSQ        -
+#*    Ecose       -
+#*    El2         -
+#*    Eo1         -
+#*    Eccp        -
+#*    Esine       -
+#*    Argpm       -
+#*    Argpp       -
+#*    Omgadf      -
+#*    Pl          -
+#*    R           -
+#*    RTEMSQ      -
+#*    Rdotl       -
+#*    Rl          -
+#*    Rvdot       -
+#*    Rvdotl      -
+#*    Su          -
+#*    T2  , T3   , T4    , Tc
+#*    Tem5, Temp , Temp1 , Temp2  , Tempa  , Tempe  , Templ
+#*    U   , Ux   , Uy    , Uz     , Vx     , Vy     , Vz
+#*    inclm       - inclination
+#*    mm          - mean anomaly
+#*    nm          - mean motion
+#*    nodem       - longi of ascending node
+#*    xinc        -
+#*    xincp       -
+#*    xl          -
+#*    xlm         -
+#*    mp          -
+#*    xmdf        -
+#*    xmx         -
+#*    xmy         -
+#*    nodedf     -
+#*    xnode       -
+#*    nodep      -
+#*    np          -
+#*
+#*  coupling      :
+#*    getgravconst-
+#*    dpper
+#*    dpspace
+#*
+#*  references    :
+#*    hoots, roehrich, norad spacetrack report #3 1980
+#*    hoots, norad spacetrack report #6 1986
+#*    hoots, schumacher and glover 2004
+#*    vallado, crawford, hujsak, kelso  2006
+#*------------------------------------------------------------------------------
+
+sub sgp4r {
+    my ($self, $t) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r} ||= $self->_r_sgp4init ();
+    my $time = $t;
+    $t = ($t - $self->{epoch}) / 60;
+
+    my (@r, @v);
+#>>>>trw	INCLUDE 'SGP4.CMN'
+
+#* -------------------------- Local Variables --------------------------
+
+    my ($am, $axnl, $aynl, $betal, $cosim, $cnod, $cos2u, $coseo1,
+        $cosi, $cosip, $cosisq, $cossu, $cosu, $delm, $delomg, $eccm,
+        $emsq, $ecose, $el2, $eo1, $eccp, $esine, $argpm, $argpp,
+        $omgadf, $pl, $rdotl, $rl, $rvdot, $rvdotl, $sinim, $sin2u,
+        $sineo1, $sini, $sinip, $sinsu, $sinu, $snod, $su, $t2, $t3,
+        $t4, $tem5, $temp, $temp1, $temp2, $tempa, $tempe, $templ, $u,
+        $ux, $uy, $uz, $vx, $vy, $vz, $inclm, $mm, $xn, $nodem, $xinc,
+        $xincp, $xl, $xlm, $mp, $xmdf, $xmx, $xmy, $xnoddf, $xnode,
+        $nodep, $tc, $dndt);
+    my ($mr, $mv, $vkmpersec, $temp4);
+
+    my ($iter);
+#>>>>trw	INCLUDE 'ASTMATH.CMN'
+
+#* ------------------------ WGS-72 EARTH CONSTANTS ---------------------
+#* ---------------------- SET MATHEMATICAL CONSTANTS -------------------
+
+#>>>>trw	X2O3   = 2.0D0/3.0D0
+#c     Keep compiler ok for warnings on uninitialized variables
+    $mr= 0;
+    $coseo1= 1;
+
+
+    $sineo1= 0;
+#>>>>trw	CALL getgravconst( whichconst, tumin, mu, radiusearthkm, xke, j2, j3, j4, j3oj2 )
+    $temp4=   1 + cos(&SGP_PI-1e-09);
+
+    $vkmpersec=  $parm->{radiusearthkm}* $parm->{xke}/60;
+#* ------------------------- CLEAR SGP4 ERROR FLAG ---------------------
+
+    $self->{model_error}= &SGP4R_ERROR_0;
+#* ----------- UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG ---------
+    $xmdf= $parm->{meananomaly}+ $parm->{mdot}*$t;
+    $omgadf= $parm->{argumentofperigee}+ $parm->{argpdot}*$t;
+    $xnoddf= $parm->{rightascension}+ $parm->{nodedot}*$t;
+    $argpm= $omgadf;
+    $mm= $xmdf;
+    $t2= $t*$t;
+    $nodem= $xnoddf+ $parm->{xnodcf}*$t2;
+    $tempa= 1 - $parm->{cc1}*$t;
+    $tempe= $self->{bstardrag}*$parm->{cc4}*$t;
+    $templ= $parm->{t2cof}*$t2;
+    if ( !  $parm->{isimp}) {
+        $delomg= $parm->{omgcof}*$t;
+        $delm= $parm->{xmcof}*(( 1+$parm->{eta}*cos($xmdf)
+            )**3-$parm->{delmo});
+        $temp= $delomg+ $delm;
+        $mm= $xmdf+ $temp;
+        $argpm= $omgadf- $temp;
+        $t3= $t2*$t;
+        $t4= $t3*$t;
+        $tempa= $tempa- $parm->{d2}*$t2- $parm->{d3}*$t3-
+            $parm->{d4}*$t4;
+        $tempe= $tempe+ $self->{bstardrag}*$parm->{cc5}*(sin($mm) -
+            $parm->{sinmao});
+        $templ= $templ+ $parm->{t3cof}*$t3+ $t4*($parm->{t4cof}+
+            $t*$parm->{t5cof});
+    }
+    $xn= $parm->{meanmotion};
+    $eccm= $parm->{eccentricity};
+    $inclm= $parm->{inclination};
+    if ($parm->{deep_space}) {
+        $tc= $t;
+        $self->_r_dspace ($t, $tc, \$parm->{atime}, \$eccm, \$argpm,
+            \$inclm, \$parm->{xli}, \$mm, \$parm->{xni}, \$nodem,
+            \$dndt, \$xn);
+
+    }
+#c     mean motion less than 0.0
+    if ($xn <=  0) {
+        $self->{model_error}= &SGP4R_ERROR_2;
+        croak 'Error - ', &SGP4R_ERROR_MEAN_MOTION;
+    }
+    $am= ($parm->{xke}/$xn)**&SGP_TOTHRD*$tempa**2;
+    $xn= $parm->{xke}/$am**1.5;
+    $eccm= $eccm-$tempe;
+#c   fix tolerance for error recognition
+    if ($eccm >=  1  ||  $eccm < -0.001  ||  $am <  0.95) {
+#c         write(6,*) '# Error 1, Eccm = ',  Eccm, ' AM = ', AM
+        $self->{model_error}= &SGP4R_ERROR_1;
+        croak 'Error - ', &SGP4R_ERROR_MEAN_ECCEN;
+    }
+    if ($eccm <  0) {
+        $eccm= 1e-06
+    }
+    $mm= $mm+$parm->{meanmotion}*$templ;
+    $xlm= $mm+$argpm+$nodem;
+    $emsq= $eccm*$eccm;
+    $temp= 1 - $emsq;
+    $nodem= fmod($nodem, &SGP_TWOPI);
+    $argpm= fmod($argpm, &SGP_TWOPI);
+    $xlm= fmod($xlm, &SGP_TWOPI);
+
+    $mm= fmod($xlm- $argpm- $nodem, &SGP_TWOPI);
+#* --------------------- COMPUTE EXTRA MEAN QUANTITIES -----------------
+    $sinim= sin($inclm);
+
+    $cosim= cos($inclm);
+#* ------------------------ ADD LUNAR-SOLAR PERIODICS ------------------
+    $eccp= $eccm;
+    $xincp= $inclm;
+    $argpp= $argpm;
+    $nodep= $nodem;
+    $mp= $mm;
+    $sinip= $sinim;
+    $cosip= $cosim;
+    if ($parm->{deep_space}) {
+        $self->_r_dpper ($t, \$eccp, \$xincp, \$nodep, \$argpp, \$mp);
+        if ($xincp <  0) {
+            $xincp= -$xincp;
+            $nodep= $nodep+ &SGP_PI;
+            $argpp= $argpp- &SGP_PI;
+        }
+        if ($eccp <  0  ||  $eccp >  1) {
+            $self->{model_error}= &SGP4R_ERROR_3;
+            croak 'Error - ', &SGP4R_ERROR_INST_ECCEN;
+        }
+
+    }
+#* ------------------------ LONG PERIOD PERIODICS ----------------------
+    if ($parm->{deep_space}) {
+        $sinip=  sin($xincp);
+        $cosip=  cos($xincp);
+        $parm->{aycof}= -0.5*$parm->{j3oj2}*$sinip;
+#c         sgp4fix for divide by zero with xincp = 180 deg
+        if (abs($cosip+1) >  1.5e-12) {
+            $parm->{xlcof}= -0.25*$parm->{j3oj2}*$sinip*
+                (3+5*$cosip)/(1+$cosip);
+        } else {
+            $parm->{xlcof}= -0.25*$parm->{j3oj2}*$sinip*
+                (3+5*$cosip)/$temp4;
+        }
+    }
+    $axnl= $eccp*cos($argpp);
+    $temp= 1 / ($am*(1-$eccp*$eccp));
+    $aynl= $eccp*sin($argpp) + $temp*$parm->{aycof};
+
+    $xl= $mp+ $argpp+ $nodep+ $temp*$parm->{xlcof}*$axnl;
+#* ------------------------- SOLVE KEPLER'S EQUATION -------------------
+    $u= fmod($xl-$nodep, &SGP_TWOPI);
+    $eo1= $u;
+    $iter=0;
+#c   sgp4fix for kepler iteration
+#c   the following iteration needs better limits on corrections
+    $temp= 9999.9;
+    while (($temp >= 1e-12) && ($iter < 10)) {
+        $iter=$iter+1;
+        $sineo1= sin($eo1);
+        $coseo1= cos($eo1);
+        $tem5= 1 - $coseo1*$axnl- $sineo1*$aynl;
+        $tem5= ($u- $aynl*$coseo1+ $axnl*$sineo1- $eo1) / $tem5;
+        $temp= abs($tem5);
+        if ($temp > 1) {
+            $tem5=$tem5/$temp
+        }
+        $eo1= $eo1+$tem5;
+
+    }
+#* ----------------- SHORT PERIOD PRELIMINARY QUANTITIES ---------------
+    $ecose= $axnl*$coseo1+$aynl*$sineo1;
+    $esine= $axnl*$sineo1-$aynl*$coseo1;
+    $el2= $axnl*$axnl+$aynl*$aynl;
+    $pl= $am*(1-$el2);
+#c     semi-latus rectum < 0.0
+    if ( $pl <  0 ) {
+        $self->{model_error}= &SGP4R_ERROR_4;
+        croak 'Error - ', &SGP4R_ERROR_LATUSRECTUM;
+    } else {
+        $rl= $am*(1-$ecose);
+        $rdotl= sqrt($am)*$esine/$rl;
+        $rvdotl= sqrt($pl)/$rl;
+        $betal= sqrt(1-$el2);
+        $temp= $esine/(1+$betal);
+        $sinu= $am/$rl*($sineo1-$aynl-$axnl*$temp);
+        $cosu= $am/$rl*($coseo1-$axnl+$aynl*$temp);
+        $su= atan2($sinu, $cosu);
+        $sin2u= ($cosu+$cosu)*$sinu;
+        $cos2u= 1-2*$sinu*$sinu;
+        $temp= 1/$pl;
+        $temp1= 0.5*$parm->{j2}*$temp;
+
+        $temp2= $temp1*$temp;
+#* ------------------ UPDATE FOR SHORT PERIOD PERIODICS ----------------
+        if ($parm->{deep_space}) {
+            $cosisq= $cosip*$cosip;
+            $parm->{con41}= 3*$cosisq- 1;
+            $parm->{x1mth2}= 1 - $cosisq;
+            $parm->{x7thm1}= 7*$cosisq- 1;
+        }
+        $mr= $rl*(1 - 1.5*$temp2*$betal*$parm->{con41}) +
+            0.5*$temp1*$parm->{x1mth2}*$cos2u;
+        $su= $su- 0.25*$temp2*$parm->{x7thm1}*$sin2u;
+        $xnode= $nodep+ 1.5*$temp2*$cosip*$sin2u;
+        $xinc= $xincp+ 1.5*$temp2*$cosip*$sinip*$cos2u;
+        $mv= $rdotl- $xn*$temp1*$parm->{x1mth2}*$sin2u/ $parm->{xke};
+
+        $rvdot= $rvdotl+ $xn*$temp1*
+            ($parm->{x1mth2}*$cos2u+1.5*$parm->{con41}) / $parm->{xke};
+#* ------------------------- ORIENTATION VECTORS -----------------------
+        $sinsu=  sin($su);
+        $cossu=  cos($su);
+        $snod=  sin($xnode);
+        $cnod=  cos($xnode);
+        $sini=  sin($xinc);
+        $cosi=  cos($xinc);
+        $xmx= -$snod*$cosi;
+        $xmy=  $cnod*$cosi;
+        $ux=  $xmx*$sinsu+ $cnod*$cossu;
+        $uy=  $xmy*$sinsu+ $snod*$cossu;
+        $uz=  $sini*$sinsu;
+        $vx=  $xmx*$cossu- $cnod*$sinsu;
+        $vy=  $xmy*$cossu- $snod*$sinsu;
+
+        $vz=  $sini*$cossu;
+#* ----------------------- POSITION AND VELOCITY -----------------------
+        $r[1] = $mr*$ux* $parm->{radiusearthkm};
+        $r[2] = $mr*$uy* $parm->{radiusearthkm};
+        $r[3] = $mr*$uz* $parm->{radiusearthkm};
+        $v[1] = ($mv*$ux+ $rvdot*$vx) * $vkmpersec;
+        $v[2] = ($mv*$uy+ $rvdot*$vy) * $vkmpersec;
+        $v[3] = ($mv*$uz+ $rvdot*$vz) * $vkmpersec;
+
+    }
+#* --------------------------- ERROR PROCESSING ------------------------
+#c     sgp4fix for decaying satellites
+    if ($mr <  1) {
+#c          write(*,*) '# decay condition ',mr
+        $self->{model_error}= &SGP4R_ERROR_6;
+
+    }
+#c        INCLUDE 'debug7.for'
+
+#>>>>trw	RETURN
+
+    $self->universal ($time);
+    $self->eci (@r[1..3], @v[1..3]);
+    $self->equinox_dynamical ($self->{epoch_dynamical});
+    return $self;
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                           FUNCTION GSTIME
+#*
+#*  This function finds the Greenwich SIDEREAL time.  Notice just the INTEGER
+#*    part of the Julian Date is used for the Julian centuries calculation.
+#*    We use radper Solar day because we're multiplying by 0-24 solar hours.
+#*
+#*  Author        : David Vallado                  719-573-2600    1 Mar 2001
+#*
+#*  Inputs          Description                    Range / Units
+#*    JD          - Julian Date                    days from 4713 BC
+#*
+#*  OutPuts       :
+#*    GSTIME      - Greenwich SIDEREAL Time        0 to 2Pi rad
+#*
+#*  Locals        :
+#*    Temp        - Temporary variable for reals   rad
+#*    TUT1        - Julian Centuries from the
+#*                  Jan 1, 2000 12 h epoch (UT1)
+#*
+#*  Coupling      :
+#*
+#*  References    :
+#*    Vallado       2007, 194, Eq 3-45
+#* -----------------------------------------------------------------------------
+
+sub _r_gstime {
+    my $gstime;
+    my ($jd) = @_;
+#* ----------------------------  Locals  -------------------------------
+
+    my ($temp, $tut1);
+#>>>>trw	INCLUDE 'astmath.cmn'
+
+
+
+    $tut1= ( $$jd- 2451545 ) / 36525;
+    $temp= - 6.2e-06*$tut1*$tut1*$tut1+ 0.093104*$tut1*$tut1+
+        (876600*3600 + 8640184.812866)*$tut1+ 67310.54841;
+
+
+    $temp= fmod($temp*&SGP_DE2RA/240, &SGP_TWOPI);
+    if ( $temp <  0 ) {
+        $temp= $temp+ &SGP_TWOPI;
+
+    }
+
+    $gstime= $temp;
+    return $gstime;
+
+
+}
+#* -----------------------------------------------------------------------------
+#*
+#*                           function getgravconst
+#*
+#*  this function gets constants for the propagator. note that mu is identified to
+#*    facilitiate comparisons with newer models.
+#*
+#*  author        : david vallado                  719-573-2600   21 jul 2006
+#*
+#*  inputs        :
+#*    whichconst  - which set of constants to use  721, 72, 84
+#*
+#*  outputs       :
+#*    tumin       - minutes in one time unit
+#*    mu          - earth gravitational parameter
+#*    radiusearthkm - radius of the earth in km
+#*    xke         - reciprocal of tumin
+#*    j2, j3, j4  - un-normalized zonal harmonic values
+#*    j3oj2       - j3 divided by j2
+#*
+#*  locals        :
+#*
+#*  coupling      :
+#*
+#*  references    :
+#*    norad spacetrack report #3
+#*    vallado, crawford, hujsak, kelso  2006
+#*  ----------------------------------------------------------------------------
+
+sub _r_getgravconst {
+    my ($self) = @_;
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
+        or croak "Error - Sgp4r not initialized";
+
+
+    if ($self->{gravconst_r} == 721) {
+        $parm->{radiusearthkm}= 6378.135;
+        $parm->{xke}= 0.0743669161;
+        $parm->{mu}= 398600.79964;
+        $parm->{tumin}= 1 / $parm->{xke};
+        $parm->{j2}=   0.001082616;
+        $parm->{j3}=  -2.53881e-06;
+        $parm->{j4}=  -1.65597e-06;
+        $parm->{j3oj2}=  $parm->{j3}/ $parm->{j2};
+    }
+
+    if ($self->{gravconst_r} == 72) {
+        $parm->{mu}= 398600.8;
+        $parm->{radiusearthkm}= 6378.135;
+        $parm->{xke}= 60 / sqrt($parm->{radiusearthkm}**3/$parm->{mu});
+        $parm->{tumin}= 1 / $parm->{xke};
+        $parm->{j2}=   0.001082616;
+        $parm->{j3}=  -2.53881e-06;
+        $parm->{j4}=  -1.65597e-06;
+        $parm->{j3oj2}=  $parm->{j3}/ $parm->{j2};
+    }
+
+    if ($self->{gravconst_r} == 84) {
+        $parm->{mu}= 398600.5;
+        $parm->{radiusearthkm}= 6378.137;
+        $parm->{xke}= 60 / sqrt($parm->{radiusearthkm}**3/$parm->{mu});
+        $parm->{tumin}= 1 / $parm->{xke};
+        $parm->{j2}=   0.00108262998905;
+        $parm->{j3}=  -2.53215306e-06;
+        $parm->{j4}=  -1.61098761e-06;
+        $parm->{j3oj2}=  $parm->{j3}/ $parm->{j2};
+
+    }
+    return;
+
+
+
+}
+
+##### end of sgp4unit.for
+
+sub _r_dump {
+    my $self = shift;
+    no warnings qw{uninitialized};
+    my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
+	or croak "Sgp4r not initialized";
+    open (my $fh, '>>', 'perldump.out')
+	or croak "Failed to open perldump.out: $!";
+    print $fh ' ========== sgp4r initialization', "\n";
+    print $fh ' SatNum = ', $self->get ('id'), "\n";
+    print $fh ' ...', "\n";
+    print $fh ' Bstar = ', $self->{bstardrag}, "\n";
+    print $fh ' Ecco = ', $parm->{eccentricity}, "\n";
+    print $fh ' Inclo = ', $parm->{inclination}, "\n";
+    print $fh ' nodeo = ', $parm->{rightascension}, "\n";
+    print $fh ' Argpo = ', $parm->{argumentofperigee}, "\n";
+    print $fh ' No = ', $parm->{meanmotion}, "\n";
+    print $fh ' Mo = ', $parm->{meananomaly}, "\n";
+    print $fh ' NDot = ', '????', "\n";
+    print $fh ' NDDot = ', '????', "\n";
+    print $fh ' alta = ', 'not computed; unused?', "\n";
+    print $fh ' altp = ', 'not computed; unused?', "\n";
+    print $fh ' a = ', 'not computed; unused?', "\n";
+    print $fh ' ...', "\n";
+    print $fh ' ----', "\n";
+    print $fh ' Aycof = ', $parm->{aycof}, "\n";
+    print $fh ' CON41 = ', $parm->{con41}, "\n";
+    print $fh ' Cc1 = ', $parm->{cc1}, "\n";
+    print $fh ' Cc4 = ', $parm->{cc4}, "\n";
+    print $fh ' Cc5 = ', $parm->{cc5}, "\n";
+    print $fh ' D2 = ', $parm->{d2}, "\n";
+    print $fh ' D3 = ', $parm->{d3}, "\n";
+    print $fh ' D4 = ', $parm->{d4}, "\n";
+    print $fh ' Delmo = ', $parm->{delmo}, "\n";
+    print $fh ' Eta = ', $parm->{eta}, "\n";
+    print $fh ' ArgpDot = ', $parm->{argpdot}, "\n";
+    print $fh ' Omgcof = ', $parm->{omgcof}, "\n";
+    print $fh ' Sinmao = ', $parm->{sinmao}, "\n";
+    print $fh ' T2cof = ', $parm->{t2cof}, "\n";
+    print $fh ' T3cof = ', $parm->{t3cof}, "\n";
+    print $fh ' T4cof = ', $parm->{t4cof}, "\n";
+    print $fh ' T5cof = ', $parm->{t5cof}, "\n";
+    print $fh ' X1mth2 = ', $parm->{x1mth2}, "\n";
+    print $fh ' MDot = ', $parm->{mdot}, "\n";
+    print $fh ' nodeDot = ', $parm->{nodedot}, "\n";
+    print $fh ' Xlcof = ', $parm->{xlcof}, "\n";
+    print $fh ' Xmcof = ', $parm->{xmcof}, "\n";
+    print $fh ' Xnodcf = ', $parm->{xnodcf}, "\n";
+    print $fh ' ----', "\n";
+    print $fh ' D2201 = ', $parm->{d2201}, "\n";
+    print $fh ' D2211 = ', $parm->{d2211}, "\n";
+    print $fh ' D3210 = ', $parm->{d3210}, "\n";
+    print $fh ' D3222 = ', $parm->{d3222}, "\n";
+    print $fh ' D4410 = ', $parm->{d4410}, "\n";
+    print $fh ' D4422 = ', $parm->{d4422}, "\n";
+    print $fh ' D5220 = ', $parm->{d5220}, "\n";
+    print $fh ' D5232 = ', $parm->{d5232}, "\n";
+    print $fh ' D5421 = ', $parm->{d5421}, "\n";
+    print $fh ' D5433 = ', $parm->{d5433}, "\n";
+    print $fh ' Dedt = ', $parm->{dedt}, "\n";
+    print $fh ' Del1 = ', $parm->{del1}, "\n";
+    print $fh ' Del2 = ', $parm->{del2}, "\n";
+    print $fh ' Del3 = ', $parm->{del3}, "\n";
+    print $fh ' Didt = ', $parm->{didt}, "\n";
+    print $fh ' Dmdt = ', $parm->{dmdt}, "\n";
+    print $fh ' Dnodt = ', $parm->{dnodt}, "\n";
+    print $fh ' Domdt = ', $parm->{domdt}, "\n";
+    print $fh ' E3 = ', $parm->{e3}, "\n";
+    print $fh ' Ee2 = ', $parm->{ee2}, "\n";
+    print $fh ' Peo = ', $parm->{peo}, "\n";
+    print $fh ' Pgho = ', $parm->{pgho}, "\n";
+    print $fh ' Pho = ', $parm->{pho}, "\n";
+    print $fh ' Pinco = ', $parm->{pinco}, "\n";
+    print $fh ' Plo = ', $parm->{plo}, "\n";
+    print $fh ' Se2 = ', $parm->{se2}, "\n";
+    print $fh ' Se3 = ', $parm->{se3}, "\n";
+    print $fh ' Sgh2 = ', $parm->{sgh2}, "\n";
+    print $fh ' Sgh3 = ', $parm->{sgh3}, "\n";
+    print $fh ' Sgh4 = ', $parm->{sgh4}, "\n";
+    print $fh ' Sh2 = ', $parm->{sh2}, "\n";
+    print $fh ' Sh3 = ', $parm->{sh3}, "\n";
+    print $fh ' Si2 = ', $parm->{si2}, "\n";
+    print $fh ' Si3 = ', $parm->{si3}, "\n";
+    print $fh ' Sl2 = ', $parm->{sl2}, "\n";
+    print $fh ' Sl3 = ', $parm->{sl3}, "\n";
+    print $fh ' Sl4 = ', $parm->{sl4}, "\n";
+    print $fh ' GSTo = ', $parm->{gsto}, "\n";
+    print $fh ' Xfact = ', $parm->{xfact}, "\n";
+    print $fh ' Xgh2 = ', $parm->{xgh2}, "\n";
+    print $fh ' Xgh3 = ', $parm->{xgh3}, "\n";
+    print $fh ' Xgh4 = ', $parm->{xgh4}, "\n";
+    print $fh ' Xh2 = ', $parm->{xh2}, "\n";
+    print $fh ' Xh3 = ', $parm->{xh3}, "\n";
+    print $fh ' Xi2 = ', $parm->{xi2}, "\n";
+    print $fh ' Xi3 = ', $parm->{xi3}, "\n";
+    print $fh ' Xl2 = ', $parm->{xl2}, "\n";
+    print $fh ' Xl3 = ', $parm->{xl3}, "\n";
+    print $fh ' Xl4 = ', $parm->{xl4}, "\n";
+    print $fh ' Xlamo = ', $parm->{xlamo}, "\n";
+    print $fh ' Zmol = ', $parm->{zmol}, "\n";
+    print $fh ' Zmos = ', $parm->{zmos}, "\n";
+    print $fh ' Atime = ', $parm->{atime}, "\n";
+    print $fh ' Xli = ', $parm->{xli}, "\n";
+    print $fh ' Xni = ', $parm->{xni}, "\n";
+    print $fh ' IRez = ', $parm->{irez}, "\n";
+    print $fh ' Isimp = ', $parm->{isimp}, "\n";
+    print $fh ' Init = ', $parm->{init}, "\n";
+    print $fh ' Method = ', ($parm->{deep_space} ? 'd' : 'n'), "\n";
+}
+
 
 #######################################################################
 
@@ -4520,6 +6765,34 @@ false)
 
 The default is 0 (i.e. false).
 
+=item gravconst_r (numeric, static)
+
+Tells the sgp4r() method which set of gravitational constants to use.
+Legal values are:
+
+ 72 - Use WGS-72 values;
+ 721 - Use old WGS-72 values;
+ 84 - Use WGS-84 values.
+
+The 'old WGS-72 values' appear from the code comments to be those
+embedded in the original SGP4 model given in "Space Track Report Number
+3".
+
+B<Note well> that "Revisiting Spacetrack Report #3" says "We use  WGS-72
+as the default value." It does not state whether it means the values
+specified by 72 or the values specified by 721, but the former gives
+results closer to the test results included with the code.
+
+Comparing the positions computed by this code to the positions given in
+the published test results, the following maximum deviations are found,
+depending on the gravconst_r value used:
+
+ 72 - 4 mm (oid 23333, X at epoch)
+ 721 - 57 cm (OID 28350, X at 1320 minutes from epoch)
+ 84 - 3.22 km (OID 23333, X at epoch)
+
+The default is 72, to agree with "Revisiting Spacetrack Report #3".
+
 =item id (numeric, parse)
 
 This attribute contains the NORAD SATCAT catalog ID.
@@ -4596,6 +6869,16 @@ model4, model8, null, sgp, sgp4, sgp8, sdp4, and sdp8.
 The default is 'model'. Setting the value on the class changes the
 default.
 
+=item model_error (number)
+
+The sgp4r() model sets this to the number of the error encountered, with
+0 representing success. See the documentation to that model for the
+values set. All other models simply set this to undef. This is B<not> a
+read-only attribute, so the interested user can clear the value if
+desired.
+
+The default is undef.
+
 =item name (string, parse (three-line sets only))
 
 This attribute contains the common name of the body.
@@ -4655,11 +6938,16 @@ Felix R. Hoots and Ronald L. Roehric, the authors of "SPACETRACK
 REPORT NO. 3 - Models for Propagation of NORAD Element Sets,"
 which provided the basis for the Astro::Coord::ECI::TLE module.
 
-Dr. T. S. Kelso, who compiled this report and made it available at
-L<http://celestrak.com/NORAD/documentation/spacetrk.pdf>. Dr. Kelso's
-Two-Line Element Set Format FAQ
-(L<http://celestrak.com/columns/v04n03/>) was also extremely helpful,
-as was his discussion of the coordinate system used
+David A. Vallado, Paul Crawford, Richard Hujsak, and T. S. Kelso, the
+authors of "Revisiting Spacetrack Report #3", presented at the 2006
+AIAA/AAS Astrodynamics Specialist Conference.
+
+Dr. T. S. Kelso, who made these two key reports available at
+L<http://celestrak.com/NORAD/documentation/spacetrk.pdf> and
+L<http://celestrak.com/publications/AIAA/2006-6753/> respectively. Dr.
+Kelso's Two-Line Element Set Format FAQ
+(L<http://celestrak.com/columns/v04n03/>) was also extremely helpful, as
+was his discussion of the coordinate system used
 (L<http://celestrak.com/columns/v02n01/>) and (indirectly) his Pascal
 implementation of these models.
 
