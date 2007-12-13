@@ -1,0 +1,931 @@
+#!/usr/local/bin/perl510
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use IO::Handle;
+use Text::Tabs;
+use Text::Wrap qw{wrap};
+
+our $VERSION = '0.000_01';
+
+my %opt;
+GetOptions (\%opt, qw{crossreference help specification=s set=s% version}) && (
+    $opt{specification} || $opt{help} || $opt{version} || @ARGV)
+    or die &usage;
+$opt{help} and do {print &usage; exit};
+
+my %common;
+my $within = 'global';	# Current declaration scope.
+sub indent ($);	# Defined below; specifies indentation of 'output'.
+sub output (@);	# Defined below; to be used in place of 'print'.
+sub outlit (@); # Similar to output(), but without indenting.
+my %parm;	# Parameters (duh!)
+my %byvalue;	# Subroutine arguments to be passed by value.
+my %replarg;	# Replacement argument list for subroutines.
+my %callinfo;	# Formal/actual parameter cross-reference.
+my %ifcalled;	# Text of warning to issue of a given sub is called.
+
+foreach (undef, $opt{specification} ? ($opt{specification}) : ()) {
+    my $fh;
+    my $fn = $_;	# Because we may have a constant.
+    if (defined $fn) {
+	open ($fh, '<', $fn)
+	    or die "Unable to open $fh: $!\n";
+    } else {
+	$fh = \*DATA;
+	$fn = '<DATA>';
+    }
+    while (defined (local $_ = $fh->getline)) {
+	s/^\s+//;
+	$_ or next;
+	substr ($_, 0, 1) eq '#' and next;
+	s/\s+$//;
+	my ($type, $name, $value) = split ('\s+', $_, 3);
+	'end' eq lc $type && !defined ($name) and last;
+	my $code = __PACKAGE__->can ('define_' . $type)
+	    or die "Invalid type '$type' in $fn";
+	$code->($name, $value);
+    }
+}
+if ($opt{version}) {
+    require File::Basename;
+    my $me = File::Basename::basename ($0);
+    print "$me version $VERSION\n";
+    if ($opt{specification}) {
+	if (defined $parm{version}) {
+	    print "$opt{specification} version $parm{version}\n";
+	} else {
+	    print "$opt{specification} version is undefined\n";
+	}
+    }
+    exit;
+}
+if (my $set = $opt{set}) {
+    foreach my $key (keys %$set) {
+	define_set ($key, $set->{$key});
+    }
+}
+##5.8 defined $parm{comment_out} or $parm{comment_out} = '';
+$parm{comment_out} //= '';
+
+my $type = qr{(?:real|integer|character|complex)(?:\*\d+)?}i;
+my $vardef = qr{[[:alpha:]]\w*\s*}i;
+my $arydef = qr{$vardef(?:\(\s*\d+(?:,\s*\d+)*\))?};
+
+my @fh;
+my %subarg;
+my %declared;
+my @nesttype;
+my %drop;	# Drop variable declaration or assignment, or include.
+
+{
+    unless (@ARGV) {
+	defined $parm{source} and push @ARGV, $parm{source};
+    }
+    if (@ARGV > 1) {
+	die "Only one input file allowed.\n";
+    } elsif (@ARGV > 0) {
+	open (my $fh, '<', $ARGV[0])
+	    or die "Failed to open $ARGV[0]: $!\n";
+	push @fh, $fh;
+    } else {
+	push @fh, \*STDIN;
+    }
+}
+
+
+$within = 'global';
+foreach (@{get_code_ref ('begin')}) {
+    output $_;
+}
+if ($parm{enclose}) {
+    output '{';
+    indent 1;
+}
+
+$within = 'main';	# We're in the main until further notice.
+my @line;
+while (@fh) {
+    @line = ();
+    while (defined (local $_ = $fh[-1]->getline ())) {
+	($_) = expand ($_);
+	s/\![^!']*//;
+	s/\s+$//;
+	if (!m/\S/) {
+	    outlit;
+	} elsif (m/^\S/ && m/^\D/ || m/^\s*!/) {
+	    substr ($_, 0, 0) = '#';
+	    &process;
+	    outlit $_;
+	} elsif (s/^     \S//) {
+	    s/^\s+//;
+	    push @line, $_;
+	} elsif (m/^\s{6,}include\s*'([^']*)'$/i) {
+	    my $fn = $1;
+	    &process;
+	    my $lcf = lc $fn;
+	    if (drop (include => $lcf)) {
+		s/^\s+//;
+		outlit '#', $parm{comment_out}, "\t", $_;
+	    } else {
+		open (my $fh, '<', $fn) or die "Failed to open $fn: $!\n";
+		s/^\s+//;
+		outlit '#### BEGIN ', $_;
+		push @fh, "#### END $_\n";
+		push @fh, $fh;
+		@line = ();
+	    }
+	} else {
+	    &process;
+	    push @line, $_;
+	}
+    }
+    &process;
+    pop @fh;
+    while (@fh && !ref $fh[-1]) {
+	outlit pop @fh;
+    }
+}
+if ($parm{enclose}) {
+    indent -1;
+    output '}';
+}
+
+$within = 'global';
+foreach (@{get_code_ref ('end')}) {
+    output $_;
+}
+
+if ($opt{crossreference}) {
+    my $comment = '#' . $parm{comment_out} . "\t";
+    outlit;
+    outlit $comment, "Cross-reference";
+    foreach my $name (sort keys %callinfo) {
+	outlit $comment, 'subroutine ', $name, ' defined at line ',
+		$callinfo{$name}{formal}[0];
+	my $comment = $comment . "\t";
+	foreach my $actual (@{$callinfo{$name}{actual}}) {
+	    outlit $comment, 'subroutine ', $name, ' called at line ',
+	    $actual->[0];
+	    my $comment = $comment . "\t";
+	    for (my $inx = 1; $inx < @$actual; $inx++) {
+		outlit $comment, $inx - 1, ': ', $callinfo{$name}{formal}[$inx], ' => ',
+		$actual->[$inx];
+	    }
+	}
+    }
+}
+
+{
+    my $retvar;		# Name of return variable for Fortran function.
+    my $teardown;	# Reference to list of teardown code.
+    sub process {
+	@line or return;
+	local $_ = join ' ', @line;
+	@line = ();
+	s/^(......)// and my $number = $1;
+	$number =~ s/\s//g;
+	if ($number ne '') {
+	    outlit "Line_$number:";
+	}
+	s/^\s+//;
+	emit_before ($_);
+	$_ = substitute ($_);
+	if (m/^\s*#/) {	# Substitute may have commented the line out.
+	    outlit $_;
+	} elsif (m/^implicit/i) {
+	} elsif (m/^\s*subroutine\s*(\w+)\s*\(([^\)]*)\)$/i) {
+	    subroutine_declaration ($1, $2, undef);
+	} elsif (m/^(?:$type)?\s*function\s*(\w+)\s*\(([^\)]*)\)$/i) {
+	    subroutine_declaration ($1, $2, 1);
+	} elsif (m/^end$/i) {
+	    if (@nesttype && $nesttype[-1] eq 'sub') {
+		pop @nesttype;
+		if ($teardown) {
+		    foreach (@$teardown) {
+			output $_;
+		    }
+		    $teardown = undef;
+		}
+		indent -1;
+		output '}';
+		$retvar = undef;
+		%subarg = ();
+		%declared = ();
+		$within = 'main';
+	    } else {
+		warn "Warning - end without subroutine or function";
+		outlit '#>>>> unmatched ', $_;
+	    }
+	} elsif (m/^end\s*if$/i) {
+	    if (@nesttype && $nesttype[-1] eq 'if') {
+		pop @nesttype;
+		indent -1;
+		output '}';
+	    } else {
+		warn "Warning - endif without if";
+		outlit '#>>>> unmatched ', $_;
+	    }
+	} elsif (m/^if\s*\((.*)\)\s*then$/i) {
+	    local $_ = expression ($1);
+	    output 'if (', $_, ') {';
+	    indent 1;
+	    push @nesttype, 'if';
+	} elsif (m/^if\s*\((.*)\)\s*(.*)$/i) {
+	    my $cond = expression ($1);
+	    my $expr = expression ($2);
+	    output 'if (', $cond, ') {';
+	    indent 1;
+	    output $expr;
+	    indent -1;
+	    output '}';
+	} elsif (m/^else$/i) {
+	    if (@nesttype && $nesttype[-1] eq 'if') {
+		indent -1;
+		output '} else {';
+		indent 1;
+	    } else {
+		warn "Warning - else without if";
+		outlit '#>>>> unmatched ', $_;
+	    }
+	} elsif (m/^do\s*($vardef)=\s*([^,]+),\s*([^,]+)(?:,\s*([^,]+))?$/i) {
+	    my ($var, $start, $end, $inc) = ($1, $2, $3, $4);
+##5.8	    defined $inc or $inc = 1;
+	    $inc //= 1;
+	    $var =~ s/\s+$//;
+	    $var = lc $var;
+	    my $prefix = 'my ';
+	    if ($subarg{$var}) {
+		$var = '$$' . $var;
+		$prefix = '';
+	    } elsif ($declared{$var}) {
+		$prefix = '';
+		$var = '$' . $var;
+	    } else {
+		$var = '$' . $var;
+	    }
+	    if ($inc == 1) {
+		output 'foreach ', $prefix, $var, '(', $start, ' .. ',
+		    $end, ') {';
+	    } else {
+		output 'for (', $prefix, $var, ' = ', $start, '; ',
+		    $var, ' <= ', $end, '; ', $var, ' += ', $inc,
+		    ') {';
+	    }
+	    indent 1;
+	    push @nesttype, 'do';
+	} elsif (m/^do\s*while\s*\((.*)\)$/i) {
+	    my $test = expression ($1);
+	    push @nesttype, 'do';
+	    output 'while (', $test, ') {';
+	    indent 1;
+	} elsif (m/^end\s*do$/i) {
+	    if (@nesttype && $nesttype[-1] eq 'do') {
+		pop @nesttype;
+		indent -1;
+		output '}';
+	    } else {
+		warn "Warning - enddo without do";
+		outlit '#>>>> unmatched ', $_;
+	    }
+	# TODO need true nested parens parser here.
+	} elsif (m/^call\s*($vardef)\((.*)\)/i) {
+	    my $old = $_;
+	    (my $subnam = lc $1) =~ s/\s+$//;
+	    local $_ = lc $2;
+	    s/\s//g;
+	    if (drop (call => $subnam)) {
+		outlit '#', $parm{comment_out}, "\t", $old;
+	    } else {
+		push @{$callinfo{$subnam}{actual} ||= []}, [$., split ',', expression ($_)];
+		iscall ($subnam);
+		output function ($subnam, $_), ';';
+		iscall (undef);
+	    }
+	} elsif (m/^return$/i) {
+	    if ($teardown) {
+		outlit "#", $parm{comment_out}, "\t", $_;
+	    } elsif ($retvar) {
+		output 'return ', $retvar, ';';
+	    } else {
+		output 'return;';
+	    }
+	} elsif (m{^common\s*/([^/]*)/}i) {
+	    my $cmnnam = lc $1;
+	    s{.*/\s*}{};
+	    s/\s//g;
+	    foreach (split ',', lc $_) {
+		$common{$_} = '$Common::' . $cmnnam . '::' . $_;
+	    }
+	} elsif (m{^data\s*$vardef[,/]}i) {
+	    s/^data\s*//i;
+	    my ($vars, $vals) = m{([^/]*)/([^/]*)};
+	    $vars =~ s/\s//g;
+	    my @vars = split '\s*,\s*', lc $vars;
+	    $vals =~ s/^\s+//;
+	    $vals =~ s/\s+$//;
+	    my @vals = split '\s*,\s*', $vals;
+	    @vars == @vals
+		or warn "Variables do not equal values in 'data $_'";
+	    for (my $inx = 0; $inx < @vars; $inx++) {
+		my $name = $vars[$inx];
+		if (drop (assign => $name)) {
+		    outlit '#', $parm{comment_out}, "\t", $name, ' = ',
+		    $vals[$inx];
+		} else {
+		    (my $pfx = ($subarg{$name} || $common{$name} ||
+			$declared{$name}) ? '' : 'my ')
+		    and $declared{$name} = 1;
+		    $name = $subarg{$name} || $common{$name} || '$' . $name;
+		    my $value = expression ($vals[$inx] || 0);
+		    output $pfx, $name, ' = ', $value, ';';
+		}
+	    }
+	} elsif (m/^$type\s*($arydef(?:,\s*$arydef)*)/) {
+	    local $_ = lc $1;
+	    s/\s//g;
+	    my @args;
+	    isdeclaration (1);
+	    foreach (split ',', $_) {
+		(my $name = $_) =~ s/\(.*//;
+		$subarg{$name} || $common{$name} || drop (declare => $name)
+		|| $parm{drop_var_declare} && var_defined ($name)
+		|| $declared{$name}
+		    and next;
+		push @args, expression ($_);
+	    }
+	    isdeclaration (0);
+	    @args and output 'my (', join (', ', @args), ');';
+	} else {
+	    my $pfx = 'my ';
+	    if (m/^\s*($vardef)=/) {
+		(my $name = lc $1) =~ s/\s+$//;
+		drop (assign => $name)
+		    and $pfx = undef;
+	    }
+	    if ($pfx) {
+		$_ = expression ($_);
+		if (m/^\s*\$+($vardef)/) {
+		    my $vnam = lc $1;
+		    $vnam =~ s/\s+$//;
+		    if ($declared{$vnam} || $subarg{$vnam} || $common{$vnam}) {
+			$pfx = '';
+		    } else {
+			$declared{$vnam} = 1;
+		    }
+		}
+		output $pfx, $_, ';';
+	    } else {
+		s/^\s+//;
+		outlit '#', $parm{comment_out}, "\t", $_;
+	    }
+	}
+	emit_after ();
+    }
+
+    sub subroutine_declaration {
+	(my $subnam, local $_, my $function) = @_;
+	s/\s//g;
+	$subnam = lc $subnam;
+	$retvar = $function ? $subnam : undef;
+	$callinfo{$subnam}{formal} = [$., split '\s*,\s*', $_];
+	exists $replarg{$subnam} and $_ = $replarg{$subnam};
+	$within = 'sub ' . $subnam;	# We're in the named subroutine.
+	my $byval = $byvalue{$subnam} || {};
+	$subnam = define_func ($subnam);
+	s/\s//g;
+	my @args = split ',', lc $_;
+	%subarg = map {$_ => '$$' . $_} @args;
+	output 'sub ', $subnam, ' {';
+	indent 1;
+	%declared = ();
+	foreach my $name (keys %$byval) {
+	    delete $subarg{$name};
+	    $declared{$name} = 1;
+	}
+	push @nesttype, 'sub';
+	if ($function) {
+	    output 'my $', $retvar, ';';
+	    $declared{$retvar} = 1;
+	    $retvar = '$' . $retvar;
+	}
+	output 'my (', join (', ', map "\$$_", @args), ') = @_;';
+	foreach (@{get_code_ref ('begin')}) {
+	    if (m/^\s*(?:my\s*)?\$+($vardef)/) {
+		local $_ = $1;
+		s/\s+$//;
+		$declared{$_} = 1;
+	    }
+	    output $_;
+	}
+	$teardown = get_code_ref ('end');
+	@$teardown or $teardown = undef;
+    }
+}
+
+{
+    my %relation;
+    my %reverse;
+    my $relre;
+    my $numrelre;
+    BEGIN {
+	%relation = (
+	    lt => '<',
+	    le => '<=',
+	    eq => '==',
+	    ne => '!=',
+	    gt => '>',
+	    ge => '>=',
+	);
+	foreach (keys %relation) {$reverse{$relation{$_}} = $_}
+	@relation{qw{and or not}} = qw{&& || !};
+	$relre = qr{@{[join '|', sort keys %relation]}}i;
+	$numrelre = qr{@{[join '|', map quotemeta($_), sort keys %reverse]}};
+    }
+
+    sub expression {
+	local $_ = shift;
+	s/^$type\s*//;
+##    s/(\w+)/\$\L$1/g;
+	s/('[^']*')|
+	  (?:\.($relre)\.)|
+	  (\d*\.\d*[DE][+\-]?\d+|
+	    \d+[DE][+\-]?\d+|
+	    \d*\.\d+|
+	    \d+\.?)|
+	(($vardef)\s*\(([^\)]*)\))|
+	($vardef)/
+	$1 ? $1 :
+	$2 ? " $relation{lc $2} " :
+	defined ($3) ? number ($3) :
+        defined ($4) ? function ($5, $6) : variable ($7)/giex;
+	s/\s*($numrelre)(\s*\')/q{ } . $reverse{$1} . q{ '}/ge;
+	s/(\'\s*)($numrelre)\s*/q{' } . $reverse{$2} . q{ }/ge;
+	return $_;
+    }
+}
+
+sub number {
+    local $_ = shift;
+    s/[de]/e/ig;
+    $_ + 0;
+}
+
+sub squish {
+    local $_ = shift;
+    s/\s//g;
+    $_;
+}
+
+sub define_arg {$replarg{lc $_[0]} = $_[1] || ''}
+sub define_byvalue {
+    $byvalue{lc $_[0]} = {map {$_ => 1} split ',', lc squish ($_[1])};
+}
+sub define_ifcalled {$ifcalled{lc $_[0]} = $_[1]}
+sub define_set {$parm {lc $_[0]} = $_[1]}
+
+{
+    my %code;
+    my %legal;
+    BEGIN {%legal = map {$_ => 1} qw{begin end}}
+    sub define_code {
+	push @{get_code_ref ($_[0])}, $_[1];
+    }
+    sub get_code_ref {
+	my $loc = lc shift;
+	$legal{$loc} or die "Illegal code location '$loc'";
+	$code{$within}{$loc} ||= [];
+    }
+}
+
+{
+    my %intrinsic;
+    my $iscall;
+    sub iscall {$iscall = shift}
+    sub define_func {
+	my $name = lc shift;
+	$name =~ s/\s+$//;
+	local $_ = $intrinsic{$name} ||= shift || $name . '(%s)';
+	s/\s*\(.*//;
+	s/.*\W//;
+	$_;
+    }
+    my $declaration;
+    sub isdeclaration {$declaration = shift}
+    sub function {
+	my $name = lc shift;
+	my $args = shift;
+	$name =~ s/\s+$//;
+	local $_;
+	if ($declaration) {
+	    my $size = 1;
+	    foreach (split '\s*,\s*', $args) {
+		$size *= number ($_);
+	    }
+	    $declared{$name} = $size;
+	    return ($size > 1 ? '@' : '$') . $name;
+	} elsif ($declared{$name} || $subarg{$name} || $common{$name}) {
+	    local $_ = expression ($args);
+	    s/,/\]\[/g;
+	    return '$' . $name . ($subarg{$name} ? '->' : '') . '[' . $_ . ']';
+	} else {
+	    define_func ($name);
+	    if (my $msg = delete $ifcalled{$name}) {
+		warn $msg, "\n";
+	    }
+	    return format_args ($intrinsic{$name}, expression ($args));
+	}
+    }
+
+    my %replace;
+    sub define_within {
+	my $type = lc shift;
+	if ($type eq 'sub') {
+	    my $sub_name = lc shift
+		or die "Error - 'within sub' requires subroutine name";
+	    $within = 'sub ' . $sub_name;
+	} elsif ($type eq 'main') {
+	    $within = 'main';
+	} elsif ($type eq 'global') {
+	    $within = 'global';
+	} else {
+	    die "Error - 'within $type' illegal";
+	}
+    }
+    sub define_var {
+	$replace{$within}{lc $_[0]} = $_[1];
+    }
+    sub var_defined {
+	(my $name = lc shift) =~ s/\s+$//;
+	$replace{$within}{$name} || $replace{global}{$name};
+    }
+    {
+	my %lgltyp;
+	BEGIN {%lgltyp = map {$_ => 1} qw{assign call declare include}}
+	sub define_drop {
+	    my $type = lc shift;
+	    $lgltyp{$type} or die "Error - 'drop $type' is illegal";
+	    my $name = lc shift;
+	    $name =~ s/\s//g;
+	    $drop{$type}{$within}{$name} = 1;
+	}
+	sub drop {
+	    my $type = lc shift;
+	    $lgltyp{$type} or die "Error - 'drop $type' is illegal";
+	    my $name = lc shift;
+	    $name =~ s/\s//g;
+	    $drop{$type}{$within}{$name} || $drop{$type}{global}{$name};
+	}
+    }
+    sub variable {
+	local $_ = lc shift;
+	s/\s//g;
+	if ($declaration) {
+	    $declared{$_} ||= 1;
+	    return '$' . $_;
+	} elsif ($iscall && !$byvalue{$iscall}{$_}) {
+	    $replace{$within}{$_} ? '\\' . $replace{$within}{$_} :
+	    $replace{global}{$_} ? '\\' . $replace{global}{$_} :
+	    $subarg{$_} ? '$' . $_ :
+	    $common{$_} ? '\\' . $common{$_} : '\\$' . $_;
+	} else {
+	    $replace{$within}{$_} || $replace{global}{$_} ||
+	    $subarg{$_} || $common{$_} || '$' . $_;
+	}
+    }
+}
+
+{
+    my $level;
+    BEGIN {
+	$level = 0;
+    }
+    sub indent ($) {
+	$level += shift || 0;
+	$level < 0 and $level = 0;
+    }
+    sub output (@) {
+	@_ = grep {defined $_} @_;
+	@_ or goto \&outlit;
+	unshift @_, '    ' x (
+	    $level + ($_[0] =~ m/^(?:(?:and|or)\b|["'])/ ? 1 : 0));
+	if ($parm{wrap}) {
+	    local $Text::Wrap::columns = $parm{wrap};
+	    local $Text::Wrap::unexpand = undef;
+	    local $Text::Wrap::huge = 'overflow';
+	    my $init = shift @_;
+	    my $subs = $init . '    ';
+	    @_ = (wrap ($init, $subs, join '', @_));
+	}
+	goto &outlit
+    }
+    sub outlit (@) {
+	if (@_) {
+###5.8	    print @_, "\n";
+	    say @_;
+	} else {
+###5.8	    print "\n";
+	    say '';
+	}
+    }
+}
+
+{
+    my %surround;
+    sub _define_surround {
+	my ($where, $re, $code) = @_;
+	$surround{$re}{re} ||= qr{$re}i;
+	push @{$surround{$re}{$where} ||= []}, $code;
+    }
+    sub define_after {_define_surround (after => @_)}
+    sub define_before {_define_surround (before => @_)}
+    my $pending_after;
+    sub emit_after {
+	if ($pending_after) {
+	    foreach (@$pending_after) {
+		if (substr ($_, 0, 1) eq '#') {
+		    outlit $_;
+		} else {
+		    output $_;
+		}
+	    }
+	}
+    }
+    sub emit_before {
+	local $_ = shift;
+	my %rslt;
+	foreach my $key (keys %surround) {
+	    m/$surround{$key}{re}/ or next;
+	    foreach my $where (qw{before after}) {
+		$surround{$key}{$where}
+		    and push @{$rslt{$where} ||= []},
+		    @{$surround{$key}{$where}};
+	    }
+	}
+	$pending_after = $rslt{before} and emit_after ();
+	$pending_after = $rslt{after};
+    }
+}
+
+{
+    my @subst;
+    my $sub_code;
+    sub define_subst {
+	push @subst, [@_];
+    }
+    sub substitute {
+	unless ($sub_code) {
+	    if (@subst) {
+		my $kode = join ("\n", 'sub {local $_ = shift;',
+		    (map "s/$_->[0]/$_->[1]/ig;", @subst), '$_}');
+		$sub_code = eval $kode;
+	    } else {
+		$sub_code = sub {$_[0]};
+	    }
+	}
+	$sub_code->(join '', @_);
+    }
+}
+
+sub format_args {
+    my ($format, $args) = @_;
+    $args =~ s/^\s+//;
+    $args =~ s/\s+$//;
+    my @single = split '\s*,\s*', $args;
+    $format =~ s{%(?:([s])|(-?\d+)|(.))}
+	{$1 ? $args : defined $2 ? $single[$2 + 0] : $3}gex;
+    $format =~ s/\s*,\s*/, /g;
+    $format;
+}
+
+sub usage {
+    require File::Basename;
+    my $me = File::Basename::basename ($0);
+    <<eod;
+
+$me version $VERSION
+Convert Fortran to Perl (sort of)
+
+usage: $me [options] [file]
+
+The file argument is the source file. If omitted, it comes from the -set
+source=filename command option if any, or the 'set source filename'
+specification in the specification file if any, or standard in
+otherwise. The valid options are:
+  -crossreference
+    appends a subroutine declaration/call cross reference (commented
+    out) to the output;
+  -help
+    displays this text and exits;
+  -set key=value
+    sets parameters from the command line, overriding settings in the
+    specification file;
+  -specification filename
+    reads the given file for specifications on how to conver the Fortran
+    to Perl; see the end of the source for documentation on file format;
+  -version
+    displays the version of this code (and the version setting of the
+    specification file if one was specified), and exits.
+eod
+}
+__END__
+
+#	This is the constant part of the specification on how to convert
+#	Fortran to Perl. Blank lines and lines whose first non-blank
+#	character is '#' are ignored. All other lines must look like one
+#	of the following. All lines consist of three fields; the first
+#	must be the given string; the second is as defined, and may not
+#	contain blanks. The rest of the line is the third, which may
+#	contain blanks.
+#
+#	after	pattern	code
+#	    where
+#		pattern	is a Perl regular expression which is matched to
+#			the Fortran code, and
+#		code	is Perl code to be inserted into the output
+#			after the match.
+#	    You can specify more than one line of code for the same
+#	    pattern; they will be inserted in the order specified. If
+#	    more than one pattern matches a given line, the order of the
+#	    two code blocks is undefined, and may in fact change from
+#	    run to run.
+#
+#	arg	name	arguments
+#	    where
+#		name	is the name of a subroutine or function;
+#		arguments is a list of arguments, separated by commas,
+#			to replace the arguments specified in the
+#			Fortran source. This does _not_ alter the actual
+#			parameter list, only the formal parameter list.
+#			To alter the actual parameter list, see 'func'.
+#
+#	before	pattern	code
+#	    This is pretty much the same as 'after pattern code' (which
+#	    see), but the code gets emitted before the matched line.
+#
+#	byvalue	name	arguments
+#	    where
+#		name	is the name of a subroutine or function;
+#		arguments is a list of arguments, separated by commas,
+#			which are to be considered passed in by value.
+#
+#	code	where	perlcode
+#	    where
+#		where	is 'begin' to insert at the beginning of the
+#			current 'within' unit, and 'end' to insert at
+#			the end;
+#		perlcode is a line of Perl code to be inserted at the
+#			given location. You can specify more than one
+#			line of code for a given location; they will be
+#			inserted in order. The line of code may contain
+#			spaces.
+#		NOTE>>>	If at least one 'end' is defined for a
+#			subroutine, all 'return' statements will be
+#			commented out. It is the responsibility of the
+#			'end' code to return the proper value if any.
+#			This will break code that returns from the
+#			middle of the subroutine, but it will allow
+#			you to turn a subroutine into a function.
+#
+#	drop	type	name
+#	    where:
+#		type is the type of thing to be dropped, with legal
+#			values being 'include' to drop an include,
+#			'declare' to drop a variable declaration,
+#			'assign' to drop all assignments to the
+#			variable, and 'call' to drop a subroutine
+#			call. Function calls may not be dropped.
+#		name is the name of the thing to be dropped; Fortran
+#			variable name for 'declare' or 'assign',
+#			include file name for 'include', or subroutine
+#			name for 'call'.
+#	    Each 'drop' declaration is effective only in the program unit
+#	    declared by the immediately-preceding 'within' declaration,
+#	    or 'global' if there is none.
+#
+#	end
+#	    An 'end' by itself represents the logical end of the
+#	    specification file, and is treated like the actual end of
+#	    the file. No further data are read.
+#
+#	error	pattern	replacement
+#	    where
+#		pattern	is a regular expression (which will be applied
+#			case-insensitive);
+#		replacement is the line that replaces the given line.
+#	    Maybe this should have been called 'replace', but I was
+#	    using it to generate errors from 'Error = n' statements.
+#
+#	func	name	definition
+#	    where:
+#		name is the name of the function (case-insensitive)
+#		definition is what to emit when the function is called.
+#			If the definition is omitted, it is the name
+#			with '(%s)' appended. You are allowed to change
+#			the name of the subroutine, or turn it into a
+#			Perl o-o call.
+#
+#			It is possible to use the definition to modify
+#			the actual parameters passed in. Substitution of
+#			actual parameters into the definition is
+#			specified using '%' followed by magic
+#			characters, as follows:
+#
+#			's' substitutes the entire argument list
+#			verbatim.
+#
+#			An integer substitutes that argument. Arguments
+#			are numbered from 0, with negative numbers
+#			representing offsets from the end (-1 is the
+#			last argument).
+#
+#			'%' inserts a '%', though I have no idea why you
+#			would want this.
+#
+#			Anything else is unsupported. Right now it
+#			substitutes itself in, but this will change as
+#			functionality is added.
+#
+#			To alter the formal parameter list, see 'arg'.
+#
+#	set	name	value
+#	    where:
+#		name is the parameter name (case-insensitive)
+#		value is the value to give that parameter.
+#	    The following settings are used:
+#		comment_out = identifier string for code commented out
+#			by this script (in addition to leading '#');
+#		drop_var_declare = drop the declarations of variables
+#			modified via a 'var' declaration if true;
+#		enclose = enclose the emitted code in curly brackets if
+#			true;
+#		source = name of Fortran file to process (only effective
+#			if -specification specified on command line);
+#		wrap = use Text::Wrap to wrap lines at the specified
+#			column.
+#
+#	subst	regexp	replacement
+#	    where:
+#		regexp is a Perl regular expression not containing
+#			literal spaces, with slashes escaped, and
+#			possibly with capture parentheses;
+#		replacement is the replacement string, which may contain
+#			spaces.
+#	    All 'subst' expressions, in the order given, are applied
+#	    to Fortran code before it is parsed. They are not applied
+#	    to comments. Because Fortran is a case-insensitive language
+#	    the substitution is always case-insensitive.
+#
+#	var	name	substitution
+#	    where:
+#		name is the name of the variable (case-insensitive)
+#		substitution is what to substitute in when the variable
+#			is encountered.
+#	    Each 'var' declaration is effective only in the program unit
+#	    declared by the immediately-preceding 'within' declaration,
+#	    or 'global' if there is none.
+#
+#	within	type	name
+#	    where:
+#		type is the type of program unit, with only 'sub',
+#			'main', and 'global' (applying to all program
+#			units) being valid;
+#		name is the name of the program unit, which is ignored
+#			unless the type is 'sub'.
+#	    All 'drop' and 'var' declarations are qualified by the
+#	    immediately preceding 'within'. If there is none, 'global'
+#	    is assumed.
+
+#	The following 'func' definitions are necessary to process
+#	FORTRAN; DO NOT remove or alter them.
+
+func	abs
+func	atan	atan2(%s,1)
+func	atan2
+func	cos
+func	dabs	abs(%s)
+func	datan2	atan2(%s)
+func	dcos	cos(%s)
+# use Perl int, for whatever it's worth
+func	dint	int(%s)
+# func	dint	floor(%s)
+# ifcalled dint	Need 'use POSIX qw{floor};'
+func	dmod	fmod(%s)
+ifcalled dmod	Need 'use POSIX qw{fmod};'
+func	dsin	sin(%s)
+func	dsqrt	sqrt(%s)
+func	fmod
+ifcalled fmod	Need 'use POSIX qw{fmod};'
+# use Perl int, for whatever it's worth
+func	int
+# func	int	floor(%s)
+# ifcalled int	Need 'use POSIX qw{floor};'
+func	sin
+func	sqrt
+func	datan	atan2(%s,1)
+func	datan2	atan2(%s)
+
