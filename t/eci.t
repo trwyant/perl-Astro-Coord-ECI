@@ -2,14 +2,13 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI;
-use Math::Trig;
+use Astro::Coord::ECI::Utils qw{deg2rad PERL2000 rad2deg};
 use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
 BEGIN {plan tests => 65}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
-use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
 Astro::Coord::ECI->set (debug => 0);

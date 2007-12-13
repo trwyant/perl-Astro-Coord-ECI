@@ -3,15 +3,13 @@ use warnings;
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
-use Math::Trig;
+use Astro::Coord::ECI::Utils qw{deg2rad PI};
 use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
 BEGIN {plan tests => 9}
-use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
-use constant PI => atan2 (0, -1);
 
 my $test = 0;
 

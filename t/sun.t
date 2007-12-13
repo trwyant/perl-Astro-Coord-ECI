@@ -3,7 +3,7 @@ use warnings;
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Sun;
-use Math::Trig;
+use Astro::Coord::ECI::Utils qw{deg2rad};
 use POSIX qw{strftime floor};
 use Test;
 use Time::Local;

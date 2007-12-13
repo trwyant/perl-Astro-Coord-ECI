@@ -3,15 +3,12 @@ use warnings;
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Star;
-use Math::Trig;
+use Astro::Coord::ECI::Utils qw{deg2rad PI};
 use POSIX qw{strftime floor};
 use Test;
 use Time::Local;
 
 BEGIN {plan tests => 2}
-##use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
-##use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
-use constant PI => atan2 (0, -1);
 
 my $test = 0;
 
@@ -28,8 +25,8 @@ my $star = Astro::Coord::ECI::Star->new (name => 'Theta Persei')->
  	deg2rad (41.0499416666667), 	# right ascension - radians
  	deg2rad (49.2284666666667),	# declination - radians
 	36.64 * LIGHTYEAR2KILOMETER,	# range - kilometers
-	.03425 / 3600 / 12 * pi / SECSPERYEAR,	# motion in r.a. - radians/sec
-	-.0895 / 3600 / 180 * pi / SECSPERYEAR,	# motion in decl - radians/sec
+	.03425 / 3600 / 12 * PI / SECSPERYEAR,	# motion in r.a. - radians/sec
+	-.0895 / 3600 / 180 * PI / SECSPERYEAR,	# motion in decl - radians/sec
 	0,					# recession vel - km/sec
 	);
 my $time = timegm (0, 0, 12, 13, 10, 2028) + .19 * 86400;
@@ -44,7 +41,7 @@ print <<eod;
 # coordinates.
 #
 eod
-foreach (['right ascension' => $alpha, ((14.390 / 60 + 46) / 60 + 2) / 12 * pi],
+foreach (['right ascension' => $alpha, ((14.390 / 60 + 46) / 60 + 2) / 12 * PI],
 	[declination => $delta, deg2rad ((7.45 / 60 + 21) / 60 + 49)],
 	) {
     my ($what, $got, $expected) = @$_;
