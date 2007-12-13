@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -20,13 +20,7 @@ eod
 
 my @exe_files;
 my @clean_files;
-my @prereq = (
-    );
-
-eval {
-    require t::Ctags;		# Make 'make' generate tags file.
-    push @clean_files, 'tags';	# Clean it up.
-};
+my @prereq = ();
 
 print <<eod;
 
