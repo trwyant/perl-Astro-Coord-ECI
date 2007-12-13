@@ -10,7 +10,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_10';
 
 add_stopwords (<DATA>);
 
@@ -28,6 +28,7 @@ appulsing
 appulses
 argumentofperigee
 Astro
+Astrodynamics
 au
 autoheight
 azel
@@ -59,10 +60,12 @@ deg
 degreesDminutesMsecondsS
 des
 distsq
+DMOD
 Dominik
 ds
 du
 dualvar
+dualvars
 ECEF
 ECI
 eci
@@ -95,6 +98,7 @@ harvard
 Haversine
 haversine
 haversines
+Hujsak
 IDs
 illum
 illuminator
@@ -135,6 +139,7 @@ nouvelles
 Obliquity
 obliquity
 Observatoire
+OID
 op
 oped
 orbitaux
@@ -215,6 +220,8 @@ UT
 UTC
 VA
 valeurs
+Vallado
+ver
 webcmd
 WGS
 Willmann
