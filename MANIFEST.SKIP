@@ -20,7 +20,6 @@ CVS/
 ^pm_to_blib$
 ^scalps/
 ^sgp4r/
-^t/Ctags.pm$
 ^t/Satpass.pm$
 ^t/executable.t$
 ^t/manifest.t$
