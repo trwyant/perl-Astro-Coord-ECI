@@ -30,3 +30,14 @@ sh_script
     http://spaceflight.nasa.gov/realdata/elements/ and predict
     visibility at the current time from 1600 Pennsylvania Avenue,
     Washington DC, USA.
+
+tle_period.t
+    This is not really a test, since I have no canonical data to test
+    against. It is really a demonstration of the effect the model chosen
+    and geophysical constants used have on the calculation of period. It
+    expects to be run from the main distribution directory  as (e.g.)
+    perl -Mblib eg/tle_period.t
+    and it expects to find the orbital elements file sgp4-ver.tle in the
+    t directory. The sgp4-ver.tle file is not distributed by me, since I
+    am not authorized to redistribute TLEs. The file is available in
+    http://celestrak.com/publications/AIAA/2006-6753/AIAA-2006-6753.zip
