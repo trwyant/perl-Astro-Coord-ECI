@@ -1,7 +1,6 @@
 use strict;
 use warnings;
 
-my $ok;
 BEGIN {
     eval "use Test::More";
     if ($@) {
