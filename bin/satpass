@@ -44,7 +44,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.015';
+our $VERSION = '0.015_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3707,51 +3707,24 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-The only code change from version 0.014 to 0.015 is an attempt to make
-the pod coverage test ignore declared constants.
+The major change from version 0.015 to 0.016 is the addition of the
+model from B<Revisiting Spacetrack Report #3> to Astro::Coord::ECI::TLE
+as model sgp4r, and making the 'model' model call sgp4r rather than sgp4
+or sdp4 as appropriate. Additionally, the period method depends on the
+model called, using a revised calculation if the model is sgp4r or its
+equivalents model or model4r, or the original calculation otherwise.
+B<Revisiting Spacetrack Report #3> is available on line at
+L<http://celestrak.com/publications/AIAA/2006-6753/>.
 
-B<Heads up:> I am looking at incorporating the material from
-B<Revisiting Spacetrack Report #3>
-(L<http://celestrak.com/publications/AIAA/2006-6753/>) into
-Astro::Coord::ECI::TLE. When (or if) this happens, I anticipate making
-the 'model' meta-model of Astro::Coord::ECI::TLE (which is documented as
-being the 'preferred' model) execute the new model, whatever I decide to
-call it. The functionality of 'model4', 'sgp4', and 'sdp4' will remain
-unchanged.
+In a change to functionality added in 0.014, setting the backdate
+attribute false no longer causes errors in the Astro::Coord::ECI::TLE
+pass() method and the Astro::Coord::ECI::TLE::Iridium method if the
+start time is adjusted to be after the end time; instead an empty list
+of passes or flares is returned.
 
-The following paragraphs deal with the changes from version 0.013 to
-0.014. I hesitate to remove them since version 0.015 followed so quickly
-on 0.014.
-
-The L<backdate|/backdate> parameter has been added to allow the user to
-control whether orbital elements are used before their epochs. This
-defaults to 1 (i.e. true) to be consistent with the behavior of prior
-releases, but you may wish to set it to 0 (i.e. false) if you are
-dealing with (e.g.) predicted Space Shuttle data from
-L<http://spaceflight.nasa.gov/>, especially if you are making pass
-predictions before the launch.
-
-The L<desired_equinox_dynamical|/desired_equinox_dynamical> parameter
-has been added to cause displayed equatorial coordinates to be referred
-to the equinox of your choice.
-
-Since it looks to me like the old Harvard SIMBAD mirror is redirected to
-the University of Strasbourg these days, the default setting of
-'simbad_url' is now 'simbad.u-strasbg.fr', and the default setting of
-'simbad_version' is now 4.
-
-The underlying classes have some minor changes:
-
-* The 'backdate' attribute has been added to Astro::Coord::ECI::TLE,
-which actually implements the functionality described above in its
-pass() method.
-
-* The 'backdate' functionality has also been added to the
-Astro::Coord::ECI::TLE::Iridium flare() method.
-
-* The 'equinox_dynamical' attribute has been added to
-Astro::Coordinate::ECI. This records the equinox produced by any models
-implemented by subclasses, or can be set by hand.
+All these changes are in the underlying classes; the only change to the
+satpass script itself is the updating of this information and the
+version.
 
 =head1 DETAILS
 
