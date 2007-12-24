@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.005';
+our $VERSION = '0.005_01';
 
 my $bldr = Module::Build->new (
 	dist_author => 'Tom Wyant (wyant at cpan dot org)',
@@ -34,11 +34,11 @@ The following executable can be installed:
   satpass is a scriptable program to predict satellite passes
     over a given observer.
 
-If you do not want this, run Build.PL with the -n option.
+If you do not want this, run Build.PL with the -n option. If you want to
+install without being asked, run Build.PL with the -y option.
 
-Unless you are running MSWin32 or VMS (which are special-cased),
-I will assume you are running some version of U*ix, and behave
-accordingly.
+Unless you are running MSWin32 or VMS (which are special-cased), I will
+assume you are running some version of U*ix, and behave accordingly.
 
 eod
 
@@ -53,14 +53,10 @@ if ($opt{n}) {
   else {
     foreach (@possible_exes) {
 	push @exe_files, $_
-##	    if prompt ("Do you want to install $_?", 'n') =~ m/^y/i
+	    if $bldr->prompt ("Do you want to install $_?", 'n') =~ m/^y/i
 	    ;
 	}
     }
-
-=for comment keep parentheses-matching editor (that does not understand POD) happy: [
-
-=cut
 
 my $stringmod = $] >= 5.008 ? '' : 'IO::String';
 
@@ -99,18 +95,6 @@ eod
 ##	$@ or do {push @prereq, $module, $version; next};
 	$@ or next;
 	print "\n", $info, "\n";
-##	if ($opt{n}) {
-##	    print "Because you have asserted -n, optional module @mv will not be installed.\n\n";
-##	    }
-##	  elsif ($opt{y}) {
-##	    print "Because you have asserted -y, optional module @mv will be installed.\n\n";
-##	    push @prereq, $module, $version;
-##	    }
-##	  else {
-##	    push @prereq, $module, $version
-##		if prompt ("Do you want to install optional module @mv?", 'n')
-##			=~ m/^y/i;
-##	    }
 	}
     if ($^O eq 'MSWin32') {
 	@exe_files = map {"bin/$_"} @exe_files;
