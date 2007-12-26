@@ -1,7 +1,6 @@
 use strict;
 use warnings;
 
-my $skip;
 BEGIN {
     eval "use Test::Spelling";
     $@ and do {
@@ -10,7 +9,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.008_10';
+our $VERSION = '0.008_11';
 
 add_stopwords (<DATA>);
 
