@@ -17,6 +17,7 @@ CVS/
 ^MANIFEST\.
 ^mccants\.expect$
 ^mccants\.got$
+^perldump.out$
 ^pm_to_blib$
 ^scalps/
 ^sgp4r/
