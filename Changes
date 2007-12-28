@@ -323,3 +323,47 @@
     Specify all-caps routines as private, since some testers are
       getting failures on 'use constant' declarations. I don't get
       these, so the change is kind of blind.
+0.016
+  Astro::Coord::ECI 0.016
+    Increment version. No other changes.
+  Astro::Coord::ECI::TLE 0.011
+    Use PI-related constants from Astro::Coord::ECI::Utils.
+    pass() no longer throws 'end before beginning' error if caused
+      by setting backdate false; instead returns empty list of
+      passes.
+  Astro::Coord::ECI::TLE::Iridium 0.004
+    flare() no longer throws 'end before beginning' error if caused
+      by setting backdate false; instead returns empty list of
+      passes.
+    Add model 'sgp4r', based on 'Revisiting Spacetrack Report #3',
+      and equivalent metamodel 'model4r.'
+    Make metamodel 'model' execute sgp4r.
+    Have 'period' take into account which model is being used.
+  Build.PL
+    Prompt for installation of 'satpass' script, defaulting to 'n'.
+  Makefile.PL
+    Fix license support check to work with developer versions of
+      ExtUtils::MakeMaker.
+    Prompt for installation of 'satpass' script, defaulting to 'n'.
+  bin/satpass 0.016
+    Document major changes in classes. No other changes.
+  eg/tle_period.t
+    Pseudo-test to compare the various period calculations.
+  eg/README
+    Update to add eg/tle_period.t
+  t/{eci,moon,star,sun}.t
+    Remove dependency on Math::Trig.
+    Prefer Astro::Coord::ECI::Utils over local definitions of
+      constants.
+  t/iridium.t
+    Clarify (I hope!) how to run the Iridium tests.
+  t/tle_sgp4r.t
+    New test for model sgp4r. TLEs are not included in the kit,
+      but are downloaded if needed.
+  t/sgp4r.out
+    Comparison data for tle_sgp4r.t. Renamed from tforver.out in
+      the 'Revisiting Spacetrack Report #3' download.
+  t/pod.t
+    Remove unused variable
+  t/pod_coverage.t
+    Remove unused variable
