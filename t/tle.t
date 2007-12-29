@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::TLE;
-use List::Util qw{max};
+use Astro::Coord::ECI::Utils qw{max};
 use Test;
 
 BEGIN {plan tests => 150};
