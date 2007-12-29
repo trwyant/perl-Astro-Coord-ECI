@@ -91,13 +91,12 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.016';
+our $VERSION = '0.016_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
-use Storable qw{dclone};
 use Time::Local;
 use UNIVERSAL qw{can isa};
 
@@ -360,8 +359,40 @@ It's really just a wrapper for Storable::dclone.
 
 =cut
 
-sub clone {
-dclone shift;
+if (eval {require Storable; 1}) {
+    *clone = sub {Storable::dclone (shift)};
+} else {
+    my $reftype = sub {	# Not general, but maybe good enough.
+	my $thing = shift;
+	ref $thing or return undef;
+	(my $string = "$thing") =~ s/.*=//;
+	$string =~ s/\(.*//;
+	$string;
+    };
+    my %clone_ref;
+    %clone_ref = (
+	HASH => sub {
+	    my $from = shift;
+	    my $to = shift || {};
+	    foreach my $key (keys %$from) {
+		unless (my $ref = ref $from->{$key}) {
+		    $to->{$key} = $from->{$key};
+		} else {
+		    my $code = $clone_ref{$ref}
+			or confess "Programming error - Can't clone a $ref";
+		    $to->{$key} = $code->($from->{$key});
+		}
+	    }
+	    $to;
+	},
+##	ARRAY => sub {
+##	},
+    );
+    *clone = sub {
+	my $self = shift;
+	my $to = $clone_ref{$reftype->($self)}->($self); 
+	bless $to, ref $self;
+    };
 }
 
 =item $elevation = $coord->correct_for_refraction ($elevation);
