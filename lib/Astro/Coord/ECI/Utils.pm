@@ -67,7 +67,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_01';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -83,9 +83,9 @@ our @EXPORT_OK = qw{
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
 	dynamical_delta epoch2datetime equation_of_time find_first_true
 	intensity_to_magnitude jcent2000 jd2date jd2datetime jday2000
-	julianday load_module mod2pi nutation_in_longitude
-	nutation_in_obliquity obliquity omega rad2deg tan theta0
-	thetag};
+	julianday load_module looks_like_number max min mod2pi
+	nutation_in_longitude nutation_in_obliquity obliquity omega
+	rad2deg tan theta0 thetag};
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -603,6 +603,76 @@ results.
 	return $rslt{$module};
     }
 }	# End local symbol block.
+
+
+=item $boolean = looks_like_number ($string);
+
+This subroutine returns true if the input looks like a number. It uses
+Scalar::Util::looks_like_number if that is available, otherwise it uses
+its own code, which is lifted verbatim from Scalar::Util 1.19, which in
+turn leans heavily on perlfaq4.
+
+=cut
+
+unless (eval {require Scalar::Util; Scalar::Util->import
+	('looks_like_number'); 1}) {
+    *looks_like_number = sub {
+	local $_ = shift;
+
+	# checks from perlfaq4
+	return 0 if !defined($_) or ref($_);
+	return 1 if (/^[+-]?\d+$/); # is a +/- integer
+	return 1 if (/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/); # a C float
+	return 1 if ($] >= 5.008 and /^(Inf(inity)?|NaN)$/i)
+	    or ($] >= 5.006001 and /^Inf$/i);
+
+	0;
+    };
+}
+
+
+=item $maximum = max (...);
+
+This subroutine returns the maximum of its arguments.  If List::Util can
+be loaded and 'max' imported, that's what you get. Otherwise you get a
+pure Perl implementation.
+
+=cut
+
+unless (eval {require List::Util; List::Util->import ('max'); 1}) {
+    *max = sub {
+	my $rslt;
+	foreach (@_) {
+	    defined $_ or next;
+	    if (!defined $rslt || $_ > $rslt) {
+		$rslt = $_;
+	    }
+	}
+	$rslt;
+    };
+}
+
+
+=item $minimum = min (...);
+
+This subroutine returns the minimum of its arguments.  If List::Util can
+be loaded and 'min' imported, that's what you get. Otherwise you get a
+pure Perl implementation.
+
+=cut
+
+unless (eval {require List::Util; List::Util->import ('min'); 1}) {
+    *min = sub {
+	my $rslt;
+	foreach (@_) {
+	    defined $_ or next;
+	    if (!defined $rslt || $_ < $rslt) {
+		$rslt = $_;
+	    }
+	}
+	$rslt;
+    };
+}
 
 
 =item $theta = mod2pi ($theta)
