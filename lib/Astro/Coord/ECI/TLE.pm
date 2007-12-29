@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.011';
+our $VERSION = '0.011_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -779,8 +779,9 @@ the object:
 =cut
 
 BEGIN {
-    eval {use Scalar::Util qw{dualvar}};
-    $@ and *dualvar = sub {$_[0]};
+    local $@;
+    eval {require Scalar::Util; Scalar::Util->import ('dualvar'); 1}
+	or *dualvar = sub {$_[0]};
 }
 
 use constant PASS_EVENT_NONE => dualvar (0, '');	# Guaranteed false.
