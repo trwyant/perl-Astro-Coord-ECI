@@ -112,12 +112,11 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.004';
+our $VERSION = '0.004_01';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
-use List::Util qw{max min};
 use POSIX qw{floor strftime};	# For debugging
 
 use constant ATTRIBUTE_KEY => '_sub_TLE_Iridium';
