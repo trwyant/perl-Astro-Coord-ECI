@@ -21,10 +21,8 @@ use Date::Manip;
 use File::Basename;
 use FileHandle;
 use Getopt::Long;
-use List::Util qw{max};
 use Pod::Usage;
 use POSIX qw{floor strftime};
-use Scalar::Util qw{looks_like_number};
 use Term::ReadLine;
 use Text::Abbrev;
 use Text::ParseWords;
@@ -44,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.016';
+our $VERSION = '0.016_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2843,42 +2841,31 @@ eod
 #	Loads the module if it has not yet been loaded. Dies if it
 #	can not be loaded.
 
-{	# Begin local symbol block
+BEGIN {	# Begin local symbol block
 
-    my %tried = ('.pm' => 'No module name specified.');
-    my %version;
-    BEGIN {
-       %version = (
-	    'Astro::SpaceTrack' => 0.017,
-	);
-    }
+    my %version = (
+	'Astro::SpaceTrack' => 0.017,
+    );
 
     sub _load_module {
 	my @module = ref $_[0] eq 'ARRAY' ? @{shift ()} : shift ||
 	    die "Programming error - No module specified";
 	my @probs;
 	foreach my $module (@module) {
-	    $tried{$module} and do {
-		push @probs, $tried{$module};
+	    eval {load_module ($module); 1} or do {
+		push @probs, "$module must be installed";
 		next;
 	    };
-	    return $module if exists $tried{$module};
-	    eval "use $module";
-	    if ($@) {
-		push @probs, (
-		    $tried{$module} = "$module must be installed");
-	    } elsif ($version{$module} &&
-		    (my $modver = $module->VERSION)) {
+	    my $modver;
+	    $version{$module} && ($modver = $module->VERSION) and do {
 		$modver =~ s/_//g;
-		if ($modver < $version{$module}) {
-		    push @probs, ($tried{$module} =
-			"$module version must be at least $version{$module}");
-		}
-	    }
-	    unless ($tried{$module}) {
-		$tried{$module} = undef;
-		return $module;
-	    }
+		$modver < $version{$module} and do {
+		    push @probs,
+		    "$module version must be at least $version{$module}";
+		    next;
+		};
+	    };
+	    return $module;
 	}
 	push @probs, "if you wish to use command @_" if @_;
 	my $pfx = 'Error -';
@@ -3466,7 +3453,6 @@ package IO::Clipboard;
 
 use Carp;
 use Config;
-use Scalar::Util qw{weaken};
 use Symbol;
 
 my ($clip, $clipout, $memio);
@@ -3476,6 +3462,11 @@ our $clipboard_unavailable;
 BEGIN {
 
 $clipboard_unavailable = '';
+
+eval "use Scalar::Util qw{weaken}; 1"
+    or $clipboard_unavailable = <<eod;
+Error - Clipboard unavailable. Unable to load Scalar::Util weaken.
+eod
 
 sub _win32 {
 eval "use Win32::Clipboard" ?
