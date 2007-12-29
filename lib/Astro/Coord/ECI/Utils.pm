@@ -67,7 +67,7 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.008_01';
+our $VERSION = '0.008_02';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -585,9 +585,10 @@ jday2000($_[0]) + 2_451_545.0	#   Meeus p. 62
 =item $rslt = load_module ($module_name)
 
 This convenience method loads the named module (using 'require'),
-throwing an exception if the load fails. Results are cached, and
-subsequent attempts to load the same module simply give the cached
-results.
+throwing an exception if the load fails. If the load succeeds, it
+returns the result of the 'require' built-in, which is required to be
+true for a successful load.  Results are cached, and subsequent attempts
+to load the same module simply give the cached results.
 
 =cut
 
