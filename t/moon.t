@@ -129,12 +129,15 @@ eod
 #	Tests 8 - 9: Singleton object
 
 {	# Local symbol block.
+    my $skip;
     eval {
+	local $@;
+	$skip = "Can not load Scalar::Util.";
 	require Scalar::Util;
-	UNIVERSAL::can ('Scalar::Util', 'refaddr') or
-	    die "Scalar::Util does not implement refaddr().";
-	};
-    my $skip = $@;
+	$skip = "Scalar::Util does not implement refaddr ().";
+	UNIVERSAL::can ('Scalar::Util', 'refaddr')
+	    and $skip = undef;
+    };
     my @text = qw{different same};
 
     foreach ([1, 1], [0, 0]) {
