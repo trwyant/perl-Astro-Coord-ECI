@@ -9,7 +9,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.009';
+our $VERSION = '0.009_01';
 
 add_stopwords (<DATA>);
 
@@ -123,10 +123,12 @@ Lune
 ly
 magma
 Mariana
+max
 McCants
 meananomaly
 meanmotion
 Meeus
+min
 mma
 mmas
 Moon's
