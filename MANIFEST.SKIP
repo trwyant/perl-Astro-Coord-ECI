@@ -19,6 +19,7 @@ CVS/
 ^mccants\.got$
 ^perldump.out$
 ^pm_to_blib$
+^pod2htm.\.tmp$
 ^scalps/
 ^sgp4r/
 ^t/Satpass.pm$
