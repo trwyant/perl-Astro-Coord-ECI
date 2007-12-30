@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.016_02';
+our $VERSION = '0.017';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3697,6 +3697,9 @@ macros can be defined to issue frequently-used commands.
  satpass> exit
 
 =head1 NOTICE
+
+The changes from 0.016 to 0.017 are mostly for compatibility with old
+or new Perls, and to get tests to run under various conditions.
 
 The major change from version 0.015 to 0.016 is the addition of the
 model from B<Revisiting Spacetrack Report #3> to Astro::Coord::ECI::TLE
