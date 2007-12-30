@@ -91,7 +91,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.016_01';
+our $VERSION = '0.017';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -385,8 +385,20 @@ if (eval {require Storable; 1}) {
 	    }
 	    $to;
 	},
-##	ARRAY => sub {
-##	},
+	ARRAY => sub {
+	    my $from = shift;
+	    my $to = shift || [];
+	    foreach my $val (@$from) {
+		unless (my $ref = ref $val) {
+		    push @$to, $val;
+		} else {
+		    my $code = $clone_ref{$ref}
+			or confess "Programming error - Can't clone a $ref";
+		    push @$to, $code->($val);
+		}
+	    }
+	    $to;
+	},
     );
     *clone = sub {
 	my $self = shift;
