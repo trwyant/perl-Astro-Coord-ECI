@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.016_01';
+our $VERSION = '0.016_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3457,14 +3457,13 @@ use Symbol;
 
 my ($clip, $clipout, $memio);
 our @ISA;
-our $clipboard_unavailable;
 
 BEGIN {
 
-$clipboard_unavailable = '';
+$IO::Clipboard::clipboard_unavailable = '';
 
 eval "use Scalar::Util qw{weaken}; 1"
-    or $clipboard_unavailable = <<eod;
+    or $IO::Clipboard::clipboard_unavailable = <<eod;
 Error - Clipboard unavailable. Unable to load Scalar::Util weaken.
 eod
 
@@ -3503,7 +3502,7 @@ eod
 }
 
 sub _flunk {
-$clipboard_unavailable = shift;
+$IO::Clipboard::clipboard_unavailable = shift;
 }
 
 my $err = "Can not open handle to clipboard.";
@@ -3542,7 +3541,8 @@ $memio = $] >= 5.008 && $Config{useperlio} ?
 
 sub new {
 return $clip if $clip;
-croak $clipboard_unavailable if $clipboard_unavailable;
+croak $IO::Clipboard::clipboard_unavailable
+    if $IO::Clipboard::clipboard_unavailable;
 my $class = shift;
 my $data = '';
 my $clip = _memio ('>', \$data);
