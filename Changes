@@ -367,3 +367,35 @@
     Remove unused variable
   t/pod_coverage.t
     Remove unused variable
+0.017
+  Astro::Coord::ECI 0.017
+    Fall back to homegrown (and un-general, and insufficiently tested)
+      code if Storable::dclone not available.
+  Astro::Coord::ECI::TLE 0.012
+    Correct behavior when Scalar::Util::dualvar not present.
+  Astro::Coord::ECI::TLE::Iridium 0.005
+    Use max() and min() from Astro::Coord::ECI::Utils.
+  Astro::Coord::ECI::Utils 0.009
+    Added looks_like_number(), max(), min(), defaulting to the
+      Scalar::Util or List::Util implementations if possible, but
+      providing our own if not.
+    Clarify load_module() documentation.
+  bin/satpass 0.017
+    Use looks_like_number() and max() from Astro::Coord::ECI::Utils.
+    Recode _load_module to use Astro::Coord::ECI::Utils::load_module.
+    Fix clipboard code to fail gracefully if Scalar::Util::weaken
+      is unavailable.
+  t/{moon,sun}.t
+    Skip singleton test if Scalar::Util::refaddr not available.
+  t/pod_coverage.t
+    Correct also_private setting to make it skip all-uppercase+numeric
+      (blind fix since mine seems to skip constants anyway, which is
+      what I'm really trying to do).
+  t/tle.t
+    Use max() from Astro::Coord::ECI::Utils.
+  t/pod_spelling.t 0.010
+    Add stop words 'max' and 'min'.
+  bin/satpass 0.017
+    Supress '"our" variable $clipboard_unavailable masks earlier
+      declaration ...' under 5.10.0.
+
