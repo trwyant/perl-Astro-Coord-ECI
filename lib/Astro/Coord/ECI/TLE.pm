@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.012';
+our $VERSION = '0.012_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1252,6 +1252,39 @@ $tle->before_reblessing ();
 bless $tle, $class;
 $tle->after_reblessing (@_);
 $tle;
+}
+
+
+=item $kilometers = $tle->semimajor();
+
+This method calculates the semimajor axis of the orbit, using Kepler's
+Third Law in the form
+
+ T ** 2 / a ** 3 = 4 * pi ** 2 / mu
+
+where
+
+ T is the orbital period,
+ a is the semimajor axis of the orbit,
+ pi is the circle ratio (3.14159 ...), and
+ mu is the Earth's gravitational constant,
+    3.986005e5 km ** 3 / sec ** 2
+
+
+The calculation is carried out using the period implied by the current
+model.
+
+=cut
+
+{
+    my $mu = 3.986005e5;	# km ** 3 / sec ** 2 -- for Earth.
+    sub semimajor {
+	my $self = shift;
+	$self->{&TLE_INIT}{TLE_semimajor} ||= do {
+	    my $to2pi = $self->period / SGP_TWOPI;
+	    exp (log ($to2pi * $to2pi * $mu) / 3);
+	};
+    }
 }
 
 
