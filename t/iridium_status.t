@@ -27,7 +27,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 0, 19, 4, 05, 107);
+my $asof = timegm (0, 0, 19, 4, 05, 108);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -44,8 +44,8 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of May 4, 2007
-================================
+Iridium status as of Jan. 22, 2008
+==================================
 
 Iridiums not listed in the following table are thought to be stable
 in orbit and capable of generating flares.
@@ -65,7 +65,7 @@ June 2005:     Iridium 98 has changed its inclination so that it will
                drift between planes.
 Aug. 2005:     Iridium 77 has been maneuvered into the orbital spot
                for Iridium 17.  Presumably, Iridium 17 has failed.
-Oct. 2005:     Iridium 91 has changed its inclination so that it will
+Oct. 2005:     Iridium 90 has changed its inclination so that it will
                drift between planes.
 Jan. 2006:     Spacecom has switched the names for Iridium 91 and Iridium 90
 Jan. 10, 2006: Iridium 74 has been moved into a lower orbit and Iridium 21
@@ -75,6 +75,8 @@ Jan. 10, 2007: From January 5 to January 9, 2007, Iridium 97 was moved from
 Mar. 6, 2007:  Iridium 36 has not had an orbit maintenance maneuver since
                January and was observed to flash, so I assume it has failed.
 May 4, 2007:   Iridium 98 has changed its inclination so that it is now
+               a spare in its new plane.
+Jan. 22, 2008: Iridium 90 has changed its inclination so that it is now
                a spare in its new plane.
 
  NCat    Name           Status   Comment
@@ -99,12 +101,12 @@ May 4, 2007:   Iridium 98 has changed its inclination so that it is now
  25777   Iridium 14     ?        Spare   was called Iridium 14A
  25778   Iridium 21              Replaced Iridium 74   was called Iridium 21A
  27372   Iridium 91     ?        Spare   was called Iridium 90
- 27373   Iridium 90     ?        Moving between planes (Oct. 2005) was called I 91
+ 27373   Iridium 90     ?        Spare (new plane Jan. 2008)   was called Iridium 91
  27374   Iridium 94     ?        Spare
  27375   Iridium 95     ?        Spare
  27376   Iridium 96     ?        Spare
  27450   Iridium 97              Replaced Iridium 36 on Jan. 10, 2007
- 27451   Iridium 98     ?        Spare - arrived at a new plane (May 2007)
+ 27451   Iridium 98     ?        Spare (new plane May 2007)
 
 Status  Meaning
 ------  -------
