@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.017_01';
+our $VERSION = '0.017_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1123,12 +1123,31 @@ $cmdopt{height} ? !$parm{autoheight} : $parm{autoheight} and
 #	height () - Fetch the height above sea level.
 #
 
-#	In addition to the usual command qualifiers, height takes -all,
-#	which means to return the results from all datasets. The
-#	first valid result is accepted.
+#	In addition to the usual command qualifiers, height takes the
+#	following additional ones:
+
+#	The -all option asks the USGS to return data from all data sets,
+#	rather than the 'best.' The first valid non-zero result is
+#	accepted. If all results are 0, that is accepted also.
+
+#	The -retry_on_zero option is for dealing with a flakiness of the
+#	USGS server, which will sometimes return 0 rather than the
+#	actual height. The argument is the number of retries.
+
+#	The -source_layer option is for specifying a specific data
+#	source rather than the USGS' idea of 'best.' Its argument is the
+#	name of the data source (see the USGS for more data, or look at
+#	the data returned by -all). This will have no effect of -all is
+#	specified.
+
+#	The -yaml option is to feed the parsing logic data from a file
+#	rather than downloading it from the USGS. This is for debugging
+#	purposes only, and will remain undocumented and unsupported. The
+#	argument is the name of the YAML file. Either YAML or YAML::Syck
+#	can be used, with the latter being preferred.
 
 BEGIN {
-$cmdlgl{height} = [qw{all retry_on_zero=i source_layer=s}];
+$cmdlgl{height} = [qw{all retry_on_zero=i source_layer=s yaml=s}];
 $cmdlgl{height_af} = $cmdlgl{height};
 $cmdlgl{height_as} = $cmdlgl{height};
 $cmdlgl{height_ca} = $cmdlgl{height};
@@ -1166,8 +1185,8 @@ goto \&{$handler};
 #
 #	height_ca () - Fetch the height above sea level in Canada.
 #
-#	We default the source layer to 'SRTM.C_1TO19_3', and redispatch
-#	to height_us ().
+#	We default the source layer to 'SRTM.C_1TO19_3' and
+#	retry_on_zero to 3, and redispatch to height_us ().
 
 sub height_ca {
 $cmdopt{debug} and warn "Debug - Calling height_ca()\n";
@@ -1178,11 +1197,13 @@ goto \&height_us;
 
 ########################################################################
 #
-#	height_us () - Fetch the height above sea level in Canada.
+#	height_us () - Fetch the height above sea level in the United
+#	States.
 #
 #	The USGS has data for locations other than the USA, so other
 #	countries will be handled here as well.
 
+my $yaml_loader;	# For debugging only.
 sub height_us {
 _load_module ('SOAP::Lite', 'geocode_us');
 
@@ -1216,7 +1237,16 @@ my $tries = ($cmdopt{retry_on_zero} || 0) + 1;
 
 while (--$tries >= 0) {
 
-    if ($cmdopt{all}) {
+#	The -yaml option is purely for debugging purposes, and will
+#	remain undocumented.
+
+    if ($cmdopt{yaml}) {
+	$yaml_loader ||= eval {
+	    require YAML::Syck; \&YAML::Syck::LoadFile;} || eval {
+	    require YAML; \&YAML::LoadFile; }
+	    or die "Can not load YAML::Syck or YAML.\n";
+	$rslt = $yaml_loader->($cmdopt{yaml});
+    } elsif ($cmdopt{all}) {
 	$rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
 		{xmlns => $xmlns}) =>
 	    SOAP::Data->new (name => 'X_Value', type => 'string',
@@ -1243,14 +1273,33 @@ while (--$tries >= 0) {
 	    )->result;
 	}
 
-#	Parse our result. This is not straightforward either, because
-#	they decided to encode the result in XML, but they omit one or
-#	two end tags, depending on the function called. Because
-#	XML::Parser is standards-compliant, it blows up on this, so
-#	we have to examine the result and fix it up _before_ calling
-#	XML::Parser.
+#	Parse our result. If we got a hash back, it means that the USGS
+#	got their XML correct and SOAP::Lite parsed it for us. But in
+#	the past their XML was missing end tags, so SOAP::Lite passed us
+#	a string which we had to correct by supplying the missing end
+#	tags before parsing the XML ourselves.
 
-    if ($rslt) {
+    if (ref $rslt eq 'HASH') {
+	if ($cmdopt{debug}) {
+	    local $Data::Dumper::Terse = 1;
+	    print 'Result: ', Dumper($rslt);
+	}
+	foreach my $key (
+	    qw{USGS_Elevation_Web_Service_Query Elevation_Query Elevation}) {
+	    $rslt = $rslt->{$key}
+		or die "Error - Elevation result is missing tag <$key>\n";
+	}
+	if (ref $rslt eq 'ARRAY') {
+	    my $foo = $rslt;
+	    $rslt = undef;
+	    foreach my $val (@$foo) {
+		looks_like_number($val) or next;
+		$rslt = +$val and last;
+	    }
+	} else {
+	    looks_like_number($rslt) or $rslt = undef;
+	}
+    } elsif ($rslt) {
 
 	$cmdopt{debug} and print 'Result: ', $rslt, "\n";
 
@@ -1285,8 +1334,7 @@ while (--$tries >= 0) {
 	    last unless $rslt == 0;
 	};
 	sleep 2 if $tries;
-	}
-      else {
+    } else {
 	$cmdopt{debug} and print "No result from http://gisdata.usgs.gov/\n";
 	$rslt = undef;
 	last;
@@ -1391,8 +1439,7 @@ Normally, we would display the documentation for the satpass
 script here. But unfortunately this depends on the ability to
 spawn the perldoc command, and we do not have this ability under
 Mac OS 9 and earlier. You can find the same thing online at
-http://search.cpan.org/~wyant/Astro-Coord-ECI-@{[
-    Astro::Coord::ECI->VERSION]}/bin/satpass
+http://search.cpan.org/dist/Astro-satpass/
 
 eod
 }
@@ -3529,9 +3576,14 @@ eod
 }
 
 sub _pb {
-no warnings;
-`pbcopy -help 2>&1`;
-use warnings;
+    my $code;
+    $code = eval {
+	require Mac::Pasteboard;
+	sub {Mac::Pasteboard::pbcopy($_[0])};
+    } and return $code;
+### no warnings;
+system('pbcopy -help >/dev/null 2>&1');
+### use warnings;
 $? ? undef : sub {
     my $hdl;
     open ($hdl, '|pbcopy') or croak <<eod;
@@ -3557,8 +3609,9 @@ Error - Clipboard unavailable. Can not load Win32::Clipboard
         http://freshmeat.net/projects/xclip
 eod
     $^O eq 'darwin' ? _pb || _flunk (<<eod) :
-Error - Clipboard unavailable. Can not find pbcopy. This is
-        supposed to come with Mac OS X.
+Error - Clipboard unavailable. Can not load Mac::Pasteboard, and
+        can not find pbcopy. The latter is supposed to come with
+        Mac OS X.
 eod
     $^O eq 'MacOS' ? _flunk (<<eod) :
 Error - Clipboard unavailable. Mac OS 9 and below not supported.
@@ -3860,10 +3913,10 @@ clipboard until the command completes.
 
 The clipboard functionality requires the availability of the
 Win32::Clipboard module under MSWin32 (standard with ActivePerl), the
-pbcopy command under darwin (and any Mac OS X I know of comes with
-pbcopy and pbpaste), or the xclip command (available from
-L<http://freshmeat.net/projects/xclip>) under any other operating
-system.
+Mac::Pasteboard module or the pbcopy command under darwin (and any Mac
+OS X I know of comes with pbcopy and pbpaste), or the xclip command
+(available from L<http://freshmeat.net/projects/xclip>) under any other
+operating system.
 
 The clipboard functionality is implemented as a singleton object,
 so that if you redirect output away from the clipboard and then
@@ -5589,11 +5642,11 @@ The only command qualifiers are
 
 which causes all output to go to the clipboard. Use of this qualifier
 requires module Win32::Clipboard under MSWin32 (standard with
-ActivePerl), the 'pbcopy' command under Darwin (standard with Mac OS
-X), or the xclip command
+ActivePerl), the Mac::Pasteboard module or the 'pbcopy' command under
+Darwin (the latter standard with Mac OS X), or the xclip command
 (available from L<http://freshmeat.net/projects/xclip>) under any other
-operating system. This script will die if the requisite module is not
-available.
+operating system. This script will warn and abort the command using this
+option if the requisites are not available.
 
 =item -filter
 
