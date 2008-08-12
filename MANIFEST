@@ -26,6 +26,7 @@ t/iridium.t
 t/moon.t
 t/pod.t
 t/pod_coverage.t
+t/semimajor.t
 t/set.t
 t/SetDelegate.pm
 t/sgp4r.out
