@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.012_01';
+our $VERSION = '0.012_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1258,7 +1258,7 @@ $tle;
 =item $kilometers = $tle->semimajor();
 
 This method calculates the semimajor axis of the orbit, using Kepler's
-Third Law in the form
+Third Law (Isaac Newton's version) in the form
 
  T ** 2 / a ** 3 = 4 * pi ** 2 / mu
 
