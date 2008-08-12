@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.017_02';
+our $VERSION = '0.017_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1051,13 +1051,16 @@ my $loc = shift @_ || $parm{location};
 #	Manufacture a SOAP::Lite object appropriate to the version of
 #	SOAP::Lite we have installed.
 
+$cmdopt{debug} and SOAP::Trace->import ('all');
 my $soap = _soapdish ('http://rpc.geocoder.us/Geo/Coder/US',
 	'http://geocoder.us/service/soap', '#');
 
 #	Query rpc.geocoder.us, and strain out various errors we might
 #	get back.
 
-my $rslt = $soap->geocode ($loc)->result or die <<eod;
+my $rslt = $soap->geocode ($loc)->result;
+$cmdopt{debug} and SOAP::Trace->import ('all');
+$rslt or die <<eod;
 Error - Failed to access geocoder.us.
 eod
 
@@ -1205,7 +1208,7 @@ goto \&height_us;
 
 my $yaml_loader;	# For debugging only.
 sub height_us {
-_load_module ('SOAP::Lite', 'geocode_us');
+_load_module ('SOAP::Lite', 'height_us');
 
 my $set_pos = @_;
 my $lat = @_ ? shift @_ : $parm{latitude};
@@ -1294,7 +1297,8 @@ while (--$tries >= 0) {
 	    $rslt = undef;
 	    foreach my $val (@$foo) {
 		looks_like_number($val) or next;
-		$rslt = +$val and last;
+		($val += 0) < -1e100 and next;
+		$rslt = $val and last;
 	    }
 	} else {
 	    looks_like_number($rslt) or $rslt = undef;
