@@ -12,9 +12,9 @@ if ($@) {
     exit;
 }
 
-plan tests => 4;
+plan tests => 6;
 
-use constant TFMT => '%d-%b-%Y %H:%M:%S GMT';
+use constant TFMT => '%d %b %Y %H:%M:%S GMT';
 
 my %mth;
 {	# Local symbol block
@@ -225,6 +225,12 @@ eod
 27376IRIDIUM 96 [S]
 27450IRIDIUM 97 [+]
 27451IRIDIUM 98 [S]
+eod
+	["Rod Sladen's Iridium Constellation Status",
+	'http://www.rod.sladen.org.uk/iridium.htm',
+	$asof,
+	sladen => <<eod],
+We have met the enemy and he is us.
 eod
 	) {
     my ($what, $url, $expect, $file, $data) = @$_;
