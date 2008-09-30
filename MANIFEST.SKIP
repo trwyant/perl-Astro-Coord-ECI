@@ -22,6 +22,8 @@ CVS/
 ^pod2htm.\.tmp$
 ^scalps/
 ^sgp4r/
+^sladen\.expect$
+^sladen\.got$
 ^t/Satpass.pm$
 ^t/executable.t$
 ^t/manifest.t$
