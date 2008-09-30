@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.012_03';
+our $VERSION = '0.012_04';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -5963,7 +5963,7 @@ eod
 
 #	Initialization
 
-%status = (	# As of 21-Feb-2007, from Kelso's document dated 19-Feb-2007
+%status = (	# As of 30-Sep-2008, from Kelso's document dated 29-Sep-2008
           '25432' => {
                        'comment' => '',
                        'status' => 0,
@@ -5990,7 +5990,7 @@ eod
                      },
           '24948' => {
                        'comment' => '',
-                       'status' => 0,
+                       'status' => 2,
                        'name' => 'Iridium 28',
                        'class' => 'Astro::Coord::ECI::TLE::Iridium',
                        'type' => 'iridium',
@@ -6462,7 +6462,7 @@ eod
                      },
           '27375' => {
                        'comment' => '',
-                       'status' => 1,
+                       'status' => 0,
                        'name' => 'Iridium 95',
                        'class' => 'Astro::Coord::ECI::TLE::Iridium',
                        'type' => 'iridium',
@@ -6699,7 +6699,7 @@ eod
                        'class' => 'Astro::Coord::ECI::TLE::Iridium',
                        'type' => 'iridium',
                        'id' => 25346
-                     },
+                     }
 	);
 
 1;
