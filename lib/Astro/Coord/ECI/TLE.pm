@@ -106,7 +106,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.012_02';
+our $VERSION = '0.012_03';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1430,6 +1430,14 @@ eod
     sort {$a->[0] <=> $b->[0]}
         map {[$_->{id}, $_->{type}, $_->{status}, $_->{name},
 	$_->{comment}]} values %status;
+    }
+  elsif ($cmd eq 'yaml') {	# <<<< Undocumented!!!
+    my $class = eval {require YAML::Syck; 'YAML::Syck'} ||
+    eval {require YAML; 'YAML'}
+	or croak "Neither YAML nor YAML::Syck available";
+    my $dumper = $class->can('Dump')
+	or croak "$class does not implement Dump()";
+    print $dumper->(\%status);
     }
   else {
     croak <<eod;
@@ -6998,7 +7006,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007, 2008 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE
