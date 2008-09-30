@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.017_03';
+our $VERSION = '0.017_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1226,15 +1226,16 @@ eod
 #	version of SOAP::Lite.
 
 $cmdopt{debug} and SOAP::Trace->import ('all');
-my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices/',
-    'http://gisdata.usgs.gov/XMLWebServices/TNM_Elevation_Service.asmx');
+my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices2/',
+####    'http://gisdata.usgs.gov/XMLWebServices/TNM_Elevation_Service.asmx');
+    'http://gisdata.usgs.gov/xmlwebservices2/elevation_service.asmx');
 
 #	Query the USGS for the data. This is not straightforward
 #	because they're using .NET.
 
 my $rslt;
 ##my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
-my $xmlns = 'http://gisdata.usgs.gov/XMLWebServices/';
+my $xmlns = 'http://gisdata.usgs.gov/XMLWebServices2/';
 
 my $tries = ($cmdopt{retry_on_zero} || 0) + 1;
 
