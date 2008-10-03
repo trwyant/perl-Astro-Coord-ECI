@@ -398,4 +398,15 @@
   bin/satpass 0.017
     Supress '"our" variable $clipboard_unavailable masks earlier
       declaration ...' under 5.10.0.
-
+0.018
+  Astro::Coord::ECI 0.018
+    Update version number and copyright date. No other changes.
+  Astro::Coord::ECI::TLE 0.013
+    Add semimajor(), to calculate and return the semimajor axis of the
+      orbit.
+    Update Iridium status: mark Iridium 28 (OID 24948) failed, and
+      Iridium 95 (OID 27375) as in service (was spare).
+  bin/satpass 0.018
+    Under Mac OS X, use Mac::Pasteboard for clipboard operations if
+      available; supress pbcopy warning when run as cron job.
+    Fix 'height' query to track changes in USGS' elevation web service.
