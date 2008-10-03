@@ -410,3 +410,7 @@
     Under Mac OS X, use Mac::Pasteboard for clipboard operations if
       available; supress pbcopy warning when run as cron job.
     Fix 'height' query to track changes in USGS' elevation web service.
+  t/tle_sgp4r.t
+    Correct the code that extracts the needed TLEs from the downloaded
+      zip file.
+
