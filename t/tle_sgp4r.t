@@ -28,7 +28,8 @@ unless (-e $tle_file) {
     print $fh $rslt->content;
     seek $fh, 0, 0;
 
-    my $member = 'sgp4-ver.tle';
+##    my $member = 'sgp4-ver.tle';
+    my $member = 'SGP4-VER.TLE';
 
     my $zip = Archive::Zip->new ();
     warn "# Reading Zip file\n";
