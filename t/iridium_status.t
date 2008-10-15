@@ -478,6 +478,7 @@ eod
     my ($what, $url, $expect, $file, $data) = @$_;
     $test++;
     my ($skip, $rslt, $got, $dt) = parse_date ($url);
+    defined $got or $got = 'undef';
     $dt ||= 0;
     print <<eod;
 #
