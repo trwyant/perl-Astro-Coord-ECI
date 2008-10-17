@@ -4,13 +4,23 @@ Astro::Coord::ECI::Moon - Compute the position of the Moon.
 
 =head1 SYNOPSIS
 
+ use Astro::Coord::ECI;
+ use Astro::Coord::ECI::Moon;
+ use Astro::Coord::ECI::Utils qw{deg2rad};
+ 
+ # 1600 Pennsylvania Ave, Washington DC USA
+ # latitude 38.899 N, longitude 77.038 W,
+ # altitude 16.68 meters above sea level
+ my $lat = deg2rad (38.899);    # Radians
+ my $long = deg2rad (-77.038);  # Radians
+ my $alt = 16.68 / 1000;        # Kilometers
  my $moon = Astro::Coord::ECI::Moon->new ();
  my $sta = Astro::Coord::ECI->
      universal (time ())->
      geodetic ($lat, $long, $alt);
  my ($time, $rise) = $sta->next_elevation ($moon);
  print "Moon @{[$rise ? 'rise' : 'set']} is ",
-     scalar localtime $time;
+     scalar localtime $time, "\n";
 
 =head1 DESCRIPTION
 
@@ -33,7 +43,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.004';
+our $VERSION = '0.004_01';
 
 use base qw{Astro::Coord::ECI};
 
