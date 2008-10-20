@@ -5,19 +5,76 @@ propagation models
 
 =head1 SYNOPSIS
 
- my @sats = Astro::Coord::ECI::TLE->parse ($tle_data);
- my $now = time ();
+The following is a semi-brief script to calculate Iridium flares. You
+will need to substitute your own location where indicated.
+
+ use Astro::SpaceTrack;
+ use Astro::Coord::ECI;
+ use Astro::Coord::ECI::TLE;
+ use Astro::Coord::ECI::TLE::Set;
+ use Astro::Coord::ECI::Utils qw{deg2rad rad2deg};
+
+ # 1600 Pennsylvania Avenue, Washington DC, USA
+ my $your_north_latitude_in_degrees = 38.898748;
+ my $your_east_longitude_in_degrees = -77.037684;
+ my $your_height_above_sea_level_in_meters = 16.68;
+ 
+ # Create object representing the observers' location.
+ # Note that the input to geodetic() is latitude north
+ # and longitude west, in RADIANS, and height above sea
+ # level in KILOMETERS.
+ 
+ my $loc = Astro::Coord::ECI->geodetic (
+    deg2rad ($your_north_latitude_in_degrees),
+    deg2rad ($your_east_longitude_in_degrees),
+    $your_height_above_sea_level_in_meters/1000);
+ 
+ # Get all the Space Station data from NASA's human
+ # spaceflight page. It is all direct-fetched, so no
+ # password is needed.
+ 
+ my $st = Astro::SpaceTrack->new (direct => 1);
+ my $data = $st->spaceflight ('-all');
+ $data->is_success or die $data->status_line;
+ 
+ # Parse the fetched data, yielding TLE objects. Aggregate
+ # them into Set objects where this is warranted, since the
+ # Manned Spaceflight website gives multiple sets of
+ # orbital elements for each object.
+ 
+ my @sats = Astro::Coord::ECI::TLE::Set->aggregate(
+     Astro::Coord::ECI::TLE->parse ($data->content));
+ 
+ # We want passes for the next 7 days.
+ 
+ my $start = time ();
+ my $finish = $start + 7 * 86400;
+ my @passes;
  foreach my $tle (@sats) {
-     my @latlon = $tle->universal ($now)->geodetic ();
-     my @xyz = $tle->eci ();	# For same time.
-     print $tle->get ('id'), "\t@latlon\t@xyx\n";
-     }
-
-The acquisition of the orbital elements represented by $tle_data
-in the above example is left as an exercise for the student.
-
-Hint: see F<http://www.space-track.org/>, F<http://celestrak.com/>,
-or L<Astro::SpaceTrack>.
+    push @passes, $tle->pass($loc, $start, $finish);
+ }
+ print <<eod;
+      Date/Time          Satellite        Elevation  Azimuth Event
+ eod
+ foreach my $pass (sort {$a->{time} <=> $b->{time}} @passes) {
+ 
+ #  The returned angles are in radians, so we need to
+ #  convert back to degrees.
+ #
+ #  Note that unless Scalar::Util::dualvar works, the event output
+ #  will be integers.
+ 
+    print "\n";
+    
+    foreach my $event (@{$pass->{events}}) {
+	printf "%s %-15s %9.1f %9.1f %-5s\n",
+	    scalar localtime $event->{time},
+	    $event->{body}->get ('name'),
+	    rad2deg ($event->{elevation}),
+	    rad2deg ($event->{azimuth}),
+	    $event->{event};
+    }
+ }
 
 =head1 DESCRIPTION
 
@@ -106,7 +163,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.013';
+our $VERSION = '0.013_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
