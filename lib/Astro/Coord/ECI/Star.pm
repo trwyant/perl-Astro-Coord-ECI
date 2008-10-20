@@ -4,12 +4,28 @@ Astro::Coord::ECI::Star - Compute the position of a star.
 
 =head1 SYNOPSIS
 
- my $star = Astro::Coord::ECI::Star->star ();
- my $sta = Astro::Coord::ECI->new (name => 'Spica')->
-     position (3.51331869544372, -0.194802985206623);
+ use Astro::Coord::ECI;
+ use Astro::Coord::ECI::Star;
+ use Astro::Coord::ECI::Utils qw{deg2rad};
+ 
+ # 1600 Pennsylvania Ave, Washington DC USA
+ # latitude 38.899 N, longitude 77.038 W,
+ # altitude 16.68 meters above sea level
+ my $lat = deg2rad (38.899);    # Radians
+ my $long = deg2rad (-77.038);  # Radians
+ my $alt = 16.68 / 1000;        # Kilometers
+ 
+ my $star = Astro::Coord::ECI::Star->new (
+     name => 'Spica')->position(
+     3.51331869544372,    # Right ascension, radians
+     -0.194802985206623,  # Declination, radians
+ );
+ my $sta = Astro::Coord::ECI->
+     universal (time ())->
+     geodetic ($lat, $long, $alt);
  my ($time, $rise) = $sta->next_elevation ($star);
- print "Spica's @{[$rise ? 'rise' : 'set']} is ",
-     scalar localtime $time;
+ print "Star @{[$rise ? 'rise' : 'set']} is ",
+     scalar localtime $time, "\n";
 
 =head1 DESCRIPTION
 
@@ -34,7 +50,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.004';
+our $VERSION = '0.004_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -218,7 +234,8 @@ my $end = $self->dynamical;
 #	equatorial coordinates to the result.
 
 my $deltat = $end - $epoch;
-$ra += $mra * $deltat;
+#### $ra += $mra * $deltat;
+$ra = mod2pi($ra + $mra * $deltat);
 $dec += $mdc * $deltat;
 $range += $mrg * $deltat;
 ##!! $self->set (equinox => $epoch);
