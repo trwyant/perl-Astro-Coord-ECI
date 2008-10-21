@@ -4,13 +4,36 @@ Astro::Coord::ECI::TLE::Set - Represent a set of data for the same ID.
 
 =head1 SYNOPSIS
 
+ use Astro::SpaceTrack;
+ use Astro::Coord::ECI::TLE;
+ use Astro::Coord::ECI::TLE::Set;
+ use Astro::Coord::ECI::Utils qw{rad2deg};
+
+ # Get orbital data on the International Space Station and
+ # related NASA stuff. 
+ my $st = Astro::SpaceTrack->new();
+ my $rslt = $st->spaceflight('-all');
+ $rslt->is_success
+     or die "Unable to get data: ", $rslt->status_line;
+ 
+ # We aggregate the data because NASA provides multiple sets
+ # of orbital elements for each body. The Set object will
+ # select the correct one for the given time.
  my @sats = Astro::Coord::ECI::TLE::Set->aggregate (
-     Astro::Coord::ECI::TLE->parse ($tle_data));
+     Astro::Coord::ECI::TLE->parse ($rslt->content));
  my $now = time ();
+ 
+ # Display current International Space Station (etc)
+ # position in terms of latitude, longitude, and altitude.
+ # Like all position methods, geodetic() returns angles in
+ # radians and distances in kilometers.
+ print join ("\t", qw{OID Latitude Longitude Altitude}
+    ), "\n";
  foreach my $tle (@sats) {
-    print join ("\t",
-       $tle->get ('id'),
-       $tle->universal ($now)->geodetic ()),
+    my ($lat, $long, $alt) = $tle->universal($now)
+       ->geodetic();
+    print join ("\t", $tle->get ('id'),
+       rad2deg($lat), rad2deg($long), $alt),
        "\n";
  }
 
@@ -115,7 +138,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
