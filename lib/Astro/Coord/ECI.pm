@@ -21,31 +21,9 @@ Astro::Coord::ECI - Manipulate geocentric coordinates
  my ($azimuth, $elevation, $range) = $loc->azel ($sun);
  print "The Sun is ", rad2deg ($elevation),
      " degrees above the horizon.\n";
- # Instantiate a satellite. The parser returns a list.
- my ($tle) = Astro::Coord::ECI::TLE->parse (<<eod);
- Pretend this text contains NORAD orbital element data for
- a satellite. If it contains more than one set of data, you
- get more than one object back.
- eod
- # Figure out where the satellite is in the observer's sky.
- # Note that setting the time runs the model.
- my ($right_asc, $decl, $rng) =
-     $loc->equatorial ($tle->universal ($time));
- # Find the satellite's ECI coordinates at the given time.
- # It is not necessary to run the model again, unless you
- # want coordinates for a different time.
- my ($X, $Y, $Z) = $tle->eci ();
- print <<eod;
- Satellite position
-     equatorial coordinates:
-         right ascension: @{[rad2deg ($right_asc)]} degr
-         declination: @{[rad2deg ($decl)]} degr
-         range: $rng km
-     ECI coordinates:
-         X: $X
-         Y: $Y
-         Z: $Z
- eod
+
+See the Astro::Coord::ECI::TLE documentation for an example involving
+satellite pass prediction.
 
 =head1 DESCRIPTION
 
@@ -91,7 +69,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.018';
+our $VERSION = '0.018_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -715,6 +693,13 @@ The object itself is returned.
 The time argument is optional if the time represented by the object has
 already been set (e.g. by the universal() or dynamical() methods).
 
+The latitude should be a number between -PI/2 and PI/2 radians
+inclusive. The longitude should be a number between -2*PI and 2*PI
+radians inclusive.  The increased range (one would expect -PI to PI) is
+because in some astronomical usages latitudes outside the range + or -
+180 degrees are employed. A warning will be generated if either of these
+range checks fails.
+
 This method can also be called as a class method, in which case it
 instantiates the desired object. In this case the time is not optional.
 
@@ -758,9 +743,8 @@ unless (@_) {
 if (@_ == 3) {
     ref $self or $self = $self->new ();
     my ($beta, $lambda, $rho) = @_;
-
-    $lambda = mod2pi ($lambda);
-    $beta = mod2pi ($beta);
+    $beta = _check_latitude(latitude => $beta);
+    $lambda = _check_longitude(longitude => $lambda);
 
     my $epsilon = obliquity ($self->dynamical);
     my $sinlamda = sin ($lambda);
@@ -809,6 +793,11 @@ This method sets the L</Equatorial> coordinates represented by the
 object in terms of L<Right Ascension> and L</Declination> in radians,
 and the range to the object in kilometers, time being universal
 time. The object itself is returned.
+
+The right ascension should be a number between 0 and 2*PI radians
+inclusive. The declination should be a number between -PI/2 and PI/2
+radians inclusive. A warning will be generated if either of these range
+checks fails.
 
 The time argument is optional if the time represented by the object
 has already been set (e.g. by the universal() or dynamical() methods).
@@ -902,6 +891,8 @@ Error - You may not set the equatorial coordinates relative to an
         observer.
 eod
     my ($ra, $dec, $range) = @_;
+    $ra = _check_right_ascension('right ascension' => $ra);
+    $dec = _check_latitude(declination => $dec);
     my $z = $range * sin ($dec);
     my $r = $range * cos ($dec);
     my $x = $r * cos ($ra);
@@ -953,6 +944,13 @@ object in terms of L</Geocentric latitude> psiprime and L</Longitude>
 lambda in radians, and distance from the center of the Earth rho in
 kilometers.
 
+The latitude should be a number between -PI/2 and PI/2 radians
+inclusive. The longitude should be a number between -2*PI and 2*PI
+radians inclusive.  The increased range (one would expect -PI to PI) is
+because in some astronomical usages latitudes outside the range + or -
+180 degrees are employed. A warning will be generated if either of these
+range checks fails.
+
 This method can also be called as a class method, in which case it
 instantiates the desired object.
 
@@ -1000,6 +998,8 @@ eod
 
 if (@_ == 3) {
     my ($psiprime, $lambda, $rho) = @_;
+    $psiprime = _check_latitude(latitude => $psiprime);
+    $lambda = _check_longitude(longitude => $lambda);
     my $z = $rho * sin ($psiprime);
     my $r = $rho * cos ($psiprime);
     my $x = $r * cos ($lambda);
@@ -1036,6 +1036,13 @@ $self;
 This method sets the L</Geodetic> coordinates represented by the object
 in terms of its L</Geodetic latitude> psi and L</Longitude> lambda in
 radians, and its height h above mean sea level in kilometers.
+
+The latitude should be a number between -PI/2 and PI/2 radians
+inclusive.  The longitude should be a number between -2*PI and 2*PI
+radians inclusive. The increased range (one would expect -PI to PI) is
+because in some astronomical usages latitudes outside the range + or -
+180 degrees are employed. A warning will be generated if either of these
+range checks fails.
 
 The ellipsoid argument is the name of a L</Reference Ellipsoid> known
 to the class, and is optional. If passed, it will set the ellipsoid
@@ -1210,6 +1217,8 @@ if (@_ == 3) {
 #	Calculate the geocentric data.
 
     my ($phi, $lambda, $h) = @_;
+    $phi = _check_latitude(latitude => $phi);
+    $lambda = _check_longitude(longitude => $lambda);
     my $bovera = 1 - $self->{flattening};
 
 
@@ -1633,7 +1642,7 @@ my $A = $cosdelta0 * sin ($alpha0 + $zeta);
 my $B = $costheta * $cosdelta0cosalpha0 - $sintheta * $sindelta0;
 my $C = $sintheta * $cosdelta0cosalpha0 + $costheta * $sindelta0;
 
-my $alpha = atan2 ($A , $B) + $z;
+my $alpha = mod2pi(atan2 ($A , $B) + $z);
 my $delta = asin ($C);
 
 $self->equatorial ($alpha, $delta, $rho0);
@@ -2048,6 +2057,50 @@ if ($self->{specified}) {
     }
 
 $self;
+}
+
+#	_check_latitude($arg_name => $value)
+#
+#	This subroutine range-checks the given latitude value,
+#	generating a warning if it is outside the range -PIOVER2 <=
+#	$value <= PIOVER2. The $arg_name is used in the exception, if
+#	any. The value is normalized to the range -PI to PI, and
+#	returned. Not that a value outside the validation range makes
+#	any sense.
+
+sub _check_latitude {
+    -&PIOVER2 <= $_[1] && $_[1] <= &PIOVER2
+	or carp (ucfirst $_[0],
+	' must be in radians, between -PI/2 and PI/2');
+    mod2pi($_[1] + PI) - PI;
+}
+
+#	$value = _check_longitude($arg_name => $value)
+#
+#	This subroutine range-checks the given longitude value,
+#	generating a warning if it is outside the range -TWOPI <= $value
+#	<= TWOPI. The $arg_name is used in the exception, if any. The
+#	value is normalized to the range -PI to PI, and returned.
+
+sub _check_longitude {
+    -&TWOPI <= $_[1] && $_[1] <= &TWOPI
+	or carp (ucfirst $_[0],
+	' must be in radians, between -2*PI and 2*PI');
+    mod2pi($_[1] + PI) - PI;
+}
+
+#	_check_right_ascension($arg_name => $value)
+#
+#	This subroutine range-checks the given right ascension value,
+#	generating a warning if it is outside the range 0 <= $value <=
+#	TWOPI. The $arg_name is used in the exception, if any. The value
+#	is normalized to the range 0 to TWOPI, and returned.
+
+sub _check_right_ascension {
+    0 <= $_[1] && $_[1] <= &TWOPI
+	or carp (ucfirst $_[0],
+	' must be in radians, between 0 and 2*PI');
+    mod2pi($_[1]);
 }
 
 #	@eci = $self->_convert_ecef_to_eci ()
