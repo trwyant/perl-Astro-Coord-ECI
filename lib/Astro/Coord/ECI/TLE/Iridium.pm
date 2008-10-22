@@ -11,6 +11,11 @@ will need to substitute your own location where indicated.
  use Astro::Coord::ECI;
  use Astro::Coord::ECI::TLE;
  use Astro::Coord::ECI::Utils qw{deg2rad rad2deg};
+
+ # 1600 Pennsylvania Avenue, Washington DC, USA
+ my $your_north_latitude_in_degrees = 38.898748;
+ my $your_east_longitude_in_degrees = -77.037684;
+ my $your_height_above_sea_level_in_meters = 16.68;
  
  # Create object representing the observers' location.
  # Note that the input to geodetic() is latitude north
@@ -112,7 +117,7 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.005';
+our $VERSION = '0.005_01';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -424,6 +429,14 @@ Fifth, the orbital elements used to make the prediction can differ.
 I have occasionally seen Heavens Above using elements a day old,
 versus the ones available from Space Track, and seen this difference
 make a difference of six or eight seconds in the time of the flare.
+
+Sixth, this method takes no account of the decrease in magnitude that
+would result from the Sun being extremely close to the horizon as seen
+from the flaring satellite. I do not know whether Heavens Above does
+this or not, but I have seen an instance where this code predicted a
+flare but Heavens Above did not, where the observed flare was much
+dimmer than this code predicted, and reddened. Subsequent calculations
+put the Sun 0.1 degrees above the horizon as seen from the satellite.
 
 B<NOTE> that the algorithm used to calculate flares does not work at
 latitudes beyond 85 degrees north or south, nor does it work for any
@@ -1247,6 +1260,7 @@ my %rslt = (
 	type => $flare_type,		# Flare type ('am', 'day', 'pm')
 	virtual_image => $virtual_image, # Virtual image of illum.
 	);
+
 return wantarray ? %rslt : \%rslt;
 }
 
