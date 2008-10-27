@@ -413,4 +413,26 @@
   t/tle_sgp4r.t
     Correct the code that extracts the needed TLEs from the downloaded
       zip file.
-
+0.019
+  Astro::Coord::ECI 0.019
+    Truncate SYNOPSIS code.
+    Range-check angular position input, with warning if out of range:
+      Latitude: - PI/2 <= latitude <= PI/2;
+      Longitude: - 2*PI <= longitude < 2*PI (Jean Meeus' examples
+        sometimes use examples outside the conventional range);
+      Right ascension: 0 <= right ascension < 2*PI
+  Astro::Coord::ECI::Moon 0.005
+    Clarify and expand SYNOPSIS code.
+  Astro::Coord::ECI::Star 0.005
+    Correct and expand SYNOPSIS code.
+    Normalize computed right ascension to range 0 to 2 PI.
+  Astro::Coord::ECI::Sun 0.007
+    Clarify and expand SYNOPSIS code.
+  Astro::Coord::ECI::TLE 0.014
+    Clarify and expand SYNOPSIS code.
+  Astro::Coord::ECI::TLE::Iridium 0.006
+    Correct SYNOPSIS code.
+    Document problems with magnitude estimate when the Sun is close
+      to the horizon as seen from the satellite.
+  Astro::Coord::ECI::TLE::Set 0.004
+    Clarify and complete SYNOPSIS code.
