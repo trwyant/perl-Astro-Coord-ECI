@@ -216,6 +216,7 @@ Turbo
 TWOPI
 tz
 uk
+URI
 USGS
 UT
 UTC
