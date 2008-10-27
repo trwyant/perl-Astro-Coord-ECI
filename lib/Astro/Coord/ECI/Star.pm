@@ -50,7 +50,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.004_01';
+our $VERSION = '0.005';
 
 use base qw{Astro::Coord::ECI};
 
