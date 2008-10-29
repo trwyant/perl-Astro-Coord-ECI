@@ -117,7 +117,7 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -1535,6 +1535,36 @@ __END__
 This class adds the following attributes:
 
 =over
+
+=item am (boolean)
+
+If true, the flare() method returns flares that occur between midnight
+and morning twilight. If false, such flares are ignored.
+
+The default is 1 (i.e. true).
+
+=item day (boolean)
+
+If true, the flare() method returns flares that occur between morning
+twilight and evening twilight. If false, such flares are ignored.
+
+The default is 1 (i.e. true).
+
+=item extinction (boolean)
+
+If true, flare magnitude calculations will take atmospheric extinction
+into account. If false, they will not. The observer who wishes to
+compare forecast magnitudes to nearby stars may wish to set this to some
+value Perl considers false (e.g. undef).
+
+The default is 1 (i.e. true).
+
+=item pm (boolean)
+
+If true, the flare() method returns flares that occur between evening
+twilight and midmight. If false, such flares are ignored.
+
+The default is 1 (i.e. true).
 
 =item status (integer)
 
