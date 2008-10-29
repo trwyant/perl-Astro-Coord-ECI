@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_01';
+our $VERSION = '0.019_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -4150,8 +4150,8 @@ The start_time defaults to 'today noon', and the end_time to +7.
 In addition to the global options, the following options are legal
 for the flare command:
 
--am selects only morning flares -- that is, those after midnight but
-before morning twilight.
+-am ignores morning flares -- that is, those after midnight but before
+morning twilight.
 
 -choose chooses bodies from the observing list. It works the same way
 as the L<choose|/choose> command, but does not alter the observing
@@ -4159,11 +4159,11 @@ list. You can specify multiple bodies by specifying -choose multiple
 times, or by separating your choices with commas. If -choose is not
 specified, the whole observing list is used.
 
--day selects daytime flares -- that is, those between morning
-twilight and evening twilight.
+-day ignores daytime flares -- that is, those between morning twilight
+and evening twilight.
 
--pm selects evening flares -- that is, those between evening
-twilight and midnight.
+-pm ignores evening flares -- that is, those between evening twilight
+and midnight.
 
 -questionable requests that satellites whose status is questionable
 (i.e. 'S') be included. Typically these are spares, or moving
