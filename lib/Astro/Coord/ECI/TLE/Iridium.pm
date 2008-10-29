@@ -117,7 +117,7 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.006_01';
+our $VERSION = '0.006_02';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -1562,7 +1562,7 @@ The default is 1 (i.e. true).
 =item pm (boolean)
 
 If true, the flare() method returns flares that occur between evening
-twilight and midmight. If false, such flares are ignored.
+twilight and midnight. If false, such flares are ignored.
 
 The default is 1 (i.e. true).
 
