@@ -138,7 +138,7 @@ package Astro::Coord::ECI::TLE::Set;
 use Carp;
 use UNIVERSAL qw{isa};
 
-our $VERSION = '0.004';
+our $VERSION = '0.004_01';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -301,6 +301,28 @@ epoch.
 sub members {
 my $self = shift;
 map {$_->[1]} @{$self->{members}};
+}
+
+=item $set->represents($class)
+
+If the set has a current member, this method returns true if the current
+member represents the given class, or the class name of the current
+member if no argument is given.
+
+If the set has no current member, an exception is thrown.
+
+See the Astro::Coord::ECI represents() method for the details of the
+behavior if the set has a current member.
+
+Normally we would just let AUTOLOAD take care of this, but it turned out
+to be handy to be able to call UNIVERSAL::can on this method.
+
+=cut
+
+sub represents {
+    my $self = shift;
+    $self->{current} or croak sprintf ERR_NOCURRENT, 'represents';
+    $self->{current}->represents(@_);
 }
 
 
