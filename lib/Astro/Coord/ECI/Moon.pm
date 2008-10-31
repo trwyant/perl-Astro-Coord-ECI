@@ -43,7 +43,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.005_01';
+our $VERSION = '0.005_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -245,6 +245,37 @@ $self->dynamical ($end);
 wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal;
 }
 
+=item $hash_reference = $moon->next_quarter_hash($want);
+
+This convenience method wraps $moon->next_quarter(), but returns the
+data in a hash reference, sort of like Astro::Coord::ECI::TLE->pass()
+does. The hash contains the following keys:
+
+  {body} => the original object ($moon);
+  {quarter} => {
+    {number} => the quarter number (0 through 3);
+    {description} => the quarter description;
+  }
+  {time} => the time the quarter occurred.
+
+The {time}, {number}, and {description} keys correspond to elements 0
+through 2 of the list returned by next_quarter().
+
+=cut
+
+sub next_quarter_hash {
+    my $self = shift;
+    my ($time, $quarter, $desc) = $self->next_quarter(@_);
+    my %hash = (
+	body => $self,
+	quarter => {
+	    number => $quarter,
+	    description => $desc,
+	},
+	time => $time,
+    );
+    return wantarray ? %hash : \%hash;
+}
 
 =item $period = $moon->period ()
 

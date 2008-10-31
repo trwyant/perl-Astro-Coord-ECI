@@ -44,7 +44,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -329,6 +329,38 @@ while ($end - $begin > 1) {
 $self->dynamical ($end);
 
 wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal;
+}
+
+=item $hash_reference = $sun->next_quarter_hash($want);
+
+This convenience method wraps $sun->next_quarter(), but returns the
+data in a hash reference, sort of like Astro::Coord::ECI::TLE->pass()
+does. The hash contains the following keys:
+
+  {body} => the original object ($sun);
+  {quarter} => {
+    {number} => the quarter number (0 through 3);
+    {description} => the quarter description;
+  }
+  {time} => the time the quarter occurred.
+
+The {time}, {number}, and {description} keys correspond to elements 0
+through 2 of the list returned by next_quarter().
+
+=cut
+
+sub next_quarter_hash {
+    my $self = shift;
+    my ($time, $quarter, $desc) = $self->next_quarter(@_);
+    my %hash = (
+	body => $self,
+	quarter => {
+	    number => $quarter,
+	    description => $desc,
+	},
+	time => $time,
+    );
+    return wantarray ? %hash : \%hash;
 }
 
 
