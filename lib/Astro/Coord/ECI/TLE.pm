@@ -153,7 +153,7 @@ meters to as much as a kilometer.
 I have no information on the accuracy claims of SGP4R.
 
 This module is a computer-assisted translation of the FORTRAN reference
-implementations in "SPACETRACK REPORT NO. 3" and "Revsiting Spacetrack
+implementations in "SPACETRACK REPORT NO. 3" and "Revisiting Spacetrack
 Report #3." That means, basically, that I ran the FORTRAN through a Perl
 script that handled the translation of the assignment statements into
 Perl, and then fixed up the logic by hand. Dominik Borkowski's SGP C-lib
@@ -174,7 +174,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_02';
+our $VERSION = '0.014_03';
 
 use base qw{Astro::Coord::ECI Exporter};
 
