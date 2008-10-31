@@ -69,7 +69,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.019';
+our $VERSION = '0.019_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -836,7 +836,9 @@ Pedro Ramon Escobal, pages 401 - 402.
 sub equatorial {
 my $self = shift;
 
-my $body = shift if @_ && isa ($_[0], __PACKAGE__);
+#### my $body = shift if @_ && isa ($_[0], __PACKAGE__);
+@_ && UNIVERSAL::can($_[0], 'represents') && $_[0]->represents(__PACKAGE__)
+    and my $body = shift;
 
 $self = $self->_check_coord (equatorial => \@_);
 my $time = $self->universal unless $body;
@@ -1441,7 +1443,8 @@ Error - The next_elevation() method may not be called as a class method.
 eod
 
 my $body = shift;
-isa ($body, __PACKAGE__) or croak <<eod;
+#### isa ($body, __PACKAGE__) or croak <<eod;
+$body->represents(__PACKAGE__) or croak <<eod;
 Error - The first argument to next_elevation() must be a subclass of
         @{[__PACKAGE__]}.
 eod
@@ -1515,7 +1518,8 @@ Error - The next_meridian() method may not be called as a class method.
 eod
 
 my $body = shift;
-isa ($body, __PACKAGE__) or croak <<eod;
+####isa ($body, __PACKAGE__) or croak <<eod;
+$body->represents(__PACKAGE__) or croak <<eod;
 Error - The argument to next_meridian() must be a subclass of
         @{[__PACKAGE__]}.
 eod
