@@ -92,15 +92,17 @@ The models implemented are:
   SGP4 - more complex, only useful for near-earth bodies;
   SDP4 - corresponds to SGP4, but for deep-space bodies;
   SGP8 - more complex still, only for near-earth bodies;
-  SDP8 - corresponds to SGP8, but for deep-space bodies.
+  SDP8 - corresponds to SGP8, but for deep-space bodies;
+  SGP4R - updates and combines SGP4 and SDP4.
 
 There are also some meta-models, with the smarts to run either a
 near-earth model or the corresponding deep-space model depending on the
 body the object represents:
 
-  model - uses the preferred model (sgp4 or sdp4);
+  model - uses the preferred model (sgp4r);
   model4 - runs sgp4 or sdp4;
-  model8 = runs sgp8 or sdp8.
+  model4r - runs sgp4r;
+  model8 - runs sgp8 or sdp8.
 
 In addition, I have on at least one occasion wanted to turn off the
 automatic calculation of position when the time was set. That is
@@ -126,8 +128,15 @@ It is also possible to run the desired model (as specified by the
 L<model|/item_model> attribute) simply by setting the time represented
 by the object.
 
-At the moment, the recommended model to use is either SGP4 or SDP4,
-depending on whether the orbital elements are for a near-earth or
+As of release 0.016, the recommended model to use is SGP4R, which was
+added in that release. The SGP4R model, described in "Revisiting
+Spacetrack Report #3"
+(L<http://celestrak.com/publications/AIAA/2006-6753/>), combines SGP4
+and SDP4, and updates them. For the details of the changes, see the
+report.
+
+Prior to release 0.016, the recommended model to use was either SGP4 or
+SDP4, depending on whether the orbital elements are for a near-earth or
 deep-space body. For the purpose of these models, any body with a period
 of at least 225 minutes is considered to be a deep-space body.
 
@@ -141,14 +150,16 @@ the models involved) the total error of the predictions (including error
 in measuring the position of the satellite) runs from a few hundred
 meters to as much as a kilometer.
 
+I have no information on the accuracy claims of SGP4R.
+
 This module is a computer-assisted translation of the FORTRAN reference
-implementation in "SPACETRACK REPORT NO. 3." That means, basically,
-that I ran the FORTRAN through a Perl script that handled the
-translation of the assignment statements into Perl, and then fixed up
-the logic by hand. Dominik Borkowski's SGP C-lib was used as a reference
-implementation for testing purposes, because I didn't have a Pascal
-compiler, and I have yet to get any model but SGP to run correctly under
-g77.
+implementations in "SPACETRACK REPORT NO. 3" and "Revsiting Spacetrack
+Report #3." That means, basically, that I ran the FORTRAN through a Perl
+script that handled the translation of the assignment statements into
+Perl, and then fixed up the logic by hand. Dominik Borkowski's SGP C-lib
+was used as a reference implementation for testing purposes, because I
+didn't have a Pascal compiler, and I have yet to get any model but SGP
+to run correctly under g77.
 
 =head2 Methods
 
@@ -163,7 +174,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_01';
+our $VERSION = '0.014_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
