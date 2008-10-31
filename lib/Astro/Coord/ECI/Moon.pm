@@ -43,7 +43,7 @@ use warnings;
 
 package Astro::Coord::ECI::Moon;
 
-our $VERSION = '0.005_02';
+our $VERSION = '0.005_03';
 
 use base qw{Astro::Coord::ECI};
 
@@ -161,7 +161,8 @@ potentially returned:
 
 =cut
 
-my @quarters = ('New Moon', 'First quarter', 'Full Moon', 'Last quarter');
+my @quarters = ('New Moon', 'First quarter Moon', 'Full Moon',
+    'Last quarter Moon');
 
 sub almanac {
 my $self = shift;
