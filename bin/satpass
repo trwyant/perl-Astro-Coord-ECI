@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_02';
+our $VERSION = '0.019_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -5355,20 +5355,28 @@ is currently the model normally used for near-Earth objects.
 sdp4 - A deep-space model corresponding to sgp4, but including resonance
 terms. This is currently the model normally used for deep-space objects.
 
+sgp4r - The model from "Revisiting Spacetrack Report #3", which corrects
+and combines sgp4 and sdp4.
+
 sgp8 - A proposed model for near-Earth objects.
 
 sdp8 - A proposed deep-space model corresponding to sgp8.
 
+null - A non-model, which causes no position computation to be done.
+Useful for testing, maybe.
+
 The 'meta-models' implemented are:
 
 model - Use the normal model appropriate to the object. Currently this
-means sgp4 for near-Earth objects and sdp4 for deep-space objects, but
-this will change if the preferred model changes (at least, if I become
-aware of the fact).
+means sgp4r, but this will change if the preferred model changes (at
+least, if I become aware of the fact).
 
 model4 - Use either sgp4 or sdp4 as appropriate. Right now this is the
 same as 'model', but 'model4' will still run sgp4 and sdp4, even if
 they are no longer the preferred models.
+
+model4r - Synonym for sgp4r, implemented to keep the 'meta-models'
+consistent.
 
 model8 - Use either sgp8 or sdp8 as appropriate.
 

@@ -163,7 +163,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014';
+our $VERSION = '0.014_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -6963,7 +6963,7 @@ minute.
 This attribute contains the name of the model to be run (i.e. the name
 of the method to be called) when the time_set() method is called, or a
 false value if no model is to be run. Legal model names are: model,
-model4, model8, null, sgp, sgp4, sgp8, sdp4, and sdp8.
+model4, model4r, model8, null, sgp, sgp4, sgp4r, sgp8, sdp4, and sdp8.
 
 The default is 'model'. Setting the value on the class changes the
 default.
