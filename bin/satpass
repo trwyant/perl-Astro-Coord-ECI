@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_03';
+our $VERSION = '0.019_04';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1246,38 +1246,45 @@ while (--$tries >= 0) {
 #	The -yaml option is purely for debugging purposes, and will
 #	remain undocumented.
 
-    if ($cmdopt{yaml}) {
-	$yaml_loader ||= eval {
-	    require YAML::Syck; \&YAML::Syck::LoadFile;} || eval {
-	    require YAML; \&YAML::LoadFile; }
-	    or die "Can not load YAML::Syck or YAML.\n";
-	$rslt = $yaml_loader->($cmdopt{yaml});
-    } elsif ($cmdopt{all}) {
-	$rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
-		{xmlns => $xmlns}) =>
-	    SOAP::Data->new (name => 'X_Value', type => 'string',
-		value => $lon),
-	    SOAP::Data->new (name => 'Y_Value', type => 'string',
-		value => $lat),
-	    SOAP::Data->new (name => 'Elevation_Units', type => 'string',
-		value => 'METERS'),
-	    )->result;
-	}
-      else {
-	$rslt = $soap->call (SOAP::Data->name ('getElevation')->attr (
-		{xmlns => $xmlns}) =>
-	    SOAP::Data->new (name => 'X_Value', type => 'string',
-		value => $lon),
-	    SOAP::Data->new (name => 'Y_Value', type => 'string',
-		value => $lat),
-	    SOAP::Data->new (name => 'Source_Layer', type => 'string', 
-		value => $cmdopt{source_layer} || -1),
-	    SOAP::Data->new (name => 'Elevation_Units', type => 'string',
-		value => 'METERS'),
-	    SOAP::Data->new (name => 'Elevation_Only', type => 'string',
-		value => 'false'),
-	    )->result;
-	}
+    eval {
+	if ($cmdopt{yaml}) {
+	    $yaml_loader ||= eval {
+		require YAML::Syck; \&YAML::Syck::LoadFile;} || eval {
+		require YAML; \&YAML::LoadFile; }
+		or die "Can not load YAML::Syck or YAML.\n";
+	    $rslt = $yaml_loader->($cmdopt{yaml});
+	} elsif ($cmdopt{all}) {
+	    $rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
+		    {xmlns => $xmlns}) =>
+		SOAP::Data->new (name => 'X_Value', type => 'string',
+		    value => $lon),
+		SOAP::Data->new (name => 'Y_Value', type => 'string',
+		    value => $lat),
+		SOAP::Data->new (name => 'Elevation_Units', type => 'string',
+		    value => 'METERS'),
+		)->result;
+	    }
+	  else {
+	    $rslt = $soap->call (SOAP::Data->name ('getElevation')->attr (
+		    {xmlns => $xmlns}) =>
+		SOAP::Data->new (name => 'X_Value', type => 'string',
+		    value => $lon),
+		SOAP::Data->new (name => 'Y_Value', type => 'string',
+		    value => $lat),
+		SOAP::Data->new (name => 'Source_Layer', type => 'string', 
+		    value => $cmdopt{source_layer} || -1),
+		SOAP::Data->new (name => 'Elevation_Units', type => 'string',
+		    value => 'METERS'),
+		SOAP::Data->new (name => 'Elevation_Only', type => 'string',
+		    value => 'false'),
+		)->result;
+	    }
+	};
+
+    my $err = $@;
+    undef $soap;
+    $cmdopt{debug} and SOAP::Trace->import ('-all');
+    $err and die $err;
 
 #	Parse our result. If we got a hash back, it means that the USGS
 #	got their XML correct and SOAP::Lite parsed it for us. But in
@@ -1292,8 +1299,9 @@ while (--$tries >= 0) {
 	}
 	foreach my $key (
 	    qw{USGS_Elevation_Web_Service_Query Elevation_Query Elevation}) {
-	    $rslt = $rslt->{$key}
+	    exists $rslt->{$key}
 		or die "Error - Elevation result is missing tag <$key>\n";
+	    $rslt = $rslt->{$key};
 	}
 	if (ref $rslt eq 'ARRAY') {
 	    my $foo = $rslt;
@@ -1348,9 +1356,6 @@ while (--$tries >= 0) {
 	}
 
     }
-
-undef $soap;
-$cmdopt{debug} and SOAP::Trace->import ('-all');
 
 #	If, after all the above shenannigans, we have a result, set
 #	the height (and latitude and longitude if not defaulted), and
@@ -1747,7 +1752,7 @@ foreach my $body (@sky) {
     $phase = rad2deg ($phase);
     my $name;
     foreach (@table) {$_->[0] > $phase or next; $name = $_->[1]; last}
-    printf "%s @{[$body->get ('name')]} phase %d deg, %s, %i%% illum.\n",
+    printf "%s @{[$body->get ('name')]} phase %.0f deg, %s, %.0f%% illum.\n",
 	strftime ($dtfmt, localtime $time), $phase, $name, $illum * 100;
     }
 }
