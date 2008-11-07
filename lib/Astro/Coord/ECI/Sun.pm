@@ -44,7 +44,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -179,6 +179,39 @@ foreach (
 	}
     }
 return sort {$a->[0] <=> $b->[0]} @almanac;
+}
+
+=item @almanac = $sun->almanac_hash($location, $start, $end);
+
+This convenience method wraps $sun->almanac(), but returns a list of
+hash references, sort of like Astro::Coord::ECI::TLE->pass()
+does. The hashes contain the following keys:
+
+  {almanac} => {
+    {event} => the event type;
+    {detail} => the event detail (typically 0 or 1);
+    {description} => the event description;
+  }
+  {body} => the original object ($sun);
+  {station} => the observing station;
+  {time} => the time the quarter occurred.
+
+The {time}, {event}, {detail}, and {description} keys correspond to
+elements 0 through 3 of the list returned by almanac().
+
+=cut
+
+sub almanac_hash {
+    return map {
+	body => $_[0],
+	station => $_[1],
+	time => $_->[0],
+	almanac => {
+	    event => $_->[1],
+	    detail => $_->[2],
+	    description => $_->[3],
+	}
+    }, almanac(@_);
 }
 
 
