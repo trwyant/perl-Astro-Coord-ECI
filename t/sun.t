@@ -146,7 +146,7 @@ eod
 	my $hash = $sun->next_quarter_hash();
 	my $got = $sun->dynamical;
 	print <<eod;
-# Test $test: $hash->{quarter}{description} $year
+# Test $test: $hash->{almanac}{description} $year
 #      Expected: @{[strftime TIMFMT, gmtime $expect]} (dynamical)
 #           Got: @{[strftime TIMFMT, gmtime $got]} (dynamical)
 #     Tolerance: $tolerance seconds
