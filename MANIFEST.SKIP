@@ -33,6 +33,7 @@ CVS/
 ^t/satpass.t$
 ^t/satpass_geocode.t$
 ^t/sgp4-ver.tle$
+^t/tle_make.t$
 ^tags$
 ^USED_BY$
 ^usual\.dat$
