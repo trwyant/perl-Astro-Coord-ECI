@@ -174,7 +174,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_03';
+our $VERSION = '0.014_04';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -499,17 +499,24 @@ L</Attributes> section for a description of the attributes.
 
 =cut
 
-sub get {
-my $self = shift;
-my $name = shift;
-if (ref $self) {
-    exists $attrib{$name} or return $self->SUPER::get ($name);
-    return $self->{$name};
-    }
-  else {
-    exists $static{$name} or
-	return $self->SUPER::get ($name);
-    return $static{$name};
+{
+    my %accessor = (
+	tle => sub {$_[0]{$_[1]} ||= $_[0]->_make_tle()},
+    );
+    sub get {
+	my $self = shift;
+	my $name = shift;
+	if (ref $self) {
+	    exists $attrib{$name} or return $self->SUPER::get ($name);
+####	    return $self->{$name};
+	    return $accessor{$name} ?
+		$accessor{$name}->($self, $name) :
+		$self->{$name};
+	} else {
+	    exists $static{$name} or
+		return $self->SUPER::get ($name);
+	    return $static{$name};
+	}
     }
 }
 
@@ -6000,6 +6007,86 @@ $self->equinox_dynamical ($self->{epoch_dynamical});
 $self;
 }
 
+sub _make_tle {
+    my $self = shift;
+    my $output;
+
+    my $name = $self->get('name');
+    defined $name && $name ne ''
+	and $output .= substr ($name, 0, 24) . "\n";
+
+    my %ele;
+    {
+	foreach (qw{firstderivative secondderivative bstardrag
+	    inclination rightascension eccentricity
+	    argumentofperigee meananomaly meanmotion
+	    revolutionsatepoch}) {
+	    defined ($ele{$_} = $self->get($_))
+		or croak ucfirst $_, "undefined; can not generate TLE";
+	}
+	my $temp = SGP_TWOPI;
+	foreach (qw{meanmotion firstderivative secondderivative}) {
+	    $temp /= SGP_XMNPDA;
+	    $ele{$_} /= $temp;
+	}
+	foreach (qw{rightascension argumentofperigee meananomaly
+		    inclination}) {
+	    $ele{$_} /= SGP_DE2RA;
+	}
+	foreach my $key (qw{eccentricity}) {
+	    local $_ = sprintf '%.7f', $ele{$key};
+	    s/.*?\.//;
+	    $ele{$key} = $_;
+	}
+	my $epoch = $self->get('epoch');
+	my $epoch_dayfrac = sprintf '%.8f', ($epoch / SECSPERDAY);
+	$epoch_dayfrac =~ s/.*?\././;
+	my $epoch_daynum = strftime '%y%j', gmtime ($epoch);
+	$ele{epoch} = $epoch_daynum . $epoch_dayfrac;
+	$ele{firstderivative} = sprintf (
+	    '%.8f', $ele{firstderivative});
+	$ele{firstderivative} =~ s/([-+]?)[\s0]*\./$1./;
+	foreach my $key (qw{secondderivative bstardrag}) {
+	    if ($ele{$key}) {
+		local $_ = sprintf '%.4e', $ele{$key};
+		s/\.//;
+		my ($mantissa, $exponent) = split 'e', $_;
+		$exponent++;
+		$ele{$key} = sprintf '%s%+1d', $mantissa, $exponent;
+	    } else {
+		$ele{$key} = '00000-0';
+	    }
+	}
+    }
+    my $oid = $self->get('id');
+    $output .= _make_tle_checksum ('1%6s%s %-8s %-14s %10s %8s %8s %s %4s',
+	$oid, $self->get('classification'),
+	$self->get('international'),
+	@ele{qw{epoch firstderivative secondderivative bstardrag}},
+	$self->get('ephemeristype'), $self->get('elementnumber'),
+    );
+    $output .= _make_tle_checksum ('2%6s%9.4f%9.4f %-7s%9.4f%9.4f%12.8f%5s',
+	$oid, @ele{qw{inclination rightascension eccentricity
+	    argumentofperigee meananomaly meanmotion revolutionsatepoch}},
+    );
+    return $output;
+}
+
+sub _make_tle_checksum {
+    my $fmt = shift;
+    my $buffer = sprintf $fmt, @_;
+    my $sum = 0;
+    foreach (split '', $buffer) {
+	if ($_ eq '-') {
+	    $sum++;
+	} elsif (m/\d/) {
+	    $sum += $_;
+	}
+    }
+    $sum = $sum % 10;
+    sprintf "%-68s%i\n", substr ($buffer, 0, 68), $sum;
+}
+
 # *equinox_dynamical = \&Astro::Coord::ECI::equinox_dynamical;
 
 #	_set_illum
@@ -7023,7 +7110,8 @@ motion, in radians per minute cubed.
 
 This attribute contains the input data used by the parse() method to
 generate this object. If the object was not created by the parse()
-method, this attribute will be empty.
+method, a (hopefully) equivalent TLE will be constructed and returned if
+enough attributes have been set, otherwise an exception will be raised.
 
 =item visible (boolean, static)
 
