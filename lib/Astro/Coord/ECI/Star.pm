@@ -50,7 +50,7 @@ use warnings;
 
 package Astro::Coord::ECI::Star;
 
-our $VERSION = '0.005_01';
+our $VERSION = '0.005_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -59,9 +59,6 @@ use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
-##use Time::Local;
-use UNIVERSAL qw{isa};
-
 
 =item $star = Astro::Coord::ECI::Star->new();
 
@@ -116,7 +113,7 @@ potentially returned:
 sub almanac {
 my $self = shift;
 my $location = shift;
-ref $location && UNIVERSAL::isa ($location, 'Astro::Coord::ECI') or
+embodies ($location, 'Astro::Coord::ECI') or
     croak <<eod;
 Error - The first argument of the almanac() method must be a member of
         the Astro::Coord::ECI class, or a subclass thereof.

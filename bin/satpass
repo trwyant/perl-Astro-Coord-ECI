@@ -27,7 +27,6 @@ use Term::ReadLine;
 use Text::Abbrev;
 use Text::ParseWords;
 use Time::Local;
-use UNIVERSAL qw{can};
 
 my (
 	$clipboard_unavailable,
@@ -42,7 +41,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_04';
+our $VERSION = '0.019_05';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -499,7 +498,7 @@ eod
 #	call it, fielding any exceptions thrown and turning them into
 #	warnings.
 
-      elsif (can (__PACKAGE__, $verb)) {
+      elsif (__PACKAGE__->can($verb)) {
 	_parse_time_reset ();	# Reset relative time base to last explicit
 	no strict qw{refs};
 	$SIG{INT} = sub {die "\nInterrupted by user.\n"};
@@ -2620,8 +2619,8 @@ sub _flatten {
 sub _format_local_az_rng {
 @_ or return ' azim     range    ';
 @_ or return ' azim     range    ';
-@_ == 2 && UNIVERSAL::isa ($_[0], 'Astro::Coord::ECI') &&
-    UNIVERSAL::isa ($_[1], 'Astro::Coord::ECI') or die <<eod;
+@_ == 2 && embodies ($_[0], 'Astro::Coord::ECI') &&
+    embodies ($_[1], 'Astro::Coord::ECI') or die <<eod;
 Programming error - _format_azel () must be called with either zero
     or two arguments. If two, both must be Astro::Coord::ECI objects.
 eod
@@ -3244,7 +3243,8 @@ if ($time) {
     }
   elsif ($cmdopt{epoch}) {
     my $time = _parse_time ($cmdopt{epoch});
-    $data = [map {UNIVERSAL::isa ($_, 'Astro::Coord::ECI::TLE::Set') ? $_->select ($time) : $_}
+    $data = [map {eval {$_->isa('Astro::Coord::ECI::TLE::Set')} ?
+	$_->select ($time) : $_}
 	_aggregate (@bodies)];
     }
   else {

@@ -147,7 +147,7 @@ eod
 	$skip = "Can not load Scalar::Util.";
 	require Scalar::Util;
 	$skip = "Scalar::Util does not implement refaddr ().";
-	UNIVERSAL::can ('Scalar::Util', 'refaddr')
+	Scalar::Util->can('refaddr')
 	    and $skip = undef;
     };
     my @text = qw{different same};

@@ -44,7 +44,7 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.007_03';
+our $VERSION = '0.007_04';
 
 use base qw{Astro::Coord::ECI};
 
@@ -52,7 +52,6 @@ use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 ## use Data::Dumper;
 use POSIX qw{floor strftime};
-use UNIVERSAL qw{isa};
 
 my %static = (
     id => 'Sun',
@@ -62,7 +61,7 @@ my %static = (
 
 my $weaken = eval {
     require Scalar::Util;
-    UNIVERSAL::can ('Scalar::Util', 'weaken');
+    Scalar::Util->can('weaken');
     };
 my $object;
 
@@ -91,8 +90,9 @@ otherwise.
 =cut
 
 sub new {
-my $class = shift;
-if ($Singleton && $weaken && UNIVERSAL::isa ($class, __PACKAGE__)) {
+my $class = ref $_[0] || $_[0];
+shift;
+if ($Singleton && $weaken && $class->isa(__PACKAGE__)) {
     if ($object) {
 	$object->set (@_) if @_;
 	return $object;
@@ -148,7 +148,7 @@ my @quarters = ('Spring equinox', 'Summer solstice', 'Fall equinox',
 sub almanac {
 my $self = shift;
 my $location = shift;
-ref $location && UNIVERSAL::isa ($location, 'Astro::Coord::ECI') or
+embodies ($location, 'Astro::Coord::ECI') or
     croak <<eod;
 Error - The first argument of the almanac() method must be a member of
         the Astro::Coord::ECI class, or a subclass thereof.

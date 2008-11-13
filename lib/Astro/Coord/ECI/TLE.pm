@@ -174,12 +174,13 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_04';
+our $VERSION = '0.014_05';
 
 use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta find_first_true
-    load_module mod2pi PI PIOVER2 SECSPERDAY TWOPI thetag};
+use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta embodies
+    find_first_true load_module mod2pi PI PIOVER2 SECSPERDAY TWOPI
+    thetag};
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
@@ -560,7 +561,7 @@ can select the correct member object before running the model.
 
 {	# Begin local symbol block
 
-my %valid = map {$_ => UNIVERSAL::can (__PACKAGE__, $_)}
+my %valid = map {$_ => __PACKAGE__->can ($_)}
     qw{model model4 model4r model8 null sdp4 sdp8 sgp sgp4 sgp4r sgp8};
 
     #>>>	NOTE WELL
@@ -1304,7 +1305,7 @@ It does not under any circumstances manufacture another object.
 
 sub rebless {
 my $tle = shift;
-UNIVERSAL::isa ($tle, __PACKAGE__) or croak <<eod;
+eval {$tle->isa(__PACKAGE__)} or croak <<eod;
 Error - You can only rebless an object of class @{[__PACKAGE__]}
         or a subclass thereof. The object you are trying to rebless
 	is of class @{[ref $tle]}.
@@ -1318,7 +1319,7 @@ my $class = ref $_[0] eq 'HASH' ? $_[0]->{class} || $_[0]->{type} : shift
     or return $tle;
 $class = $type_map{$class} if $type_map{$class};
 load_module ($class);
-UNIVERSAL::isa ($class, __PACKAGE__) or croak <<eod;
+eval {$class->isa(__PACKAGE__)} or croak <<eod;
 Error - You can only rebless an object into @{[__PACKAGE__]} or
         a subclass thereof. You are trying to rebless the object
 	into $class.
@@ -6007,6 +6008,18 @@ $self->equinox_dynamical ($self->{epoch_dynamical});
 $self;
 }
 
+# *equinox_dynamical = \&Astro::Coord::ECI::equinox_dynamical;
+
+#	$text = $self->_make_tle();
+#
+#	This method manufactures a TLE. It's a 'real' TLE if the 'name'
+#	attribute is not set, and a 'NASA' TLE (i.e. the 'T' stands for
+#	'three') if the 'name' attribute is set. The output is intended
+#	to be equivalent to the TLE (if any) that initialized the
+#	object, not identical to it. This method is used to manufacture
+#	a TLE in the case where $self->get('tle') was called but the
+#	object was not initialized by the parse() method.
+
 sub _make_tle {
     my $self = shift;
     my $output;
@@ -6072,6 +6085,13 @@ sub _make_tle {
     return $output;
 }
 
+#	$output = _make_tle_checksum($fmt ...);
+#
+#	This subroutine calls sprintf using the first argument as a
+#	format and the rest as arguments. It then computes the TLE-style
+#	checksum, appends it to the output, slaps a newline on the end
+#	of the whole thing, and returns it.
+
 sub _make_tle_checksum {
     my $fmt = shift;
     my $buffer = sprintf $fmt, @_;
@@ -6086,8 +6106,6 @@ sub _make_tle_checksum {
     $sum = $sum % 10;
     sprintf "%-68s%i\n", substr ($buffer, 0, 68), $sum;
 }
-
-# *equinox_dynamical = \&Astro::Coord::ECI::equinox_dynamical;
 
 #	_set_illum
 
@@ -6104,7 +6122,7 @@ sub _set_illum {
 	$type_map{$body} and $body = $type_map{$body};
 	load_module ($body);
     }
-    UNIVERSAL::isa ($body, 'Astro::Coord::ECI') or croak <<eod;
+    embodies ($body, 'Astro::Coord::ECI') or croak <<eod;
 Error - The illuminating body must be an Astro::Coord::ECI, or a
         subclass thereof, or the words 'sun' or 'moon', which are
 	handled as special cases. You tried to use a

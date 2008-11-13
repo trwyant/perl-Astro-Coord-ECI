@@ -69,14 +69,13 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.019_01';
+our $VERSION = '0.019_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
 use Time::Local;
-use UNIVERSAL qw{can isa};
 
 use constant MINUSONEDEGREE => deg2rad (-1);
 
@@ -836,8 +835,7 @@ Pedro Ramon Escobal, pages 401 - 402.
 sub equatorial {
 my $self = shift;
 
-#### my $body = shift if @_ && isa ($_[0], __PACKAGE__);
-@_ && UNIVERSAL::can($_[0], 'represents') && $_[0]->represents(__PACKAGE__)
+@_ && embodies($_[0], __PACKAGE__)
     and my $body = shift;
 
 $self = $self->_check_coord (equatorial => \@_);

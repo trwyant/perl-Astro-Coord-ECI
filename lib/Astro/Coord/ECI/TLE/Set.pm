@@ -136,9 +136,8 @@ use warnings;
 package Astro::Coord::ECI::TLE::Set;
 
 use Carp;
-use UNIVERSAL qw{isa};
 
-our $VERSION = '0.004_01';
+our $VERSION = '0.004_02';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -191,11 +190,11 @@ foreach (@{$self->{members}}) {
     $class ||= ref $tle;
     $ep{$tle->get ('epoch')} = $tle;
     }
-foreach my $tle (map {UNIVERSAL::isa ($_, __PACKAGE__) ?
+foreach my $tle (map {eval {$_->isa(__PACKAGE__)} ?
 	$_->members : $_} @_) {
     my $aid = $tle->get ('id');
     if (defined $id) {
-	croak <<eod unless ref $tle && isa ($tle, $class);
+	croak <<eod unless eval {$tle->isa($class)};
 Error - Additional member of @{[__PACKAGE__]} must be a
         subclass of $class
 eod
@@ -205,7 +204,7 @@ Error - NORAD ID mismatch. Trying to add ID $aid to set defined
 eod
 	}
       else {
-	croak <<eod unless ref $tle && isa ($tle, 'Astro::Coord::ECI::TLE');
+	croak <<eod unless eval{$tle->isa('Astro::Coord::ECI::TLE')};
 Error - First member of @{[__PACKAGE__]} must be a subclass
         of Astro::Coord::ECI::TLE.
 eod
@@ -269,11 +268,12 @@ they are not in our namespace.
 =cut
 
 sub can {
-my ($self, $method) = @_;
-my $rslt = UNIVERSAL::can ($self, $method);
-$rslt = UNIVERSAL::can ($self->{current}, $method)
-    if !$rslt && $self->{current};
-$rslt;
+    my ($self, $method) = @_;
+    my $rslt = eval {$self->SUPER::can($method)};
+    $@ and return undef;
+    $rslt and return $rslt;
+
+    eval {$self->{current}->can($method)};
 }
 
 
