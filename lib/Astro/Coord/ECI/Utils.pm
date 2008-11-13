@@ -67,25 +67,24 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.009';
+our $VERSION = '0.009_01';
 our @ISA = qw{Exporter};
 
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
 use Time::Local;
-use UNIVERSAL qw{can isa};
 
 our @EXPORT;
 our @EXPORT_OK = qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
 	PERL2000 PI PIOVER2 SECSPERDAY TWOPI acos asin
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
-	dynamical_delta epoch2datetime equation_of_time find_first_true
-	intensity_to_magnitude jcent2000 jd2date jd2datetime jday2000
-	julianday load_module looks_like_number max min mod2pi
-	nutation_in_longitude nutation_in_obliquity obliquity omega
-	rad2deg tan theta0 thetag};
+	dynamical_delta embodies epoch2datetime equation_of_time
+	find_first_true intensity_to_magnitude jcent2000 jd2date
+	jd2datetime jday2000 julianday load_module looks_like_number max
+	min mod2pi nutation_in_longitude nutation_in_obliquity obliquity
+	omega rad2deg tan theta0 thetag};
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -304,6 +303,25 @@ my $t = ($year - 2000) / 100;
 my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
 (25.3 * $t + 102) * $t + 102		# Meeus (10.2)
 	+ $correction;			# Meeus' correction.
+}
+
+=item $boolean = embodies ($thingy, $class)
+
+This subroutine represents a safe way to call the 'represents' method on
+$thingy. You get back true if and only if $thingy->can('represents')
+does not throw an exception and returns true, and
+$thingy->represents($class) returns true. Otherwise it returns false.
+Any exception is trapped and dismissed.
+
+This subroutine is called 'embodies' because it was too confusing to
+call it 'represents', both for the author and for the Perl interpreter.
+
+=cut
+
+sub embodies {
+    my ($thingy, $class) = @_;
+    my $code = eval {$thingy->can('represents')};
+    $code ? $code->($thingy, $class) : undef;
 }
 
 
@@ -617,6 +635,7 @@ turn leans heavily on perlfaq4.
 
 unless (eval {require Scalar::Util; Scalar::Util->import
 	('looks_like_number'); 1}) {
+    no warnings qw{once};
     *looks_like_number = sub {
 	local $_ = shift;
 
@@ -641,6 +660,7 @@ pure Perl implementation.
 =cut
 
 unless (eval {require List::Util; List::Util->import ('max'); 1}) {
+    no warnings qw{once};
     *max = sub {
 	my $rslt;
 	foreach (@_) {
@@ -663,6 +683,7 @@ pure Perl implementation.
 =cut
 
 unless (eval {require List::Util; List::Util->import ('min'); 1}) {
+    no warnings qw{once};
     *min = sub {
 	my $rslt;
 	foreach (@_) {
