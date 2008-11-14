@@ -13,7 +13,7 @@ will need to substitute your own location where indicated.
  use Astro::Coord::ECI::TLE;
  use Astro::Coord::ECI::TLE::Set;
  use Astro::Coord::ECI::Utils qw{deg2rad rad2deg};
-
+ 
  # 1600 Pennsylvania Avenue, Washington DC, USA
  my $your_north_latitude_in_degrees = 38.898748;
  my $your_east_longitude_in_degrees = -77.037684;
@@ -46,11 +46,12 @@ will need to substitute your own location where indicated.
      Astro::Coord::ECI::TLE->parse ($data->content));
  
  # We want passes for the next 7 days.
- 
+  
  my $start = time ();
  my $finish = $start + 7 * 86400;
  my @passes;
  foreach my $tle (@sats) {
+    $tle->set(backdate => 0); # Probably should be default
     push @passes, $tle->pass($loc, $start, $finish);
  }
  print <<eod;
@@ -65,14 +66,14 @@ will need to substitute your own location where indicated.
  #  will be integers.
  
     print "\n";
-    
+ 
     foreach my $event (@{$pass->{events}}) {
-	printf "%s %-15s %9.1f %9.1f %-5s\n",
-	    scalar localtime $event->{time},
-	    $event->{body}->get ('name'),
-	    rad2deg ($event->{elevation}),
-	    rad2deg ($event->{azimuth}),
-	    $event->{event};
+ 	printf "%s %-15s %9.1f %9.1f %-5s\n",
+ 	    scalar localtime $event->{time},
+ 	    $event->{body}->get ('name'),
+ 	    rad2deg ($event->{elevation}),
+ 	    rad2deg ($event->{azimuth}),
+ 	    $event->{event};
     }
  }
 
@@ -174,7 +175,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_05';
+our $VERSION = '0.014_06';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -185,7 +186,7 @@ use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta embodies
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use POSIX qw{floor fmod strftime};
-use Time::Local;
+use Time::y2038;
 
 {	# Local symbol block.
     my @const = qw{
@@ -484,7 +485,7 @@ my $y2k = timegm (0, 0, 0, 1, 0, 100);	# Calc. time of 2000 Jan 1 0h UT
 sub ds50 {
 my $self = shift;
 my $epoch = @_ ? $_[0] : $self->{epoch};
-my $rslt = ($epoch - $y2k) / 86400 + 18263;
+my $rslt = ($epoch - $y2k) / SECSPERDAY + 18263;
 ref $self && $self->{debug} and print <<eod;
 Debug ds50 ($epoch) = $rslt
 eod
@@ -733,7 +734,7 @@ while (@data) {
     foreach (qw{epoch}) {
 	my ($yr, $day) = $ele{$_} =~ m/(..)(.*)/;
 	$yr += 100 if $yr < 57;
-	$ele{$_} = timegm (0, 0, 0, 1, 0, $yr) + ($day - 1) * 86400;
+	$ele{$_} = timegm (0, 0, 0, 1, 0, $yr) + ($day - 1) * SECSPERDAY;
 	}
 
 #	From here is conversion to the units expected by the
@@ -5995,9 +5996,9 @@ my $self = shift;
 $_[0] *= (SGP_XKMPER / SGP_AE);		# x
 $_[1] *= (SGP_XKMPER / SGP_AE);		# y
 $_[2] *= (SGP_XKMPER / SGP_AE);		# z
-$_[3] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dx/dt
-$_[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dy/dt
-$_[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / 86400);	# dz/dt
+$_[3] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / SECSPERDAY);	# dx/dt
+$_[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / SECSPERDAY);	# dy/dt
+$_[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / SECSPERDAY);	# dz/dt
 $self->universal (pop @_);
 $self->eci (@_);
 
