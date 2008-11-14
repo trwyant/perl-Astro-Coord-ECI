@@ -26,7 +26,7 @@ use POSIX qw{floor strftime};
 use Term::ReadLine;
 use Text::Abbrev;
 use Text::ParseWords;
-use Time::Local;
+use Time::y2038;
 
 my (
 	$clipboard_unavailable,
@@ -41,7 +41,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_05';
+our $VERSION = '0.019_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2390,31 +2390,17 @@ sub times {
     my $time = _parse_time (shift || '+0');
     my $dtfmt = "$parm{date_format} $parm{time_format}";
     my $sta = _get_station ()->universal ($time);
-    if ($ENV{SATPASS_EXTENDED_TIME}) {	# NOT SUPPORTED!!!!!
-	print strftime ($dtfmt, epoch2datetime ($time)), " universal =\n";
-	print '    ', strftime ($dtfmt, epoch2datetime ($sta->dynamical ())),
-	    " dynamical\n";
-##	print '    ', strftime ($dtfmt, localtime ($time)),
-##	    " local standard time\n";
-	print '    ', strftime ($dtfmt, epoch2datetime (
-		floor ($sta->local_mean_time () + .5))),
-	    " local mean time\n";
-	print '    ', strftime ($dtfmt, epoch2datetime (
-		floor ($sta->local_time () + .5))),
-	    " local time\n";
-    } else {
-	print strftime ($dtfmt, gmtime ($time)), " universal =\n";
-	print '    ', strftime ($dtfmt, gmtime ($sta->dynamical ())),
-	    " dynamical\n";
-	print '    ', strftime ($dtfmt, localtime ($time)),
-	    " local standard time\n";
-	print '    ', strftime ($dtfmt, gmtime (
-		floor ($sta->local_mean_time () + .5))),
-	    " local mean time\n";
-	print '    ', strftime ($dtfmt, gmtime (
-		floor ($sta->local_time () + .5))),
-	    " local time\n";
-    }
+    print strftime ($dtfmt, gmtime ($time)), " universal =\n";
+    print '    ', strftime ($dtfmt, gmtime ($sta->dynamical ())),
+	" dynamical\n";
+    print '    ', strftime ($dtfmt, localtime ($time)),
+	" local standard time\n";
+    print '    ', strftime ($dtfmt, gmtime (
+	    floor ($sta->local_mean_time () + .5))),
+	" local mean time\n";
+    print '    ', strftime ($dtfmt, gmtime (
+	    floor ($sta->local_time () + .5))),
+	" local time\n";
 }
 
 ########################################################################
@@ -3052,26 +3038,10 @@ BEGIN {	# Begin local symbol block.
 	    $last_time_set - $delta;
 	}
       else {
-	if ($ENV{SATPASS_EXTENDED_TIME}) {	# NOT SUPPORTED!!!!!
-	    my @dtinfo = UnixDate ($time, qw{%S %M %H %d %m %Y %z});
-	    @dtinfo or die <<eod;
+	$last_time_set = (UnixDate ($time, '%s') || die <<eod
 Error - Invalid time '$time'
 eod
-	    my $zone = pop @dtinfo;
-	    $dtinfo[4] -= 1;
-	    $dtinfo[5] -= 1900;
-	    my $sign = $zone < 0
-		and $zone = abs ($zone);
-	    my $min = $zone % 100;
-	    $zone = (floor ($zone / 100) * 60 + $min) * 60;
-	    $sign and $zone = -$zone;
-	    $last_time_set = date2epoch (@dtinfo) - $zone;
-	} else {
-	    $last_time_set = (UnixDate ($time, '%s') || die <<eod
-Error - Invalid time '$time'
-eod
-		) + $date_manip_fudge;
-	}
+	    ) + $date_manip_fudge;
 	$parm{perltime} and $last_time_set =
 	    timelocal gmtime $last_time_set;
 	$initial_time_set = $last_time_set;
