@@ -5,7 +5,7 @@ use Astro::Coord::ECI;
 use Astro::Coord::ECI::Utils qw{deg2rad PERL2000 rad2deg};
 use POSIX qw{strftime floor};
 use Test;
-use Time::Local;
+use Time::y2038;
 
 BEGIN {plan tests => 65}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
@@ -20,8 +20,8 @@ my $test = 0;
 
 #	We just make sure we get the same thing back.
 
-foreach ([timegm (0, 0, 0, 1, 0, 2000)],
-	[timegm (0, 0, 0, 1, 0, 2005)],
+foreach ([timegm (0, 0, 0, 1, 0, 100)],
+	[timegm (0, 0, 0, 1, 0, 105)],
 	) {
     $test++;
     my ($expect) = @$_;
@@ -39,8 +39,8 @@ eod
 #	Tests 3 - 4: universal time -> dynamical time
 #	Tests: dynamical()
 
-foreach ([timegm (0, 0, 0, 1, 0, 2000), 65],
-	[timegm (0, 0, 0, 1, 0, 2005), 72],
+foreach ([timegm (0, 0, 0, 1, 0, 100), 65],
+	[timegm (0, 0, 0, 1, 0, 105), 72],
 	) {
     $test++;
     my ($univ, $expect) = @$_;
@@ -60,8 +60,8 @@ eod
 #	Tests 5 - 6: dynamical time -> universal time
 #	tests: dynamical()
 
-foreach ([timegm (0, 0, 0, 1, 0, 2000), -65],
-	[timegm (0, 0, 0, 1, 0, 2005), -72],
+foreach ([timegm (0, 0, 0, 1, 0, 100), -65],
+	[timegm (0, 0, 0, 1, 0, 105), -72],
 	) {
     $test++;
     my ($dyn, $expect) = @$_;
@@ -338,7 +338,7 @@ print <<eod;
 eod
 
 foreach ([GRS80 => 38, -80, 1, 0, -75, 35800,
-		timegm (0, 0, 5, 27, 7, 2005),
+		timegm (0, 0, 5, 27, 7, 105),
 		45.682, 171.906, 37355.457],
 	) {
     my ($elps, $olat, $olong, $oelev, $slat, $slong, $selev,
@@ -426,7 +426,7 @@ eod
 use constant LIGHTYEAR2KILOMETER => 9.4607e12;
 
 foreach ([41.054063, 49.227750, 36.64, PERL2000, 41.547214, 49.348483,
-		timegm (0, 0, 0, 13, 10, 2028) + .19 * 86400],
+		timegm (0, 0, 0, 13, 10, 128) + .19 * 86400],
 	) {
     my ($alpha0, $delta0, $rho, $t0, $alphae, $deltae, $time) = @$_;
     my $eci = Astro::Coord::ECI->dynamical ($t0)->equatorial (
@@ -465,7 +465,8 @@ eod
 #	in the example was chosen because it gave the desired obliquity
 #	value of 23.4392911 degrees.
 
-foreach ([116.328942, 28.026183, 6.684170, 113.215630, timegm (36, 27, 2, 30, 6, 2009)],
+foreach ([116.328942, 28.026183, 6.684170, 113.215630,
+	    timegm (36, 27, 2, 30, 6, 109)],
 	) {
     my ($ra, $dec, $explat, $explong, $time) = @$_;
     my ($lat, $long) = Astro::Coord::ECI->equatorial (
@@ -494,7 +495,8 @@ eod
 
 #	Based on inverting the above test.
 
-foreach ([6.684170, 113.215630, 116.328942, 28.026183, timegm (36, 27, 2, 30, 6, 2009)],
+foreach ([6.684170, 113.215630, 116.328942, 28.026183,
+	    timegm (36, 27, 2, 30, 6, 109)],
 	) {
     my ($lat, $long, $expra, $expdec, $time) = @$_;
     my ($ra, $dec) = Astro::Coord::ECI->ecliptic (
@@ -525,7 +527,7 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 
 #	This test is based on Meeus' example 26.a.
 
-foreach ([timegm (0, 0, 0, 13, 9, 1992), .62 / 3600, 199.907347,
+foreach ([timegm (0, 0, 0, 13, 9, 92), .62 / 3600, 199.907347,
 		.99760775, -0.9379952, -0.3116544, -0.1351215],
 	) {
     my ($time, $lat, $long, $rho, $expx, $expy, $expz) = @$_;
@@ -554,7 +556,7 @@ eod
 
 #	This test is based on http://www.statoids.com/tconcept.html
 
-foreach ([timegm (0, 0, 0, 1, 0, 2001), 29/60 + 40, -(8/60 + 86),
+foreach ([timegm (0, 0, 0, 1, 0, 101), 29/60 + 40, -(8/60 + 86),
 		-((5 * 60 + 44) * 60 + 32)],
 	) {
     my ($time, $lat, $lon, $offset) = @$_;
@@ -578,7 +580,7 @@ eod
 
 #	This test is the inverse of the previous one.
 
-foreach ([timegm (28, 15, 18, 31, 11, 2000), 29/60 + 40, -(8/60 + 86),
+foreach ([timegm (28, 15, 18, 31, 11, 100), 29/60 + 40, -(8/60 + 86),
 		-((5 * 60 + 44) * 60 + 32)],
 	) {
     my ($time, $lat, $lon, $offset) = @$_;

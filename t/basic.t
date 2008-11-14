@@ -4,7 +4,7 @@ use warnings;
 use Astro::Coord::ECI::Utils qw{:all};
 use POSIX qw{strftime floor};
 use Test;
-use Time::Local;
+use Time::y2038;
 
 BEGIN {plan tests => 57}
 ##use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
@@ -20,8 +20,8 @@ my $test = 0;
 
 #	Based on the table on Meeus' page 62.
 
-foreach ([timegm (0, 0, 12, 1, 0, 2000), 0],
-	[timegm (0, 0, 0, 1, 0, 1999), -365.5],
+foreach ([timegm (0, 0, 12, 1, 0, 100), 0],
+	[timegm (0, 0, 0, 1, 0, 99), -365.5],
 	) {
     $test++;
     my ($time, $expect) = @$_;
@@ -41,8 +41,8 @@ eod
 
 #	Based on the table on Meeus' page 62.
 
-foreach ([timegm (0, 0, 12, 1, 0, 2000), 2451545.0],
-	[timegm (0, 0, 0, 1, 0, 1999), 2451179.5],
+foreach ([timegm (0, 0, 12, 1, 0, 100), 2451545.0],
+	[timegm (0, 0, 0, 1, 0, 99), 2451179.5],
 	) {
     $test++;
     my ($time, $expect) = @$_;
@@ -62,8 +62,8 @@ eod
 
 #	Based on Meeus' examples 12.a and 12.b.
 
-foreach ([timegm (0, 0, 0, 10, 3, 1987), -.127296372348, '%.12f'],
-	[timegm (0, 21, 19, 10, 3, 1987), -.12727430, '%.8f'],
+foreach ([timegm (0, 0, 0, 10, 3, 87), -.127296372348, '%.12f'],
+	[timegm (0, 21, 19, 10, 3, 87), -.12727430, '%.8f'],
 	) {
     $test++;
     my ($time, $expect, $tplt) = @$_;
@@ -130,7 +130,7 @@ eod
 
 #	Based on Meeus' example 22.a.
 
-foreach ([timegm (0, 0, 0, 10, 3, 1987), 11.2531],
+foreach ([timegm (0, 0, 0, 10, 3, 87), 11.2531],
 	) {
     $test++;
     my ($time, $expect) = @$_;
@@ -154,8 +154,8 @@ eod
 
 #	Based on Meeus' example 22.a.
 
-foreach ([longitude => timegm (0, 0, 0, 10, 3, 1987), -3.788/3600, .5/3600],
-	[obliquity => timegm (0, 0, 0, 10, 3, 1987), 9.443/3600, .1/3600],
+foreach ([longitude => timegm (0, 0, 0, 10, 3, 87), -3.788/3600, .5/3600],
+	[obliquity => timegm (0, 0, 0, 10, 3, 87), 9.443/3600, .1/3600],
 	) {
     $test++;
     my ($what, $time, $expect, $tolerance) = @$_;
@@ -181,7 +181,7 @@ eod
 
 #	This test is based on Meeus' example 28.b.
 
-foreach ([timegm (0, 0, 0, 13, 9, 1992), 13 * 60 + 42.7, .1],
+foreach ([timegm (0, 0, 0, 13, 9, 92), 13 * 60 + 42.7, .1],
 	) {
     my ($time, $expect, $tolerance) = @$_;
     my $got = equation_of_time ($time);
@@ -205,7 +205,7 @@ eod
 
 #	Based on Meeus' example 22.a.
 
-foreach ([timegm (0, 0, 0, 10, 3, 1987), (36.850 / 60 + 26) / 60 + 23],
+foreach ([timegm (0, 0, 0, 10, 3, 87), (36.850 / 60 + 26) / 60 + 23],
 	) {
     $test++;
     my ($time, $expect) = @$_;

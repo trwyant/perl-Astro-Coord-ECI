@@ -6,7 +6,7 @@ use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Utils qw{deg2rad PI};
 use POSIX qw{strftime floor};
 use Test;
-use Time::Local;
+use Time::y2038;
 
 BEGIN {plan tests => 36}
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
@@ -27,7 +27,7 @@ my $test = 0;
 #	Note that we're not too picky about the position of the sun, since it's
 #	an extended object. One part in a thousand is less than half its disk.
 
-foreach ([timegm (0, 0, 0, 12, 3, 1992), -3.229126, 133.167265, 368409.7],
+foreach ([timegm (0, 0, 0, 12, 3, 92), -3.229126, 133.167265, 368409.7],
 	) {
     my ($time, $explat, $explong, $expdelta) = @$_;
 ##    my $moon = Astro::Coord::ECI::Moon->dynamical ($time);
@@ -57,7 +57,7 @@ eod
 
 #	This test is based on Meeus' example 49.a, but worked backward.
 
-foreach ([timegm (42, 37, 3, 18, 1, 1977), 0],
+foreach ([timegm (42, 37, 3, 18, 1, 77), 0],
 	) {
     $test++;
     my ($time, $expect) = @$_;
@@ -79,7 +79,7 @@ eod
 
 #	This test is based on Meeus' example 48.a.
 
-foreach ([timegm (0, 0, 0, 12, 3, 1992), 180 - 69.0756, .6786],
+foreach ([timegm (0, 0, 0, 12, 3, 92), 180 - 69.0756, .6786],
 	) {
     my ($time, $expph, $expil) = @$_;
     $expph = deg2rad ($expph);
@@ -107,7 +107,7 @@ eod
 
 #	This test is based on Meeus' example 49.1, right way around.
 
-foreach ([timegm (0, 0, 0, 1, 1, 1977), 0, timegm (42, 37, 3, 18, 1, 1977)],
+foreach ([timegm (0, 0, 0, 1, 1, 77), 0, timegm (42, 37, 3, 18, 1, 77)],
 	) {
     $test++;
     my ($time, $quarter, $expect) = @$_;

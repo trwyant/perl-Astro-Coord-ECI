@@ -6,7 +6,7 @@ use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{deg2rad};
 use POSIX qw{strftime floor};
 use Test;
-use Time::Local;
+use Time::y2038;
 
 BEGIN {plan tests => 67}
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
@@ -25,7 +25,7 @@ my $test = 0;
 
 use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 
-foreach ([timegm (0, 0, 0, 13, 9, 1992), 199.90895, .99766, 199.90988],
+foreach ([timegm (0, 0, 0, 13, 9, 92), 199.90895, .99766, 199.90988],
 	) {
     my ($time, $explong, $exprho, $expgeo) = @$_;
     my $sun = Astro::Coord::ECI::Sun->dynamical ($time);
@@ -64,22 +64,22 @@ eod
 #	for the use of DateTime, but I don't understand their
 #	leap-second code well enough yet.
 
-foreach ([timegm (0, 0, 0, 20, 2, 2005), 53/60 + 38, -(2/60 + 77), -5,
-		timegm (0, 11, 6, 20, 2, 2005),
-		timegm (0, 16, 12, 20, 2, 2005),
-		timegm (0, 20, 18, 20, 2, 2005)],
-	[timegm (0, 0, 0, 21, 5, 2005), 53/60 + 38, -(2/60 + 77), -5,
-		timegm (0, 43, 4, 21, 5, 2005),
-		timegm (0, 10, 12, 21, 5, 2005),
-		timegm (0, 37, 19, 21, 5, 2005)],
-	[timegm (0, 0, 0, 22, 8, 2005), 53/60 + 38, -(2/60 + 77), -5,
-		timegm (0, 56, 5, 22, 8, 2005),
-		timegm (0, 1, 12, 22, 8, 2005),
-		timegm (0, 5, 18, 22, 8, 2005)],
-	[timegm (0, 0, 0, 21, 11, 2005), 53/60 + 38, -(2/60 + 77), -5,
-		timegm (0, 23, 7, 21, 11, 2005),
-		timegm (0, 6, 12, 21, 11, 2005),
-		timegm (0, 50, 16, 21, 11, 2005)],
+foreach ([timegm (0, 0, 0, 20, 2, 105), 53/60 + 38, -(2/60 + 77), -5,
+		timegm (0, 11, 6, 20, 2, 105),
+		timegm (0, 16, 12, 20, 2, 105),
+		timegm (0, 20, 18, 20, 2, 105)],
+	[timegm (0, 0, 0, 21, 5, 105), 53/60 + 38, -(2/60 + 77), -5,
+		timegm (0, 43, 4, 21, 5, 105),
+		timegm (0, 10, 12, 21, 5, 105),
+		timegm (0, 37, 19, 21, 5, 105)],
+	[timegm (0, 0, 0, 22, 8, 105), 53/60 + 38, -(2/60 + 77), -5,
+		timegm (0, 56, 5, 22, 8, 105),
+		timegm (0, 1, 12, 22, 8, 105),
+		timegm (0, 5, 18, 22, 8, 105)],
+	[timegm (0, 0, 0, 21, 11, 105), 53/60 + 38, -(2/60 + 77), -5,
+		timegm (0, 23, 7, 21, 11, 105),
+		timegm (0, 6, 12, 21, 11, 105),
+		timegm (0, 50, 16, 21, 11, 105)],
 	) {
     my ($time, $lat, $long, $zone, $exprise, $expnoon, $expset) = @$_;
     my $date = strftime '%d-%b-%Y', gmtime $time;
@@ -117,11 +117,11 @@ eod
 #	accuracy is a fairly poor 16 minutes 40 seconds, because
 #	our  position of the Sun is only good to 0.01 degrees.
 
-foreach ([timegm (0, 0, 0, 1, 0, 2005),
-		timegm (29, 34, 12, 20, 2, 2005),
-		timegm (12, 47, 6, 21, 5, 2005),
-		timegm (14, 24, 22, 22, 8, 2005),
-		timegm (01, 36, 18, 21, 11, 2005)],
+foreach ([timegm (0, 0, 0, 1, 0, 105),
+		timegm (29, 34, 12, 20, 2, 105),
+		timegm (12, 47, 6, 21, 5, 105),
+		timegm (14, 24, 22, 22, 8, 105),
+		timegm (01, 36, 18, 21, 11, 105)],
 	) {
     my $year = (gmtime $_->[0])[5] + 1900;
     my $time = shift @$_;

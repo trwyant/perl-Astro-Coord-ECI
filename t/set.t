@@ -6,9 +6,9 @@ use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
 use t::SetDelegate;
 use Test;
-use Time::Local;
+use Time::y2038;
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 plan tests => 53, todo => [];
 
@@ -199,9 +199,9 @@ foreach my $single (0, 1) {
     local $Astro::Coord::ECI::TLE::Set::Singleton = $single;
 
     my @set = eval {Astro::Coord::ECI::TLE::Set->aggregate (
-		dummy (timegm (0, 0, 0, 1, 6, 2006), 99999),
-		dummy (timegm (0, 0, 0, 2, 6, 2006)),
-		dummy (timegm (0, 0, 0, 1, 6, 2006), 11111),
+		dummy (timegm (0, 0, 0, 1, 6, 106), 99999),
+		dummy (timegm (0, 0, 0, 2, 6, 106)),
+		dummy (timegm (0, 0, 0, 1, 6, 106), 11111),
 		)};
     $test++;
     print <<eod;
@@ -242,7 +242,7 @@ eod
 
     my $set1 = Astro::Coord::ECI::TLE::Set->new (
 	t::SetDelegate->new (id => 99999, name => 'Anonymous',
-	epoch => timegm (0, 0, 0, 1, 6, 2006)));
+	epoch => timegm (0, 0, 0, 1, 6, 106)));
     my $set2 = Astro::Coord::ECI::TLE::Set->new ();
     eval {$set2->add ($set1)};
     $test++;
@@ -259,7 +259,7 @@ eod
 {	# Begin local symbol block.
     my $set = Astro::Coord::ECI::TLE::Set->new (
 	t::SetDelegate->new (id => 22222, name => 'Anonymous',
-	epoch => timegm (0, 0, 0, 2, 6, 2006)));
+	epoch => timegm (0, 0, 0, 2, 6, 106)));
     my $skip = $set ? '' : 'Failed to instantiate set';
     foreach ([delegate => 't::SetDelegate'],
 	    [nodelegate => 'Astro::Coord::ECI::TLE::Set'],
@@ -284,7 +284,7 @@ eod
     foreach ([members => 1], [delegate => 0],
 	    [add => t::SetDelegate->new (id => 333333,
 		name => 'Nobody',
-		epoch => timegm (0, 0, 0, 2, 6, 2006))],
+		epoch => timegm (0, 0, 0, 2, 6, 106))],
 	    [members => 1], [delegate => 1],
 	    [clear => 0],
 	    [members => 1], [delegate => 0],
@@ -316,7 +316,7 @@ eod
     my $members = 0;
     foreach ([represents => undef, 'Exception thrown'],
 	    [represents => 'Astro::Coord::ECI', 'Exception thrown'],
-	    [add => dummy (timegm (0, 0, 0, 6, 1, 2006), 99999)],
+	    [add => dummy (timegm (0, 0, 0, 6, 1, 106), 99999)],
 	    [represents => undef, 'Astro::Coord::ECI::TLE'],
 	    [represents => 'Astro::Coord::ECI', 1],
 	    [represents => 'Astro::Coord::ECI::TLE', 1],
