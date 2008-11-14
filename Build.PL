@@ -61,7 +61,7 @@ if ($opt{n}) {
 my $stringmod = $] >= 5.008 ? '' : 'IO::String';
 
 if (@exe_files) {
-    push @prereq, 'Date::Manip' => 1.14;
+    push @prereq, 'Date::Manip' => 1.14, 'Time::y2038' => 0;
     foreach (['Astro::SIMBAD::Query' => 0, <<eod],
 Optional module Astro::SIMBAD::Query is needed if you wish to retrieve
 star positions directly from the SIMBAD catalog via the 'sky lookup'
