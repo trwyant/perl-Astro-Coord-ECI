@@ -9,7 +9,7 @@ use Cwd;
 use File::Spec;
 use FileHandle;
 use Test;
-use Time::Local;
+use Time::y2038;
 
 BEGIN {plan tests => 9};
 
