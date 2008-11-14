@@ -44,14 +44,14 @@ use warnings;
 
 package Astro::Coord::ECI::Sun;
 
-our $VERSION = '0.007_04';
+our $VERSION = '0.007_05';
 
 use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
-## use Data::Dumper;
 use POSIX qw{floor strftime};
+use Time::y2038;
 
 my %static = (
     id => 'Sun',

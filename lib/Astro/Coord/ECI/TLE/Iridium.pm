@@ -117,12 +117,13 @@ package Astro::Coord::ECI::TLE::Iridium;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.006_02';
+our $VERSION = '0.006_03';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use POSIX qw{floor strftime};	# For debugging
+use Time::y2038;
 
 use constant ATTRIBUTE_KEY => '_sub_TLE_Iridium';
 use constant DEFAULT_MAX_MIRROR_ANGLE => deg2rad (10);
