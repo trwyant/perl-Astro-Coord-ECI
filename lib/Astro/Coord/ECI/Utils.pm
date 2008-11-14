@@ -67,13 +67,13 @@ use warnings;
 
 package Astro::Coord::ECI::Utils;
 
-our $VERSION = '0.009_01';
+our $VERSION = '0.009_02';
 our @ISA = qw{Exporter};
 
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
-use Time::Local;
+use Time::y2038;
 
 our @EXPORT;
 our @EXPORT_OK = qw{
