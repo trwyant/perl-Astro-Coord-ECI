@@ -9,7 +9,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.010';
+our $VERSION = '0.010_01';
 
 add_stopwords (<DATA>);
 
@@ -19,6 +19,7 @@ Above's
 accreted
 Alasdair
 altazimuth
+AMSAT
 angulardiameter
 angularvelocity
 appulse
@@ -50,6 +51,7 @@ Chalpront
 cmd
 coodinate
 Coords
+CPAN
 dans
 darwin
 DateTime
@@ -121,6 +123,7 @@ LLC
 ls
 Lune
 ly
+magics
 magma
 Mariana
 max
@@ -210,6 +213,7 @@ timekeeping
 TIMEZONES
 TLE
 tle
+TLEs
 TT
 Touze
 Turbo
@@ -217,6 +221,7 @@ TWOPI
 tz
 uk
 URI
+username
 USGS
 UT
 UTC
