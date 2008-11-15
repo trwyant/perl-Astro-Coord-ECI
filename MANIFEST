@@ -9,6 +9,7 @@ eg/sh_script
 eg/tle_period.t
 lib/Astro/Coord/ECI.pm
 lib/Astro/Coord/ECI/Moon.pm
+lib/Astro/Coord/ECI/Overview.pod
 lib/Astro/Coord/ECI/Star.pm
 lib/Astro/Coord/ECI/Sun.pm
 lib/Astro/Coord/ECI/TLE.pm
