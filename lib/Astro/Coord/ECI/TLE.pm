@@ -40,10 +40,21 @@ will need to substitute your own location where indicated.
  # Parse the fetched data, yielding TLE objects. Aggregate
  # them into Set objects where this is warranted, since the
  # Manned Spaceflight website gives multiple sets of
- # orbital elements for each object.
+ # orbital elements for each object, and aggregation lets
+ # us use whichever one is best for the time.
  
  my @sats = Astro::Coord::ECI::TLE::Set->aggregate(
      Astro::Coord::ECI::TLE->parse ($data->content));
+
+ # Turn off the ability to use orbital elements before their
+ # epoch. This is normally harmless, but in this case the
+ # data may include predicted Space Shuttle data, in which
+ # case we are really using the epoch of the first data set
+ # as proxy for liftoff time.
+ 
+ foreach my $tle (@sats) {
+    $tle->set(backdate => 0);
+ }
  
  # We want passes for the next 7 days.
   
@@ -51,7 +62,6 @@ will need to substitute your own location where indicated.
  my $finish = $start + 7 * 86400;
  my @passes;
  foreach my $tle (@sats) {
-    $tle->set(backdate => 0); # Probably should be default
     push @passes, $tle->pass($loc, $start, $finish);
  }
  print <<eod;
@@ -175,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_06';
+our $VERSION = '0.014_07';
 
 use base qw{Astro::Coord::ECI Exporter};
 
