@@ -22,6 +22,7 @@ altazimuth
 AMSAT
 angulardiameter
 angularvelocity
+App
 appulse
 appulsed
 appulsing
@@ -49,6 +50,7 @@ ca
 Celestrak
 Chalpront
 cmd
+Coord
 coodinate
 Coords
 CPAN
@@ -178,6 +180,7 @@ rightascension
 Roehric
 Saemundsson's
 SATCAT
+Satpass
 satpass
 SATPASSINI
 SDP
