@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_07';
+our $VERSION = '0.014_08';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -520,7 +520,6 @@ L</Attributes> section for a description of the attributes.
 	my $name = shift;
 	if (ref $self) {
 	    exists $attrib{$name} or return $self->SUPER::get ($name);
-####	    return $self->{$name};
 	    return $accessor{$name} ?
 		$accessor{$name}->($self, $name) :
 		$self->{$name};
@@ -699,10 +698,9 @@ and the presence of such data will result in an exception being thrown.
 sub parse {
 my $self = shift;
 my @rslt;
-###!!! my $subclass = ref $_[0] eq 'HASH' ? shift : {};
 my @data = grep {$_ && $_ !~ m/^\s*#/} map {chomp; $_}
     map {ref $_ && croak <<eod; split '\n', $_} @_;
-Error - The hash reference must be the first argument to parse ().
+Error - Arguments to parse() must be scalar.
 eod
 while (@data) {
     my %ele = %static;
