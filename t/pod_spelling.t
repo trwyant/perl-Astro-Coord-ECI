@@ -90,6 +90,7 @@ gb
 geocode
 Geocoder
 geocoder
+geodesy
 GMT
 gmtime's
 Goran
