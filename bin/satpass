@@ -41,7 +41,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_06';
+our $VERSION = '0.019_07';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3775,27 +3775,48 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-The changes from 0.016 to 0.017 are mostly for compatibility with old
-or new Perls, and to get tests to run under various conditions.
+I plan, probably in the first quarter of 2009, to restructure this
+package. The plan calls for moving all the .pm files to distribution
+Astro-Coord-ECI, publishing an App-Satpass2 package with a reworked
+version of the F<satpass> script, and abandoning development of the
+Astro-satpass package. My intent is that in the last release of the
+Astro-satpass package, the banner displayed by the F<satpass> script
+will direct the user to App-Satpass2.
 
-The major change from version 0.015 to 0.016 is the addition of the
-model from B<Revisiting Spacetrack Report #3> to Astro::Coord::ECI::TLE
-as model sgp4r, and making the 'model' model call sgp4r rather than sgp4
-or sdp4 as appropriate. Additionally, the period method depends on the
-model called, using a revised calculation if the model is sgp4r or its
-equivalents model or model4r, or the original calculation otherwise.
-B<Revisiting Spacetrack Report #3> is available on line at
-L<http://celestrak.com/publications/AIAA/2006-6753/>.
+Most of the functionality of the App-Satpass2 distribution will be in
+the App::Satpass2 class. A minimal F<satpass2> script will be provided
+to manufacture an App::Satpass2 object and invoke its run method. I will
+try to keep the core functionality the same, and to document in
+App::Satpass2 any incompatibilities introduced.
 
-In a change to functionality added in 0.014, setting the backdate
-attribute false no longer causes errors in the Astro::Coord::ECI::TLE
-pass() method and the Astro::Coord::ECI::TLE::Iridium method if the
-start time is adjusted to be after the end time; instead an empty list
-of passes or flares is returned.
+Since Perl's dependency mechanism is based on module names, not package
+names, I assume that there will be no problems with packages that depend
+on the Astro::Coord::ECI modules. But I will try to give the authors of
+such packages a week's notice before releasing the first Astro-Coord-ECI
+package.
 
-All these changes are in the underlying classes; the only change to the
-satpass script itself is the updating of this information and the
-version.
+One incentive for doing this is to restructure the F<satpass>
+functionality to be more easily testable. Placing the F<satpass>
+functionality in its own object achieves this; indeed the work flushed
+out a couple subtle bugs in the F<satpass> script, whose fixes have been
+back-ported into that script.
+
+A second incentive was that the natural dependencies for the application
+are quite different than those of the Astro::Coord::ECI classes. It
+seemed desirable not to force those who only wanted the latter to
+download and install all the stuff required by the former.
+
+Changes in release 0.020 include:
+
+* Use of Time::y2038 instead of Time::Local functions and core gmtime
+and localtime;
+
+* Elimination of calls to UNIVERSAL::isa and UNIVERSAL::can as
+functions;
+
+* Add overview documentation;
+
+* Add and correct documentation in various places.
 
 =head1 DETAILS
 
