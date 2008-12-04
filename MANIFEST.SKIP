@@ -8,6 +8,7 @@
 ^cover_db/
 CVS/
 ^foo
+^html/
 ^iridium\.dat$
 ^iridium_observers$
 ^iss.dat$
