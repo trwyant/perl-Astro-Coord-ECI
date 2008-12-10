@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_08';
+our $VERSION = '0.014_09';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -887,7 +887,8 @@ use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
 
 sub pass {
 
-    my @sky = @{pop @_} if ref $_[$#_] eq 'ARRAY';
+    my @sky;
+    ref $_[$#_] eq 'ARRAY' and @sky = @{pop @_};
     my $tle = shift;
     my $sta = shift;
     my $pass_start = shift || time ();
@@ -3407,7 +3408,8 @@ if ($xnq < .0052359877 && $xnq > .0034906585) {
     }
 
 #	$bfact won't be defined unless we're a 12- or 24-hour orbit.
-my $xfact = $bfact - $xnq if defined $bfact;
+my $xfact;
+defined $bfact and $xfact = $bfact - $xnq;
 #C
 #C INITIALIZE INTEGRATOR
 #C
@@ -3572,9 +3574,10 @@ sub _dpsec {
 my $self = shift;
 my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 my ($xll, $omgasm, $xnodes, $em, $xinc, $xn, $t) = @_;
-my @orig = map {defined $_ ? $_ : 'undef'}
-	map {ref $_ eq 'SCALAR' ? $$_ : $_} @_
-    if $self->{debug};
+my @orig;
+$self->{debug}
+    and @orig = map {defined $_ ? $_ : 'undef'}
+	map {ref $_ eq 'SCALAR' ? $$_ : $_} @_;
 
 #* ENTRANCE FOR DEEP SPACE SECULAR EFFECTS
 
@@ -3729,9 +3732,10 @@ sub _dpper {
 my $self = shift;
 my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 my ($em, $xinc, $omgasm, $xnodes, $xll, $t) = @_;
-my @orig = map {defined $_ ? $_ : 'undef'}
-	map {ref $_ eq 'SCALAR' ? $$_ : $_} @_
-    if $self->{debug};
+my @orig;
+$self->{debug}
+    and @orig = map {defined $_ ? $_ : 'undef'}
+	map {ref $_ eq 'SCALAR' ? $$_ : $_} @_;
 
 #C
 #C ENTRANCES FOR LUNAR-SOLAR PERIODICS
@@ -4243,7 +4247,6 @@ sub _r_dscom {
 
 #* -------------------------- Local Variables --------------------------
     my ($c1ss, $c1l, $zcosis, $zsinis, $zsings, $zcosgs, $zes, $zel);
-    my ($lsflg);
 
     my ($a1, $a2, $a3, $a4, $a5, $a6, $a7, $a8, $a9, $a10, $betasq, $cc,
         $ctem, $stem, $x1, $x2, $x3, $x4, $x5, $x6, $x7, $x8, $xnodce,
@@ -4306,7 +4309,7 @@ sub _r_dscom {
     $cc= $c1ss;
 
     $xnoi= 1 / $init->{xn};
-    foreach $lsflg(1 .. 2) {
+    foreach my $lsflg (1 .. 2) {
         $a1=   $zcosg*$zcosh+ $zsing*$zcosi*$zsinh;
         $a3=  -$zsing*$zcosh+ $zcosg*$zcosi*$zsinh;
         $a7=  -$zcosg*$zsinh+ $zsing*$zcosi*$zcosh;
