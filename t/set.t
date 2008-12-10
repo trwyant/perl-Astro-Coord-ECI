@@ -8,7 +8,7 @@ use t::SetDelegate;
 use Test;
 use Time::y2038;
 
-our $VERSION = '0.002_01';
+our $VERSION = '0.002_02';
 
 plan tests => 53, todo => [];
 
@@ -51,8 +51,8 @@ eod
 	my $time = timegm (0, 0, 0, splice @$_, 0, 3);
 	my $expect = timegm (0, 0, 0, @$_);
 	$test++;
-	my $got = eval {$set->select ($time)->get ('epoch')}
-	    unless $skip;
+	my $got;
+	$skip or $got = eval {$set->select ($time)->get ('epoch')};
 	print <<eod;
 #
 # Test $test - Select $what set members.
@@ -81,8 +81,9 @@ eod
 	my $expect = timegm (0, 0, 0, @$_);
 	$test++;
 	$@ = undef;
-	my $tle = eval {$set->universal ($time)} unless $skip;
-	my $got = eval {$tle->get ('epoch')} if $tle && !$@;
+	my ($tle, $got);
+	$skip or $tle = eval {$set->universal ($time)};
+	$tle && !$@ and $got = eval {$tle->get ('epoch')};
 	print <<eod;
 #
 # Test $test - Set universal() $what set members - resultant epoch.
@@ -133,7 +134,8 @@ eod
 	skip ($skip, $time == $got);
     }
 
-    my @members = $set->members() unless $skip;
+    my @members;
+    $skip or @members = $set->members();
     $test++;
     print <<eod;
 #
