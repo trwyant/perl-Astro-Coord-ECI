@@ -69,7 +69,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.019_03';
+our $VERSION = '0.019_04';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -835,8 +835,9 @@ Pedro Ramon Escobal, pages 401 - 402.
 sub equatorial {
 my $self = shift;
 
+my $body;
 @_ && embodies($_[0], __PACKAGE__)
-    and my $body = shift;
+    and $body = shift;
 
 $self = $self->_check_coord (equatorial => \@_);
 my $time;
