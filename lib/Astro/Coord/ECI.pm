@@ -69,7 +69,7 @@ use warnings;
 
 package Astro::Coord::ECI;
 
-our $VERSION = '0.019_02';
+our $VERSION = '0.019_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -839,7 +839,8 @@ my $self = shift;
     and my $body = shift;
 
 $self = $self->_check_coord (equatorial => \@_);
-my $time = $self->universal unless $body;
+my $time;
+$body or $time = $self->universal;
 
 unless (@_) {
 
