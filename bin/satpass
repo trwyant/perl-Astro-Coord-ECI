@@ -41,7 +41,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_07';
+our $VERSION = '0.019_08';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -186,7 +186,8 @@ sub _time ();		# Predeclare, since I intend to redefine.
 my $date_manip_fudge = 
     $^O eq 'MacOS' ? timegm (0, 0, 0, 1, 0, 1970) : 0;
 
-my $rl = Term::ReadLine->new ('Predict satellite passes') if -t STDIN;
+my $rl;
+$rl = Term::ReadLine->new ('Predict satellite passes') if -t STDIN;
 my $fh = *STDIN;
 my @frame;
 my %alias = (
@@ -578,7 +579,8 @@ $almanac_start >= $almanac_end and die <<eod;
 Error - End time must be after start time.
 eod
 
-my $all = 1 unless grep{$cmdopt{$_}} qw{horizon transit twilight quarter};
+my $all;
+$all = 1 unless grep{$cmdopt{$_}} qw{horizon transit twilight quarter};
 
 #	Build an object representing our ground location.
 
@@ -645,7 +647,8 @@ foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
 #
 
 sub cd {
-my $expand = _tilde_expand ($_[0]) if $_[0];
+my $expand;
+$expand = _tilde_expand ($_[0]) if $_[0];
 $expand ? chdir ($expand) || die <<eod : chdir () || die <<eod;
 Error - Can not cd to $expand
         $!
@@ -1168,7 +1171,8 @@ $cmdlgl{height_vi} = $cmdlgl{height};
 #	Here is the height() subroutine itself.
 
 sub height {
-my $cc = pop @_ if @_ % 2;
+my $cc;
+@_ % 2 and $cc = pop @_;
 $cc ||= $parm{country};
 $cc = lc $cc;
 my $handler = "height_$cc";
@@ -1207,174 +1211,39 @@ goto \&height_us;
 #	The USGS has data for locations other than the USA, so other
 #	countries will be handled here as well.
 
-my $yaml_loader;	# For debugging only.
 sub height_us {
-_load_module ('SOAP::Lite', 'height_us');
+    _load_module ('Geo::WebService::Elevation::USGS', 'height_us');
 
-my $set_pos = @_;
-my $lat = @_ ? shift @_ : $parm{latitude};
-my $lon = @_ ? shift @_ : $parm{longitude};
+    my $set_pos = @_;
+    my $lat = @_ ? shift @_ : $parm{latitude};
+    my $lon = @_ ? shift @_ : $parm{longitude};
 
-$cmdopt{source_layer} ||= -1;
-$cmdopt{retry_on_zero} ||= 0;
-$cmdopt{debug} and warn <<eod;
-Debug - Getting elevation for latitude $lat, longitude $lon
-        -source_layer $cmdopt{source_layer}
-	-retry_on_zero $cmdopt{retry_on_zero}
-eod
+    $cmdopt{source_layer} ||= -1;
+    $cmdopt{retry_on_zero} ||= 0;
 
-#	Manufacture a SOAP::Lite object appropriate to the installed
-#	version of SOAP::Lite.
-
-$cmdopt{debug} and SOAP::Trace->import ('all');
-my $soap = _soapdish ('http://gisdata.usgs.gov/XMLWebServices2/',
-####    'http://gisdata.usgs.gov/XMLWebServices/TNM_Elevation_Service.asmx');
-    'http://gisdata.usgs.gov/xmlwebservices2/elevation_service.asmx');
-
-#	Query the USGS for the data. This is not straightforward
-#	because they're using .NET.
-
-my $rslt;
-##my $xmlns = 'http://gisdata.usgs.net/XMLWebServices/';
-my $xmlns = 'http://gisdata.usgs.gov/XMLWebServices2/';
-
-my $tries = ($cmdopt{retry_on_zero} || 0) + 1;
-
-while (--$tries >= 0) {
-
-#	The -yaml option is purely for debugging purposes, and will
-#	remain undocumented.
-
-    eval {
-	if ($cmdopt{yaml}) {
-	    $yaml_loader ||= eval {
-		require YAML::Syck; \&YAML::Syck::LoadFile;} || eval {
-		require YAML; \&YAML::LoadFile; }
-		or die "Can not load YAML::Syck or YAML.\n";
-	    $rslt = $yaml_loader->($cmdopt{yaml});
-	} elsif ($cmdopt{all}) {
-	    $rslt = $soap->call (SOAP::Data->name ('getAllElevations')->attr (
-		    {xmlns => $xmlns}) =>
-		SOAP::Data->new (name => 'X_Value', type => 'string',
-		    value => $lon),
-		SOAP::Data->new (name => 'Y_Value', type => 'string',
-		    value => $lat),
-		SOAP::Data->new (name => 'Elevation_Units', type => 'string',
-		    value => 'METERS'),
-		)->result;
-	    }
-	  else {
-	    $rslt = $soap->call (SOAP::Data->name ('getElevation')->attr (
-		    {xmlns => $xmlns}) =>
-		SOAP::Data->new (name => 'X_Value', type => 'string',
-		    value => $lon),
-		SOAP::Data->new (name => 'Y_Value', type => 'string',
-		    value => $lat),
-		SOAP::Data->new (name => 'Source_Layer', type => 'string', 
-		    value => $cmdopt{source_layer} || -1),
-		SOAP::Data->new (name => 'Elevation_Units', type => 'string',
-		    value => 'METERS'),
-		SOAP::Data->new (name => 'Elevation_Only', type => 'string',
-		    value => 'false'),
-		)->result;
-	    }
+    my $eq = Geo::WebService::Elevation::USGS->new (
+	source => $cmdopt{source_layer},
+	trace => $cmdopt{debug},
+	units => 'METERS',
+    );
+    my $tries = ($cmdopt{retry_on_zero} || 0) + 1;
+    my $rslt;
+    while (--$tries >= 0) {
+	($rslt) = $eq->elevation($lat, $lon);
+	$eq->is_valid($rslt) or do {
+	    $tries > 0 and next;
+	    die "No valid result found.\n";
 	};
-
-    my $err = $@;
-    undef $soap;
-    $cmdopt{debug} and SOAP::Trace->import ('-all');
-    $err and die $err;
-
-#	Parse our result. If we got a hash back, it means that the USGS
-#	got their XML correct and SOAP::Lite parsed it for us. But in
-#	the past their XML was missing end tags, so SOAP::Lite passed us
-#	a string which we had to correct by supplying the missing end
-#	tags before parsing the XML ourselves.
-
-    if (ref $rslt eq 'HASH') {
-	if ($cmdopt{debug}) {
-	    local $Data::Dumper::Terse = 1;
-	    print 'Result: ', Dumper($rslt);
-	}
-	foreach my $key (
-	    qw{USGS_Elevation_Web_Service_Query Elevation_Query Elevation}) {
-	    exists $rslt->{$key}
-		or die "Error - Elevation result is missing tag <$key>\n";
-	    $rslt = $rslt->{$key};
-	}
-	if (ref $rslt eq 'ARRAY') {
-	    my $foo = $rslt;
-	    $rslt = undef;
-	    foreach my $val (@$foo) {
-		looks_like_number($val) or next;
-		($val += 0) < -1e100 and next;
-		$rslt = $val and last;
-	    }
-	} else {
-	    looks_like_number($rslt) or $rslt = undef;
-	}
-    } elsif ($rslt) {
-
-	$cmdopt{debug} and print 'Result: ', $rslt, "\n";
-
-	my @endtag;
-	while ($rslt =~ m/(<\w+.*?>)/g) {
-	    my $begintag = $1;
-	    (my $endtag = $begintag) =~ s|<|</|;
-	    $endtag =~ s/\s+.*/>/;
-	    last if $rslt =~ m/$endtag/i;
-	    unshift @endtag, $endtag;
-	    }
-	if (my $endtag = join '', @endtag) {
-	    $cmdopt{debug} and
-		warn "Warning - Supplying missing end tag $endtag\n";
-	    $rslt .= $endtag;
-	    }
-	$cmdopt{debug} and print 'Parsing: ', $rslt, "\n";
-	my @data = _parse_xml ($rslt, 'height_us');
-	@data and do {
-	    @data = @{_find_first_tag (\@data, qw{
-		USGS_Elevation_Web_Service_Query
-		Elevation_Query})};
-	    $rslt = 0;
-	    foreach (@data) {
-		next unless ref $_ eq 'ARRAY';
-		next unless $_->[0] eq 'Elevation';
-		next unless looks_like_number ($_->[2]);
-		next if $_->[2] < -1e100;
-		$rslt = $_->[2];
-		last;
-	    }
-	    last unless $rslt == 0;
-	};
-	sleep 2 if $tries;
-    } else {
-	$cmdopt{debug} and print "No result from http://gisdata.usgs.gov/\n";
-	$rslt = undef;
-	last;
-	}
-
+	$rslt->{Elevation} != 0 and last;
     }
 
-#	If, after all the above shenannigans, we have a result, set
-#	the height (and latitude and longitude if not defaulted), and
-#	display whatever we set. The USGS returns a ridiculous
-#	precision, so we round to the nearest centimeter.
-
-if (defined $rslt) {
     if ($set_pos) {
 	$parm{latitude} = $lat;
 	$parm{longitude} = $lon;
 	show (qw{latitude longitude});
 	}
-    $parm{height} = sprintf '%.2f', $rslt;
+    $parm{height} = sprintf '%.2f', $rslt->{Elevation};
     show (qw{height});
-    }
-  else {
-    print <<eod;
-No height found for latitude $parm{latitude} longitude $parm{longitude}
-eod
-    }
 
 }
 
@@ -3799,7 +3668,7 @@ One incentive for doing this is to restructure the F<satpass>
 functionality to be more easily testable. Placing the F<satpass>
 functionality in its own object achieves this; indeed the work flushed
 out a couple subtle bugs in the F<satpass> script, whose fixes have been
-back-ported into that script.
+back-ported into this script.
 
 A second incentive was that the natural dependencies for the application
 are quite different than those of the Astro::Coord::ECI classes. It
@@ -3813,6 +3682,10 @@ and localtime;
 
 * Elimination of calls to UNIVERSAL::isa and UNIVERSAL::can as
 functions;
+
+* Conversion of height lookup functionality to use
+Geo::WebService::Elevation::USGS. Note that this is an optional module,
+and you will need to install it to get this functionality.
 
 * Add overview documentation;
 
