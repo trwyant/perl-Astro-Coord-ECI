@@ -121,7 +121,7 @@ foreach ([timegm (0, 0, 0, 1, 0, 105),
 		timegm (29, 34, 12, 20, 2, 105),
 		timegm (12, 47, 6, 21, 5, 105),
 		timegm (14, 24, 22, 22, 8, 105),
-		timegm (01, 36, 18, 21, 11, 105)],
+		timegm ( 1, 36, 18, 21, 11, 105)],
 	) {
     my $year = (gmtime $_->[0])[5] + 1900;
     my $time = shift @$_;
@@ -171,12 +171,13 @@ eod
 
     foreach ([1, 1], [0, 0]) {
 	my ($sgl, $expect) = @$_;
-	my $got =  do {
+	my $got;
+	$skip or $got =  do {
 	    local $Astro::Coord::ECI::Sun::Singleton = $sgl;
 	    my @sun = map {Astro::Coord::ECI::Sun->new} (0 .. 1);
 	    Scalar::Util::refaddr ($sun[0]) ==
 		Scalar::Util::refaddr ($sun[1]) ? 1 : 0;
-	    } unless $skip;
+	    };
 	$test++;
 	print <<eod;
 # Test $test: \$Astro::Coord::ECI::Sun::Singleton = $sgl
