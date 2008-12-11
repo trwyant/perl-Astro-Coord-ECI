@@ -154,12 +154,13 @@ eod
 
     foreach ([1, 1], [0, 0]) {
 	my ($sgl, $expect) = @$_;
-	my $got =  do {
+	my $got;
+	$skip or $got = do {
 	    local $Astro::Coord::ECI::Moon::Singleton = $sgl;
 	    my @moon = map {Astro::Coord::ECI::Moon->new} (0 .. 1);
 	    Scalar::Util::refaddr ($moon[0]) ==
 		Scalar::Util::refaddr ($moon[1]) ? 1 : 0;
-	    } unless $skip;
+	    };
 	$test++;
 	print <<eod;
 # Test $test: \$Astro::Coord::ECI::Moon::Singleton = $sgl
