@@ -506,10 +506,10 @@ eod
 eod
     skip ($skip, $got eq $data);
     unless ($skip || $got eq $data) {
-	open (HANDLE, ">$file.expect");
-	print HANDLE $data;
-	open (HANDLE, ">$file.got");
-	print HANDLE $got;
+	open (my $fh, '>', "$file.expect");
+	print $fh $data;
+	open ($fh, '>', "$file.got");
+	print $fh $got;
 	warn <<eod;
 #
 # Expected and gotten information written to $file.expect and
