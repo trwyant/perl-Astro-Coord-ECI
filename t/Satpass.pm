@@ -10,7 +10,7 @@ use Cwd;
 use File::Spec;
 use Test;
 
-our $VERSION = '0.003';
+our $VERSION = '0.003_01';
 
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
@@ -91,7 +91,11 @@ print $@ if $@;
 
 sub not_available {
 foreach my $module (@_) {
-    eval "use $module";
+    # Perl::Critic wants us not to do this, but using 'require $fn'
+    # requires us to duplicate the bareword logic. That was not too
+    # bad when .pm was the only option for the file type, but when
+    # they added .pmc things got complex, and they might change again.
+    eval "require $module";	## no critic
     return "Module $module can not be loaded." if $@;
     }
 return '';
@@ -201,13 +205,21 @@ eod
 #	$output. The presumption is that we're doing some computation
 #	to determine the actual results of the test.
 
-    s/-result\b\s*//m and do {$output = eval $_; die $@ if $@; next};
+    s/-result\b\s*//m and do {
+	# Perl::Critic does not like string evals, but it's the only
+	# way to execute arbitrary code out of the data.
+	$output = eval $_;	## no critic
+	die $@ if $@; next};
 
 #	-skip evals the rest of the line, placing the output into the
 #	$skip variable. This will _not_ override any global
 #	considerations that force the whole shebang to be skipped.
 
-    s/-skip\b\s*//m and do {$skip = eval $_; die $@ if $@; next};
+    s/-skip\b\s*//m and do {
+	# Perl::Critic does not like string evals, but it's the only
+	# way to execute arbitrary code out of the data.
+	$skip = eval $_;	## no critic
+	die $@ if $@; next};
 
 #	-test actually performs the test. The rest of the line is an
 #	optional title for the test. Note that if $except is defined,
@@ -271,7 +283,7 @@ eod
 #	If we run out of <DATA>, we return undef to request the script
 #	to exit.
 
-return undef;
+return;
 }
 
 1;
