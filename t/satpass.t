@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 use t::Satpass;
 
 eval {require Astro::SpaceTrack};

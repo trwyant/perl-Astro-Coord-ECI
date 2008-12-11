@@ -1,4 +1,7 @@
-our $VERSION = '0.005';
+use strict;
+use warnings;
+
+our $VERSION = '0.005_01';
 
 use t::Satpass;
 
