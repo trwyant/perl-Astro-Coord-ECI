@@ -2,14 +2,21 @@ use strict;
 use warnings;
 
 BEGIN {
-    eval "use Test::More";
+    eval {
+	require Test::More;
+	Test::More->import();
+    };
     if ($@) {
 	print <<eod;
 1..0 # skip Test::More required to test POD validity.
 eod
 	exit;
     }
-    eval "use Test::Pod 1.00";
+    eval {
+	use Test::Pod;
+	Test::Pod->VERSION (1.00);
+	Test::Pod->import();
+    };
     if ($@) {
 	print <<eod;
 1..0 # skip Test::Pod 1.00 or higher required to test POD validity.

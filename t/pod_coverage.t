@@ -2,12 +2,19 @@ use strict;
 use warnings;
 
 BEGIN {
-    eval "use Test::More";
+    eval {
+	require Test::More;
+	Test::More->import();
+    };
     if ($@) {
 	print "1..0 # skip Test::More required to test pod coverage.\n";
 	exit;
     }
-    eval "use Test::Pod::Coverage 1.00";
+    eval {
+	require Test::Pod::Coverage;
+	Test::Pod::Coverage->VERSION(1.00);
+	Test::Pod::Coverage->import();
+    };
     if ($@) {
 	print <<eod;
 1..0 # skip Test::Pod::Coverage 1.00 or greater required.
