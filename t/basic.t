@@ -159,10 +159,8 @@ foreach ([longitude => timegm (0, 0, 0, 10, 3, 87), -3.788/3600, .5/3600],
 	) {
     $test++;
     my ($what, $time, $expect, $tolerance) = @$_;
-    my $method = "nutation_in_$what";
-no strict qw{refs};
+    my $method = Astro::Coord::ECI::Utils->can("nutation_in_$what");
     my $got = $method->($time);
-use strict qw{refs};
     $expect = deg2rad ($expect);
     $tolerance = deg2rad ($tolerance);
     print <<eod;
