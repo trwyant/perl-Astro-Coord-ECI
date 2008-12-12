@@ -1,10 +1,9 @@
 use strict;
 use warnings;
 
-# The following us a dummy package to force the calculation of the
-# semimajor axis from the period, without actually having all the
-# TLE information.
-package Astro::Coord::ECI::TLE::Period;	## no critic
+package main;	# To make Perl::Critic happy.
+
+package Astro::Coord::ECI::TLE::Period;
 
 use base qw{Astro::Coord::ECI::TLE};
 
