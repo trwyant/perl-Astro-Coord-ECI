@@ -23,7 +23,5 @@ foreach my $file (@check) {
     open (my $fh, '<', $file) or die "Unable to open $file: $!\n";
     local $_ = <$fh>;
     my @stat = stat $file;
-    # Perl::Critic does not like leading zeros, because it thinks
-    # you might not want octal. But I do here.
-    skip ($skip, !($stat[2] & 0111 || m/^#!.*perl/));	## no critic
+    skip ($skip, !($stat[2] & oct(111) || m/^#!.*perl/));
 }
