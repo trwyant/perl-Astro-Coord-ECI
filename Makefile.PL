@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_01';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -121,24 +121,30 @@ eod
 my $vers = '';
 
 (my $mmv = ExtUtils::MakeMaker->VERSION) =~ s/_//g;
-WriteMakefile (
-	NAME => 'Astro::Coord::ECI',
-	DISTNAME => 'Astro-satpass',
-	VERSION_FROM => 'lib/Astro/Coord/ECI.pm',
-	PREREQ_PM => {
-			@prereq
-			},
-	PL_FILES => {},	# Prevent old MakeMaker from running Build.PL
-	EXE_FILES => \@exe_files,
-#	'linkext' => {LINKTYPE => ''},
-	'dist' => {COMPRESS => 'gzip', SUFFIX => 'gz'},
-	realclean => {FILES => join ' ', @clean_files},
-	$] >= 5.005 ? (
-		AUTHOR => 'Tom Wyant (wyant at cpan dot org)',
-		ABSTRACT => 'Classes and app to compute satellite visibility',
-		BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
-		($mmv >= 6.31 ?
-		    (LICENSE => 'perl') : ())
-		) : (),
-	);
+
+my %attr = (
+    NAME => 'Astro::Coord::ECI',
+    DISTNAME => 'Astro-satpass',
+    VERSION_FROM => 'lib/Astro/Coord/ECI.pm',
+    PREREQ_PM => { @prereq },
+    PL_FILES => {},	# Prevent old MakeMaker from running Build.PL
+    EXE_FILES => \@exe_files,
+    'dist' => {COMPRESS => 'gzip', SUFFIX => 'gz'},
+    realclean => {FILES => join ' ', @clean_files},
+    AUTHOR => 'Tom Wyant (wyant at cpan dot org)',
+    ABSTRACT => 'Classes and app to compute satellite visibility',
+    BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
+);
+
+$mmv >= 6.31 and $attr{LICENSE} = 'perl';
+
+$mmv >= 6.4501 and $attr{META_MERGE} = {
+    build_requires => {
+    },
+    resources => {
+	license => 'http://dev.perl.org/licenses/',
+    },
+};
+
+WriteMakefile (%attr);
 

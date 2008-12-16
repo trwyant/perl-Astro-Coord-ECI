@@ -7,19 +7,29 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 
-my $bldr = Module::Build->new (
-	dist_author => 'Tom Wyant (wyant at cpan dot org)',
-	dist_abstract => 'Classes and app to compute satellite visibility',
-	module_name => 'Astro::Coord::ECI',
-	dist_name => 'Astro-satpass',
-	dist_version_from => 'lib/Astro/Coord/ECI.pm',
+(my $mbv = Module::Build->VERSION) =~ s/_//g;
 
-	get_options => {y => {}, n => {}},
-	dynamic_config => 1,
-	license => 'perl',
-	);
+my %attr = (
+    dist_author => 'Tom Wyant (wyant at cpan dot org)',
+    dist_abstract => 'Classes and app to compute satellite visibility',
+    module_name => 'Astro::Coord::ECI',
+    dist_name => 'Astro-satpass',
+    dist_version_from => 'lib/Astro/Coord/ECI.pm',
+
+    get_options => {y => {}, n => {}},
+    dynamic_config => 1,
+    license => 'perl',
+);
+
+$mbv >= 0.28 and $attr{meta_merge} = {
+    no_index => {
+	directory => [qw{inc t}],
+    },
+};
+
+my $bldr = Module::Build->new (%attr);
 
 my %opt = $bldr->args ();
 
