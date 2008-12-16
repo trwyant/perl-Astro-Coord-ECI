@@ -18,12 +18,16 @@ lib/Astro/Coord/ECI/TLE/Set.pm
 lib/Astro/Coord/ECI/Utils.pm
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 META.yml
 README
 README.MacOS
 t/basic.t
 t/eci.t
+t/executable.t
 t/iridium.t
+t/iridium_status.t
+t/manifest.t
 t/moon.t
 t/pod.t
 t/pod_coverage.t
