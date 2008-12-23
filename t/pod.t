@@ -13,7 +13,7 @@ eod
 	exit;
     }
     eval {
-	use Test::Pod;
+	require Test::Pod;
 	Test::Pod->VERSION (1.00);
 	Test::Pod->import();
     };
