@@ -32,7 +32,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 0, 12, 30, 9, 108);
+my $asof = timegm (0, 55, 15, 23, 11, 108);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -49,7 +49,7 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of Aug. 6, 2008
+Iridium status as of Dec. 22, 2008
 =================================
 
 Iridiums not listed in the following table are thought to be stable
@@ -85,6 +85,8 @@ Jan. 22, 2008: Iridium 90 has changed its inclination so that it is now
                a spare in its new plane.
 Jul. 19, 2008: Unusual changes in mean motion by Iridium 28
 Jul. 26, 2008: Iridium 95 moved to about 14 seconds behind Iridium 28
+Dec. 22, 2008: It is clear that Iridium 28 was no longer being controlled
+               as of about Sep. 20, 2008 - probably since July 2008
 
  NCat    Name           Status   Comment
  24836   Iridium 914    tum      Failed; was called Iridium 14
@@ -93,7 +95,7 @@ Jul. 26, 2008: Iridium 95 moved to about 14 seconds behind Iridium 28
  24870   Iridium 17     tum?     Failed in August 2005?
  24871   Iridium 920    tum      Failed; was called Iridium 20
  24873   Iridium 921    tum      Failed; was called Iridium 21
- 24948   Iridium 28     ?        Possible control issues about July 19, 2008
+ 24948   Iridium 28     unc      Assumed failed about July 19, 2008
  24967   Iridium 36     tum      Failed in January 2007
  25043   Iridium 38     tum      Failed in August 2003
  25078   Iridium 44     tum      Failed
@@ -111,7 +113,7 @@ Jul. 26, 2008: Iridium 95 moved to about 14 seconds behind Iridium 28
  27372   Iridium 91     ?        Spare   was called Iridium 90
  27373   Iridium 90     ?        Spare (new plane Jan. 2008)   was called Iridium 91
  27374   Iridium 94     ?        Spare
- 27375   Iridium 95     ?        Moved to about 14 seconds behind Iridium 28 on July 26, 2008
+ 27375   Iridium 95              Replaced Iridium 28 about July 26, 2008
  27376   Iridium 96     ?        Spare
  27450   Iridium 97              Replaced Iridium 36 on Jan. 10, 2007
  27451   Iridium 98     ?        Spare (new plane May 2007)
@@ -122,7 +124,9 @@ blank   Object is operational
 
 tum     tumbling - no flares, but flashes seen on favorable transits.
 
-?       not at operational altitude - flares may be unreliable.
+unc     uncontrolled
+
+?       controlled, but not at operational altitude - flares may be unreliable.
 
 man     maneuvering, at least slightly. Flares may be unreliable and the
         object may be early or late against prediction.
