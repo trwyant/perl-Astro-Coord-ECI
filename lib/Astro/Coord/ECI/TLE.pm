@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_09';
+our $VERSION = '0.014_10';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -5313,14 +5313,17 @@ sub _r_sgp4init {
         $cc3= 0;
         if ($parm->{eccentricity} >  0.0001) {
             $cc3=
-                -2*$coef*$tsi*$parm->{j3oj2}*$parm->{meanmotion}*$init->{sinio}/$parm->{eccentricity};
+                -2*$coef*$tsi*$parm->{j3oj2}*$parm->{meanmotion}*
+		$init->{sinio}/$parm->{eccentricity};
         }
         $parm->{x1mth2}= 1-$init->{cosio2};
         $parm->{cc4}=
-            2*$parm->{meanmotion}*$coef1*$init->{ao}*$init->{omeosq}*($parm->{eta}*(2+0.5*$etasq)
+            2*$parm->{meanmotion}*$coef1*$init->{ao}*$init->{omeosq}*
+	    ($parm->{eta}*(2+0.5*$etasq)
             +$parm->{eccentricity}*(0.5 + 2*$etasq) - $parm->{j2}*$tsi/
             ($init->{ao}*$psisq)* (-3*$parm->{con41}*(1-2*
-            $eeta+$etasq*(1.5-0.5*$eeta))+0.75*$parm->{x1mth2}*(2*$etasq-$eeta*(1+$etasq))*cos(2*$parm->{argumentofperigee})));
+            $eeta+$etasq*(1.5-0.5*$eeta))+0.75*$parm->{x1mth2}*
+	    (2*$etasq-$eeta*(1+$etasq))*cos(2*$parm->{argumentofperigee})));
         $parm->{cc5}= 2*$coef1*$init->{ao}*$init->{omeosq}* (1 + 2.75*
             ($etasq+ $eeta) + $eeta*$etasq);
         $cosio4= $init->{cosio2}*$init->{cosio2};
@@ -5406,7 +5409,7 @@ sub _r_sgp4init {
 
 
     delete $parm->{init};
-    $ENV{DEVELOPER_TEST} and $self->_r_dump ();
+####    $ENV{DEVELOPER_TEST} and $self->_r_dump ();
     return $parm;
 }
 #* -----------------------------------------------------------------------------
