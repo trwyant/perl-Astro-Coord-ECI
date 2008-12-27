@@ -41,7 +41,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_08';
+our $VERSION = '0.019_09';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3142,6 +3142,8 @@ eod
 
 #	We die on any error.
 
+=begin comment
+
 sub _simbad3 {
     _load_module ('Astro::SIMBAD::Query');
     my $query = shift;
@@ -3180,6 +3182,10 @@ eod
     my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec + 0);
     wantarray ? @temp : join ' ', @temp;
 }
+
+=end comment
+
+=cut
 
 
 #	@coordinates = _simbad4 ($query)
