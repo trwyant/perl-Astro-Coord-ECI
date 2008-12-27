@@ -56,6 +56,12 @@ set longitude -75.697786
 eod
 -test geocode Canadian location via http://rpc.geocoder.ca/
 
+# WE NO LONGER TEST BELOW HERE, BECAUSE ELEVATION FUNCTIONALITY HAS BEEN
+# MOVED TO Geo::WebService::Elevation::USGS, WHICH HAS ITS OWN TESTING
+# SUITE.
+
+-end
+
 # -skip not_available ('SOAP::Lite', 'XML::Parser') || not_reachable ('http://gisdata.usgs.gov/') || 'http://gisdata.usgs.gov/ seems to be returning 0 these days.'
 -skip not_available ('SOAP::Lite', 'XML::Parser') || not_reachable ('http://gisdata.usgs.gov/')
 
