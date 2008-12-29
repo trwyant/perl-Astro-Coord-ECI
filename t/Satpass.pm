@@ -53,7 +53,7 @@ sub satpass {
 # >>>	This interface is undocumented, and unsupported except for its
 # >>>	use in this test script.
 
-    no warnings qw{once};	## no critic ProhibitNoWarnings
+    no warnings qw{once};
     $Astro::satpass::Test::Hook = \&tester;
     $Astro::satpass::Test::Handle = $handle;
     use warnings qw{once};
