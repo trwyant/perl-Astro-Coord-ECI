@@ -110,14 +110,14 @@ This class adds the following public methods:
 
 =cut
 
+package Astro::Coord::ECI::TLE::Iridium;
+
 use strict;
 use warnings;
 
-package Astro::Coord::ECI::TLE::Iridium;
-
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.006_03';
+our $VERSION = '0.006_04';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -240,19 +240,19 @@ the object is assumed capable of generating flares.
 =cut
 
 sub after_reblessing {
-my $self = shift;
-my $attrs = @_ ? {%{shift @_}} : {};
-ref $attrs eq 'HASH' or croak <<eod;
+    my ($self, $attrs) = @_;
+    defined $attrs or $attrs = {};
+    ref $attrs eq 'HASH' or croak <<eod;
 Error - The argument of after_reblessing(), if any, must be a hash
         reference.
 eod
-foreach my $key (keys %static) {
-    $attrs->{$key} = $static{$key} unless defined $attrs->{$key};
+    foreach my $key (keys %static) {
+	$attrs->{$key} = $static{$key} unless defined $attrs->{$key};
     }
-foreach my $key (keys %$attrs) {
-    delete $attrs->{$key} unless exists $mutator{$key};
+    foreach my $key (keys %$attrs) {
+	delete $attrs->{$key} unless exists $mutator{$key};
     }
-$self->set (%$attrs);
+    return $self->set (%$attrs);
 }
 
 
@@ -260,7 +260,8 @@ $self->set (%$attrs);
 
 
 sub attribute {
-$mutator{$_[1]} ? __PACKAGE__ : $_[0]->SUPER::attribute ($_[1])
+    my ($self, $name) = @_;
+    return $mutator{$name} ? __PACKAGE__ : $self->SUPER::attribute ($name);
 }
 
 
@@ -276,7 +277,8 @@ attribute.
 =cut
 
 sub before_reblessing {
-delete $_[0]->{&ATTRIBUTE_KEY};
+    my ($self) = @_;
+    return delete $self->{&ATTRIBUTE_KEY};
 }
 
 
@@ -290,10 +292,10 @@ not.
 =cut
 
 sub can_flare {
-my $self = shift;
-my $spare = shift;
-my $status = $self->get ('status');
-!$status || $spare && $status == $self->STATUS_SPARE;
+    my $self = shift;
+    my $spare = shift;
+    my $status = $self->get ('status');
+    return !$status || $spare && $status == $self->STATUS_SPARE;
 }
 
 
@@ -465,51 +467,51 @@ use constant PM_START_LIMIT => 43200 - 480;	# 8 minutes before noon.
 use constant PM_END_LIMIT => 480;		# 8 minutes after midnight.
 
 sub flare {
-my $self = shift;
-my $method = $self->{&ATTRIBUTE_KEY}{_algorithm_method};
-$self->$method (@_);
+    my ($self, @args) = @_;
+    my $method = $self->{&ATTRIBUTE_KEY}{_algorithm_method};
+    return $self->$method (@args);
 }
 
 
 sub _flare_fixed {
-my $self = shift;
-my $station = shift;
-{
-    local $@;
-    eval {$station->isa ('Astro::Coord::ECI')} or croak <<eod;
+    my $self = shift;
+    my $station = shift;
+    {
+	local $@;
+	eval {$station->isa ('Astro::Coord::ECI')} or croak <<eod;
 Error - The station must be a subclass of Astro::Coord::ECI.
 eod
-}
-my $start = shift || time ();
-my $end = shift || $start + 86400;
-$end >= $start or croak <<eod;
+    }
+    my $start = shift || time ();
+    my $end = shift || $start + 86400;
+    $end >= $start or croak <<eod;
 Error - End time must be after start time.
 eod
-unless ($self->get ('backdate')) {
-    my $real = $self->isa ('Astro::Coord::ECI::TLE::Set') ?
-	$self->select ($start) : $self;
-    my $epoch = $real->get ('epoch');
-    $start = $epoch if $start < $epoch;
-    $start > $end and return ();
-}
+    unless ($self->get ('backdate')) {
+	my $real = $self->isa ('Astro::Coord::ECI::TLE::Set') ?
+	    $self->select ($start) : $self;
+	my $epoch = $real->get ('epoch');
+	$start = $epoch if $start < $epoch;
+	$start > $end and return ();
+    }
 
-my @flares;
-my $illum = $self->get ('illum');
-my $illum_radius = $illum->get ('diameter') / 2;
-my $horizon = $self->get ('horizon');
-my $twilight = $self->get ('twilight');
-$sun ||= Astro::Coord::ECI::Sun->new ();
-my $height = ($station->geodetic)[2];
+    my @flares;
+    my $illum = $self->get ('illum');
+    my $illum_radius = $illum->get ('diameter') / 2;
+    my $horizon = $self->get ('horizon');
+    my $twilight = $self->get ('twilight');
+    $sun ||= Astro::Coord::ECI::Sun->new ();
+    my $height = ($station->geodetic)[2];
 
-my %want = (
-    am => $self->get ('am'),
-    day => $self->get ('day'),
-    pm => $self->get ('pm'),
+    my %want = (
+	am => $self->get ('am'),
+	day => $self->get ('day'),
+	pm => $self->get ('pm'),
     );
-my $check_time = !($want{am} && $want{day} && $want{pm});
-my $day_limit = $twilight - DAY_TOLERANCE;
-my $night_limit = $twilight + DAY_TOLERANCE;
-my $illum_tolerance = deg2rad (15);
+    my $check_time = !($want{am} && $want{day} && $want{pm});
+    my $day_limit = $twilight - DAY_TOLERANCE;
+    my $night_limit = $twilight + DAY_TOLERANCE;
+    my $illum_tolerance = deg2rad (15);
 
 
 #	We assume our observing location is fixed on the surface of the
@@ -522,21 +524,21 @@ my $illum_tolerance = deg2rad (15);
 ###	is about 85 degrees. So this algorithm only works between
 ###	latitudes 85 north and 85 south.
 
-my $satlat = ($self->universal ($start)->geodetic ())[0];
-my $zdot = ($self->eci)[5];
-my $stalat = ($station->geodetic ())[0];
-my $period = $self->period;
-my $angular_velocity = TWOPI / $period;
-my ($time, $asc) = ($zdot > 0 ?
-    $satlat < $stalat ? (($stalat - $satlat) / $angular_velocity, 1) :
-	((PI - $stalat - $satlat) / $angular_velocity, 0) :
-    $satlat < $stalat ?
-	((PI + $stalat + $satlat) / $angular_velocity, 1) :
-	(($satlat - $stalat) / $angular_velocity, 0));
-$time += $start;
-my @deltas = (
-    (PIOVER2 + $stalat) * 2 / $angular_velocity,
-    (PIOVER2 - $stalat) * 2 / $angular_velocity,
+    my $satlat = ($self->universal ($start)->geodetic ())[0];
+    my $zdot = ($self->eci)[5];
+    my $stalat = ($station->geodetic ())[0];
+    my $period = $self->period;
+    my $angular_velocity = TWOPI / $period;
+    my ($time, $asc) = ($zdot > 0 ?
+	$satlat < $stalat ? (($stalat - $satlat) / $angular_velocity, 1) :
+	    ((PI - $stalat - $satlat) / $angular_velocity, 0) :
+	$satlat < $stalat ?
+	    ((PI + $stalat + $satlat) / $angular_velocity, 1) :
+	    (($satlat - $stalat) / $angular_velocity, 0));
+    $time += $start;
+    my @deltas = (
+	(PIOVER2 + $stalat) * 2 / $angular_velocity,
+	(PIOVER2 - $stalat) * 2 / $angular_velocity,
     );
 
 #	At this point the time represents (approximately, because our
@@ -546,79 +548,79 @@ my @deltas = (
 #	Pick up a copy of our max mirror angle so we don't have to call
 #	get () repeatedly.
 
-my $max_mirror_angle = $self->get ('max_mirror_angle');
+    my $max_mirror_angle = $self->get ('max_mirror_angle');
 
 #	While this time is less than our end time ...
 
-while ($time < $end) {
+    while ($time < $end) {
 
 #	Calculate location of satellite.
 
-    $self->universal ($time);
-    my ($satlat, $satlon, $satalt) = $self->geodetic;
+	$self->universal ($time);
+	my ($satlat, $satlon, $satalt) = $self->geodetic;
 
 
 #	Correct time to put satellite at same latitude as station.
 
-    $time += ($asc ? $stalat - $satlat : $satlat - $stalat)
-	/ $angular_velocity;
-    ($satlat, $satlon, $satalt) = $self->universal ($time)->geodetic;
+	$time += ($asc ? $stalat - $satlat : $satlat - $stalat)
+	    / $angular_velocity;
+	($satlat, $satlon, $satalt) = $self->universal ($time)->geodetic;
 
 
 #	Calculate whether satellite is above horizon.
 
-    my ($azm, $elev, $rng) = $station->azel ($self, 0);
-    $elev > $horizon or next;
+	my ($azm, $elev, $rng) = $station->azel ($self, 0);
+	$elev > $horizon or next;
 
 
 #	Check whether we are interested in this potential flare, based
 #	on whether it might be during the day, or am, or pm.
 
-    $check_time and eval {
-	my $sun_elev = ($station->azel ($sun->universal ($time)))[1];
-	$want{day} && $sun_elev > $day_limit and return 1;
-	($want{am} || $want{pm}) && $sun_elev < $night_limit or return 0;
-	my @local_time = localtime ($time);
-	my $time_of_day = ($local_time[2] * 60 + $local_time[1]) * 60
-		+ $local_time[0];
-	$want{am} && ($time_of_day > AM_START_LIMIT ||
-		$time_of_day < AM_END_LIMIT) and return 1;
-	$want{pm} && ($time_of_day > PM_START_LIMIT ||
-		$time_of_day < PM_END_LIMIT) and return 1;
-	0;
-	} || next;
+	$check_time and (eval {
+	    my $sun_elev = ($station->azel ($sun->universal ($time)))[1];
+	    ($want{day} && $sun_elev > $day_limit) and return 1;
+	    (($want{am} || $want{pm}) && $sun_elev < $night_limit) or return 0;
+	    my @local_time = localtime ($time);
+	    my $time_of_day = ($local_time[2] * 60 + $local_time[1]) * 60
+		    + $local_time[0];
+	    ($want{am} && ($time_of_day > AM_START_LIMIT ||
+		    $time_of_day < AM_END_LIMIT)) and return 1;
+	    ($want{pm} && ($time_of_day > PM_START_LIMIT ||
+		    $time_of_day < PM_END_LIMIT)) and return 1;
+	    0;
+	    } || next);
 
 
 #	Calculate whether the satellite is illuminated.
 
-    my $lit = ($self->azel ($illum->universal ($time)))[1] >=
-	$self->dip () - $illum_tolerance or next;
+	my $lit = ($self->azel ($illum->universal ($time)))[1] >=
+	    $self->dip () - $illum_tolerance or next;
 
 
 #	For our screening to work we need to know the maximum angular
 #	distance we can travel in 30 seconds. This is the arc tangent
 #	of the velocity over the range
 
-    my (undef, undef, undef, $xdot, $ydot, $zdot) = $self->eci ();
-    my $max_angle = atan2 (
-	sqrt ($xdot * $xdot + $ydot * $ydot + $zdot * $zdot), $rng)
-	* 30;
-    $max_angle += $max_mirror_angle;	# Take into account near misses.
+	my (undef, undef, undef, $xdot, $ydot, $zdot) = $self->eci ();
+	my $max_angle = atan2 (
+	    sqrt ($xdot * $xdot + $ydot * $ydot + $zdot * $zdot), $rng)
+	    * 30;
+	$max_angle += $max_mirror_angle;	# Take into account near misses.
 
 
 #	Iterate over a period of 16 minutes centered on our current
 #	time, calculating the location of the reflection of the sun
 #	versus the satellite, as seen by the observer.
 
-    my @flare_potential = ([], [], []);	# Flare-potential data by MMA.
-    foreach my $deltat (-8 .. 8) {
-	my $time = $deltat * 60 + $time;
+	my @flare_potential = ([], [], []);	# Flare-potential data by MMA.
+	foreach my $deltat (-8 .. 8) {
+	    my $time = $deltat * 60 + $time;
 
 
 #	See if the satellite is illuminated at this time.
 
-	($self->universal ($time)->azel ($illum->universal ($time)))[1] >=
-	    $self->dip () or next;
+	    ($self->universal ($time)->azel ($illum->universal ($time)))[1] >=
+		$self->dip () or next;
 
 
 #	Transform the relevant coordinates into a coordinate system
@@ -628,15 +630,15 @@ while ($time < $end) {
 #	the X axis. The method returns Math::VectorReal objects
 #	corresponding to all inputs, including '$self'.
 
-	my ($tle_vector, $illum_vector, $station_vector) =
-	    $self->_flare_transform_coords_list (
-	    $illum, $station->universal ($time));
+	    my ($tle_vector, $illum_vector, $station_vector) =
+		$self->_flare_transform_coords_list (
+		$illum, $station->universal ($time));
 
 
 #	Now we do a second iteration over the Main Mission Antennae,
 #	checking for the position of the Sun's reflection.
 
-	foreach my $mma (0 .. 2) {
+	    foreach my $mma (0 .. 2) {
 
 
 #	We clone the sun and the station, and then calculate the angle
@@ -644,18 +646,18 @@ while ($time < $end) {
 #	the observer. We skip to the next antenna if no reflection is
 #	generated.
 
-	    my $illum_vector = [@$illum_vector];
-	    my $station_vector = [@$station_vector];
-	    next unless defined (
-		my $angle = _flare_calculate_angle_list ($tle_vector,
-		$mma, $illum_vector, $station_vector));
+		my $illum_vector = [@$illum_vector];
+		my $station_vector = [@$station_vector];
+		next unless defined (
+		    my $angle = _flare_calculate_angle_list ($tle_vector,
+		    $mma, $illum_vector, $station_vector));
 
 
 #	Save the angle, time, and cloned station for subsequent
 #	analysis.
 
-	    push @{$flare_potential[$mma]},
-		[$angle, $time, $illum_vector, $station_vector];
+		push @{$flare_potential[$mma]},
+		    [$angle, $time, $illum_vector, $station_vector];
 
 
 #	End of iterating over Main Mission Antennae.
@@ -671,43 +673,43 @@ while ($time < $end) {
 
 #	Now iterate over each MMA to calculate its flare, if any.
 
-    foreach my $mma (0 .. 2) {
+	foreach my $mma (0 .. 2) {
 
 
 #	Find the best possibility for a flare. If none, or the angle is
 #	more than the max possible, ignore this antenna.
 
-	next if @{$flare_potential[$mma]} < 2;
-	my @flare_approx;
-	do {	# Begin local symbol block
-	    my $inx = 0;
-	    my $angle = $flare_potential[$mma][$inx][0];
-	    foreach (1 .. @{$flare_potential[$mma]} - 1) {
-		next unless $flare_potential[$mma][$_][0] < $angle;
-		$inx = $_;
-		$angle = $flare_potential[$mma][$_][0];
+	    next if @{$flare_potential[$mma]} < 2;
+	    my @flare_approx;
+	    do {	# Begin local symbol block
+		my $inx = 0;
+		my $angle = $flare_potential[$mma][$inx][0];
+		foreach (1 .. @{$flare_potential[$mma]} - 1) {
+		    next unless $flare_potential[$mma][$_][0] < $angle;
+		    $inx = $_;
+		    $angle = $flare_potential[$mma][$_][0];
 		}
-	    next if $angle > $max_angle;
+		next if $angle > $max_angle;
 
 #	If the best potential is at the beginning or end of the list,
 #	calculate the entrance (or exit) of the flare so we have a
 #	starting point for out approximations. Note that we used to
 #	just abandon the calculation in these cases.
 
-	    if ($inx == 0) {
-		unshift @{$flare_potential[$mma]},
-		    $self->_flare_entrance ($illum, $station, $mma,
-			$flare_potential[$mma][$inx][1] - 60,
-			$flare_potential[$mma][$inx][1]);
-		$inx++;
-	    } elsif ($inx == @{$flare_potential[$mma]} - 1) {
-		push @{$flare_potential[$mma]},
-		    $self->_flare_entrance ($illum, $station, $mma,
-			$flare_potential[$mma][$inx][1] + 60,
-			$flare_potential[$mma][$inx][1]);
-	    }
-	    @flare_approx = ($flare_potential[$mma][$inx - 1],
-		$flare_potential[$mma][$inx + 1]);
+		if ($inx == 0) {
+		    unshift @{$flare_potential[$mma]},
+			$self->_flare_entrance ($illum, $station, $mma,
+			    $flare_potential[$mma][$inx][1] - 60,
+			    $flare_potential[$mma][$inx][1]);
+		    $inx++;
+		} elsif ($inx == @{$flare_potential[$mma]} - 1) {
+		    push @{$flare_potential[$mma]},
+			$self->_flare_entrance ($illum, $station, $mma,
+			    $flare_potential[$mma][$inx][1] + 60,
+			    $flare_potential[$mma][$inx][1]);
+		}
+		@flare_approx = ($flare_potential[$mma][$inx - 1],
+		    $flare_potential[$mma][$inx + 1]);
 	    };	# End local symbol block;
 
 
@@ -719,7 +721,7 @@ while ($time < $end) {
 #	previously-used times to prevent converging so fast we jump
 #	over the point we are trying to find.
 
-	while (abs ($flare_approx[1][1] - $flare_approx[0][1]) > .1) {
+	    while (abs ($flare_approx[1][1] - $flare_approx[0][1]) > .1) {
 
 
 #	Calculate the next time to try as a weighted average of the
@@ -731,9 +733,9 @@ while ($time < $end) {
 #	obvious on daytime flares, where if you miss the peak the
 #	flare is probably not specular.
 
-##	    my $time = ($flare_approx[1][1] * 2 + $flare_approx[0][1]) / 3;
-	    my $time = ($flare_approx[1][1] * 3 + $flare_approx[0][1]) / 4;
-####	    my $time = ($flare_approx[1][1] * 6 + $flare_approx[0][1]) / 7;
+##		my $time = ($flare_approx[1][1] * 2 + $flare_approx[0][1]) / 3;
+		my $time = ($flare_approx[1][1] * 3 + $flare_approx[0][1]) / 4;
+####		my $time = ($flare_approx[1][1] * 6 + $flare_approx[0][1]) / 7;
 
 
 #	Transform the relevant coordinates into a coordinate system
@@ -742,24 +744,25 @@ while ($time < $end) {
 #	motion (and hence one of the Main Mission Antennae) is along
 #	the X axis.
 
-	    my ($tle_vector, $illum_vector, $station_vector) =
-		$self->universal ($time)->
-		    _flare_transform_coords_list (
-		    $illum->universal ($time), $station->universal ($time));
+		my ($tle_vector, $illum_vector, $station_vector) =
+		    $self->universal ($time)->
+			_flare_transform_coords_list (
+			$illum->universal ($time),
+			$station->universal ($time));
 
 
 #	Calculate the angle between the satellite and the reflection
 #	of the Sun, as seen by the observer.
 
-	    my $angle = _flare_calculate_angle_list ($tle_vector,
-		$mma, $illum_vector, $station_vector);
+		my $angle = _flare_calculate_angle_list ($tle_vector,
+		    $mma, $illum_vector, $station_vector);
 
 
 #	Store the data in our approximation list, in order by angle.
 
-	    pop @flare_approx;
-	    splice @flare_approx, $angle >= $flare_approx[0][0], 0,
-		[$angle, $time, $illum_vector, $station_vector];
+		pop @flare_approx;
+		splice @flare_approx, $angle >= $flare_approx[0][0], 0,
+		    [$angle, $time, $illum_vector, $station_vector];
 
 
 #	End of successive approximation of time of minimum angle.
@@ -769,13 +772,13 @@ while ($time < $end) {
 
 #	Pull the (potential) flare data off the approximation list.
 
-	my ($angle, $time, $illum_vector, $station_vector) =
-		@{$flare_approx[0]};
+	    my ($angle, $time, $illum_vector, $station_vector) =
+		    @{$flare_approx[0]};
 
 
 #	Skip it if the mirror angle is greater than the max.
 
-	next if $angle > $max_mirror_angle;
+	    next if $angle > $max_mirror_angle;
 
 
 #	All our approximations may have left us with a satellite which
@@ -783,19 +786,19 @@ while ($time < $end) {
 #	Feb 03 2007 at 07:45:19 PM. So we check for illumination one
 #	last time.
 
-	($self->universal ($time)->azel ($illum->universal ($time)))[1] >=
-	    $self->dip () or next;
+	    ($self->universal ($time)->azel ($illum->universal ($time)))[1] >=
+		$self->dip () or next;
 
 
 #	Calculate all the flare data.
 
-	my $flare = $self->_flare_char_list ($station, $mma, $angle,
-	    $time, $illum_vector, $station_vector);
+	    my $flare = $self->_flare_char_list ($station, $mma, $angle,
+		$time, $illum_vector, $station_vector);
 
 #	Stash the data.
 
-	push @flares, $flare
-	    if !$flare->{status} && $want{$flare->{type}};
+	    push @flares, $flare
+		if !$flare->{status} && $want{$flare->{type}};
 
 
 #	End of iteration over each MMA to calculate its flare.
@@ -806,13 +809,12 @@ while ($time < $end) {
 #	Compute the next approxiate crossing of the observer's
 #	latitude.
 
-    }
-  continue {
-    $time += $deltas[$asc];
-    $asc = 1 - $asc;
+    } continue {
+	$time += $deltas[$asc];
+	$asc = 1 - $asc;
     }
 
-@flares;
+    return @flares;
 
 }
 
@@ -862,7 +864,7 @@ Programming error - No entrance found by _flare_entrance.
     \$start = $start = @{[scalar localtime $start]}
     \$end = $end = @{[scalar localtime $end]}
 eod
-
+    return $output;
 }
 
 #	@vectors = $tle->_flare_transform_coords_list ($eci ....)
@@ -879,19 +881,22 @@ eod
 #	corresponding to all arguments (including $tle) are returned.
 
 sub _flare_transform_coords_list {
-my @ref = $_[0]->eci ();
-my $X = _list_normalize ([@ref[3 .. 5]]);
-my $Y = _list_cross_product (_list_normalize ([@ref[0 .. 2]]), $X);
-my $Z = _list_cross_product ($X, $Y);
-my @coord = ($X, $Y, $Z);
-my @rslt;
-foreach my $loc (@_) {
-    my @eci = $loc->eci ();
-    my $pos = [$eci[0] - $ref[0], $eci[1] - $ref[1], $eci[2] - $ref[2]];
-    foreach my $inx (0 .. 2) {$eci[$inx] = _list_dot_product ($pos, $coord[$inx])}
-    push @rslt, [@eci[0 .. 2]];
+    my @args = @_;
+    my @ref = $args[0]->eci ();
+    my $X = _list_normalize ([@ref[3 .. 5]]);
+    my $Y = _list_cross_product (_list_normalize ([@ref[0 .. 2]]), $X);
+    my $Z = _list_cross_product ($X, $Y);
+    my @coord = ($X, $Y, $Z);
+    my @rslt;
+    foreach my $loc (@args) {
+	my @eci = $loc->eci ();
+	my $pos = [$eci[0] - $ref[0], $eci[1] - $ref[1], $eci[2] - $ref[2]];
+	foreach my $inx (0 .. 2) {
+	    $eci[$inx] = _list_dot_product ($pos, $coord[$inx])
+	}
+	push @rslt, [@eci[0 .. 2]];
     }
-@rslt;
+    return @rslt;
 }
 
 
@@ -908,24 +913,28 @@ foreach my $loc (@_) {
 #	If there is no reflection, undef is returned.
 
 sub _flare_calculate_angle_list {
-my ($tle, $mma, $illum, $station) = @_;
+    my ($tle, $mma, $illum, $station) = @_;
 
 #	Rotate the objects so that the Main Mission Antenna of interest
 #	lies in the X-Y plane, facing in the +Z direction.
 
-my @eci;
-foreach my $inx (0 .. 2) {$eci[$inx] = _list_dot_product ($illum, $transform_vector[$mma][$inx])}
-return undef unless $eci[2] > 0;
-$eci[2] = - $eci[2];
-$illum = [$eci[0], $eci[1], $eci[2]];
-foreach my $inx (0 .. 2) {$eci[$inx] = _list_dot_product ($station, $transform_vector[$mma][$inx])}
-return undef unless $eci[2] > 0;
-$station = [$eci[0], $eci[1], $eci[2]];
+    my @eci;
+    foreach my $inx (0 .. 2) {
+	$eci[$inx] = _list_dot_product ($illum, $transform_vector[$mma][$inx])
+    }
+    return unless $eci[2] > 0;
+    $eci[2] = - $eci[2];
+    $illum = [$eci[0], $eci[1], $eci[2]];
+    foreach my $inx (0 .. 2) {
+	$eci[$inx] = _list_dot_product ($station, $transform_vector[$mma][$inx])
+    }
+    return unless $eci[2] > 0;
+    $station = [$eci[0], $eci[1], $eci[2]];
 
 #	Now calculate the angle between the illumination source and the
 #	observer as seen by the observer.
 
-return _list_angle ($station, $illum, $tle);
+    return _list_angle ($station, $illum, $tle);
 }
 
 
@@ -1276,27 +1285,28 @@ return wantarray ? %rslt : \%rslt;
 #	list references as a list.
 
 sub _invert_matrix_list {
-confess <<eod unless (grep {ref $_ eq 'ARRAY'} @_) == 3;
+    my @args = @_;
+    confess <<eod unless (grep {ref $_ eq 'ARRAY'} @args) == 3;
 Programming error -- _invert_matrix_list takes as its arguments three
        list references.
 eod
-my ($a, $b, $c) = @{$_[0]};
-my ($d, $e, $f) = @{$_[1]};
-my ($g, $h, $i) = @{$_[2]};
-my $ei_fh = $e * $i - $f * $h;
-my $fg_di = $f * $g - $d * $i;
-my $dh_eg = $d * $h - $e * $g;
-my $A = $a * $ei_fh + $b * $fg_di + $c * $dh_eg;
-confess <<eod if $A == 0;
+    my ($a, $b, $c) = @{$args[0]};
+    my ($d, $e, $f) = @{$args[1]};
+    my ($g, $h, $i) = @{$args[2]};
+    my $ei_fh = $e * $i - $f * $h;
+    my $fg_di = $f * $g - $d * $i;
+    my $dh_eg = $d * $h - $e * $g;
+    my $A = $a * $ei_fh + $b * $fg_di + $c * $dh_eg;
+    confess <<eod if $A == 0;
 Programming error -- You are trying to invert a singular matrix. This
         should not happen since our purpose is to undo a rotation.
 eod
-my @inv = (
-    [$ei_fh / $A, ($c * $h - $b * $i) / $A, ($b * $f - $c * $e) / $A],
-    [$fg_di / $A, ($a * $i - $c * $g) / $A, ($c * $d - $a * $f) / $A],
-    [$dh_eg / $A, ($b * $g - $a * $h) / $A, ($a * $e - $b * $d) / $A],
+    my @inv = (
+	[$ei_fh / $A, ($c * $h - $b * $i) / $A, ($b * $f - $c * $e) / $A],
+	[$fg_di / $A, ($a * $i - $c * $g) / $A, ($c * $d - $a * $f) / $A],
+	[$dh_eg / $A, ($b * $g - $a * $h) / $A, ($a * $e - $b * $d) / $A],
     );
-return wantarray ? @inv : \@inv;
+    return wantarray ? @inv : \@inv;
 }
 
 #	$a = _list_angle ($A, $B, $C)
@@ -1307,15 +1317,15 @@ return wantarray ? @inv : \@inv;
 #	radians) by the law of cosines, and returned.
 
 sub _list_angle {
-my $A = shift;
-my $B = shift;
-my $C = shift;
+    my $A = shift;
+    my $B = shift;
+    my $C = shift;
 
-my $a = distsq ($B, $C);
-my $b = distsq ($A, $C);
-my $c = distsq ($A, $B);
+    my $a = distsq ($B, $C);
+    my $b = distsq ($A, $C);
+    my $c = distsq ($A, $B);
 
-acos (($b + $c - $a) / sqrt (4 * $b * $c));
+    return acos (($b + $c - $a) / sqrt (4 * $b * $c));
 }
 
 #	$a = _list_cross_product ($b, $c);
@@ -1325,13 +1335,15 @@ acos (($b + $c - $a) / sqrt (4 * $b * $c));
 #	cross product of the two lists as another list reference.
 
 sub _list_cross_product {
-@{$_[0]} == 3 && @{$_[1]} == 3 or confess <<eod;
+    my ($b, $c) = @_;
+    (@$b == 3 && @$c == 3) or confess <<eod;
 Programming error - _list_cross_product arguments must be length 3.
 eod
-[   $_[0][1] * $_[1][2] - $_[0][2] * $_[1][1],
-    $_[0][2] * $_[1][0] - $_[0][0] * $_[1][2],
-    $_[0][0] * $_[1][1] - $_[0][1] * $_[1][0],
-    ]
+    return [
+	$b->[1] * $c->[2] - $b->[2] * $c->[1],
+	$b->[2] * $c->[0] - $b->[0] * $c->[2],
+	$b->[0] * $c->[1] - $b->[1] * $c->[0],
+    ];
 }
 
 #	$a = _list_dot_product ($b, $c);
@@ -1341,10 +1353,11 @@ eod
 #	dot product of the two lists as another list reference.
 
 sub _list_dot_product {
-@{$_[0]} == 3 && @{$_[1]} == 3 or confess <<eod;
+    my ($b, $c) = @_;
+    (@$b == 3 && @$c == 3) or confess <<eod;
 Programming error - _list_dot_product arguments must be length 3.
 eod
-$_[0][0] * $_[1][0] + $_[0][1] * $_[1][1] + $_[0][2] * $_[1][2]
+    return $b->[0] * $c->[0] + $b->[1] * $c->[1] + $b->[2] * $c->[2];
 }
 
 #	$a = _list_magnitude ($b);
@@ -1355,11 +1368,12 @@ $_[0][0] * $_[1][0] + $_[0][1] * $_[1][1] + $_[0][2] * $_[1][2]
 #	vector represented by the list.
 
 sub _list_magnitude {
-@{$_[0]} == 3 or confess <<eod;
+    my ($list) = @_;
+    @$list == 3 or confess <<eod;
 Programming error - _list_magnitude argument must be length 3.
 eod
-sqrt ($_[0][0] * $_[0][0] + $_[0][1] * $_[0][1] +
-	$_[0][2] * $_[0][2]);
+    return sqrt ($list->[0] * $list->[0] + $list->[1] * $list->[1] +
+	    $list->[2] * $list->[2]);
 }
 
 #	$a = _list_normalize ($b);
@@ -1370,11 +1384,12 @@ sqrt ($_[0][0] * $_[0][0] + $_[0][1] * $_[0][1] +
 #	as the vector that the original list represents.
 
 sub _list_normalize {
-@{$_[0]} == 3 or confess <<eod;
+    my ($list) = @_;
+    @$list == 3 or confess <<eod;
 Programming error - _list_normalize arguments must be length 3.
 eod
-my $mag = _list_magnitude (@_);
-[$_[0][0] / $mag, $_[0][1] / $mag, $_[0][2] / $mag]
+    my $mag = _list_magnitude ($list);
+    return [$list->[0] / $mag, $list->[1] / $mag, $list->[2] / $mag];
 }
 
 =item $value = $tle->get ($name);
@@ -1385,17 +1400,15 @@ than 'status' are delegated to the parent.
 =cut
 
 sub get {
-my $self = shift;
-my $name = shift;
+    my $self = shift;
+    my $name = shift;
 
-if (!$accessor{$name}) {
-    $self->SUPER::get ($name);
-    }
-  elsif (ref $self) {
-    $accessor{$name}->($self, $name);
-    }
-  else {
-    $accessor{$name}->(\%statatr, $name);
+    if (!$accessor{$name}) {
+	return $self->SUPER::get ($name);
+    } elsif (ref $self) {
+	return $accessor{$name}->($self, $name);
+    } else {
+	return $accessor{$name}->(\%statatr, $name);
     }
 }
 
@@ -1405,9 +1418,9 @@ if (!$accessor{$name}) {
 #	containing the given message. In list context it returns the
 #	hash itself.
 
-sub _make_status {
-my %stat = (status => @_);
-return wantarray ? %stat : \%stat;
+sub _make_status {	## no critic RequireArgUnpacking
+    my %stat = (status => @_);
+    return wantarray ? %stat : \%stat;
 }
 
 
@@ -1434,36 +1447,36 @@ If called in scalar context, a reference to the \@data list is returned.
 =cut
 
 sub reflection {
-my $self = shift;
-my $method = "_reflection_$self->{&ATTRIBUTE_KEY}{algorithm}";
-$self->$method (@_);
+    my ($self, @args) = @_;
+    my $method = "_reflection_$self->{&ATTRIBUTE_KEY}{algorithm}";
+    return $self->$method (@args);
 }
 
 
 sub _reflection_fixed {
-my $self = shift;
-my $station = shift;
-my $time = shift || time ();
-my $debug = $self->get ('debug');
-my $illum = $self->get ('illum')->universal ($time);
+    my $self = shift;
+    my $station = shift;
+    my $time = shift || time ();
+    my $debug = $self->get ('debug');
+    my $illum = $self->get ('illum')->universal ($time);
 
 
 #	Calculate whether satellite is above horizon.
 
-my ($azm, $elev, $rng) = $station->universal ($time)->
-	azel ($self->universal ($time), 0);
-return scalar _make_status (
-    sprintf ('Satellite %.2f degrees below horizon', rad2deg (-$elev)))
-    unless $elev >= 0;
+    my ($azm, $elev, $rng) = $station->universal ($time)->
+	    azel ($self->universal ($time), 0);
+    return scalar _make_status (
+	sprintf ('Satellite %.2f degrees below horizon', rad2deg (-$elev)))
+	unless $elev >= 0;
 
 
 #	Calculate whether the satellite is illuminated.
 
-my $lit = ($self->azel ($illum->universal ($time)))[1] - $self->dip ();
-return scalar _make_status (
-    sprintf ('Satellite fails to be illuminated by %.2f degrees',
-	rad2deg (-$lit)))
-    unless $lit >= 0;
+    my $lit = ($self->azel ($illum->universal ($time)))[1] - $self->dip ();
+    return scalar _make_status (
+	sprintf ('Satellite fails to be illuminated by %.2f degrees',
+	    rad2deg (-$lit)))
+	unless $lit >= 0;
 
 
 #	Transform the relevant coordinates into a coordinate system
@@ -1472,32 +1485,32 @@ return scalar _make_status (
 #	motion (and hence one of the Main Mission Antennae) is along
 #	the X axis.
 
-my ($tle_vector, $illum_vector, $station_vector) =
-    $self->_flare_transform_coords_list ($illum, $station);
+    my ($tle_vector, $illum_vector, $station_vector) =
+	$self->_flare_transform_coords_list ($illum, $station);
 
-my @rslt;
+    my @rslt;
 
-foreach my $mma (0 .. 2) {
+    foreach my $mma (0 .. 2) {
 
 #	We calculate
 #	the angle between the satellite and the reflection of the Sun,
 #	as seen by the observer. We skip to the next antenna if no
 #	reflection is generated.
 
-    my $angle = _flare_calculate_angle_list (
-	    $tle_vector, $mma, $illum_vector, $station_vector);
-    warn <<eod if $debug;
+	my $angle = _flare_calculate_angle_list (
+		$tle_vector, $mma, $illum_vector, $station_vector);
+	warn <<eod if $debug;
         MMA $mma Angle: @{[defined $angle ? rad2deg ($angle) . ' degrees' :
 		'undefined']}
 eod
-    push @rslt, defined $angle ?
-	scalar $self->_flare_char_list ($station, $mma, $angle, $time,
-	    $illum_vector, $station_vector) :
-	scalar _make_status ('Geometry does not allow reflection',
-	    mma => $mma);
+	push @rslt, defined $angle ?
+	    scalar $self->_flare_char_list ($station, $mma, $angle, $time,
+		$illum_vector, $station_vector) :
+	    scalar _make_status ('Geometry does not allow reflection',
+		mma => $mma);
     }
 
-return wantarray ? @rslt : \@rslt;
+    return wantarray ? @rslt : \@rslt;
 }
 
 
@@ -1509,20 +1522,19 @@ Attributes other than 'status' are delegated to the parent.
 =cut
 
 sub set {
-my $self = shift;
-while (@_) {
-    my $name = shift;
-    my $value  = shift;
-    if (!$mutator{$name}) {
-	$self->SUPER::set ($name, $value);
-	}
-      elsif (ref $self) {
-	$mutator{$name}->($self, $name, $value);
-	}
-      else {
-	$mutator{$name}->(\%statatr, $name, $value);
+    my ($self, @args) = @_;
+    while (@args) {
+	my $name = shift @args;
+	my $value  = shift @args;
+	if (!$mutator{$name}) {
+	    $self->SUPER::set ($name, $value);
+	} elsif (ref $self) {
+	    $mutator{$name}->($self, $name, $value);
+	} else {
+	    $mutator{$name}->(\%statatr, $name, $value);
 	}
     }
+    return $self;
 }
 
 1;
