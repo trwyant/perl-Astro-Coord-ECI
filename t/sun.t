@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -9,8 +11,15 @@ use Test;
 use Time::y2038;
 
 BEGIN {plan tests => 67}
+
+# Perl::Critic and Perl Best Practices object to the 'constant' pragma
+# because it does not interpolate. It really does, but even if not this
+# is a test, and we want the script to be fairly lightweight.
+## no critic ProhibitConstantPragma
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
+use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
+## use critic ProhibitConstantPragma
 
 my $test = 0;
 
@@ -22,8 +31,6 @@ my $test = 0;
 
 #	Note that we're not too picky about the position of the sun, since it's
 #	an extended object. One part in a thousand is less than half its disk.
-
-use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 
 foreach ([timegm (0, 0, 0, 13, 9, 92), 199.90895, .99766, 199.90988],
 	) {
@@ -257,4 +264,5 @@ eod
 	}
     }
 }
-    
+
+1;

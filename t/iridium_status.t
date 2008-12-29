@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -19,7 +21,12 @@ if ($@) {
 
 plan tests => 6;
 
+# Perl::Critic and Perl Best Practices object to the 'constant' pragma
+# because it does not interpolate. It really does, but even if not this
+# is a test, and we want the script to be fairly lightweight.
+## no critic ProhibitConstantPragma
 use constant TFMT => '%d %b %Y %H:%M:%S GMT';
+## use critic ProhibitConstantPragma
 
 my %mth;
 {	# Local symbol block
@@ -517,8 +524,10 @@ eod
     unless ($skip || $got eq $data) {
 	open (my $fh, '>', "$file.expect");
 	print $fh $data;
+	close $fh;
 	open ($fh, '>', "$file.got");
 	print $fh $got;
+	close $fh;
 	warn <<eod;
 #
 # Expected and gotten information written to $file.expect and
@@ -549,3 +558,4 @@ defined (my $mn = $mth{lc $mon}) or
 return (undef, $rslt, $got, timegm ($sec, $min, $hr, $day, $mn, $yr));
 }
 
+1;

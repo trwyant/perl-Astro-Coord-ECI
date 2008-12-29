@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -27,3 +29,5 @@ all_pod_coverage_ok ({
 	also_private => [ qr{^[[:upper:]\d_]+$}, ],
 	coverage_class => 'Pod::Coverage::CountParents'
     });
+
+1;

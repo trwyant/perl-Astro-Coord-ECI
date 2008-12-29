@@ -5,20 +5,20 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.002';
+our $VERSION = '0.002_01';
 
 sub new {
-my $class = shift;
-$class = ref $class if ref $class;
-my $self = $class->SUPER::new ();
-$self->set (model => 'null', @_);
-$self;
+    my ($class, @args) = @_;
+    $class = ref $class if ref $class;
+    my $self = $class->SUPER::new ();
+    $self->set (model => 'null', @args);
+    return $self;
 }
 
 *_nodelegate_nodelegate = \&nodelegate;
-sub nodelegate {$_[0]};
+sub nodelegate {return $_[0]}	## no critic RequireArgUnpacking
 
-sub delegate {$_[0]};
+sub delegate {return $_[0]}	## no critic RequireArgUnpacking
 
 sub rebless {}	# No-op rebless() to defeat class changes.
 

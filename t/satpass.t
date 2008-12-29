@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -11,6 +13,7 @@ if ($@) {
 
 t::Satpass::satpass (*DATA);
 
+1;
 __END__
 
 st get direct

@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -9,7 +11,13 @@ use Test;
 use Time::y2038;
 
 BEGIN {plan tests => 36}
+
+# Perl::Critic and Perl Best Practices object to the 'constant' pragma
+# because it does not interpolate. It really does, but even if not this
+# is a test, and we want the script to be fairly lightweight.
+## no critic ProhibitConstantPragma
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
+## no critic ProhibitConstantPragma
 
 my $test = 0;
 
@@ -235,4 +243,6 @@ eod
 	}
     }
 }
+
+1;
 __END__

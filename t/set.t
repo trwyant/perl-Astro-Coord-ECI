@@ -1,3 +1,4 @@
+package main;
 
 use strict;
 use warnings;
@@ -8,7 +9,7 @@ use t::SetDelegate;
 use Test;
 use Time::y2038;
 
-our $VERSION = '0.002_02';
+our $VERSION = '0.002_03';
 
 plan tests => 53, todo => [];
 
@@ -26,8 +27,8 @@ eod
     my $skip = $set ? '' : 'Failed to instantiate set.';
 
     foreach ([first => 2, 6, 2006], [second => 4, 6, 2006]) {
-        $@ = undef;
 	my $which = shift @$_;
+	eval {1};	# Clear error indicator.
 	eval {$set->add (dummy (timegm (0, 0, 0, @$_), 99999,
 		'Anonymous'))}
 	    unless $skip;
@@ -80,10 +81,10 @@ eod
 	my $time = timegm (0, 0, 0, splice @$_, 0, 3);
 	my $expect = timegm (0, 0, 0, @$_);
 	$test++;
-	$@ = undef;
 	my ($tle, $got);
+	eval {1};	# Clear error indicator.
 	$skip or $tle = eval {$set->universal ($time)};
-	$tle && !$@ and $got = eval {$tle->get ('epoch')};
+	($tle && !$@) and $got = eval {$tle->get ('epoch')};
 	print <<eod;
 #
 # Test $test - Set universal() $what set members - resultant epoch.
@@ -145,7 +146,7 @@ eod
 eod
     skip ($skip, @members == 2);
 
-    $@ = undef;
+    eval {1};	# Clear error indicator.
     eval {$set->set_all (name => 'Nemo')} unless $skip;
     $test++;
     print <<eod;
@@ -356,15 +357,17 @@ eod
 
 {	# Local symbol block.
 
-my ($id, $name);
-INIT {($id, $name) = (99999, 'Anonymous')};
-sub dummy {
-    (my $epoch = shift) or die <<eod;
+    my ($id, $name);
+    INIT {($id, $name) = (99999, 'Anonymous')};
+    sub dummy {
+	(my $epoch = shift) or die <<eod;
 Error - You must specify the epoch.
 eod
-    $id = $_[0] if $_[0];
-    $name = $_[1] if $_[1];
-    Astro::Coord::ECI::TLE->new (id => $id,
-	name => $name || 'Anonymous', epoch => $epoch, model => 'null');
+	$id = shift || $id;
+	$name = shift || $name;
+	return Astro::Coord::ECI::TLE->new (id => $id,
+	    name => $name || 'Anonymous', epoch => $epoch, model => 'null');
     }
 }	# End of local symbol block.
+
+1;

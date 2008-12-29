@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -42,30 +44,34 @@ eod
     }
 
 sub model {
-my ($tsince, @std) = split '\s+', $_[0];
-$tsince += 0;
-my $time = $tle->get ('epoch') + $tsince * 60;
-## my @calc = $tle->$model ($time);
-my @calc = $tle->$model ($time)->eci;
-foreach (my $iter8 = 0; $iter8 < 6; $iter8++) {
-    $test++;
-    print "# Test $test: tsince = $tsince. $title[$iter8] std: $std[$iter8], calc $calc[$iter8]\n";
-    my $denom = max (abs ($std[$iter8]), $mindenom[$iter8]);
-    ok (abs (($std[$iter8] - $calc[$iter8]) / $denom) < .00001);
+    my ($tsince, @std) = split '\s+', shift;
+    $tsince += 0;
+    my $time = $tle->get ('epoch') + $tsince * 60;
+    ## my @calc = $tle->$model ($time);
+    my @calc = $tle->$model ($time)->eci;
+    foreach (my $iter8 = 0; $iter8 < 6; $iter8++) {
+	$test++;
+	print "# Test $test: tsince = $tsince. $title[$iter8] ",
+	    "std: $std[$iter8], calc $calc[$iter8]\n";
+	my $denom = max (abs ($std[$iter8]), $mindenom[$iter8]);
+	ok (abs (($std[$iter8] - $calc[$iter8]) / $denom) < .00001);
     }
+    return;
 }
 
 sub model_setup {
-$tle ||= (Astro::Coord::ECI::TLE->parse (@data))[0];
-$model = $_[0];
-print <<eod;
+    $tle ||= (Astro::Coord::ECI::TLE->parse (@data))[0];
+    $model = shift;
+    print <<eod;
 #
 # **** $model ****
 # $data[0]
 # $data[1]
 eod
-\&model;
+    return \&model;
 }
+
+1;
 __END__
 
 -rem

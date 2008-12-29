@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -26,3 +28,5 @@ eod
 }
 
 all_pod_files_ok ();
+
+1;

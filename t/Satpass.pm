@@ -1,16 +1,14 @@
-#!/usr/local/bin/perl
+package t::Satpass;
 
 use strict;
 use warnings;
-
-package t::Satpass;
 
 use Config;
 use Cwd;
 use File::Spec;
 use Test;
 
-our $VERSION = '0.003_02';
+
 
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
@@ -49,13 +47,13 @@ sub satpass {
 	return;
     }
 
-    $| = 1;
+    local $| = 1;
 
 #	Set up the testing hook in satpass.
 # >>>	This interface is undocumented, and unsupported except for its
 # >>>	use in this test script.
 
-    no warnings qw{once};
+    no warnings qw{once};	## no critic ProhibitNoWarnings
     $Astro::satpass::Test::Hook = \&tester;
     $Astro::satpass::Test::Handle = $handle;
     use warnings qw{once};
@@ -88,19 +86,20 @@ sub satpass {
     $skip = '';
     do $script;
     print $@ if $@;
+    return;
 }
 
 #	not_available(module ...) is a utility to determine whether the
 #	given modules are available. If so, it loads them. If not, it
 #	returns a message for the first module that can not be loaded.
 
-sub not_available {
+sub not_available {	## no critic RequireArgUnpacking
     foreach my $module (@_) {
 	# Perl::Critic wants us not to do this, but using 'require $fn'
 	# requires us to duplicate the bareword logic. That was not too
 	# bad when .pm was the only option for the file type, but when
 	# they added .pmc things got complex, and they might change again.
-	eval "require $module";	## no critic
+	eval "require $module";	## no critic ProhibitStringyEval
 	return "Module $module can not be loaded." if $@;
     }
     return '';
@@ -112,11 +111,12 @@ sub not_available {
 #	the results of not_available ('LWP::UserAgent').
 
 sub not_reachable {
+    my @args = @_;
     my $ok = not_available ('LWP::UserAgent');
     return $ok if $ok;
     my $ua = LWP::UserAgent->new ()
 	or return "Cannot instantiate LWP::UserAgent.\n$@";
-    foreach my $url (@_) {
+    foreach my $url (@args) {
 	my $resp = $ua->get ($url);
 	return $resp->status_line unless $resp->is_success;
     }
@@ -206,8 +206,9 @@ eod
 	s/-read\b\s*//m and do {
 	    my $fh;
 	    open ($fh, '<', File::Spec->catfile (cwd, $_));
-	    local $/ = undef;
+	    local $/ = undef;	# Slurp mode
 	    $output = <$fh>;
+	    close $fh;
 	    next;
 	};
 
@@ -284,6 +285,7 @@ eod
 	    my $fh;
 	    open ($fh, '>', File::Spec->catfile (getcwd, $_));
 	    print $fh $data;
+	    close $fh;
 	    next;
 	};
 

@@ -1,25 +1,29 @@
+package main;	# To make Perl::Critic happy.
+
 use strict;
 use warnings;
 
-package main;	# To make Perl::Critic happy.
-
-package Astro::Coord::ECI::TLE::Period;
+# The following is a quick ad-hoc way to get an object with a specified
+# period.
+package Astro::Coord::ECI::TLE::Period;	## no critic ProhibitMultiplePackages
 
 use base qw{Astro::Coord::ECI::TLE};
 
 {
     my $pkg = __PACKAGE__;
     sub period {
-	my $self = shift;
-	if (@_) {
-	    $self->{$pkg}{period} = shift;
+	my ($self, @args) = @_;
+	if (@args) {
+	    $self->{$pkg}{period} = shift @args;
+	    return;
 	} else {
 	    return $self->{$pkg}{period};
 	}
     }
 }
 
-package main;
+# And now, back to our regularly-scheduled test.
+package main;	## no critic ProhibitMultiplePackages
 
 use Astro::Coord::ECI::TLE;
 use Test;
@@ -60,6 +64,8 @@ while (<DATA>) {
 eod
     ok(abs ($want - $got) <= $tolerance);
 }
+
+1;
 __DATA__
 
 # Worked examples are hard to find. This one is pretty approximate.

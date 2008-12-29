@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -5,7 +7,7 @@ use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Iridium;
 use Test;
 
-our $VERSION = '0.001';
+our $VERSION = '0.001_01';
 
 plan tests => 31;
 
@@ -109,12 +111,15 @@ eod
 }
 
 sub arglist {
-    my $method  = shift;
+    my ($method, @args) = @_;
     my @fmt;
-    for (my $inx = 0; $inx < @_; $inx += 2) {
+    for (my $inx = 0; $inx < @args; $inx += 2) {
 	my $incr = $inx + 1;
-	push @fmt, $incr >= @_ ? "'$_[$inx]'" : "$_[$inx] => " .
-	    ($_[$incr] =~ m/\D/ || !$_[$incr] ? "'$_[$incr]'" : $_[$incr]); 
+	push @fmt, $incr >= @args ? "'$args[$inx]'" : "$args[$inx] => " .
+	    ($args[$incr] =~ m/\D/ || !$args[$incr] ?
+		"'$args[$incr]'" : $args[$incr]); 
     }
-    "$method (" . join (', ', @fmt) . ')';
+    return "$method (" . join (', ', @fmt) . ')';
 }
+
+1;

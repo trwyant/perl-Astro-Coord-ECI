@@ -1,7 +1,9 @@
+package main;
+
 use strict;
 use warnings;
 
-our $VERSION = '0.005_01';
+our $VERSION = '0.005_02';
 
 use t::Satpass;
 
@@ -26,6 +28,7 @@ if ($@) {	# Shouldn't happen since SOAP::Lite loaded.
 
 t::Satpass::satpass (*DATA);
 
+1;
 __END__
 
 ## -skip not_available ('SOAP::Lite') || not_reachable ('http://rpc.geocoder.us/')

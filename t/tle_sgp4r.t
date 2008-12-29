@@ -1,8 +1,11 @@
+package main;
+
 use strict;
 use warnings;
 
 use Astro::Coord::ECI::TLE;
 use File::Spec;
+use IO::File;
 use Test;
 
 my $tle_file = File::Spec->catfile ('t', 'sgp4-ver.tle');
@@ -59,7 +62,9 @@ while (<DATA>) {
     $object_tolerance{$oid} = \@toler;
 }
 
-open (my $rslt, '<', 't/sgp4r.out') or die "Failed to open t/sgp4r.out: $!";
+#### open (my $rslt, '<', 't/sgp4r.out')
+my $rslt = IO::File->new('t/sgp4r.out', '<')
+    or die "Failed to open t/sgp4r.out: $!";
 my $satnum = qr{^\s*(\d+)\s*xx\s*$}i;
 my $test = 0;
 {
@@ -78,6 +83,7 @@ my @satrecs;
     local $/ = undef;	# Slurp mode.
     open (my $fh, '<', $tle_file) or die "Failed to open $tle_file: $!";
     my $data = <$fh>;
+    close $fh;
     @satrecs = Astro::Coord::ECI::TLE->parse ($data);
 }
 
@@ -149,9 +155,12 @@ eod
 		and $max_delta[$inx] = $delta[$inx];
 	}
     }
+    return;
 }
 
-sub bail_out {
+# We're just printing @_. NOTE that we are not allowed to modify the
+# contents of @_, though.
+sub bail_out {	## no critic RequireArgUnpacking
     print '1..0 # skip ', @_, "\n";
     warn <<eod;
 
@@ -173,12 +182,17 @@ eod
     exit;
 }
 
-sub prompt {
+# We're just printing @_. NOTE that we are not allowed to modify the
+# contents of @_, though.
+sub prompt {	## no critic RequireArgUnpacking
     print STDERR @_;
-    return unless defined (my $input = <STDIN>);
+    return
+	# We're a test module, and want to be fairly lightweight.
+	unless defined (my $input = <STDIN>);	## no critic ProhibitExplicitStdin
     chomp $input;
     return $input;
 }
 
+1;
 __DATA__
 ## 23599	1	1	1	.001	.001	.001

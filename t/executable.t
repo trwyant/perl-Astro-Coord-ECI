@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -13,7 +15,7 @@ my $manifest = maniread ();
 
 my @check;
 foreach (sort keys %$manifest) {
-    m/^bin\b/ || m/^eg\b/ and next;
+    (m/^bin\b/ || m/^eg\b/) and next;
     push @check, $_;
 }
 
@@ -27,6 +29,9 @@ foreach my $file (@check) {
     print "# Test $test - $file\n";
     open (my $fh, '<', $file) or die "Unable to open $file: $!\n";
     local $_ = <$fh>;
+    close $fh;
     my @stat = stat $file;
     skip ($skip, !($stat[2] & oct(111) || m/^#!.*perl/));
 }
+
+1;

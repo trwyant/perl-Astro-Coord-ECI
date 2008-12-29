@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -12,11 +14,13 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.010_02';
+our $VERSION = '0.010_03';
 
 add_stopwords (<DATA>);
 
 all_pod_files_spelling_ok ();
+
+1;
 __DATA__
 Above's
 accreted

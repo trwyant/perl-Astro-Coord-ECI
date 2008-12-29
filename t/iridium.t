@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -127,6 +129,7 @@ eod
     skip ($skip, abs ($expect - $got) <= $tolerance);
     }
 
+1;
 #	If you wish to run the flare prediction tests
 
 __END__
@@ -151,3 +154,5 @@ foreach (
 eod
     skip ($skip, $expect == $got);
     }
+
+1;

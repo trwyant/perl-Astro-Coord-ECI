@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -29,10 +31,11 @@ eod
     }
 }
 sub comment {
+    my @args = @_;
     my @rslt;
-    foreach (@_) {
+    foreach (@args) {
 	if (defined $_) {
-	    push @rslt, join ('', map "# $_\n", grep $_, split "\n", $_);
+	    push @rslt, join ('', map {"# $_\n"} grep {$_} split "\n", $_);
 	} else {
 	    push @rslt, "undef\n";
 	}
@@ -40,6 +43,8 @@ sub comment {
     }
     return wantarray ? @rslt : $rslt[0];
 }
+
+1;
 __END__
 1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    87
 2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  1058
