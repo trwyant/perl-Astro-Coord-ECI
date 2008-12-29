@@ -21,12 +21,7 @@ if ($@) {
 
 plan tests => 6;
 
-# Perl::Critic and Perl Best Practices object to the 'constant' pragma
-# because it does not interpolate. It really does, but even if not this
-# is a test, and we want the script to be fairly lightweight.
-## no critic ProhibitConstantPragma
 use constant TFMT => '%d %b %Y %H:%M:%S GMT';
-## use critic ProhibitConstantPragma
 
 my %mth;
 {	# Local symbol block

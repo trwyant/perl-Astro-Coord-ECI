@@ -11,13 +11,8 @@ use Time::y2038;
 
 BEGIN {plan tests => 65}
 
-# Perl::Critic and Perl Best Practices object to the 'constant' pragma
-# because it does not interpolate. It really does, but even if not this
-# is a test, and we want the script to be fairly lightweight.
-## no critic ProhibitConstantPragma
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
-## use critic ProhibitConstantPragma
 
 Astro::Coord::ECI->set (debug => 0);
 
@@ -431,12 +426,7 @@ eod
 
 #	Based on Meeus' example 21.b.
 
-# Perl::Critic and Perl Best Practices object to the 'constant' pragma
-# because it does not interpolate. It really does, but even if not this
-# is a test, and we want the script to be fairly lightweight.
-## no critic ProhibitConstantPragma
 use constant LIGHTYEAR2KILOMETER => 9.4607e12;
-## use critic ProhibitConstantPragma
 
 foreach ([41.054063, 49.227750, 36.64, PERL2000, 41.547214, 49.348483,
 		timegm (0, 0, 0, 13, 10, 128) + .19 * 86400],
@@ -532,13 +522,7 @@ eod
 	}
     }
 
-
-# Perl::Critic and Perl Best Practices object to the 'constant' pragma
-# because it does not interpolate. It really does, but even if not this
-# is a test, and we want the script to be fairly lightweight.
-## no critic ProhibitConstantPragma
 use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
-## use critic ProhibitConstantPragma
 
 #	Tests 55 - 57: Ecliptic lat/long to ECI
 #	Tests: equatorial() (and ecliptic())

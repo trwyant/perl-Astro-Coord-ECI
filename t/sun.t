@@ -12,14 +12,9 @@ use Time::y2038;
 
 BEGIN {plan tests => 67}
 
-# Perl::Critic and Perl Best Practices object to the 'constant' pragma
-# because it does not interpolate. It really does, but even if not this
-# is a test, and we want the script to be fairly lightweight.
-## no critic ProhibitConstantPragma
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
-## use critic ProhibitConstantPragma
 
 my $test = 0;
 

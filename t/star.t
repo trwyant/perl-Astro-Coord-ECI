@@ -14,13 +14,8 @@ BEGIN {plan tests => 2}
 
 my $test = 0;
 
-# Perl::Critic and Perl Best Practices object to the 'constant' pragma
-# because it does not interpolate. It really does, but even if not this
-# is a test, and we want the script to be fairly lightweight.
-## no critic ProhibitConstantPragma
 use constant LIGHTYEAR2KILOMETER => 9.4607e12;
 use constant SECSPERYEAR => 365.25 * 86400;
-## use critic ProhibitConstantPragma
 
 #	Tests 1 - 2: Position of star at given time.
 
