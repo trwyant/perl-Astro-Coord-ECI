@@ -39,12 +39,12 @@ The following methods should be considered public:
 
 =cut
 
+package Astro::Coord::ECI::Sun;
+
 use strict;
 use warnings;
 
-package Astro::Coord::ECI::Sun;
-
-our $VERSION = '0.007_05';
+our $VERSION = '0.007_06';
 
 use base qw{Astro::Coord::ECI};
 
@@ -90,21 +90,19 @@ otherwise.
 =cut
 
 sub new {
-my $class = ref $_[0] || $_[0];
-shift;
-if ($Singleton && $weaken && $class->isa(__PACKAGE__)) {
-    if ($object) {
-	$object->set (@_) if @_;
-	return $object;
+    my ($class, @args) = @_;
+    ref $class and $class = ref $class;
+    if ($Singleton && $weaken && $class->isa(__PACKAGE__)) {
+	if ($object) {
+	    $object->set (@args) if @args;
+	    return $object;
+	} else {
+	    my $self = $object = $class->SUPER::new (%static, @args);
+	    $weaken->($object);
+	    return $self;
 	}
-      else {
-	my $self = $object = $class->SUPER::new (%static, @_);
-	$weaken->($object);
-	return $self;
-	}
-    }
-  else {
-    $class->SUPER::new (%static, @_);
+    } else {
+	return $class->SUPER::new (%static, @args);
     }
 }
 
@@ -146,20 +144,20 @@ my @quarters = ('Spring equinox', 'Summer solstice', 'Fall equinox',
 	'Winter solstice');
 
 sub almanac {
-my $self = shift;
-my $location = shift;
-embodies ($location, 'Astro::Coord::ECI') or
-    croak <<eod;
+    my $self = shift;
+    my $location = shift;
+    embodies ($location, 'Astro::Coord::ECI') or
+	croak <<eod;
 Error - The first argument of the almanac() method must be a member of
         the Astro::Coord::ECI class, or a subclass thereof.
 eod
 
-my $start = shift || $self->universal;
-my $end = shift || $start + 86400;
+    my $start = shift || $self->universal;
+    my $end = shift || $start + 86400;
 
-my @almanac;
+    my @almanac;
 
-foreach (
+    foreach (
 	[$location, next_elevation => [$self, 0, 1], 'horizon',
 		['Sunset', 'Sunrise']],
 	[$location, next_meridian => [$self], 'transit',
@@ -168,17 +166,17 @@ foreach (
 		'twilight', ['end twilight', 'begin twilight']],
 	[$self, next_quarter => [], 'quarter',
 		[@quarters]],
-	) {
-    my ($obj, $method, $arg, $event, $descr) = @$_;
-    $obj->universal ($start);
-    while (1) {
-	my ($time, $which) = $obj->$method (@$arg);
-	last if $time >= $end;
-	push @almanac, [$time, $event, $which, $descr->[$which]]
-	    if $descr->[$which];
+    ) {
+	my ($obj, $method, $arg, $event, $descr) = @$_;
+	$obj->universal ($start);
+	while (1) {
+	    my ($time, $which) = $obj->$method (@$arg);
+	    last if $time >= $end;
+	    push @almanac, [$time, $event, $which, $descr->[$which]]
+		if $descr->[$which];
 	}
     }
-return sort {$a->[0] <=> $b->[0]} @almanac;
+    return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
 =item @almanac = $sun->almanac_hash($location, $start, $end);
@@ -225,8 +223,8 @@ implemented.
 =cut
 
 sub ecliptic_longitude {
-my $self = shift;
-($self->ecliptic ())[1];
+    my $self = shift;
+    return ($self->ecliptic ())[1];
 }
 
 
@@ -238,13 +236,13 @@ the last time set.
 =cut
 
 sub geometric_longitude {
-my $self = shift;
-croak <<eod unless defined $self->{_sun_geometric_longitude};
+    my $self = shift;
+    croak <<eod unless defined $self->{_sun_geometric_longitude};
 Error - You must set the time of the Sun object before the geometric
         longitude can be returned.
 eod
 
-$self->{_sun_geometric_longitude};
+    return $self->{_sun_geometric_longitude};
 }
 
 
@@ -279,37 +277,37 @@ L<http://en.wikipedia.org/wiki/Limb_darkening>.
     my $mean_mag = -26.8;
 
     sub magnitude {
-    my ($self, $theta, $omega) = @_;
-    return $mean_mag unless defined $theta;
-    unless (defined $omega) {
-	my @eci = $self->eci ();
-	$omega = $self->get ('diameter') / 2 /
-	    sqrt (distsq (\@eci[0 .. 2], [0, 0, 0]));
+	my ($self, $theta, $omega) = @_;
+	return $mean_mag unless defined $theta;
+	unless (defined $omega) {
+	    my @eci = $self->eci ();
+	    $omega = $self->get ('diameter') / 2 /
+		sqrt (distsq (\@eci[0 .. 2], [0, 0, 0]));
 	}
-    unless (defined $central_mag) {
-	my $sum = 0;
-	my $quotient = 2;
-	foreach my $a (@limb_darkening) {
-	    $sum += $a / $quotient++;
+	unless (defined $central_mag) {
+	    my $sum = 0;
+	    my $quotient = 2;
+	    foreach my $a (@limb_darkening) {
+		$sum += $a / $quotient++;
 	    }
-	$central_mag = $mean_mag - intensity_to_magnitude (2 * $sum);
+	    $central_mag = $mean_mag - intensity_to_magnitude (2 * $sum);
 	}
-    my $intens = 0;
-    my $point;
-    if ($theta < $omega) {
-	my $costheta = cos ($theta);
-	my $cosomega = cos ($omega);
-	my $sinomega = sin ($omega);
-	my $cospsi = sqrt ($costheta * $costheta -
-		$cosomega * $cosomega) / $sinomega;
-	my $psiterm = 1;
-	foreach my $a (@limb_darkening) {
-	    $intens += $a * $psiterm;
-	    $psiterm *= $cospsi;
+	my $intens = 0;
+	my $point;
+	if ($theta < $omega) {
+	    my $costheta = cos ($theta);
+	    my $cosomega = cos ($omega);
+	    my $sinomega = sin ($omega);
+	    my $cospsi = sqrt ($costheta * $costheta -
+		    $cosomega * $cosomega) / $sinomega;
+	    my $psiterm = 1;
+	    foreach my $a (@limb_darkening) {
+		$intens += $a * $psiterm;
+		$psiterm *= $cospsi;
 	    }
-	$point = $central_mag + intensity_to_magnitude ($intens);
+	    $point = $central_mag + intensity_to_magnitude ($intens);
 	}
-    return wantarray ? ($point, $intens, $central_mag) : $point;
+	return wantarray ? ($point, $intens, $central_mag) : $point;
     }
 }	# End local symbol block.
 
@@ -338,30 +336,32 @@ minutes.
 use constant QUARTER_INC => 86400 * 85;	# 85 days.
 
 sub next_quarter {
-my $self = shift;
-my $quarter = (defined $_[0] ? shift :
-    floor ($self->ecliptic_longitude () / PIOVER2) + 1) % 4;
-my $begin;
-while (floor ($self->ecliptic_longitude () / PIOVER2) == $quarter) {
-    $begin = $self->dynamical;
-    $self->dynamical ($begin + QUARTER_INC);
+    my ($self, $quarter) = @_;
+    $quarter = (defined $quarter ? $quarter :
+	floor ($self->ecliptic_longitude () / PIOVER2) + 1) % 4;
+    my $begin;
+    while (floor ($self->ecliptic_longitude () / PIOVER2) == $quarter) {
+	$begin = $self->dynamical;
+	$self->dynamical ($begin + QUARTER_INC);
     }
-while (floor ($self->ecliptic_longitude () / PIOVER2) != $quarter) {
-    $begin = $self->dynamical;
-    $self->dynamical ($begin + QUARTER_INC);
+    while (floor ($self->ecliptic_longitude () / PIOVER2) != $quarter) {
+	$begin = $self->dynamical;
+	$self->dynamical ($begin + QUARTER_INC);
     }
-my $end = $self->dynamical ();
+    my $end = $self->dynamical ();
 
-while ($end - $begin > 1) {
-    my $mid = floor (($begin + $end) / 2);
-    my $qq = floor ($self->dynamical ($mid)->ecliptic_longitude () / PIOVER2);
-    ($begin, $end) = $qq == $quarter ?
-	($begin, $mid) : ($mid, $end);
+    while ($end - $begin > 1) {
+	my $mid = floor (($begin + $end) / 2);
+	my $qq = floor ($self->dynamical ($mid)->ecliptic_longitude () /
+	    PIOVER2);
+	($begin, $end) = $qq == $quarter ?
+	    ($begin, $mid) : ($mid, $end);
     }
 
-$self->dynamical ($end);
+    $self->dynamical ($end);
 
-wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal;
+    return wantarray ? (
+	$self->universal, $quarter, $quarters[$quarter]) : $self->universal;
 }
 
 =item $hash_reference = $moon->next_quarter_hash($want);
@@ -384,8 +384,8 @@ through 2 of the list returned by next_quarter().
 =cut
 
 sub next_quarter_hash {
-    my $self = shift;
-    my ($time, $quarter, $desc) = $self->next_quarter(@_);
+    my ($self, @args) = @_;
+    my ($time, $quarter, $desc) = $self->next_quarter(@args);
     my %hash = (
 	body => $self,
 	almanac => {
@@ -407,7 +407,7 @@ per Appendix I (pg 408) of Jean Meeus' "Astronomical Algorithms,"
 
 =cut
 
-sub period {31558149.7632}	# 365.256363 * 86400
+sub period {return 31558149.7632}	# 365.256363 * 86400
 
 
 =item $sun->time_set ()
@@ -442,29 +442,27 @@ use constant SUN_C3_0 => deg2rad (0.000289);
 use constant SUN_LON_2000 => deg2rad (- 0.01397);
 
 sub time_set {
-my $self = shift;
-
-my $time = $self->dynamical;
-
+    my $self = shift;
+    my $time = $self->dynamical;
 
 #	The following algorithm is from Meeus, chapter 25, page, 163 ff.
 
-my $T = jcent2000 ($time);				# Meeus (25.1)
-my $L0 = mod2pi (deg2rad ((.0003032 * $T + 36000.76983) * $T	# Meeus (25.2)
-	+ 280.46646));
-my $M = mod2pi (deg2rad (((-.0001537) * $T + 35999.05029)	# Meeus (25.3)
-	* $T + 357.52911));
-my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;	# Meeus (25.4)
-my $C  = ((SUN_C1_2 * $T + SUN_C1_1) * $T + SUN_C1_0) * sin ($M)
-	+ (SUN_C2_1 * $T + SUN_C2_0) * sin (2 * $M)
-	+ SUN_C3_0 * sin (3 * $M);
-my $O = $self->{_sun_geometric_longitude} = $L0 + $C;
-my $omega = mod2pi (deg2rad (125.04 - 1934.156 * $T));
-my $lambda = mod2pi ($O - deg2rad (0.00569 + 0.00478 * sin ($omega)));
-my $nu = $M + $C;
-my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
-	* AU;
-$self->{debug} and print <<eod;
+    my $T = jcent2000 ($time);				# Meeus (25.1)
+    my $L0 = mod2pi(deg2rad((.0003032 * $T + 36000.76983) * $T	# Meeus (25.2)
+	    + 280.46646));
+    my $M = mod2pi(deg2rad(((-.0001537) * $T + 35999.05029)	# Meeus (25.3)
+	    * $T + 357.52911));
+    my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;# Meeus (25.4)
+    my $C  = ((SUN_C1_2 * $T + SUN_C1_1) * $T + SUN_C1_0) * sin ($M)
+	    + (SUN_C2_1 * $T + SUN_C2_0) * sin (2 * $M)
+	    + SUN_C3_0 * sin (3 * $M);
+    my $O = $self->{_sun_geometric_longitude} = $L0 + $C;
+    my $omega = mod2pi (deg2rad (125.04 - 1934.156 * $T));
+    my $lambda = mod2pi ($O - deg2rad (0.00569 + 0.00478 * sin ($omega)));
+    my $nu = $M + $C;
+    my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
+	    * AU;
+    $self->{debug} and print <<eod;
 Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
     T  = $T
     L0 = @{[_rad2deg ($L0)]} degrees
@@ -477,10 +475,10 @@ Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
     lambda = @{[_rad2deg ($lambda)]} degrees
 eod
 
-$self->ecliptic (0, $lambda, $R);
-## $self->set (equinox_dynamical => $time);
-$self->equinox_dynamical ($time);
-$self;
+    $self->ecliptic (0, $lambda, $R);
+    ## $self->set (equinox_dynamical => $time);
+    $self->equinox_dynamical ($time);
+    return $self;
 }
 
 1;
