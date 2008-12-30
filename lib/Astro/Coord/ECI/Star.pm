@@ -45,12 +45,12 @@ The following methods should be considered public:
 
 =cut
 
+package Astro::Coord::ECI::Star;
+
 use strict;
 use warnings;
 
-package Astro::Coord::ECI::Star;
-
-our $VERSION = '0.005_02';
+our $VERSION = '0.005_03';
 
 use base qw{Astro::Coord::ECI};
 
@@ -77,9 +77,10 @@ worked example is in equatorial coordinates.
 =cut
 
 sub new {
-my $class = shift;
-my $self = $class->SUPER::new (angularvelocity => 0,
-    @_);
+    my ($class, @args) = @_;
+    ref $class and $class = ref $class;
+    return $class->SUPER::new (angularvelocity => 0,
+	@args);
 }
 
 
@@ -111,36 +112,36 @@ potentially returned:
 =cut
 
 sub almanac {
-my $self = shift;
-my $location = shift;
-embodies ($location, 'Astro::Coord::ECI') or
-    croak <<eod;
+    my $self = shift;
+    my $location = shift;
+    embodies ($location, 'Astro::Coord::ECI') or
+	croak <<eod;
 Error - The first argument of the almanac() method must be a member of
         the Astro::Coord::ECI class, or a subclass thereof.
 eod
 
-my $start = shift || $self->universal;
-my $end = shift || $start + 86400;
+    my $start = shift || $self->universal;
+    my $end = shift || $start + 86400;
 
-my @almanac;
+    my @almanac;
 
-my $name = $self->get ('name') || $self->get ('id') || 'star';
-foreach (
+    my $name = $self->get ('name') || $self->get ('id') || 'star';
+    foreach (
 	[$location, next_elevation => [$self, 0, 1], 'horizon',
 		["$name sets", "$name rises"]],
 	[$location, next_meridian => [$self], 'transit',
 		[undef, "$name transits meridian"]],
-	) {
-    my ($obj, $method, $arg, $event, $descr) = @$_;
-    $obj->universal ($start);
-    while (1) {
-	my ($time, $which) = $obj->$method (@$arg);
-	last unless $time && $time < $end;
-	push @almanac, [$time, $event, $which, $descr->[$which]]
-	    if $descr->[$which];
+    ) {
+	my ($obj, $method, $arg, $event, $descr) = @$_;
+	$obj->universal ($start);
+	while (1) {
+	    my ($time, $which) = $obj->$method (@$arg);
+	    last unless $time && $time < $end;
+	    push @almanac, [$time, $event, $which, $descr->[$which]]
+		if $descr->[$which];
 	}
     }
-return sort {$a->[0] <=> $b->[0]} @almanac;
+    return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
 =item @almanac = $star->almanac_hash($location, $start, $end);
@@ -209,9 +210,8 @@ position of the star in question.
 =cut
 
 sub position {
-    my $self = shift;
-    return @{$self->{_star_position}} unless @_;
-    my @args = @_;
+    my ($self, @args) = @_;
+    return @{$self->{_star_position}} unless @args;
     $args[2] ||= PARSEC;
     @args < 5 and splice @args, 3, 0, 0, 0, 0;
     $args[3] ||= 0;
@@ -223,7 +223,7 @@ sub position {
     # CAVEAT: time_set() picks the equinox directly out of the above
     # hash.
     $self->dynamical ($args[6]);
-    $self;
+    return $self;
 }
 
 =item $star->time_set()
@@ -249,27 +249,28 @@ setting.
 use constant CONSTANT_OF_ABERRATION => deg2rad (20.49552 / 3600);
 
 sub time_set {
-my $self = shift;
+    my $self = shift;
 
-$self->{_star_position} or croak <<eod;
+    $self->{_star_position} or croak <<eod;
 Error - The position of the star has not been set.
 eod
 
-my ($ra, $dec, $range, $mra, $mdc, $mrg, $epoch) = @{$self->{_star_position}};
+    my ($ra, $dec, $range, $mra, $mdc, $mrg, $epoch) = @{
+	$self->{_star_position}};
 
-my $time = $self->universal;
-my $end = $self->dynamical;
+    my $time = $self->universal;
+    my $end = $self->dynamical;
 
 #	Account for the proper motion of the star, and set our
 #	equatorial coordinates to the result.
 
-my $deltat = $end - $epoch;
-#### $ra += $mra * $deltat;
-$ra = mod2pi($ra + $mra * $deltat);
-$dec += $mdc * $deltat;
-$range += $mrg * $deltat;
-##!! $self->set (equinox => $epoch);
-$self->equatorial ($ra, $dec, $range);
+    my $deltat = $end - $epoch;
+    #### $ra += $mra * $deltat;
+    $ra = mod2pi($ra + $mra * $deltat);
+    $dec += $mdc * $deltat;
+    $range += $mrg * $deltat;
+    ##!! $self->set (equinox => $epoch);
+    $self->equatorial ($ra, $dec, $range);
 
 #	NOTE: The call to precess() used to be here. I have no idea why,
 #	other than that I thought I could go back and forth between
@@ -283,40 +284,40 @@ $self->equatorial ($ra, $dec, $range);
 
 #	Get ecliptic coordinates, and correct for nutation.
 
-my ($beta, $lambda) = $self->ecliptic ();
-my $delta_psi = nutation_in_longitude ($self->dynamical);
-$lambda += $delta_psi;
+    my ($beta, $lambda) = $self->ecliptic ();
+    my $delta_psi = nutation_in_longitude ($self->dynamical);
+    $lambda += $delta_psi;
 
 
 #	Calculate and add in the abberation terms (Meeus 23.2);
 
-my $T = jcent2000 ($time);			# Meeus (22.1)
-my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;	# Meeus (25.4)
-my $pi = deg2rad ((0.00046 * $T + 1.71946) * $T + 102.93735);
-my $sun = $self->{_star_sun} ||= Astro::Coord::ECI::Sun->new ();
-$sun->universal ($time);
+    my $T = jcent2000 ($time);			# Meeus (22.1)
+    my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;# Meeus (25.4)
+    my $pi = deg2rad ((0.00046 * $T + 1.71946) * $T + 102.93735);
+    my $sun = $self->{_star_sun} ||= Astro::Coord::ECI::Sun->new ();
+    $sun->universal ($time);
 
-my $geoterm = $sun->geometric_longitude () - $lambda;
-my $periterm = $pi - $lambda;
-my $deltalamda = ($e * cos ($periterm) - cos ($geoterm)) *
-	CONSTANT_OF_ABERRATION / cos ($beta);
-my $deltabeta = - (sin ($geoterm) - $e * sin ($periterm)) * sin ($beta) *
-	CONSTANT_OF_ABERRATION;
-$lambda += $deltalamda;
-$beta += $deltabeta;
+    my $geoterm = $sun->geometric_longitude () - $lambda;
+    my $periterm = $pi - $lambda;
+    my $deltalamda = ($e * cos ($periterm) - cos ($geoterm)) *
+	    CONSTANT_OF_ABERRATION / cos ($beta);
+    my $deltabeta = - (sin ($geoterm) - $e * sin ($periterm)) * sin ($beta) *
+	    CONSTANT_OF_ABERRATION;
+    $lambda += $deltalamda;
+    $beta += $deltabeta;
 
-$self->ecliptic ($beta, $lambda, $range);
+    $self->ecliptic ($beta, $lambda, $range);
 
 #	Set the equinox to that implied when our position was set.
 
-## $self->set (equinox_dynamical => $epoch);
-$self->equinox_dynamical ($epoch);
+    ## $self->set (equinox_dynamical => $epoch);
+    $self->equinox_dynamical ($epoch);
 
 #	Precess ourselves to the current equinox.
 
-$self->precess_dynamical ($end);
+    $self->precess_dynamical ($end);
 
-$self;
+    return $self;
 }
 
 
