@@ -62,12 +62,12 @@ interpretation of the date you give.
 
 =cut
 
+package Astro::Coord::ECI::Utils;
+
 use strict;
 use warnings;
 
-package Astro::Coord::ECI::Utils;
-
-our $VERSION = '0.009_02';
+our $VERSION = '0.009_03';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -112,13 +112,11 @@ value.
 =cut
 
 sub acos {
-
     abs ($_[0]) > 1 and confess <<eod;
 Programming error - Trying to take the arc cosine of a number greater
         than 1.
 eod
-
-    atan2 (sqrt (1 - $_[0] * $_[0]), $_[0])
+    return atan2 (sqrt (1 - $_[0] * $_[0]), $_[0])
 }
 
 
@@ -129,7 +127,7 @@ value.
 
 =cut
 
-sub asin {atan2 ($_[0], sqrt (1 - $_[0] * $_[0]))}
+sub asin {return atan2 ($_[0], sqrt (1 - $_[0] * $_[0]))}
 
 
 =item $magnitude = atmospheric_extinction ($elevation, $height);
@@ -160,12 +158,12 @@ values given even in the absence of cloud cover.
 
 
 sub atmospheric_extinction {
-my ($elevation, $height) = @_;
-my $cosZ = cos (PIOVER2 - $elevation);
-my $X = 1/($cosZ + 0.025 * exp (-11 * $cosZ));	# Green 1
-my $Aray = 0.1451 * exp (-$height / 7.996);	# Green 2
-my $Aaer = 0.120 * exp (-$height / 1.5);	# Green 4
-($Aray + $Aaer + 0.016) * $X;	# Green 5, 6
+    my ($elevation, $height) = @_;
+    my $cosZ = cos (PIOVER2 - $elevation);
+    my $X = 1/($cosZ + 0.025 * exp (-11 * $cosZ));	# Green 1
+    my $Aray = 0.1451 * exp (-$height / 7.996);	# Green 2
+    my $Aaer = 0.120 * exp (-$height / 1.5);	# Green 4
+    return ($Aray + $Aaer + 0.016) * $X;	# Green 5, 6
 }
 
 
@@ -201,12 +199,13 @@ BEGIN {
 }
 
 sub date2jd {
-    unshift @_, 0 while @_ < 6;
-    my ($sec, $min, $hr, $day, $mon, $yr) = @_;
+    my @args = @_;
+    unshift @args, 0 while @args < 6;
+    my ($sec, $min, $hr, $day, $mon, $yr) = @args;
     $mon++;		# Algorithm expects month 1-12.
     $yr += 1900;	# Algorithm expects zero-based year.
-    $yr < -4712 and croak "Error - Invalid year $yr";
-    $mon < 1 || $mon > 12 and croak "Error - Invalid month $mon";
+    ($yr < -4712) and croak "Error - Invalid year $yr";
+    ($mon < 1 || $mon > 12) and croak "Error - Invalid month $mon";
     if ($mon < 3) {
 	--$yr;
 	$mon += 12;
@@ -220,7 +219,7 @@ sub date2jd {
 	$jd = floor (365.25 * ($yr + 4716)) +
 	floor (30.6001 * ($mon + 1)) + $day - 1524.5 +
 	((($sec || 0) / 60 + ($min || 0)) / 60 + ($hr || 0)) / 24;
-    $jd;
+    return $jd;
 }
 
 use constant JD_OF_EPOCH => date2jd (gmtime (0));
@@ -236,14 +235,16 @@ If less than 6 arguments are provided, zeroes will be prepended to the
 argument list as needed.
 
 The functionality is the same as B<Time::Local::timegm>, but this
-function lacks timegm's limited date range.
+function lacks timegm's limited date range. These days, though,
+Time::y2038::timegm is probably preferred over this subroutine.
 
 =cut
 
 sub date2epoch {
-    unshift @_, 0 while @_ < 6;
-    my ($sec, $min, $hr, $day, $mon, $yr) = @_;
-    (date2jd ($day, $mon, $yr) - JD_OF_EPOCH) * SECSPERDAY +
+    my @args = @_;
+    unshift @args, 0 while @args < 6;
+    my ($sec, $min, $hr, $day, $mon, $yr) = @args;
+    return (date2jd ($day, $mon, $yr) - JD_OF_EPOCH) * SECSPERDAY +
     (($hr || 0) * 60 + ($min || 0)) * 60 + ($sec || 0);
 }
 
@@ -254,7 +255,7 @@ This subroutine converts degrees to radians.
 
 =cut
 
-sub deg2rad {$_[0] * PI / 180}
+sub deg2rad {return $_[0] * PI / 180}
 
 
 =item $value = distsq (\@coord1, \@coord2)
@@ -267,19 +268,20 @@ to square the result again.
 =cut
 
 sub distsq {
-ref $_[0] eq 'ARRAY' && ref $_[1] eq 'ARRAY' && @{$_[0]} == @{$_[1]} or
-    confess <<eod;
+    my ($a, $b) = @_;
+    (ref $a eq 'ARRAY' && ref $b eq 'ARRAY' && @$a == @$b) or
+	confess <<eod;
 Programming error - Both arguments to distsq must be  references to
-        lists of the same length.
+        arrays of the same length.
 eod
 
-my $sum = 0;
-my $size = @{$_[0]};
-for (my $inx = 0; $inx < $size; $inx++) {
-    my $delta = $_[0][$inx] - $_[1][$inx];
-    $sum += $delta * $delta;
+    my $sum = 0;
+    my $size = @$a;
+    for (my $inx = 0; $inx < $size; $inx++) {
+	my $delta = $a->[$inx] - $b->[$inx];
+	$sum += $delta * $delta;
     }
-$sum
+    return $sum
 }
 
 
@@ -298,11 +300,12 @@ Edition, Chapter 10, page 78.
 =cut
 
 sub dynamical_delta {
-my $year = (gmtime $_[0])[5] + 1900;
-my $t = ($year - 2000) / 100;
-my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
-(25.3 * $t + 102) * $t + 102		# Meeus (10.2)
-	+ $correction;			# Meeus' correction.
+    my ($time) = @_;
+    my $year = (gmtime $time)[5] + 1900;
+    my $t = ($year - 2000) / 100;
+    my $correction = .37 * ($year - 2100);	# Meeus' correction to (10.2)
+    return (25.3 * $t + 102) * $t + 102		# Meeus (10.2)
+	    + $correction;			# Meeus' correction.
 }
 
 =item $boolean = embodies ($thingy, $class)
@@ -321,7 +324,7 @@ call it 'represents', both for the author and for the Perl interpreter.
 sub embodies {
     my ($thingy, $class) = @_;
     my $code = eval {$thingy->can('represents')};
-    $code ? $code->($thingy, $class) : undef;
+    return $code ? $code->($thingy, $class) : undef;
 }
 
 
@@ -353,8 +356,9 @@ page 65.
 =cut
 
 sub epoch2datetime {
-    my $day = floor ($_[0] / SECSPERDAY);
-    my $sec = $_[0] - $day * SECSPERDAY;
+    my ($time) = @_;
+    my $day = floor ($time / SECSPERDAY);
+    my $sec = $time - $day * SECSPERDAY;
     ($day, my $mon, my $yr, my $greg, my $leap) = jd2date (
 	my $jd = $day + JD_OF_EPOCH);
     $day = floor ($day + .5);
@@ -385,28 +389,28 @@ Chapter 28, page 185.
 
 sub equation_of_time {
 
-my $time = shift;
+    my $time = shift;
 
-my $epsilon = obliquity ($time);
-my $y = tan ($epsilon / 2);
-$y *= $y;
+    my $epsilon = obliquity ($time);
+    my $y = tan($epsilon / 2);
+    $y *= $y;
 
 
 #	The following algorithm is from Meeus, chapter 25, page, 163 ff.
 
-my $T = jcent2000 ($time);				# Meeus (25.1)
-my $L0 = mod2pi (deg2rad ((.0003032 * $T + 36000.76983) * $T	# Meeus (25.2)
-	+ 280.46646));
-my $M = mod2pi (deg2rad (((-.0001537) * $T + 35999.05029)	# Meeus (25.3)
-	* $T + 357.52911));
-my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;	# Meeus (25.4)
+    my $T = jcent2000($time);				# Meeus (25.1)
+    my $L0 = mod2pi(deg2rad((.0003032 * $T + 36000.76983) * $T	# Meeus (25.2)
+	    + 280.46646));
+    my $M = mod2pi(deg2rad(((-.0001537) * $T + 35999.05029)	# Meeus (25.3)
+	    * $T + 357.52911));
+    my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;# Meeus (25.4)
 
-my $E = $y * sin (2 * $L0) - 2 * $e * sin ($M) +
-    4 * $e * $y * sin ($M) * cos (2 * $L0) -
-    $y * $y * .5 * sin (4 * $L0) -
-    1.25 * $e * $e * sin (2 * $M);				# Meeus (28.3)
+    my $E = $y * sin (2 * $L0) - 2 * $e * sin ($M) +
+	4 * $e * $y * sin ($M) * cos (2 * $L0) -
+	$y * $y * .5 * sin (4 * $L0) -
+	1.25 * $e * $e * sin (2 * $M);				# Meeus (28.3)
 
-$E * SECSPERDAY / TWOPI;	# The formula gives radians.
+    return $E * SECSPERDAY / TWOPI;	# The formula gives radians.
 }
 
 
@@ -445,15 +449,15 @@ sub find_first_true {
     my $iterator = (
 	$end > $begin ?
 	sub {$end - $begin > $limit} :
-	sub {$begin - $end > $limit});
-##    while ($end - $begin > $limit) {
+	sub {$begin - $end > $limit}
+    );
     while ($iterator->()) {
 	my $mid = $limit >= 1 ?
 	    floor (($begin + $end) / 2) : ($begin + $end) / 2;
 	($begin, $end) = ($test->($mid)) ?
 	    ($begin, $mid) : ($mid, $end);
     }
-    $end;
+    return $end;
 }
 
 
@@ -473,7 +477,7 @@ ratio greater than 1.
 {	# Begin local symbol block
     my $intensity_to_mag_factor;	# Calculate only if needed.
     sub intensity_to_magnitude {
-    - ($intensity_to_mag_factor ||= 2.5 / log (10)) * log ($_[0]);
+	return - ($intensity_to_mag_factor ||= 2.5 / log (10)) * log ($_[0]);
     }
 }
 
@@ -501,7 +505,8 @@ zero-based, not 1-based, and the year is 1900-based.
 =cut
 
 sub jd2date {
-    my $mod_jd = $_[0] + 0.5;
+    my ($time) = @_;
+    my $mod_jd = $time + 0.5;
     my $Z = floor ($mod_jd);
     my $F = $mod_jd - $Z;
     my $A = (my $julian = $Z < $JD_GREGORIAN) ? $Z : do {
@@ -515,7 +520,7 @@ sub jd2date {
     my $day = $B - $D - floor (30.6001 * $E) + $F;
     my $mon = $E < 14 ? $E - 1 : $E - 13;
     my $yr = $mon > 2 ? $C - 4716 : $C - 4715;
-    ($day, $mon - 1, $yr - 1900, !$julian, ($julian ? !($yr % 4) : (
+    return ($day, $mon - 1, $yr - 1900, !$julian, ($julian ? !($yr % 4) : (
 		$yr % 400 ? $yr % 100 ? !($yr % 4) : 0 : 1)));
 ##	% 400 ? 1 : $yr % 100 ? 0 : !($yr % 4))));
 }
@@ -551,8 +556,8 @@ sub jd2datetime {
 
 =cut
 
-    $_[0] = ($_[0] - JD_OF_EPOCH) * SECSPERDAY;
-    goto &epoch2datetime;
+    my ($time) = @_;
+    return epoch2datetime(($time - JD_OF_EPOCH) * SECSPERDAY);
 }
 
 
@@ -565,9 +570,7 @@ that calculation.
 
 =cut
 
-sub jcent2000 {
-jday2000 ($_[0]) / 36525;
-}
+sub jcent2000 {return jday2000 ($_[0]) / 36525}
 
 
 =item $jd = jday2000 ($time);
@@ -582,9 +585,7 @@ Algorithms", 2nd Edition, Chapter 7, page 62.
 
 =cut
 
-sub jday2000 {
-($_[0] - PERL2000) / SECSPERDAY			#   Meeus p. 62
-}
+sub jday2000 {return ($_[0] - PERL2000) / SECSPERDAY}
 
 
 =item $jd = julianday ($time);
@@ -596,9 +597,7 @@ Algorithms", 2nd Edition, Chapter 7, page 62.
 
 =cut
 
-sub julianday {
-jday2000($_[0]) + 2_451_545.0	#   Meeus p. 62
-}
+sub julianday {return jday2000($_[0]) + 2_451_545.0}
 
 =item $rslt = load_module ($module_name)
 
@@ -617,7 +616,10 @@ to load the same module simply give the cached results.
 	my  ($module) = @_;
 	exists $error{$module} and croak $error{$module};
 	exists $rslt{$module} and return $rslt{$module};
-	$rslt{$module} = eval "require $module";
+	# I considered Module::Load here, but it appears not to support
+	# .pmc files. No, it's not an issue at the moment, but it may be
+	# if Perl 6 becomes a reality.
+	$rslt{$module} = eval "require $module";	## no critic ProhibitStringyEval
 	$@ and croak ($error{$module} = $@);
 	return $rslt{$module};
     }
@@ -640,13 +642,13 @@ unless (eval {require Scalar::Util; Scalar::Util->import
 	local $_ = shift;
 
 	# checks from perlfaq4
-	return 0 if !defined($_) or ref($_);
+	return 0 if !defined($_) || ref($_);
 	return 1 if (/^[+-]?\d+$/); # is a +/- integer
 	return 1 if (/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/); # a C float
 	return 1 if ($] >= 5.008 and /^(Inf(inity)?|NaN)$/i)
 	    or ($] >= 5.006001 and /^Inf$/i);
 
-	0;
+	return 0;
     };
 }
 
@@ -704,9 +706,7 @@ $theta < TWOPI.
 
 =cut
 
-sub mod2pi {
-$_[0] - floor ($_[0] / TWOPI) * TWOPI;
-}
+sub mod2pi {return $_[0] - floor ($_[0] / TWOPI) * TWOPI}
 
 
 =item $delta_psi = nutation_in_longitude ($time)
@@ -722,18 +722,18 @@ Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 
 sub nutation_in_longitude {
 
-my $time = shift;
-my $T = jcent2000 ($time);	# Meeus (22.1)
+    my $time = shift;
+    my $T = jcent2000 ($time);	# Meeus (22.1)
 
-my $omega = mod2pi (deg2rad ((($T / 450000 + .0020708) * $T -
-	1934.136261) * $T + 125.04452));
+    my $omega = mod2pi (deg2rad ((($T / 450000 + .0020708) * $T -
+	    1934.136261) * $T + 125.04452));
 
-my $L = mod2pi (deg2rad (36000.7698 * $T + 280.4665));
-my $Lprime = mod2pi (deg2rad (481267.8813 * $T + 218.3165));
-my $delta_psi = deg2rad ((-17.20 * sin ($omega) - 1.32 * sin (2 * $L)
-	- 0.23 * sin (2 * $Lprime) + 0.21 * sin (2 * $omega))/3600);
+    my $L = mod2pi (deg2rad (36000.7698 * $T + 280.4665));
+    my $Lprime = mod2pi (deg2rad (481267.8813 * $T + 218.3165));
+    my $delta_psi = deg2rad ((-17.20 * sin ($omega) - 1.32 * sin (2 * $L)
+	    - 0.23 * sin (2 * $Lprime) + 0.21 * sin (2 * $omega))/3600);
 
-$delta_psi;
+    return $delta_psi;
 }
 
 
@@ -750,18 +750,18 @@ Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 
 sub nutation_in_obliquity {
 
-my $time = shift;
-my $T = jcent2000 ($time);	# Meeus (22.1)
+    my $time = shift;
+    my $T = jcent2000 ($time);	# Meeus (22.1)
 
-my $omega = mod2pi (deg2rad ((($T / 450000 + .0020708) * $T -
-	1934.136261) * $T + 125.04452));
+    my $omega = mod2pi (deg2rad ((($T / 450000 + .0020708) * $T -
+	    1934.136261) * $T + 125.04452));
 
-my $L = mod2pi (deg2rad (36000.7698 * $T + 280.4665));
-my $Lprime = mod2pi (deg2rad (481267.8813 * $T + 218.3165));
-my $delta_epsilon = deg2rad ((9.20 * cos ($omega) + 0.57 * cos (2 * $L) +
-	0.10 * cos (2 * $Lprime) - 0.09 * cos (2 * $omega))/3600);
+    my $L = mod2pi (deg2rad (36000.7698 * $T + 280.4665));
+    my $Lprime = mod2pi (deg2rad (481267.8813 * $T + 218.3165));
+    my $delta_epsilon = deg2rad ((9.20 * cos ($omega) + 0.57 * cos (2 * $L) +
+	    0.10 * cos (2 * $Lprime) - 0.09 * cos (2 * $omega))/3600);
 
-$delta_epsilon;
+    return $delta_epsilon;
 }
 
 
@@ -780,15 +780,15 @@ use constant E0BASE => (21.446 / 60 + 26) / 60 + 23;
 
 sub obliquity {
 
-my $time = shift;
+    my $time = shift;
 
-my $T = jcent2000 ($time);	# Meeus (22.1)
+    my $T = jcent2000 ($time);	# Meeus (22.1)
 
-my $delta_epsilon = nutation_in_obliquity ($time);
+    my $delta_epsilon = nutation_in_obliquity ($time);
 
-my $epsilon0 = deg2rad (((0.001813 * $T - 0.00059) * $T - 46.8150)
-	* $T / 3600 + E0BASE);
-$epsilon0 + $delta_epsilon;
+    my $epsilon0 = deg2rad (((0.001813 * $T - 0.00059) * $T - 46.8150)
+	    * $T / 3600 + E0BASE);
+    return $epsilon0 + $delta_epsilon;
 }
 
 
@@ -803,10 +803,9 @@ Edition, Chapter 22, pages 143ff.
 =cut
 
 sub omega {
-my $T = jcent2000 (shift);	# Meeus (22.1)
-
-my $omega = mod2pi (deg2rad ((($T / 450000 + .0020708) * $T -
-	1934.136261) * $T + 125.04452));
+    my $T = jcent2000 (shift);	# Meeus (22.1)
+    return mod2pi (deg2rad ((($T / 450000 + .0020708) * $T -
+	    1934.136261) * $T + 125.04452));
 }
 
 
@@ -817,7 +816,7 @@ in degrees.
 
 =cut
 
-sub rad2deg {$_[0] / PI * 180}
+sub rad2deg {return $_[0] / PI * 180}
 
 
 =begin comment
@@ -829,10 +828,10 @@ sub rad2deg {$_[0] / PI * 180}
 #	the rotated coordinates 
 
 sub _rotate {
-my ($theta, $x, $y) = @_;
-my $costh = cos ($theta);
-my $sinth = sin ($theta);
-($x * $costh - $y * $sinth, $x * $sinth + $y * $costh);
+    my ($theta, $x, $y) = @_;
+    my $costh = cos ($theta);
+    my $sinth = sin ($theta);
+    return ($x * $costh - $y * $sinth, $x * $sinth + $y * $costh);
 }
 
 =end comment
@@ -843,7 +842,7 @@ This subroutine computes the tangent of the given angle in radians.
 
 =cut
 
-sub tan {sin ($_[0]) / cos ($_[0])}
+sub tan {return sin ($_[0]) / cos ($_[0])}
 
 
 =item $value = theta0 ($time);
@@ -855,7 +854,8 @@ a standard Perl time).
 =cut
 
 sub theta0 {
-thetag (timegm (0, 0, 0, (gmtime $_[0])[3 .. 5]));
+    my ($time) = @_;
+    return thetag (timegm (0, 0, 0, (gmtime $time)[3 .. 5]));
 }
 
 
@@ -873,10 +873,11 @@ Edition, equation 12.4, page 88.
 #	Meeus, pg 88, equation 12.4, converted to radians and Perl dates.
 
 sub thetag {
-my $T = jcent2000 ($_[0]);
-mod2pi (4.89496121273579 + 6.30038809898496 *
-	jday2000 ($_[0]))
-	+ (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
+    my ($time) = @_;
+    my $T = jcent2000 ($time);
+    return mod2pi (4.89496121273579 + 6.30038809898496 *
+	    jday2000 ($time))
+	    + (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
 }
 
 1;
