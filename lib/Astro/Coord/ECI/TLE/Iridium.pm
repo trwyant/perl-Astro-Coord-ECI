@@ -117,7 +117,7 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.006_05';
+our $VERSION = '0.006_06';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -1424,7 +1424,7 @@ sub get {
 #	containing the given message. In list context it returns the
 #	hash itself.
 
-sub _make_status {	## no critic RequireArgUnpacking
+sub _make_status {
     my %stat = (status => @_);
     return wantarray ? %stat : \%stat;
 }

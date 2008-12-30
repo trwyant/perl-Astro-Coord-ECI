@@ -16,9 +16,9 @@ sub new {
 }
 
 *_nodelegate_nodelegate = \&nodelegate;
-sub nodelegate {return $_[0]}	## no critic RequireArgUnpacking
+sub nodelegate {return $_[0]}
 
-sub delegate {return $_[0]}	## no critic RequireArgUnpacking
+sub delegate {return $_[0]}
 
 sub rebless {}	# No-op rebless() to defeat class changes.
 

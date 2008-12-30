@@ -158,9 +158,7 @@ eod
     return;
 }
 
-# We're just printing @_. NOTE that we are not allowed to modify the
-# contents of @_, though.
-sub bail_out {	## no critic RequireArgUnpacking
+sub bail_out {
     print '1..0 # skip ', @_, "\n";
     warn <<eod;
 
@@ -182,10 +180,9 @@ eod
     exit;
 }
 
-# We're just printing @_. NOTE that we are not allowed to modify the
-# contents of @_, though.
-sub prompt {	## no critic RequireArgUnpacking
-    print STDERR @_;
+sub prompt {
+    my @args = @_;	# For Perl::Critic
+    print STDERR @args;
     return
 	# We're a test module, and want to be fairly lightweight.
 	unless defined (my $input = <STDIN>);	## no critic ProhibitExplicitStdin

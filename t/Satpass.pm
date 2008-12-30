@@ -93,7 +93,7 @@ sub satpass {
 #	given modules are available. If so, it loads them. If not, it
 #	returns a message for the first module that can not be loaded.
 
-sub not_available {	## no critic RequireArgUnpacking
+sub not_available {
     foreach my $module (@_) {
 	# Perl::Critic wants us not to do this, but using 'require $fn'
 	# requires us to duplicate the bareword logic. That was not too
