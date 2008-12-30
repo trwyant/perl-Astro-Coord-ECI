@@ -117,7 +117,7 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.006_04';
+our $VERSION = '0.006_05';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -241,7 +241,11 @@ the object is assumed capable of generating flares.
 
 sub after_reblessing {
     my ($self, $attrs) = @_;
-    defined $attrs or $attrs = {};
+    if (defined $attrs) {
+	$attrs = {%$attrs};
+    } else {
+	$attrs = {};
+    }
     ref $attrs eq 'HASH' or croak <<eod;
 Error - The argument of after_reblessing(), if any, must be a hash
         reference.
@@ -252,7 +256,8 @@ eod
     foreach my $key (keys %$attrs) {
 	delete $attrs->{$key} unless exists $mutator{$key};
     }
-    return $self->set (%$attrs);
+    $self->set (%$attrs);
+    return;
 }
 
 
@@ -278,7 +283,8 @@ attribute.
 
 sub before_reblessing {
     my ($self) = @_;
-    return delete $self->{&ATTRIBUTE_KEY};
+    delete $self->{&ATTRIBUTE_KEY};
+    return;
 }
 
 
