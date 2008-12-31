@@ -64,12 +64,12 @@ The following methods should be considered public.
 
 =cut
 
+package Astro::Coord::ECI;
+
 use strict;
 use warnings;
 
-package Astro::Coord::ECI;
-
-our $VERSION = '0.019_04';
+our $VERSION = '0.019_05';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -105,14 +105,15 @@ to the set() method once the object has been instantiated.
 =cut
 
 sub new {
-my $class = shift;
-my $self = bless {%static}, $class;
-@_ and $self->set (@_);
-$self->{debug} and do {
-    local $Data::Dumper::Terse = 1;
-    print "Debug - Instantiated ", Dumper ($self);
+    my ($class, @args) = @_;
+    ref $class and $class = ref $class;
+    my $self = bless {%static}, $class;
+    @args and $self->set (@args);
+    $self->{debug} and do {
+	local $Data::Dumper::Terse = 1;
+	print "Debug - Instantiated ", Dumper ($self);
     };
-$self;
+    return $self;
 }
 
 
@@ -141,8 +142,8 @@ sub angle {
     my $self = shift;
     my $B = shift;
     my $C = shift;
-    ref $B && $B->represents (__PACKAGE__)
-	&& ref $C && $C->represents (__PACKAGE__)
+    (ref $B && $B->represents (__PACKAGE__)
+	&& ref $C && $C->represents (__PACKAGE__))
 	or croak <<eod;
 Error - Both arguments must represent @{[__PACKAGE__]} objects.
 eod
@@ -154,7 +155,7 @@ eod
     my $sinra = sin (($ra2 - $ra1)/2);
     my $a = $sindec * $sindec +
 	cos ($dec1) * cos ($dec2) * $sinra * $sinra;
-    2 * atan2 (sqrt ($a), sqrt (1 - $a));
+    return 2 * atan2 (sqrt ($a), sqrt (1 - $a));
 
 }
 
@@ -168,7 +169,7 @@ sub _angle_non_inertial {
     my $Z = $z2 - $z1;
     my $lon = atan2 ($Y, $X);
     my $lat = mod2pi (atan2 ($Z, sqrt ($X * $X + $Y * $Y)));
-    ($lon, $lat);
+    return ($lon, $lat);
 }
 
 
@@ -180,7 +181,7 @@ attribute, or undef if the attribute name is not valid.
 
 =cut
 
-sub attribute {$mutator{$_[1]} ? __PACKAGE__ : undef}
+sub attribute {return $mutator{$_[1]} ? __PACKAGE__ : undef}
 
 
 =item ($azimuth, $elevation, $range) = $coord->azel ($coord2, $upper);
@@ -212,64 +213,61 @@ needing to refer to Dr. Kelso's work to get the signs right.
 =cut
 
 sub azel {
-my $self = shift;
-my $cache = ($self->{_ECI_cache} ||= {});
-$self->{debug} and do {
-    local $Data::Dumper::Terse = 1;
-    print "Debug azel - ", Dumper ($self, @_);
+    my ($self, $trn2, $upper) = @_;
+    my $cache = ($self->{_ECI_cache} ||= {});
+    $self->{debug} and do {
+	local $Data::Dumper::Terse = 1;
+	print "Debug azel - ", Dumper ($self, $trn2, $upper);
     };
-my $trn2 = shift;
-my $upper = shift;
 
-my ($azimuth, $range, $elevation);
-if ($self->{inertial}) {
+    my ($azimuth, $range, $elevation);
+    if ($self->{inertial}) {
 
-    my @obj = $trn2->eci (@_);
-    my $time = $trn2->universal;
-    my @base = $self->eci ($time);
-    my ($phi, $lambda, $h) = $self->geodetic ();
-    my @delta;
+	my @obj = $trn2->eci ();
+	my $time = $trn2->universal;
+	my @base = $self->eci ($time);
+	my ($phi, $lambda, $h) = $self->geodetic ();
+	my @delta;
 
 
 #	Kelso algorithm from
 #	http://celestrak.com/columns/v02n02/
 
-    for (my $i = 0; $i < 6; $i++) {
-	$delta[$i] = $obj[$i] - $base[$i];
+	for (my $i = 0; $i < 6; $i++) {
+	    $delta[$i] = $obj[$i] - $base[$i];
 	}
-    my $thetag = thetag ($time);
-    my $theta = mod2pi ($thetag + $lambda);
-    my $sinlat = ($cache->{inertial}{sinphi} ||= sin ($phi));
-    my $sintheta = sin ($theta);
-    my $coslat = ($cache->{inertial}{cosphi} ||= cos ($phi));
-    my $costheta = cos ($theta);
-    my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
-    my $ts = $sinlat * $rterm - $coslat * $delta[2];
-    my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
-    my $tz = $coslat * $rterm + $sinlat * $delta[2];
-    $azimuth = mod2pi (atan2 ($te, - $ts));
-    $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
-	$delta[2] * $delta[2]);
-    $elevation = asin ($tz / $range);
+	my $thetag = thetag ($time);
+	my $theta = mod2pi ($thetag + $lambda);
+	my $sinlat = ($cache->{inertial}{sinphi} ||= sin ($phi));
+	my $sintheta = sin ($theta);
+	my $coslat = ($cache->{inertial}{cosphi} ||= cos ($phi));
+	my $costheta = cos ($theta);
+	my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
+	my $ts = $sinlat * $rterm - $coslat * $delta[2];
+	my $te = - $sintheta * $delta[0] + $costheta * $delta[1];
+	my $tz = $coslat * $rterm + $sinlat * $delta[2];
+	$azimuth = mod2pi (atan2 ($te, - $ts));
+	$range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
+	    $delta[2] * $delta[2]);
+	$elevation = asin ($tz / $range);
 
 
 #	End of Kelso algorithm.
 
-    }
-  else {	# !$self->{inertial}
+    } else {	# !$self->{inertial}
 
-###    $self->universal ($trn2->universal ()) if $self->{inertial};
-    my ($sinphi, $cosphi, $sinlamda, $coslamda) = @{
-	$cache->{fixed}{geodetic_funcs} ||= do {
-	    my ($phi, $lambda) = $self->geodetic ();
-	    [sin ($phi), cos ($phi), sin ($lambda), cos ($lambda)]
+###	$self->universal ($trn2->universal ()) if $self->{inertial};
+	my ($sinphi, $cosphi, $sinlamda, $coslamda) = @{
+	    $cache->{fixed}{geodetic_funcs} ||= do {
+		my ($phi, $lambda) = $self->geodetic ();
+		[sin ($phi), cos ($phi), sin ($lambda), cos ($lambda)]
 	    }
 	};
 
-    my @base = ($self->ecef ())[0, 1, 2];
-    my @tgt = ($trn2->ecef ())[0, 1, 2];
-    my @delta;
-    foreach my $ix (0 .. 2) {$delta[$ix] = $tgt[$ix] - $base[$ix]}
+	my @base = ($self->ecef ())[0, 1, 2];
+	my @tgt = ($trn2->ecef ())[0, 1, 2];
+	my @delta;
+	foreach my $ix (0 .. 2) {$delta[$ix] = $tgt[$ix] - $base[$ix]}
 
 #	We need to rotate the coordinate system in the X-Y plane by the
 #	longitude, followed by a rotation in the Z-X plane by 90
@@ -296,11 +294,11 @@ if ($self->{inertial}) {
 #	|  cos(lambda)cos(phi)  sin(lambda)cos(phi)  sin(phi) |
 #	+-                                                   -+
 
-    my $lclx = $coslamda * $sinphi * $delta[0] +
-	$sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
-    my $lcly = - $sinlamda * $delta[0] + $coslamda * $delta[1];
-    my $lclz = $coslamda * $cosphi * $delta[0] +
-	$sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
+	my $lclx = $coslamda * $sinphi * $delta[0] +
+	    $sinlamda * $sinphi * $delta[1] - $cosphi * $delta[2];
+	my $lcly = - $sinlamda * $delta[0] + $coslamda * $delta[1];
+	my $lclz = $coslamda * $cosphi * $delta[0] +
+	    $sinlamda * $cosphi * $delta[1] + $sinphi * $delta[2];
 
 #	We end with a Cartesian coordinate system with the observer at
 #	the origin, with X pointing to the South, Y to the East, and Z
@@ -308,22 +306,22 @@ if ($self->{inertial}) {
 #	using the definition of those terms. Note that X gets negated
 #	in the computation of azimuth, since azimuth is from the North.
 
-    $azimuth = mod2pi (atan2 ($lcly, -$lclx));
-    $range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
-	$delta[2] * $delta[2]);
-    $elevation = $range ? asin ($lclz / $range) : 0;
+	$azimuth = mod2pi (atan2 ($lcly, -$lclx));
+	$range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
+	    $delta[2] * $delta[2]);
+	$elevation = $range ? asin ($lclz / $range) : 0;
 
     }
 
 #	Adjust for upper limb and refraction if needed.
 
-$upper and
-    $elevation += atan2 ($trn2->get ('diameter') / 2, $range);
+    $upper and
+	$elevation += atan2 ($trn2->get ('diameter') / 2, $range);
 
-$self->{refraction} and
-    $elevation = $self->correct_for_refraction ($elevation);
+    $self->{refraction} and
+	$elevation = $self->correct_for_refraction ($elevation);
 
-($azimuth, $elevation, $range);
+    return ($azimuth, $elevation, $range);
 }
 
 
@@ -341,7 +339,7 @@ if (eval {require Storable; 1}) {
 } else {
     my $reftype = sub {	# Not general, but maybe good enough.
 	my $thing = shift;
-	ref $thing or return undef;
+	ref $thing or return;
 	(my $string = "$thing") =~ s/.*=//;
 	$string =~ s/\(.*//;
 	$string;
@@ -405,8 +403,8 @@ suggested by Meeus.
 =cut
 
 sub correct_for_refraction {
-my $self = shift;
-my $elevation = shift;
+    my $self = shift;
+    my $elevation = shift;
 
 
 #	We can exclude anything with an elevation <= -1 degree because
@@ -414,7 +412,7 @@ my $elevation = shift;
 #	not portable to (e.g.) Venus.
 
 
-if ($elevation > MINUSONEDEGREE) {
+    if ($elevation > MINUSONEDEGREE) {
 
 
 #	Thorsteinn Saemundsson's algorithm for refraction, as reported
@@ -432,10 +430,10 @@ if ($elevation > MINUSONEDEGREE) {
 #	  the letter "Thorn." Similarly, the "ae" in "Saemund" is
 #	  supposed to be a ligature (i.e. squished into one letter).
 
-    my $deg = rad2deg ($elevation);
-    my $correction = 1.02 / tan (deg2rad ($deg + 10.3/($deg + 5.11))) +
-	.0019279;
-    $self->get ('debug') and print <<eod;
+	my $deg = rad2deg ($elevation);
+	my $correction = 1.02 / tan (deg2rad ($deg + 10.3/($deg + 5.11))) +
+	    .0019279;
+	$self->get ('debug') and print <<eod;
 Debug correct_for_refraction
     input: $deg degrees of arc
     correction: $correction minutes of arc
@@ -445,10 +443,10 @@ eod
 #	documentation, we do not correct the elevation unless the
 #	correction would place the body above the horizon.
 
-    $correction = deg2rad ($correction / 60);
-    $elevation += $correction if $correction + $elevation >= 0;
+	$correction = deg2rad ($correction / 60);
+	$elevation += $correction if $correction + $elevation >= 0;
     }
-$elevation;
+    return $elevation;
 }
 
 
@@ -464,12 +462,12 @@ The algorithm is simple enough to be the author's.
 =cut
 
 sub dip {
-my $self = shift;
-my ($psi, $lambda, $h) = $self->geodetic ();
-my ($psiprime, undef, $rho) = $self->geocentric ();
-my $angle = $h >= 0 ?
-    - acos (($rho - $h) / $rho) :
-    acos ($rho / ($rho - $h));
+    my $self = shift;
+    my ($psi, $lambda, $h) = $self->geodetic ();
+    my ($psiprime, undef, $rho) = $self->geocentric ();
+    return $h >= 0 ?
+	- acos (($rho - $h) / $rho) :
+	acos ($rho / ($rho - $h));
 }
 
 
@@ -494,8 +492,8 @@ Edition, Chapter 10, pages 78ff.
 =cut
 
 sub dynamical {
-    my $self = shift;
-    unless (@_) {
+    my ($self, @args) = @_;
+    unless (@args) {
 	ref $self or croak <<eod;
 Error - The dynamical() method may not be called as a class method
         unless you specify arguments.
@@ -506,11 +504,12 @@ Error - Universal time of object has not been set.
 eod
     }
 
-    if (@_ == 1) {
+    if (@args == 1) {
+	my $time = shift @args;
 	$self = $self->new () unless ref $self;
 	$self->{_no_set}++;	# Supress running the model if any
-	$self->universal ($_[0] - dynamical_delta ($_[0]));
-	$self->{dynamical} = $_[0];
+	$self->universal ($time - dynamical_delta ($time));
+	$self->{dynamical} = $time;
 	--$self->{_no_set};	# Undo supression of model
 	$self->_call_time_set ();	# Run the model if any
     } else {
@@ -521,7 +520,7 @@ Error - The dynamical() method must be called with either zero
 eod
     }
 
-    $self;
+    return $self;
 }
 
 
@@ -563,32 +562,29 @@ transforms worked out.
 =cut
 
 sub ecef {
-my $self = shift;
+    my ($self, @args) = @_;
 
-$self = $self->_check_coord (ecef => \@_);
+    $self = $self->_check_coord (ecef => \@args);
 
-unless (@_) {
-    my $cache = ($self->{_ECI_cache} ||= {});
-    return @{$cache->{fixed}{ecef}} if $cache->{fixed}{ecef};
-    return $self->_convert_eci_to_ecef () if $self->{inertial};
-    croak <<eod;
+    unless (@args) {
+	my $cache = ($self->{_ECI_cache} ||= {});
+	return @{$cache->{fixed}{ecef}} if $cache->{fixed}{ecef};
+	return $self->_convert_eci_to_ecef () if $self->{inertial};
+	croak <<eod;
 Error - Object has not been initialized.
 eod
     }
 
-if (@_ == 3) {
-    push @_, 0, 0, 0;
-    }
+    @args == 3 and push @args, 0, 0, 0;
 
-if (@_ == 6) {
-    foreach my $key (@kilatr) {delete $self->{$key}}
-##    $self->{_ECI_cache}{fixed}{ecef} = [@_];
-    $self->{_ECI_cache} = {fixed => {ecef => [@_]}};
-    $self->{specified} = 'ecef';
-    $self->{inertial} = 0;
-    }
-  else {
-    croak <<eod;
+    if (@args == 6) {
+	foreach my $key (@kilatr) {delete $self->{$key}}
+##	$self->{_ECI_cache}{fixed}{ecef} = \@args;
+	$self->{_ECI_cache} = {fixed => {ecef => \@args}};
+	$self->{specified} = 'ecef';
+	$self->{inertial} = 0;
+    } else {
+	croak <<eod;
 Error - The ecef() method must be called with either zero arguments (to
         retrieve coordinates), three arguments (to set coordinates,
         with velocity defaulting to the rotational velocity of the
@@ -596,7 +592,7 @@ Error - The ecef() method must be called with either zero arguments (to
 eod
     }
 
-$self;
+    return $self;
 }
 
 
@@ -647,38 +643,37 @@ transforms worked out.
 =cut
 
 sub eci {
-my $self = shift;
+    my ($self, @args) = @_;
 
-$self = $self->_check_coord (eci => \@_);
+    $self = $self->_check_coord (eci => \@args);
 
-unless (@_) {
-    my $cache = ($self->{_ECI_cache} ||= {});
-    return @{$cache->{inertial}{eci}} if $cache->{inertial}{eci};
-    return $self->_convert_ecef_to_eci () if $self->{specified};
-    croak <<eod;
+    unless (@args) {
+	my $cache = ($self->{_ECI_cache} ||= {});
+	return @{$cache->{inertial}{eci}} if $cache->{inertial}{eci};
+	return $self->_convert_ecef_to_eci () if $self->{specified};
+	croak <<eod;
 Error - Object has not been initialized.
 eod
 
     }
 
-@_ == 3 and push @_, 0, 0, 0;
+    @args == 3 and push @args, 0, 0, 0;
 
-if (@_ == 6) {
-    foreach my $key (@kilatr) {delete $self->{$key}}
-##    $self->{_ECI_cache}{inertial}{eci} = [@_];
-    $self->{_ECI_cache} = {inertial => {eci => [@_]}};
-    $self->{specified} = 'eci';
-    $self->{inertial} = 1;
-    }
-  else {
-    croak <<eod;
+    if (@args == 6) {
+	foreach my $key (@kilatr) {delete $self->{$key}}
+##	$self->{_ECI_cache}{inertial}{eci} = \@args;
+	$self->{_ECI_cache} = {inertial => {eci => \@args}};
+	$self->{specified} = 'eci';
+	$self->{inertial} = 1;
+    } else {
+	croak <<eod;
 Error - The eci() method must be called with either zero or one
         arguments (to retrieve coordinates), three or four arguments
         (to set coordinates, with velocity defaulting to zero), or
         six or seven arguments.
 eod
     }
-$self;
+    return $self;
 }
 
 
@@ -716,48 +711,50 @@ dynamical() methods).
 =cut
 
 sub ecliptic {
-my $self = shift;
+    my ($self, @args) = @_;
 
-$self = $self->_check_coord (ecliptic => \@_);
+    $self = $self->_check_coord (ecliptic => \@args);
 
-unless (@_) {
-    return @{$self->{_ECI_cache}{inertial}{ecliptic}} if $self->{_ECI_cache}{inertial}{ecliptic};
-    my ($alpha, $delta, $rho) = $self->equatorial ();
+    unless (@args) {
+	return @{$self->{_ECI_cache}{inertial}{ecliptic}}
+	    if $self->{_ECI_cache}{inertial}{ecliptic};
+	my ($alpha, $delta, $rho) = $self->equatorial ();
 
-    my $epsilon = obliquity ($self->dynamical);
-    my $sinalpha = sin ($alpha);
-    my $cosdelta = cos ($delta);
-    my $sindelta = sin ($delta);
-    my $cosepsilon = cos ($epsilon);
-    my $sinepsilon = sin ($epsilon);
+	my $epsilon = obliquity ($self->dynamical);
+	my $sinalpha = sin ($alpha);
+	my $cosdelta = cos ($delta);
+	my $sindelta = sin ($delta);
+	my $cosepsilon = cos ($epsilon);
+	my $sinepsilon = sin ($epsilon);
 
-    my $lambda = mod2pi (atan2 ($sinalpha * $cosepsilon +	# Meeus (13.1), pg 93.
-	$sindelta / $cosdelta * $sinepsilon, cos ($alpha)));
-    my $beta = asin ($sindelta * $cosepsilon -		# Meeus (13.2), pg 93.
-	$cosdelta * $sinepsilon * $sinalpha);
+	my $lambda = mod2pi (atan2 ($sinalpha * $cosepsilon +	# Meeus (13.1),
+	    $sindelta / $cosdelta * $sinepsilon, cos ($alpha)));#     pg 93.
+	my $beta = asin ($sindelta * $cosepsilon -		# Meeus (13.2), 
+	    $cosdelta * $sinepsilon * $sinalpha);		#     pg 93.
 
-    return @{$self->{_ECI_cache}{inertial}{ecliptic} = [$beta, $lambda, $rho]};
+	return @{$self->{_ECI_cache}{inertial}{ecliptic} =
+	    [$beta, $lambda, $rho]};
     }
 
-if (@_ == 3) {
-    ref $self or $self = $self->new ();
-    my ($beta, $lambda, $rho) = @_;
-    $beta = _check_latitude(latitude => $beta);
-    $lambda = _check_longitude(longitude => $lambda);
+    if (@args == 3) {
+	ref $self or $self = $self->new ();
+	my ($beta, $lambda, $rho) = @args;
+	$beta = _check_latitude(latitude => $beta);
+	$lambda = _check_longitude(longitude => $lambda);
 
-    my $epsilon = obliquity ($self->dynamical);
-    my $sinlamda = sin ($lambda);
-    my $cosepsilon = cos ($epsilon);
-    my $sinepsilon = sin ($epsilon);
-    my $cosbeta = cos ($beta);
-    my $sinbeta = sin ($beta);
-    my $alpha = mod2pi (atan2 ($sinlamda * $cosepsilon -	# Meeus (13.3), pg 93
-	$sinbeta / $cosbeta * $sinepsilon, cos ($lambda)));
-    my $delta = asin ($sinbeta * $cosepsilon +		# Meeus (13.4), pg 93.
-	$cosbeta * $sinepsilon * $sinlamda);
-    $self->{debug} and do {
-	$beta >= PI and $beta -= TWOPI;
-	print <<eod;
+	my $epsilon = obliquity ($self->dynamical);
+	my $sinlamda = sin ($lambda);
+	my $cosepsilon = cos ($epsilon);
+	my $sinepsilon = sin ($epsilon);
+	my $cosbeta = cos ($beta);
+	my $sinbeta = sin ($beta);
+	my $alpha = mod2pi (atan2 ($sinlamda * $cosepsilon -	# Meeus (13.3),
+	    $sinbeta / $cosbeta * $sinepsilon, cos ($lambda)));	#     pg 93.
+	my $delta = asin ($sinbeta * $cosepsilon +		# Meeus (13.4),
+	    $cosbeta * $sinepsilon * $sinlamda);		#     pg 93.
+	$self->{debug} and do {
+	    $beta >= PI and $beta -= TWOPI;
+	    print <<eod;
 Debug ecliptic -
     beta = $beta (ecliptic latitude, radians)
          = @{[rad2deg ($beta)]} (ecliptic latitude, degrees)
@@ -768,21 +765,20 @@ Debug ecliptic -
     alpha = $alpha (right ascension, radians)
     delta = $delta (declination, radians)
 eod
-    };
-    $self->equatorial ($alpha, $delta, $rho);
-    $self->{_ECI_cache}{inertial}{ecliptic} = [@_];
-    $self->{specified} = 'ecliptic';
-    $self->{inertial} = 1;
-    }
-  else {
-    croak <<eod;
+	};
+	$self->equatorial ($alpha, $delta, $rho);
+	$self->{_ECI_cache}{inertial}{ecliptic} = \@args;
+	$self->{specified} = 'ecliptic';
+	$self->{inertial} = 1;
+    } else {
+	croak <<eod;
 Error - The ecliptic() method must be called with either zero or one
         arguments (to retrieve coordinates), or three or four arguments
         (to set coordinates). There is currently no six or seven
         argument version.
 eod
     }
-$self;
+    return $self;
 }
 
 
@@ -833,86 +829,86 @@ Pedro Ramon Escobal, pages 401 - 402.
 =cut
 
 sub equatorial {
-my $self = shift;
+    my ($self, @args) = @_;
 
-my $body;
-@_ && embodies($_[0], __PACKAGE__)
-    and $body = shift;
+    my $body;
+    (@args && embodies($args[0], __PACKAGE__))
+	and $body = shift @args;
 
-$self = $self->_check_coord (equatorial => \@_);
-my $time;
-$body or $time = $self->universal;
+    $self = $self->_check_coord (equatorial => \@args);
+    my $time;
+    $body or $time = $self->universal;
 
-unless (@_) {
+    unless (@args) {
 
-    if ($body) {
-	my ($azimuth, $elevation, $range) = $self->azel ($body, 0);
-	my $time = $body->universal ();
-	my ($phi, $theta) = $self->geodetic ();
-	$theta = mod2pi ($theta + thetag ($time));
-	my $sin_theta = sin ($theta);
-	my $cos_theta = cos ($theta);
-	my $sin_phi = sin ($phi);
-	my $cos_phi = cos ($phi);
-	my $coselev = cos ($elevation);
-	my $lxh = - cos ($azimuth) * $coselev;
-	my $lyh = sin ($azimuth) * $coselev;
-	my $lzh = sin ($elevation);
-	my $sx = $sin_phi * $cos_theta;
-	my $ex = - $sin_theta;
-	my $zx = $cos_theta * $cos_phi;
-	my $sy = $sin_phi * $sin_theta;
-	my $ey = $cos_theta;
-	my $zy = $sin_theta * $cos_phi;
-	my $sz = - $cos_phi;
-	my $ez = 0;
-	my $zz = $sin_phi;
-	my $lx = $sx * $lxh + $ex * $lyh + $zx * $lzh;
-	my $ly = $sy * $lxh + $ey * $lyh + $zy * $lzh;
-	my $lz = $sz * $lxh + $ez * $lyh + $zz * $lzh;
-	my $declination = asin ($lz);
-	my $cos_delta = sqrt (1 - $lz * $lz);
-	my $sin_alpha = $ly / $cos_delta;
-	my $cos_alpha = $lx / $cos_delta;
-	my $right_ascension = mod2pi (atan2 ($sin_alpha,$cos_alpha));
-	return ($right_ascension, $declination, $range);
+	if ($body) {
+	    my ($azimuth, $elevation, $range) = $self->azel ($body, 0);
+	    my $time = $body->universal ();
+	    my ($phi, $theta) = $self->geodetic ();
+	    $theta = mod2pi ($theta + thetag ($time));
+	    my $sin_theta = sin ($theta);
+	    my $cos_theta = cos ($theta);
+	    my $sin_phi = sin ($phi);
+	    my $cos_phi = cos ($phi);
+	    my $coselev = cos ($elevation);
+	    my $lxh = - cos ($azimuth) * $coselev;
+	    my $lyh = sin ($azimuth) * $coselev;
+	    my $lzh = sin ($elevation);
+	    my $sx = $sin_phi * $cos_theta;
+	    my $ex = - $sin_theta;
+	    my $zx = $cos_theta * $cos_phi;
+	    my $sy = $sin_phi * $sin_theta;
+	    my $ey = $cos_theta;
+	    my $zy = $sin_theta * $cos_phi;
+	    my $sz = - $cos_phi;
+	    my $ez = 0;
+	    my $zz = $sin_phi;
+	    my $lx = $sx * $lxh + $ex * $lyh + $zx * $lzh;
+	    my $ly = $sy * $lxh + $ey * $lyh + $zy * $lzh;
+	    my $lz = $sz * $lxh + $ez * $lyh + $zz * $lzh;
+	    my $declination = asin ($lz);
+	    my $cos_delta = sqrt (1 - $lz * $lz);
+	    my $sin_alpha = $ly / $cos_delta;
+	    my $cos_alpha = $lx / $cos_delta;
+	    my $right_ascension = mod2pi (atan2 ($sin_alpha,$cos_alpha));
+	    return ($right_ascension, $declination, $range);
 	}
 
-    return @{$self->{_ECI_cache}{inertial}{equatorial}} if $self->{_ECI_cache}{inertial}{equatorial};
-    my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->eci ();
-    my $ra = mod2pi (atan2 ($y, $x));	# Right ascension is always positive.
-    my $rsq = $x * $x + $y * $y;
-    my $dec = atan2 ($z, sqrt ($rsq));
-    my $range = sqrt ($rsq + $z * $z);
-    return @{$self->{_ECI_cache}{inertial}{equatorial} = [$ra, $dec, $range]};
+	return @{$self->{_ECI_cache}{inertial}{equatorial}}
+	    if $self->{_ECI_cache}{inertial}{equatorial};
+	my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->eci ();
+	my $ra = mod2pi (atan2 ($y, $x));	# Right ascension is always positive.
+	my $rsq = $x * $x + $y * $y;
+	my $dec = atan2 ($z, sqrt ($rsq));
+	my $range = sqrt ($rsq + $z * $z);
+	return @{$self->{_ECI_cache}{inertial}{equatorial} = [$ra, $dec, $range]};
     }
 
-if (@_ == 3) {
-    $body && croak <<eod;
+    if (@args == 3) {
+	$body && croak <<eod;
 Error - You may not set the equatorial coordinates relative to an
         observer.
 eod
-    my ($ra, $dec, $range) = @_;
-    $ra = _check_right_ascension('right ascension' => $ra);
-    $dec = _check_latitude(declination => $dec);
-    my $z = $range * sin ($dec);
-    my $r = $range * cos ($dec);
-    my $x = $r * cos ($ra);
-    my $y = $r * sin ($ra);
-    $self->eci ($x, $y, $z, 0, 0, 0);
-    $self->{_ECI_cache}{inertial}{equatorial} = [@_];
-    $self->{specified} = 'equatorial';
-    $self->{inertial} = 1;
-    }
-  else {
-    croak <<eod;
+	my ($ra, $dec, $range) = @args;
+	$ra = _check_right_ascension('right ascension' => $ra);
+	$dec = _check_latitude(declination => $dec);
+	my $z = $range * sin ($dec);
+	my $r = $range * cos ($dec);
+	my $x = $r * cos ($ra);
+	my $y = $r * sin ($ra);
+	$self->eci ($x, $y, $z, 0, 0, 0);
+	$self->{_ECI_cache}{inertial}{equatorial} = \@args;
+	$self->{specified} = 'equatorial';
+	$self->{inertial} = 1;
+    } else {
+	croak <<eod;
 Error - The equatorial() method must be called with either zero or one
         arguments (to retrieve coordinates), or three or four arguments
         (to set coordinates). There is currently no six or seven
         argument version.
 eod
     }
-$self;
+    return $self;
 }
 
 =item $coord = $coord->equinox_dynamical ($value);
@@ -932,9 +928,9 @@ this will be added, but I do not plan to eliminate the set() interface.
 sub equinox_dynamical {
     if (@_ > 1) {
 	$_[0]{equinox_dynamical} = $_[1];
-	$_[0];
+	return $_[0];
     } else {
-	$_[0]{equinox_dynamical};
+	return $_[0]{equinox_dynamical};
     }
 }
 
@@ -972,18 +968,18 @@ distance to the center of the Earth.
 =cut
 
 sub geocentric {
-my $self = shift;
+    my ($self, @args) = @_;
 
-$self = $self->_check_coord (geocentric => \@_);
+    $self = $self->_check_coord (geocentric => \@args);
 
-unless (@_) {
-    return @{$self->{_ECI_cache}{fixed}{geocentric} ||= do {
-	my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->ecef;
-	my $rsq = $x * $x + $y * $y;
-	my $rho = sqrt ($z * $z + $rsq);
-	my $lambda = atan2 ($y, $x);
-	my $psiprime = atan2 ($z, sqrt ($rsq));
-	$self->get ('debug') and print <<eod;
+    unless (@args) {
+	return @{$self->{_ECI_cache}{fixed}{geocentric} ||= do {
+	    my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->ecef;
+	    my $rsq = $x * $x + $y * $y;
+	    my $rho = sqrt ($z * $z + $rsq);
+	    my $lambda = atan2 ($y, $x);
+	    my $psiprime = atan2 ($z, sqrt ($rsq));
+	    $self->get ('debug') and print <<eod;
 Debug geocentric () - ecef -> geocentric
     inputs:
         x = $x
@@ -994,19 +990,19 @@ Debug geocentric () - ecef -> geocentric
         lambda = $lambda
         rho = $rho
 eod
-	[$psiprime, $lambda, $rho];
+	    [$psiprime, $lambda, $rho];
 	}};
     }
 
-if (@_ == 3) {
-    my ($psiprime, $lambda, $rho) = @_;
-    $psiprime = _check_latitude(latitude => $psiprime);
-    $lambda = _check_longitude(longitude => $lambda);
-    my $z = $rho * sin ($psiprime);
-    my $r = $rho * cos ($psiprime);
-    my $x = $r * cos ($lambda);
-    my $y = $r * sin ($lambda);
-    $self->get ('debug') and print <<eod;
+    if (@args == 3) {
+	my ($psiprime, $lambda, $rho) = @args;
+	$psiprime = _check_latitude(latitude => $psiprime);
+	$lambda = _check_longitude(longitude => $lambda);
+	my $z = $rho * sin ($psiprime);
+	my $r = $rho * cos ($psiprime);
+	my $x = $r * cos ($lambda);
+	my $y = $r * sin ($lambda);
+	$self->get ('debug') and print <<eod;
 Debug geocentric () - geocentric -> ecef
     inputs:
         psiprime = $psiprime
@@ -1017,19 +1013,18 @@ Debug geocentric () - geocentric -> ecef
         y = $y
         z = $z
 eod
-    $self->ecef ($x, $y, $z);
-    $self->{_ECI_cache}{fixed}{geocentric} = [@_];
-    $self->{specified} = 'geocentric';
-    $self->{inertial} = 0;
-    }
-  else {
-    croak <<eod;
+	$self->ecef ($x, $y, $z);
+	$self->{_ECI_cache}{fixed}{geocentric} = \@args;
+	$self->{specified} = 'geocentric';
+	$self->{inertial} = 0;
+    } else {
+	croak <<eod;
 Error - Method geocentric() must be called with either zero arguments
         (to retrieve coordinates) or three arguments (to set
         coordinates). There is currently no six argument version.
 eod
     }
-$self;
+    return $self;
 }
 
 
@@ -1077,58 +1072,62 @@ Symbol font.
 =cut
 
 sub geodetic {
-my $self = shift;
+    my ($self, @args) = @_;
 
 
 #	Detect and acquire the optional ellipsoid name argument. We do
 #	this before the check, since the check expects the extra
 #	argument to be a time.
 
-my $elps = (@_ == 1 || @_ == 4) ? pop @_ : undef;
+    my $elps = (@args == 1 || @args == 4) ? pop @args : undef;
 
 
-$self = $self->_check_coord (geodetic => \@_, $elps ? $elps : ());
+    $self = $self->_check_coord (geodetic => \@args, $elps ? $elps : ());
 
 
 #	The following is just a sleazy way to get a consistent
 #	error message if the ellipsoid name is unknown.
 
-$elps && $self->reference_ellipsoid ($elps);
+    $elps && $self->reference_ellipsoid ($elps);
 
 
 #	If we're fetching the geodetic coordinates
     
-unless (@_) {
+    unless (@args) {
 
 
 #	Return cached coordinates if they exist and we did not
 #	override the default ellipsoid.
 
-    return @{$self->{_ECI_cache}{fixed}{geodetic}}
-	if $self->{_ECI_cache}{fixed}{geodetic} && !$elps;
-    $self->{debug} and do {
-	local $Data::Dumper::Terse = 1;
-	print "Debug geodetic - explicit ellipsoid ", Dumper ($elps);
+	return @{$self->{_ECI_cache}{fixed}{geodetic}}
+	    if $self->{_ECI_cache}{fixed}{geodetic} && !$elps;
+	$self->{debug} and do {
+	    local $Data::Dumper::Terse = 1;
+	    print "Debug geodetic - explicit ellipsoid ", Dumper ($elps);
 	};
 
 
 #	Get a reference to the ellipsoid data to use.
 
-    $elps = $elps ? $known_ellipsoid{$elps} : $self;
-    $self->{debug} and do {
-	local $Data::Dumper::Terse = 1;
-	print "Debug geodetic - ellipsoid ", Dumper ($elps);
+	$elps = $elps ? $known_ellipsoid{$elps} : $self;
+	$self->{debug} and do {
+	    local $Data::Dumper::Terse = 1;
+	    print "Debug geodetic - ellipsoid ", Dumper ($elps);
 	};
 
 
 #	Calculate geodetic coordinates.
 
-    my ($phiprime, $lambda, $rho) = $self->geocentric;
-    my $r = $rho * cos ($phiprime);
-    my $b = $elps->{semimajor} * (1- $elps->{flattening});
-    my $a = $elps->{semimajor};
-    my $z = $rho * sin ($phiprime);
-    $b = - $b if $z < 0;	# Per Borkowski, for southern hemisphere.
+	my ($phiprime, $lambda, $rho) = $self->geocentric;
+	my $r = $rho * cos ($phiprime);
+	my $b = $elps->{semimajor} * (1- $elps->{flattening});
+	my $a = $elps->{semimajor};
+	my $z = $rho * sin ($phiprime);
+	# The $b is _not_ a magic variable, since we are not inside
+	# any of the specialized blocks that make $b magic. Perl::Critic
+	# is simply confused.
+	$b = - $b	## no critic RequireLocalizedPunctuationVars
+	    if $z < 0;	# Per Borkowski, for southern hemisphere.
 
 
 #	The following algorithm is due to Kazimierz Borkowski's
@@ -1136,35 +1135,35 @@ unless (@_) {
 #	Coordinates", from
 #	http://www.astro.uni.torun.pl/~kb/Papers/geod/Geod-BG.htm
 
-    my $bz = $b * $z;
-    my $asq_bsq = $a * $a - $b * $b;
-    my $ar = $a * $r;
-    my $E = ($bz - $asq_bsq) / $ar;		# Borkowski (10)
-    my $F = ($bz + $asq_bsq) / $ar;		# Borkowski (11)
-    my $Q = ($E * $E - $F * $F) * 2;		# Borkowski (17)
-    my $P = ($E * $F + 1) * 4 / 3;		# Borkowski (16)
-    my $D = $P * $P * $P + $Q * $Q;		# Borkowski (15)
-    my $v = $D >= 0 ? do {
-	my $d = sqrt $D;
-	my $onethird = 1 / 3;
-	my $vp = ($d - $Q) ** $onethird -	# Borkowski (14a)
-	    ($d + $Q) ** $onethird;
-	$vp * $vp >= abs ($P) ? $vp :
-	    - ($vp * $vp * $vp + 2 * $Q) /	# Borkowski (20)
-		(3 * $P);
-      } : do {
-	my $p = - $P;
-	sqrt (cos (acos ($Q /			# Borkowski (14b)
-	    sqrt ($p * $p * $p)) / 3) * $p) * 2;
+	my $bz = $b * $z;
+	my $asq_bsq = $a * $a - $b * $b;
+	my $ar = $a * $r;
+	my $E = ($bz - $asq_bsq) / $ar;		# Borkowski (10)
+	my $F = ($bz + $asq_bsq) / $ar;		# Borkowski (11)
+	my $Q = ($E * $E - $F * $F) * 2;	# Borkowski (17)
+	my $P = ($E * $F + 1) * 4 / 3;		# Borkowski (16)
+	my $D = $P * $P * $P + $Q * $Q;		# Borkowski (15)
+	my $v = $D >= 0 ? do {
+	    my $d = sqrt $D;
+	    my $onethird = 1 / 3;
+	    my $vp = ($d - $Q) ** $onethird -	# Borkowski (14a)
+		($d + $Q) ** $onethird;
+	    $vp * $vp >= abs ($P) ? $vp :
+		- ($vp * $vp * $vp + 2 * $Q) /	# Borkowski (20)
+		    (3 * $P);
+	} : do {
+	    my $p = - $P;
+	    sqrt (cos (acos ($Q /			# Borkowski (14b)
+		sqrt ($p * $p * $p)) / 3) * $p) * 2;
 	};
-    my $G = (sqrt ($E * $E + $v)		# Borkowski (13)
-	    + $E) / 2;
-    my $t = sqrt ($G * $G + ($F - $v * $G)	# Borkowski (12)
-	    / (2 * $G - $E)) - $G;
-    my $phi = atan2 (($a * (1 - $t * $t)) /	# Borkowski (18)
-	(2 * $b * $t), 1);			# equivalent to atan (arg1)
-    my $h = ($r - $a * $t) * cos ($phi) +	# Borkowski (19)
-	($z - $b) * sin ($phi);
+	my $G = (sqrt ($E * $E + $v)		# Borkowski (13)
+		+ $E) / 2;
+	my $t = sqrt ($G * $G + ($F - $v * $G)	# Borkowski (12)
+		/ (2 * $G - $E)) - $G;
+	my $phi = atan2 (($a * (1 - $t * $t)) /	# Borkowski (18)
+	    (2 * $b * $t), 1);			# equivalent to atan (arg1)
+	my $h = ($r - $a * $t) * cos ($phi) +	# Borkowski (19)
+	    ($z - $b) * sin ($phi);
 
 
 #	End of Borkowski's algorthm.
@@ -1172,12 +1171,12 @@ unless (@_) {
 #	Cache the results of the calculation if they were done using
 #	the default ellipsoid.
 
-    $self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lambda, $h] unless $elps;
+	$self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lambda, $h] unless $elps;
 
 
 #	Return the results in any event.
 
-    $self->get ('debug') and print <<eod;
+	$self->get ('debug') and print <<eod;
 Debug geodetic: geocentric to geodetic
     inputs:
         phiprime = $phiprime
@@ -1202,62 +1201,60 @@ Debug geodetic: geocentric to geodetic
           = @{[$r - $a * $t]} * cos (phi) + @{[$z - $b]} * sin (phi)
           = $h (kilometers)
 eod
-    return ($phi, $lambda, $h);
+	return ($phi, $lambda, $h);
     }
 
 
 #	If we're setting the geodetic coordinates.
 
-if (@_ == 3) {
+    if (@args == 3) {
 
 
 #	Set the ellipsoid for the object if one was specified.
 
-    $self->set (ellipsoid => $elps) if $elps;
+	$self->set (ellipsoid => $elps) if $elps;
 
 
 #	Calculate the geocentric data.
 
-    my ($phi, $lambda, $h) = @_;
-    $phi = _check_latitude(latitude => $phi);
-    $lambda = _check_longitude(longitude => $lambda);
-    my $bovera = 1 - $self->{flattening};
+	my ($phi, $lambda, $h) = @args;
+	$phi = _check_latitude(latitude => $phi);
+	$lambda = _check_longitude(longitude => $lambda);
+	my $bovera = 1 - $self->{flattening};
 
 
 #	The following algorithm appears on page 82 of the second
 #	edition of Jean Meeus' "Astronomical Algorithms."
 
-    my $u = atan2 ($bovera * tan ($phi), 1);
-    my $rhosinlatprime = $bovera * sin ($u) +
-	$h / $self->{semimajor} * sin ($phi);
-    my $rhocoslatprime = cos ($u) +
-	$h / $self->{semimajor} * cos ($phi);
-    my $phiprime = atan2 ($rhosinlatprime, $rhocoslatprime);
-    my $rho = $self->{semimajor} * ($rhocoslatprime ?
-	$rhocoslatprime / cos ($phiprime) :
-	$rhosinlatprime / sin ($phiprime));
+	my $u = atan2 ($bovera * tan ($phi), 1);
+	my $rhosinlatprime = $bovera * sin ($u) +
+	    $h / $self->{semimajor} * sin ($phi);
+	my $rhocoslatprime = cos ($u) +
+	    $h / $self->{semimajor} * cos ($phi);
+	my $phiprime = atan2 ($rhosinlatprime, $rhocoslatprime);
+	my $rho = $self->{semimajor} * ($rhocoslatprime ?
+	    $rhocoslatprime / cos ($phiprime) :
+	    $rhosinlatprime / sin ($phiprime));
 
 
 #	End of Meeus' algorithm.
 
 #	Set the geocentric data as the coordinates.
 
-    $self->geocentric ($phiprime, $lambda, $rho);
+	$self->geocentric ($phiprime, $lambda, $rho);
  
  
  #	Cache the geodetic coordinates.
  
-    $self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lambda, $h];
-    $self->{specified} = 'geodetic';
-    $self->{inertial} = 0;
-    }
-
+	$self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lambda, $h];
+	$self->{specified} = 'geodetic';
+	$self->{inertial} = 0;
 
 
 #	Else if the number of coordinates is bogus, croak.
 
-  else {
-    croak <<eod;
+    } else {
+	croak <<eod;
 Error - Method geodetic() must be called with either zero arguments
         (to retrieve coordinates) or three arguments (to set
         coordinates). There is currently no six argument version.
@@ -1265,10 +1262,9 @@ eod
     }
 
 
-
 #	Return the object, wherever it came from.
 
-$self;
+    return $self;
 
 }
 
@@ -1291,10 +1287,10 @@ See L</Attributes> for a list of the attributes you can get.
     );
 
     sub get {
-	my $self = shift;
+	my ($self, @args) = @_;
 	ref $self or $self = \%static;
 	my @rslt;
-	foreach my $name (@_) {
+	foreach my $name (@args) {
 	    exists $mutator{$name} or croak <<eod;
 Error - Attribute '$name' does not exist.
 eod
@@ -1333,48 +1329,48 @@ This means that in formatting for output, you call
 =cut
 
 sub local_mean_time {
-my $self = shift;
+    my ($self, @args) = @_;
 
-ref $self or croak <<eod;
+    ref $self or croak <<eod;
 Error - The local_mean_time() method may not be called as a class method.
 eod
 
-unless (@_) {
-    $self->{universal} || croak <<eod;
+    unless (@args) {
+	$self->{universal} || croak <<eod;
 Error - Object's time has not been set.
 eod
-    $self->{local_mean_time} = $self->universal () +
-	_local_mean_delta ($self)
-	unless defined $self->{local_mean_time};
-    return $self->{local_mean_time};
-     }
+	$self->{local_mean_time} = $self->universal () +
+	    _local_mean_delta ($self)
+	    unless defined $self->{local_mean_time};
+	return $self->{local_mean_time};
+    }
 
-if (@_ == 1) {
-    $self->{specified} or croak <<eod;
+    if (@args == 1) {
+	my $time = shift @args;
+	$self->{specified} or croak <<eod;
 Error - Object's coordinates have not been set.
 eod
-    $self->{inertial} and croak <<eod;
+	$self->{inertial} and croak <<eod;
 Error - You can not set the local time of an object that represents
        a position in an inertial coordinate system, because this
        causes the earth-fixed position to change, invalidating the
        local time.
-    $self->can ('time_set') and croak <<eod;
+	$self->can ('time_set') and croak <<eod;
 Error - You can not set the local time on an @{[ref $self]}
         object, because when you do the time_set() method will just
 	move the object, invalidating the local time.
 eod
-    $self->universal ($_[0] - _local_mean_delta ($self));
-    $self->{local_mean_time} = $_[0];
-    }
-  else {
-    croak <<eod;
+	$self->universal($time - _local_mean_delta($self));
+	$self->{local_mean_time} = $time;
+    } else {
+	croak <<eod;
 Error - The local_mean_time() method must be called with either zero
         arguments (to retrieve the time) or one argument (to set
         the time).
 eod
     }
 
-$self;
+    return $self;
 }
 
 =item $time = $coord->local_time ();
@@ -1394,8 +1390,8 @@ This means that in formatting for output, you call
 
 sub local_time {
     my $self = shift;
-    my $dyntim = $self->dynamical ();
-    $self->local_mean_time + equation_of_time ($dyntim);
+    my $dyntim = $self->dynamical();
+    return $self->local_mean_time() + equation_of_time($dyntim);
 }
 
 =item $value = $coord->mean_angular_velocity();
@@ -1408,8 +1404,8 @@ contents of the angularvelocity attribute.
 =cut
 
 sub mean_angular_velocity {
-my $self = shift;
-return $self->can ('period') ?
+    my $self = shift;
+    return $self->can ('period') ?
 	TWOPI / $self->period :
 	$self->{angularvelocity};
 }
@@ -1437,47 +1433,47 @@ an empty list in list context.
 use constant NEVER_PASS_ELEV => 183 * SECSPERDAY;
 
 sub next_elevation {
-my $self = shift;
-ref $self or croak <<eod;
+    my $self = shift;
+    ref $self or croak <<eod;
 Error - The next_elevation() method may not be called as a class method.
 eod
 
-my $body = shift;
-#### isa ($body, __PACKAGE__) or croak <<eod;
-$body->represents(__PACKAGE__) or croak <<eod;
+    my $body = shift;
+    #### isa ($body, __PACKAGE__) or croak <<eod;
+    $body->represents(__PACKAGE__) or croak <<eod;
 Error - The first argument to next_elevation() must be a subclass of
         @{[__PACKAGE__]}.
 eod
 
-my $angle = shift || 0;
-my $upper = shift;
-defined $upper or $upper = $angle >= 0;
+    my $angle = shift || 0;
+    my $upper = shift;
+    defined $upper or $upper = $angle >= 0;
 
-my $begin = $self->universal;
-my $original = $begin;
-my $rise = ($self->azel ($body->universal ($begin), $upper))[1] < $angle || 0;
+    my $begin = $self->universal;
+    my $original = $begin;
+    my $rise = ($self->azel ($body->universal ($begin), $upper))[1] < $angle || 0;
 
-my ($end, $above) = $self->next_meridian ($body, $rise);
+    my ($end, $above) = $self->next_meridian ($body, $rise);
 
-my $give_up = $body->NEVER_PASS_ELEV ();
+    my $give_up = $body->NEVER_PASS_ELEV ();
 
-while ((($self->azel($body))[1] < 0 || 0) == $rise) {
-    return if $end - $original > $give_up;
-    $begin = $end;
-    ($end, $above) = $self->next_meridian ($body, $rise);
+    while ((($self->azel($body))[1] < 0 || 0) == $rise) {
+	return if $end - $original > $give_up;
+	$begin = $end;
+	($end, $above) = $self->next_meridian ($body, $rise);
     }
 
-while ($end - $begin > 1) {
-    my $mid = floor (($begin + $end) / 2);
-    my ($azm, $elev, $rng) = $self->universal ($mid)->
-	azel ($body->universal ($mid), $upper);
-    ($begin, $end) =
-	($elev < $angle || 0) == $rise ? ($mid, $end) : ($begin, $mid);
+    while ($end - $begin > 1) {
+	my $mid = floor (($begin + $end) / 2);
+	my ($azm, $elev, $rng) = $self->universal ($mid)->
+	    azel ($body->universal ($mid), $upper);
+	($begin, $end) =
+	    ($elev < $angle || 0) == $rise ? ($mid, $end) : ($begin, $mid);
     }
 
-$self->universal ($end);	# Ensure consistent time.
-$body->universal ($end);
-wantarray ? ($end, $rise) : $end;
+    $self->universal ($end);	# Ensure consistent time.
+    $body->universal ($end);
+    return wantarray ? ($end, $rise) : $end;
 }
 
 =item ($time, $above) = $coord->next_meridian ($body, $want)
@@ -1512,63 +1508,63 @@ second after the body crosses the meridian.
 =cut
 
 sub next_meridian {
-my $self = shift;
-ref $self or croak <<eod;
+    my $self = shift;
+    ref $self or croak <<eod;
 Error - The next_meridian() method may not be called as a class method.
 eod
 
-my $body = shift;
-####isa ($body, __PACKAGE__) or croak <<eod;
-$body->represents(__PACKAGE__) or croak <<eod;
+    my $body = shift;
+    ####isa ($body, __PACKAGE__) or croak <<eod;
+    $body->represents(__PACKAGE__) or croak <<eod;
 Error - The argument to next_meridian() must be a subclass of
         @{[__PACKAGE__]}.
 eod
 
-my $want = shift;
-defined $want and $want = $want ? 1 : 0;
+    my $want = shift;
+    defined $want and $want = $want ? 1 : 0;
 
-my $denom = $body->mean_angular_velocity -
-    $self->mean_angular_velocity;
-my $retro = $denom >= 0 ? 0 : 1;
-($denom = abs ($denom)) < 1e-11 and croak <<eod;
+    my $denom = $body->mean_angular_velocity -
+	$self->mean_angular_velocity;
+    my $retro = $denom >= 0 ? 0 : 1;
+    ($denom = abs ($denom)) < 1e-11 and croak <<eod;
 Error - The next_meridian() method will not work for geosynchronous
         bodies.
 eod
 
-my $apparent = TWOPI / $denom;
-my $begin = $self->universal;
-my $delta = floor ($apparent / 16);
-my $end = $begin + $delta;
+    my $apparent = TWOPI / $denom;
+    my $begin = $self->universal;
+    my $delta = floor ($apparent / 16);
+    my $end = $begin + $delta;
 
-my ($above, $opposite) =
-    mod2pi (($body->universal($begin)->geocentric)[1]
-	- ($self->universal($begin)->geocentric)[1]) >= PI ?
-    (1 - $retro, PI) : ($retro, 0);
+    my ($above, $opposite) =
+	mod2pi (($body->universal($begin)->geocentric)[1]
+	    - ($self->universal($begin)->geocentric)[1]) >= PI ?
+	(1 - $retro, PI) : ($retro, 0);
 
-($begin, $end) = ($end, $end + $delta)
-    while mod2pi (($body->universal($end)->geocentric)[1] -
-	($self->universal($end)->geocentric)[1] + $opposite) < PI;
-
-if (defined $want && $want != $above) {
-    $above = $want;
-    $opposite = $opposite ? 0 : PI;
     ($begin, $end) = ($end, $end + $delta)
 	while mod2pi (($body->universal($end)->geocentric)[1] -
 	    ($self->universal($end)->geocentric)[1] + $opposite) < PI;
+
+    if (defined $want && $want != $above) {
+	$above = $want;
+	$opposite = $opposite ? 0 : PI;
+	($begin, $end) = ($end, $end + $delta)
+	    while mod2pi (($body->universal($end)->geocentric)[1] -
+		($self->universal($end)->geocentric)[1] + $opposite) < PI;
     }
 
-while ($end - $begin > 1) {
-    my $mid = floor (($begin + $end) / 2);
-    my $long = ($body->universal($mid)->geocentric)[1];
-    my $merid = ($self->universal($mid)->geocentric)[1];
-    ($begin, $end) =
-	mod2pi ($long - $merid + $opposite) < PI ?
-	($mid, $end) : ($begin, $mid);
+    while ($end - $begin > 1) {
+	my $mid = floor (($begin + $end) / 2);
+	my $long = ($body->universal($mid)->geocentric)[1];
+	my $merid = ($self->universal($mid)->geocentric)[1];
+	($begin, $end) =
+	    mod2pi ($long - $merid + $opposite) < PI ?
+	    ($mid, $end) : ($begin, $mid);
     }
 
-$body->universal ($end);
-$self->universal ($end);
-wantarray ? ($end, $above) : $end;
+    $body->universal ($end);
+    $self->universal ($end);
+    return wantarray ? ($end, $above) : $end;
 }
 
 
@@ -1585,7 +1581,7 @@ sub precess {
     if (@_ && $_[0]) {
 	$_[0] += dynamical_delta ($_[0]);
     }
-    $self->precess_dynamical (@_);
+    return $self->precess_dynamical (@_);
 }
 
 
@@ -1611,47 +1607,48 @@ Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
 =cut
 
 sub precess_dynamical {
-my $self = shift;
+    my $self = shift;
 
-my $end = shift
-    or croak "No equinox time specified";
+    my $end = shift
+	or croak "No equinox time specified";
 
-defined (my $start = $self->get ('equinox_dynamical'))
-    or !$self->get ('inertial')
-    or carp "Warning - Precess called with equinox_dynamical attribute undefined";
-$start ||= $self->dynamical ();
+    (defined (my $start = $self->get ('equinox_dynamical'))
+	|| !$self->get ('inertial'))
+	or carp "Warning - Precess called with equinox_dynamical ",
+	    "attribute undefined";
+    $start ||= $self->dynamical ();
 
-my ($alpha0, $delta0, $rho0) = $self->equatorial ();
+    my ($alpha0, $delta0, $rho0) = $self->equatorial ();
 
-my $T = jcent2000 ($start);
-my $t = ($end - $start) / (36525 * SECSPERDAY);
+    my $T = jcent2000($start);
+    my $t = ($end - $start) / (36525 * SECSPERDAY);
 
-#	The following four assignments correspond to Meeus' (21.2).
-my $zterm = (- 0.000139 * $T + 1.39656) * $T + 2306.2181;
-my $zeta = deg2rad ((((0.017998 * $t + (- 0.000344 * $T + 0.30188)) *
-	$t + $zterm) * $t) / 3600);
-my $z = deg2rad ((((0.018203 * $t + (0.000066 * $T + 1.09468)) * $t +
-	$zterm) * $t) / 3600);
-my $theta = deg2rad (((( - 0.041833 * $t - (0.000217 * $T + 0.42665))
-	* $t + (- 0.000217 * $T - 0.85330) * $T + 2004.3109) * $t) /
-	3600);
+    #	The following four assignments correspond to Meeus' (21.2).
+    my $zterm = (- 0.000139 * $T + 1.39656) * $T + 2306.2181;
+    my $zeta = deg2rad((((0.017998 * $t + (- 0.000344 * $T + 0.30188)) *
+	    $t + $zterm) * $t) / 3600);
+    my $z = deg2rad((((0.018203 * $t + (0.000066 * $T + 1.09468)) * $t +
+	    $zterm) * $t) / 3600);
+    my $theta = deg2rad(((( - 0.041833 * $t - (0.000217 * $T + 0.42665))
+	    * $t + (- 0.000217 * $T - 0.85330) * $T + 2004.3109) * $t) /
+	    3600);
 
-#	The following assignments correspond to Meeus' (21.4).
-my $sindelta0 = sin ($delta0);
-my $cosdelta0 = cos ($delta0);
-my $sintheta = sin ($theta);
-my $costheta = cos ($theta);
-my $cosdelta0cosalpha0 = cos ($alpha0 + $zeta) * $cosdelta0;
-my $A = $cosdelta0 * sin ($alpha0 + $zeta);
-my $B = $costheta * $cosdelta0cosalpha0 - $sintheta * $sindelta0;
-my $C = $sintheta * $cosdelta0cosalpha0 + $costheta * $sindelta0;
+    #	The following assignments correspond to Meeus' (21.4).
+    my $sindelta0 = sin ($delta0);
+    my $cosdelta0 = cos ($delta0);
+    my $sintheta = sin ($theta);
+    my $costheta = cos ($theta);
+    my $cosdelta0cosalpha0 = cos ($alpha0 + $zeta) * $cosdelta0;
+    my $A = $cosdelta0 * sin ($alpha0 + $zeta);
+    my $B = $costheta * $cosdelta0cosalpha0 - $sintheta * $sindelta0;
+    my $C = $sintheta * $cosdelta0cosalpha0 + $costheta * $sindelta0;
 
-my $alpha = mod2pi(atan2 ($A , $B) + $z);
-my $delta = asin ($C);
+    my $alpha = mod2pi(atan2 ($A , $B) + $z);
+    my $delta = asin($C);
 
-$self->equatorial ($alpha, $delta, $rho0);
-$self->set (equinox_dynamical => $end);
-$self;
+    $self->equatorial ($alpha, $delta, $rho0);
+    $self->set (equinox_dynamical => $end);
+    return $self;
 }
 
 
@@ -1721,8 +1718,6 @@ The default model is WGS84.
 
 =cut
 
-# help for editor that does not understand POD "
-
 # Wish I had:
 # Maling, D.H., 1989, Measurements from Maps: Principles and methods of cartometry, Pergamon Press, Oxford, England.
 # Maling, D.H., 1993, Coordinate Systems and Map Projections, Pergamon Press, Oxford, England. 
@@ -1734,71 +1729,69 @@ The default model is WGS84.
     'CLARKE-1866' => {	# http://www.colorado.edu/geography/gcraft/notes/datum/elist.html
 	semimajor => 6378.2064,
 	flattening => 1/294.9786982,
-	},
+    },
     GRS67 => {		# http://www.colorado.edu/geography/gcraft/notes/datum/elist.html
 	semimajor => 6378.160,
 	flattening => 1/298.247167427,
-	},
+    },
     GRS80 => {		# http://biology.usgs.gov/fgdc.metadata/version2/spref/horiz/geodet/faq.htm
 	semimajor => 6378.137,		# km
 	flattening => 1/298.25722210088, # U.S. Dept of Commerce 1989 (else 1/298.26)
-	},
+    },
     IAU68 => {		# http://maic.jmu.edu/sic/standards/ellipsoid.htm
 	semimajor => 6378.160,
 	flattening => 1/298.25,
-	},
+    },
     IAU76 => {		# Meeus, p. 82.
 	semimajor => 6378.14,
 	flattening => 1/298.257,
-	},
+    },
     NAD83 => {		# http://biology.usgs.gov/fgdc.metadata/version2/spref/horiz/geodet/faq.htm
 	semimajor => 6378.137,		# km
 	flattening => 1/298.257,
-	},
+    },
     sphere => {		# Defined by me for grins, with semimajor from GRS80.
 	semimajor => 6378.137,		# km, from GRS80
 	flattening => 0,		# It's a sphere!
-	},
+    },
     WGS72 => {		# http://biology.usgs.gov/fgdc.metadata/version2/spref/horiz/geodet/faq.htm
 	semimajor => 6378.135,		# km
 	flattening => 1/298.26,
-	},
+    },
     WGS84 => {		# http://www.colorado.edu/geography/gcraft/notes/datum/elist.html
 	semimajor => 6378.137,
 	flattening => 1/298.257223563,
-	},
-    );
+    },
+);
 foreach my $name (keys %known_ellipsoid) {
     $known_ellipsoid{$name}{name} = $name;
-    }
+}
 
 sub reference_ellipsoid {
-my $self = shift;
-my $name = pop @_ or croak <<eod;
+    my ($self, @args) = @_;
+    my $name = pop @args or croak <<eod;
 Error - You must specify the name of a reference ellipsoid.
 eod
-if (@_ == 0) {
-    $known_ellipsoid{$name} or croak <<eod;
+    if (@args == 0) {
+	$known_ellipsoid{$name} or croak <<eod;
 Error - Reference ellipsoid $name is unknown to this software. Known
         ellipsoids are:
         @{[join ', ', sort keys %known_ellipsoid]}.
 eod
-    }
-  elsif (@_ == 2) {
-    $known_ellipsoid{$name} = {
-	semimajor => $_[0],
-	flattening => $_[1],
-	name => $name,
+    } elsif (@args == 2) {
+	$known_ellipsoid{$name} = {
+	    semimajor => $args[0],
+	    flattening => $args[1],
+	    name => $name,
 	};
-    }
-  else {
-    croak <<eod;
+    } else {
+	croak <<eod;
 Error - You must call the reference_ellipsoid class method with either one
         argument (to fetch the definition of a known ellipsoid) or three
         arguments (to define a new ellipsoid or redefine an old one).
 eod
     }
-@{$known_ellipsoid{$name}}{qw{semimajor flattening name}}
+    return @{$known_ellipsoid{$name}}{qw{semimajor flattening name}}
 }
 
 =item $coord->represents ($class);
@@ -1818,7 +1811,9 @@ There. This took many more words to explain than it did to implement.
 =cut
 
 sub represents {
-defined ($_[1]) ? $_[0]->represents()->isa ($_[1]) : (ref $_[0] || $_[0]);
+    return defined ($_[1]) ?
+	$_[0]->represents()->isa ($_[1]) :
+	(ref $_[0] || $_[0]);
 }
 
 =item $coord->set (name => value ...);
@@ -1837,27 +1832,28 @@ use constant SET_ACTION_NONE => 0;	# Do nothing.
 use constant SET_ACTION_RESET => 1;	# Reset the coordinates based on the initial setting.
 
 sub set {
-my $self = shift;
-ref $self or $self = \%static;
-@_ %2 and croak <<eod;
+    my ($self, @args) = @_;
+    my $original = $self;
+    ref $self or $self = \%static;
+    @args %2 and croak <<eod;
 Error - The set() method requires an even number of arguments.
 eod
-my $action = 0;
-while (@_) {
-    my $name = shift;
-    exists $mutator{$name} or croak <<eod;
+    my $action = 0;
+    while (@args) {
+	my $name = shift @args;
+	exists $mutator{$name} or croak <<eod;
 Error - Attribute '$name' does not exist.
 eod
-    ref $mutator{$name} eq 'CODE' or croak <<eod;
+	ref $mutator{$name} eq 'CODE' or croak <<eod;
 Error - Attribute '$name' is read-only.
 eod
-    $action |= $mutator{$name}->($self, $name, shift);
+	$action |= $mutator{$name}->($self, $name, shift @args);
     }
 
-$self->{_need_purge} = 1
-    if ref $self && $self->{specified} && $action & SET_ACTION_RESET;
+    $self->{_need_purge} = 1
+	if ref $self && $self->{specified} && $action & SET_ACTION_RESET;
 
-$self;
+    return $original;
 }
 
 #	The following are the mutators for the attributes. All are
@@ -1881,24 +1877,24 @@ $self;
     refraction => \&_set_value,
     semimajor => \&_set_custom_ellipsoid,
     twilight => \&_set_value,
-    );
+);
 
 #	If you set semimajor or flattening, the ellipsoid name becomes
 #	undefined. Also clear any cached geodetic coordinates.
 
 sub _set_custom_ellipsoid {
-$_[0]->{ellipsoid} = undef;
-$_[0]->{$_[1]} = $_[2];
-SET_ACTION_RESET;
+    $_[0]->{ellipsoid} = undef;
+    $_[0]->{$_[1]} = $_[2];
+    return SET_ACTION_RESET;
 }
 
 #	Unfortunately, the TLE subclass may need objects reblessed if
 #	the ID changes. So much for factoring. Sigh.
 
 sub _set_id {
-$_[0]{$_[1]} = $_[2];
-$_[0]->rebless () if $_[0]->can ('rebless');
-SET_ACTION_NONE;
+    $_[0]{$_[1]} = $_[2];
+    $_[0]->rebless () if $_[0]->can ('rebless');
+    return SET_ACTION_NONE;
 }
 
 #	If this is a reference ellipsoid name, check it, and if it's
@@ -1906,24 +1902,25 @@ SET_ACTION_NONE;
 #	geodetic coordinates.
 
 sub _set_reference_ellipsoid {
-defined $_[2] or croak <<eod;
+    my ($self, $name, $value) = @_;
+    defined $value or croak <<eod;
 Error - Can not set reference ellipsoid to undefined.
 eod
-exists $known_ellipsoid{$_[2]} or croak <<eod;
-Error - Reference ellipsoid '$_[2]' is unknown.
+    exists $known_ellipsoid{$value} or croak <<eod;
+Error - Reference ellipsoid '$value' is unknown.
 eod
 
-$_[0]->{semimajor} = $known_ellipsoid{$_[2]}{semimajor};
-$_[0]->{flattening} = $known_ellipsoid{$_[2]}{flattening};
-$_[0]->{$_[1]} = $_[2];
-SET_ACTION_RESET;
+    $self->{semimajor} = $known_ellipsoid{$value}{semimajor};
+    $self->{flattening} = $known_ellipsoid{$value}{flattening};
+    $self->{$name} = $value;
+    return SET_ACTION_RESET;
 }
 
 #	If this is a vanilla setting, just do it.
 
 sub _set_value {
-$_[0]->{$_[1]} = $_[2];
-SET_ACTION_NONE;
+    $_[0]->{$_[1]} = $_[2];
+    return SET_ACTION_NONE;
 }
 
 =item $coord->universal ($time)
@@ -1941,8 +1938,8 @@ This method returns the universal time previously set.
 =cut
 
 sub universal {
-    my $self = shift;
-    unless (@_) {
+    my ($self, @args) = @_;
+    unless (@args) {
 	ref $self or croak <<eod;
 Error - The universal() method may not be called as a class method
         unless you specify arguments.
@@ -1952,13 +1949,13 @@ Error - Object's time has not been set.
 eod
     }
 
-    if (@_ == 1) {
+    if (@args == 1) {
 	$self = $self->new () unless ref $self;
 	return $self if defined $self->{universal} &&
-	    $_[0] == $self->{universal};
+	    $args[0] == $self->{universal};
 	delete $self->{local_mean_time};
 	delete $self->{dynamical};
-	$self->{universal} = shift;
+	$self->{universal} = shift @args;
 	if ($self->{specified}) {
 	    if ($self->{inertial}) {
 		delete $self->{_ECI_cache}{fixed};
@@ -1975,7 +1972,7 @@ Error - The universal() method must be called with either zero
         time).
 eod
     }
-    $self;
+    return $self;
 }
 
 
@@ -1996,7 +1993,7 @@ sub _call_time_set {
     unless ($self->{_no_set}++) {
 	$self->time_set ();
     }
-    --$self->{_no_set} or delete $self->{_no_set};
+    return --$self->{_no_set} or delete $self->{_no_set};
 }
 
 #	$coord->_check_coord (method => \@_)
@@ -2015,52 +2012,49 @@ sub _call_time_set {
 #	The object itself is returned.
 
 sub _check_coord {
-my $self = shift;
-my $method = shift;
-my $args = shift;
+    my ($self, $method, $args, @extra) = @_;
 
-unless (ref $self) {
-    @$args or croak <<eod;
+    unless (ref $self) {
+	@$args or croak <<eod;
 Error - The $method() method may not be called as a class method
         unless you specify arguments.
 eod
-    $self = $self->new ();
+	$self = $self->new ();
     }
 
-$self->{debug} and do {
-    local $Data::Dumper::Terse = 1;
-    print "Debug $method (", Dumper (@$args, @_), ")\n";
+    $self->{debug} and do {
+	local $Data::Dumper::Terse = 1;
+	print "Debug $method (", Dumper (@$args, @extra), ")\n";
     };
 
-{
-    my $inx = 0;
-    local $Data::Dumper::Terse = 1;
-    foreach (@$args) {
-	croak <<eod unless defined $_;
+    {
+	my $inx = 0;
+	local $Data::Dumper::Terse = 1;
+	foreach (@$args) {
+	    croak <<eod unless defined $_;
 Error - @{[ (caller (1))[3] ]} argument $inx is undefined.
         Arguments are (@{[ join ', ',
 	    map {my $x = Dumper $_; chomp $x; $x} @$args ]})
 eod
-	$inx++;
+	    $inx++;
 	}
     }
 
-$self->universal (pop @$args) if @$args % 3 == 1;
+    $self->universal (pop @$args) if @$args % 3 == 1;
 
-if ($self->{specified}) {
-    if (@$args) {
-#	Cached coordinate deletion moved to ecef(), so it's only done once.
-	}
-      elsif ($self->{_need_purge}) {
-	delete $self->{_need_purge};
-	my $spec = $self->{specified};
-	my $data = [$self->$spec ()];
-	foreach my $key (@kilatr) {delete $self->{$key}}
-	$self->$spec (@$data);
+    if ($self->{specified}) {
+	if (@$args) {
+#	    Cached coordinate deletion moved to ecef(), so it's only done once.
+	} elsif ($self->{_need_purge}) {
+	    delete $self->{_need_purge};
+	    my $spec = $self->{specified};
+	    my $data = [$self->$spec ()];
+	    foreach my $key (@kilatr) {delete $self->{$key}}
+	    $self->$spec (@$data);
 	}
     }
 
-$self;
+    return $self;
 }
 
 #	_check_latitude($arg_name => $value)
@@ -2073,10 +2067,10 @@ $self;
 #	any sense.
 
 sub _check_latitude {
-    -&PIOVER2 <= $_[1] && $_[1] <= &PIOVER2
+    (-&PIOVER2 <= $_[1] && $_[1] <= &PIOVER2)
 	or carp (ucfirst $_[0],
 	' must be in radians, between -PI/2 and PI/2');
-    mod2pi($_[1] + PI) - PI;
+    return mod2pi($_[1] + PI) - PI;
 }
 
 #	$value = _check_longitude($arg_name => $value)
@@ -2087,10 +2081,10 @@ sub _check_latitude {
 #	value is normalized to the range -PI to PI, and returned.
 
 sub _check_longitude {
-    -&TWOPI <= $_[1] && $_[1] <= &TWOPI
+    (-&TWOPI <= $_[1] && $_[1] <= &TWOPI)
 	or carp (ucfirst $_[0],
 	' must be in radians, between -2*PI and 2*PI');
-    mod2pi($_[1] + PI) - PI;
+    return mod2pi($_[1] + PI) - PI;
 }
 
 #	_check_right_ascension($arg_name => $value)
@@ -2101,10 +2095,10 @@ sub _check_longitude {
 #	is normalized to the range 0 to TWOPI, and returned.
 
 sub _check_right_ascension {
-    0 <= $_[1] && $_[1] <= &TWOPI
+    (0 <= $_[1] && $_[1] <= &TWOPI)
 	or carp (ucfirst $_[0],
 	' must be in radians, between 0 and 2*PI');
-    mod2pi($_[1]);
+    return mod2pi($_[1]);
 }
 
 #	@eci = $self->_convert_ecef_to_eci ()
@@ -2113,27 +2107,27 @@ sub _check_right_ascension {
 #	both caches and returns the result.
 
 sub _convert_ecef_to_eci {
-my $self = shift;
-my $thetag = thetag ($self->universal);
-my @data = $self->ecef ();
-$self->{debug} and print <<eod;
+    my $self = shift;
+    my $thetag = thetag ($self->universal);
+    my @data = $self->ecef ();
+    $self->{debug} and print <<eod;
 Debug eci - thetag = $thetag
     (x, y) = (@data[0, 1])
 eod
-my $costh = cos ($thetag);
-my $sinth = sin ($thetag);
-@data[0, 1] = ($data[0] * $costh - $data[1] * $sinth,
-	$data[0] * $sinth + $data[1] * $costh);
-@data[3, 4] = ($data[3] * $costh - $data[4] * $sinth,
-	$data[3] * $sinth + $data[4] * $costh);
-$self->{debug} and print <<eod;
+    my $costh = cos ($thetag);
+    my $sinth = sin ($thetag);
+    @data[0, 1] = ($data[0] * $costh - $data[1] * $sinth,
+	    $data[0] * $sinth + $data[1] * $costh);
+    @data[3, 4] = ($data[3] * $costh - $data[4] * $sinth,
+	    $data[3] * $sinth + $data[4] * $costh);
+    $self->{debug} and print <<eod;
 Debug eci - after rotation,
     (x, y) = (@data[0, 1])
 eod
-$data[3] += $data[1] * $self->{angularvelocity};
-$data[4] -= $data[0] * $self->{angularvelocity};
-$self->set (equinox_dynamical => $self->dynamical);
-return @{$self->{_ECI_cache}{inertial}{eci} = \@data};
+    $data[3] += $data[1] * $self->{angularvelocity};
+    $data[4] -= $data[0] * $self->{angularvelocity};
+    $self->set (equinox_dynamical => $self->dynamical);
+    return @{$self->{_ECI_cache}{inertial}{eci} = \@data};
 }
 
 #	This subroutine converts the object's ECI setting to ECEF, and
@@ -2142,28 +2136,28 @@ return @{$self->{_ECI_cache}{inertial}{eci} = \@data};
 our $EQUINOX_TOLERANCE = 365 * SECSPERDAY;
 
 sub _convert_eci_to_ecef {
-my $self = shift;
-my $thetag = thetag ($self->universal);
+    my $self = shift;
+    my $thetag = thetag ($self->universal);
 
-my $dyn = $self->dynamical;
-## my $equi = $self->get ('equinox_dynamical') || do {
-##     $self->set (equinox_dynamical => $dyn); $dyn};
-my $equi = $self->{equinox_dynamical} ||= $dyn;
-if (abs ($equi - $dyn) > $EQUINOX_TOLERANCE) {
-    $self->precess_dynamical ($dyn);
-}
+    my $dyn = $self->dynamical;
+    ## my $equi = $self->get ('equinox_dynamical') || do {
+    ##     $self->set (equinox_dynamical => $dyn); $dyn};
+    my $equi = $self->{equinox_dynamical} ||= $dyn;
+    if (abs ($equi - $dyn) > $EQUINOX_TOLERANCE) {
+	$self->precess_dynamical ($dyn);
+    }
 
-my @ecef = $self->eci ();
-$ecef[3] -= $ecef[1] * $self->{angularvelocity};
-$ecef[4] += $ecef[0] * $self->{angularvelocity};
-my $costh = cos (- $thetag);
-my $sinth = sin (- $thetag);
-@ecef[0, 1] = ($ecef[0] * $costh - $ecef[1] * $sinth,
-	$ecef[0] * $sinth + $ecef[1] * $costh);
-@ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
-	$ecef[3] * $sinth + $ecef[4] * $costh);
-$self->{_ECI_cache}{fixed}{ecef} = \@ecef;
-return @ecef;
+    my @ecef = $self->eci ();
+    $ecef[3] -= $ecef[1] * $self->{angularvelocity};
+    $ecef[4] += $ecef[0] * $self->{angularvelocity};
+    my $costh = cos (- $thetag);
+    my $sinth = sin (- $thetag);
+    @ecef[0, 1] = ($ecef[0] * $costh - $ecef[1] * $sinth,
+	    $ecef[0] * $sinth + $ecef[1] * $costh);
+    @ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
+	    $ecef[3] * $sinth + $ecef[4] * $costh);
+    $self->{_ECI_cache}{fixed}{ecef} = \@ecef;
+    return @ecef;
 }
 
 #	$value = _local_mean_delta ($coord)
@@ -2173,7 +2167,7 @@ return @ecef;
 #	been set.
 
 sub _local_mean_delta {
-return ($_[0]->geodetic ())[1] * SECSPERDAY / TWOPI;
+    return ($_[0]->geodetic ())[1] * SECSPERDAY / TWOPI;
 }
 
 
@@ -2183,12 +2177,12 @@ return ($_[0]->geodetic ())[1] * SECSPERDAY / TWOPI;
 #	Used for debugging.
 
 sub _rad2dms {
-my $angle = rad2deg (shift);
-my $deg = floor ($angle);
-$angle = ($angle - $deg) * 60;
-my $min = floor ($angle);
-$angle = ($angle - $min) * 60;
-"$deg degrees $min minutes $angle seconds of arc";
+    my $angle = rad2deg (shift);
+    my $deg = floor ($angle);
+    $angle = ($angle - $deg) * 60;
+    my $min = floor ($angle);
+    $angle = ($angle - $min) * 60;
+    return "$deg degrees $min minutes $angle seconds of arc";
 }
 
 
