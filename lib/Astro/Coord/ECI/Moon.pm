@@ -38,12 +38,12 @@ The following methods should be considered public:
 
 =cut
 
+package Astro::Coord::ECI::Moon;
+
 use strict;
 use warnings;
 
-package Astro::Coord::ECI::Moon;
-
-our $VERSION = '0.005_06';
+our $VERSION = '0.005_07';
 
 use base qw{Astro::Coord::ECI};
 
@@ -112,21 +112,19 @@ otherwise.
 =cut
 
 sub new {
-my $class = ref $_[0] || $_[0];
-shift;
-if ($Singleton && $weaken && $class->isa(__PACKAGE__)) {
-    if ($object) {
-	$object->set (@_) if @_;
-	return $object;
+    my ($class, @args) = @_;
+    ref $class and $class = ref $class;
+    if ($Singleton && $weaken && $class->isa(__PACKAGE__)) {
+	if ($object) {
+	    $object->set (@args) if @args;
+	    return $object;
+	} else {
+	    my $self = $object = $class->SUPER::new (%static, @args);
+	    $weaken->($object);
+	    return $self;
 	}
-      else {
-	my $self = $object = $class->SUPER::new (%static, @_);
-	$weaken->($object);
-	return $self;
-	}
-    }
-  else {
-    my $self = $class->SUPER::new (%static, @_);
+    } else {
+	return $class->SUPER::new (%static, @args);
     }
 }
 
@@ -164,37 +162,37 @@ my @quarters = ('New Moon', 'First quarter Moon', 'Full Moon',
     'Last quarter Moon');
 
 sub almanac {
-my $self = shift;
-my $location = shift;
-embodies($location, 'Astro::Coord::ECI') or
-    croak <<eod;
+    my $self = shift;
+    my $location = shift;
+    embodies($location, 'Astro::Coord::ECI') or
+	croak <<eod;
 Error - The first argument of the almanac() method must be a member of
         the Astro::Coord::ECI class, or a subclass thereof.
 eod
 
-my $start = shift || $self->universal;
-my $end = shift || $start + 86400;
+    my $start = shift || $self->universal;
+    my $end = shift || $start + 86400;
 
-my @almanac;
+    my @almanac;
 
-foreach (
+    foreach (
 	[$location, next_elevation => [$self, 0, 1], 'horizon',
 		['Moon set', 'Moon rise']],
 	[$location, next_meridian => [$self], 'transit',
 		[undef, 'Moon transits meridian']],
 	[$self, next_quarter => [], 'quarter',
 		[@quarters]],
-	) {
-    my ($obj, $method, $arg, $event, $descr) = @$_;
-    $obj->universal ($start);
-    while (1) {
-	my ($time, $which) = $obj->$method (@$arg);
-	last if $time >= $end;
-	push @almanac, [$time, $event, $which, $descr->[$which]]
-	    if $descr->[$which];
+    ) {
+	my ($obj, $method, $arg, $event, $descr) = @$_;
+	$obj->universal ($start);
+	while (1) {
+	    my ($time, $which) = $obj->$method (@$arg);
+	    last if $time >= $end;
+	    push @almanac, [$time, $event, $which, $descr->[$which]]
+		if $descr->[$which];
 	}
     }
-return sort {$a->[0] <=> $b->[0]} @almanac;
+    return sort {$a->[0] <=> $b->[0]} @almanac;
 }
 
 =item @almanac = $moon->almanac_hash($location, $start, $end);
@@ -252,30 +250,32 @@ returns the second B<after> the quarter.
 use constant QUARTER_INC => 86400 * 6;	# 6 days.
 
 sub next_quarter {
-my $self = shift;
-my $quarter = (defined $_[0] ? shift :
-    floor ($self->phase () / PIOVER2) + 1) % 4;
-my $begin;
-while (floor ($self->phase () / PIOVER2) == $quarter) {
-    $begin = $self->dynamical;
-    $self->dynamical ($begin + QUARTER_INC);	# Bump 6 days.
+    my ($self, $quarter) = @_;
+    $quarter = (defined $quarter ? $quarter :
+	floor ($self->phase () / PIOVER2) + 1) % 4;
+    my $begin;
+    while (floor ($self->phase () / PIOVER2) == $quarter) {
+	$begin = $self->dynamical;
+	$self->dynamical ($begin + QUARTER_INC);	# Bump 6 days.
     }
-while (floor ($self->phase () / PIOVER2) != $quarter) {
-    $begin = $self->dynamical;
-    $self->dynamical ($begin + QUARTER_INC);	# Bump 6 days.
+    while (floor ($self->phase () / PIOVER2) != $quarter) {
+	$begin = $self->dynamical;
+	$self->dynamical ($begin + QUARTER_INC);	# Bump 6 days.
     }
-my $end = $self->dynamical ();
+    my $end = $self->dynamical ();
 
-while ($end - $begin > 1) {
-    my $mid = floor (($begin + $end) / 2);
-    my $qq = floor ($self->dynamical ($mid)->phase () / PIOVER2);
-    ($begin, $end) = $qq == $quarter ?
-	($begin, $mid) : ($mid, $end);
+    while ($end - $begin > 1) {
+	my $mid = floor (($begin + $end) / 2);
+	my $qq = floor ($self->dynamical ($mid)->phase () / PIOVER2);
+	($begin, $end) = $qq == $quarter ?
+	    ($begin, $mid) : ($mid, $end);
     }
 
-$self->dynamical ($end);
+    $self->dynamical ($end);
 
-wantarray ? ($self->universal, $quarter, $quarters[$quarter]) : $self->universal;
+    return wantarray ?
+	($self->universal, $quarter, $quarters[$quarter]) :
+	$self->universal;
 }
 
 =item $hash_reference = $moon->next_quarter_hash($want);
@@ -298,8 +298,8 @@ through 2 of the list returned by next_quarter().
 =cut
 
 sub next_quarter_hash {
-    my $self = shift;
-    my ($time, $quarter, $desc) = $self->next_quarter(@_);
+    my ($self, @args) = @_;
+    my ($time, $quarter, $desc) = $self->next_quarter(@args);
     my %hash = (
 	body => $self,
 	almanac => {
@@ -319,7 +319,7 @@ This method returns the sidereal period of the Moon, per Appendix I
 
 =cut
 
-sub period {2360591.5968}	# 27.321662 * 86400
+sub period {return 2360591.5968}	# 27.321662 * 86400
 
 
 =item ($phase, $illum) = $moon->phase ($time);
@@ -350,23 +350,23 @@ the illumination calculation.
 =cut
 
 sub phase {
-my $self = shift;
+    my ($self, $time) = @_;
 
-ref $self || $_[0] or croak <<eod;
+    (ref $self || $time) or croak <<eod;
 Error - You must specify a time if you call phase() as a class method.
 eod
 
-$self = $self->new () unless ref $self;
+    $self = $self->new () unless ref $self;
 
-$self->universal (shift) if @_;
+    $self->universal ($time) if $time;
 
-my $sun = Astro::Coord::ECI::Sun->universal ($self->universal);
+    my $sun = Astro::Coord::ECI::Sun->universal ($self->universal);
 
-my (undef, $longs) = $sun->ecliptic ();
-my (undef, $longm) = $self->ecliptic ();
+    my (undef, $longs) = $sun->ecliptic ();
+    my (undef, $longm) = $self->ecliptic ();
 
-my $phase = mod2pi ($longm - $longs);
-wantarray ? ($phase, (1 + cos ($self->PI - $phase)) / 2) : $phase;
+    my $phase = mod2pi ($longm - $longs);
+    return wantarray ? ($phase, (1 + cos ($self->PI - $phase)) / 2) : $phase;
 }
 
 
@@ -396,113 +396,112 @@ et du barycentre Terre-Lune>, Paris, January 1998.
 =cut
 
 sub time_set {
-my $self = shift;
+    my $self = shift;
 
-my $time = $self->dynamical;
+    my $time = $self->dynamical;
 
-my $T = jcent2000 ($time);			# Meeus (22.1)
+    my $T = jcent2000 ($time);			# Meeus (22.1)
 
 #	Moon's mean longitude.
 
-my $Lprime = mod2pi (deg2rad (			# Meeus (47.1)
-    (((- ($T / 65_194_000) +
-    1 / 538_841) * $T - 0.0015786) * $T +
-    481267.88123421) * $T + 218.3164477));
+    my $Lprime = mod2pi (deg2rad (			# Meeus (47.1)
+	(((- ($T / 65_194_000) +
+	1 / 538_841) * $T - 0.0015786) * $T +
+	481267.88123421) * $T + 218.3164477));
 
 #	Moon's mean elongation.
 
-my $D = mod2pi (deg2rad (((($T / 113_065_000 +	# Meeus (47.2)
-    1 / 545_868) * $T - 0.0018819) * $T +
-    445267.1114034) * $T + 297.8501921));
+    my $D = mod2pi (deg2rad (((($T / 113_065_000 +	# Meeus (47.2)
+	1 / 545_868) * $T - 0.0018819) * $T +
+	445267.1114034) * $T + 297.8501921));
 
 #	Sun's mean anomaly.
 
-my $M = mod2pi (deg2rad ((($T / 24_490_000 -		# Meeus (47.3)
-    0.000_1536) * $T + 35999.050_2909) * $T +
-    357.5291092));
+    my $M = mod2pi (deg2rad ((($T / 24_490_000 -		# Meeus (47.3)
+	0.000_1536) * $T + 35999.050_2909) * $T +
+	357.5291092));
 
 #	Moon's mean anomaly.
 
-my $Mprime = mod2pi (deg2rad ((((- $T / 14_712_000 +	# Meeus (47.4)
-    1 / 69_699) * $T + 0.008_7414) * $T +
-    477198.867_5055) * $T + 134.963_3964));
+    my $Mprime = mod2pi (deg2rad ((((- $T / 14_712_000 +	# Meeus (47.4)
+	1 / 69_699) * $T + 0.008_7414) * $T +
+	477198.867_5055) * $T + 134.963_3964));
 
 #	Moon's argument of latitude (mean distance
 #	from ascending node).
 
-my $F = mod2pi (deg2rad (((($T / 863_310_000 -	# Meeus (47.5)
-    1 / 3_526_000) * $T - 0.003_6539) * $T +
-    483202.017_5233) * $T + 93.272_0950));
+    my $F = mod2pi (deg2rad (((($T / 863_310_000 -	# Meeus (47.5)
+	1 / 3_526_000) * $T - 0.003_6539) * $T +
+	483202.017_5233) * $T + 93.272_0950));
 
 #	Eccentricity correction factor.
 
-my $E = (- 0.000_0074 * $T - 0.002_516) * $T + 1;	# Meeus (47.6)
-my @efac = (1, $E, $E * $E);
+    my $E = (- 0.000_0074 * $T - 0.002_516) * $T + 1;	# Meeus (47.6)
+    my @efac = (1, $E, $E * $E);
 
 #	Compute "further arguments".
 
-my $A1 = mod2pi (deg2rad (131.849 * $T + 119.75));	# Venus
-my $A2 = mod2pi (deg2rad (479264.290 * $T + 53.09));	# Jupiter
-my $A3 = mod2pi (deg2rad (481266.484 * $T + 313.45));	# undocumented
+    my $A1 = mod2pi (deg2rad (131.849 * $T + 119.75));		# Venus
+    my $A2 = mod2pi (deg2rad (479264.290 * $T + 53.09));	# Jupiter
+    my $A3 = mod2pi (deg2rad (481266.484 * $T + 313.45));	# undocumented
 
 #	Compute periodic terms for longitude (sigma l) and
 #	distance (sigma r).
 
-my ($sigmal, $sigmar) = (0, 0);
-foreach (@{$terms{lr}}) {
-    my ($mulD, $mulM, $mulMprime, $mulF, $sincof, $coscof) = @$_;
-    if ($mulM) {
-	my $corr = $efac[abs $mulM] || confess <<eod;
+    my ($sigmal, $sigmar) = (0, 0);
+    foreach (@{$terms{lr}}) {
+	my ($mulD, $mulM, $mulMprime, $mulF, $sincof, $coscof) = @$_;
+	if ($mulM) {
+	    my $corr = $efac[abs $mulM] || confess <<eod;
 Programming error - M multiple greater than 2.
 eod
-	$sincof *= $corr;
-	$coscof *= $corr;
+	    $sincof *= $corr;
+	    $coscof *= $corr;
 	}
-    my $arg = $D * $mulD + $M * $mulM + $Mprime * $mulMprime +
-	$F * $mulF;
-    $sigmal += $sincof * sin ($arg);
-    $sigmar += $coscof * cos ($arg);
+	my $arg = $D * $mulD + $M * $mulM + $Mprime * $mulMprime +
+	    $F * $mulF;
+	$sigmal += $sincof * sin ($arg);
+	$sigmar += $coscof * cos ($arg);
     }
 
 #	Compute periodic terms for latitude (sigma b).
 
-my $sigmab = 0;
-foreach (@{$terms{b}}) {
-    my ($mulD, $mulM, $mulMprime, $mulF, $sincof) = @$_;
-    if ($mulM) {
-	my $corr = $efac[abs $mulM] || confess <<eod;
+    my $sigmab = 0;
+    foreach (@{$terms{b}}) {
+	my ($mulD, $mulM, $mulMprime, $mulF, $sincof) = @$_;
+	if ($mulM) {
+	    my $corr = $efac[abs $mulM] || confess <<eod;
 Programming error - M multiple greater than 2.
 eod
-	$sincof *= $corr;
+	    $sincof *= $corr;
 	}
-    my $arg = $D * $mulD + $M * $mulM + $Mprime * $mulMprime +
-	$F * $mulF;
-    $sigmab += $sincof * sin ($arg);
+	my $arg = $D * $mulD + $M * $mulM + $Mprime * $mulMprime +
+	    $F * $mulF;
+	$sigmab += $sincof * sin ($arg);
     }
 
 #	Add other terms
 
-$sigmal += 3958 * sin ($A1) + 1962 * sin ($Lprime - $F) +
-    318 * sin ($A2);
-$sigmab += - 2235 * sin ($Lprime) + 382 * sin ($A3) +
-    175 * sin ($A1 - $F) + 175 * sin ($A1 + $F) +
-    127 * sin ($Lprime - $Mprime) - 115 * sin ($Lprime + $Mprime);
+    $sigmal += 3958 * sin ($A1) + 1962 * sin ($Lprime - $F) +
+	318 * sin ($A2);
+    $sigmab += - 2235 * sin ($Lprime) + 382 * sin ($A3) +
+	175 * sin ($A1 - $F) + 175 * sin ($A1 + $F) +
+	127 * sin ($Lprime - $Mprime) - 115 * sin ($Lprime + $Mprime);
 
 #	Coordinates of Moon (finally!)
 
-my $lambda = deg2rad ($sigmal / 1_000_000) + $Lprime;
-my $beta = deg2rad ($sigmab / 1_000_000);
-my $delta = $sigmar / 1000 + 385_000.56;
+    my $lambda = deg2rad ($sigmal / 1_000_000) + $Lprime;
+    my $beta = deg2rad ($sigmab / 1_000_000);
+    my $delta = $sigmar / 1000 + 385_000.56;
 
 #	Correct longitude for nutation (from Chapter 22, pg 144).
 
-$lambda += nutation_in_longitude ($time);
+    $lambda += nutation_in_longitude ($time);
 
-
-$self->ecliptic ($beta, $lambda, $delta);
-## $self->set (equinox_dynamical => $time);
-$self->equinox_dynamical ($time);
-$self;
+    $self->ecliptic ($beta, $lambda, $delta);
+    ## $self->set (equinox_dynamical => $time);
+    $self->equinox_dynamical ($time);
+    return $self;
 }
 
 
