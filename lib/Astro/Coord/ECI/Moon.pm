@@ -43,7 +43,7 @@ package Astro::Coord::ECI::Moon;
 use strict;
 use warnings;
 
-our $VERSION = '0.005_07';
+our $VERSION = '0.005_08';
 
 use base qw{Astro::Coord::ECI};
 
@@ -192,7 +192,7 @@ eod
 		if $descr->[$which];
 	}
     }
-    return sort {$a->[0] <=> $b->[0]} @almanac;
+    return (sort {$a->[0] <=> $b->[0]} @almanac);
 }
 
 =item @almanac = $moon->almanac_hash($location, $start, $end);

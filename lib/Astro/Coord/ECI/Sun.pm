@@ -44,7 +44,7 @@ package Astro::Coord::ECI::Sun;
 use strict;
 use warnings;
 
-our $VERSION = '0.007_06';
+our $VERSION = '0.007_07';
 
 use base qw{Astro::Coord::ECI};
 
@@ -176,7 +176,7 @@ eod
 		if $descr->[$which];
 	}
     }
-    return sort {$a->[0] <=> $b->[0]} @almanac;
+    return (sort {$a->[0] <=> $b->[0]} @almanac);
 }
 
 =item @almanac = $sun->almanac_hash($location, $start, $end);
