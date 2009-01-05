@@ -51,17 +51,18 @@ GetOptions (\%opt, qw{format=s help moon sun tomorrow}) or die $usage;
 
 $opt{help} and do {print $usage; exit};
 
-@ARGV = split '\s+', $ENV{ALMANAC_POSITION}
-    if !@ARGV && $ENV{ALMANAC_POSITION};
-@ARGV = (38.898748, -77.037684, 16.68)
-    if !@ARGV;
+my @args = @ARGV;
+@args = split '\s+', $ENV{ALMANAC_POSITION}
+    if !@args && $ENV{ALMANAC_POSITION};
+@args = (38.898748, -77.037684, 16.68)
+    if !@args;
 
 $opt{sun} = $opt{moon} = 1
     unless $opt{sun} || $opt{moon};
 
 #	Stash position where it's convenient.
 
-my ($lat, $lon, $hgt) = @ARGV;
+my ($lat, $lon, $hgt) = @args;
 
 #	Start time is the previous midnight. Unless -tomorrow is
 #	set, in which case it's the next midnight.
@@ -84,7 +85,8 @@ my $loc = Astro::Coord::ECI->geodetic (
 #	away. We could also have instantiated the Sun, and then called
 #	the almanac () method as a separate step.
 
-my @almanac = Astro::Coord::ECI::Sun->new ()->almanac ($loc, $start, $end)
+my @almanac;
+@almanac = Astro::Coord::ECI::Sun->new ()->almanac ($loc, $start, $end)
     if $opt{sun};
 
 #	Generate the almanac data for the Moon, if desired, and add

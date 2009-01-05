@@ -1,3 +1,5 @@
+package main;
+
 use strict;
 use warnings;
 
@@ -25,6 +27,7 @@ my @satrecs;
     local $/ = undef;	# Slurp mode.
     open (my $fh, '<', $tle_file) or die "Failed to open $tle_file: $!";
     my $data = <$fh>;
+    close $fh;
     @satrecs = Astro::Coord::ECI::TLE->parse ($data);
 }
 
@@ -76,3 +79,5 @@ foreach my $inx (0 .. 1) {
 #    $gravconst[$inx] => $max_delta[$inx]
 eod
 }
+
+1;

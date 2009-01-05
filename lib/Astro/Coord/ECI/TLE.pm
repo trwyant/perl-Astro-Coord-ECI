@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_11';
+our $VERSION = '0.014_12';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -195,6 +195,7 @@ use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta embodies
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
+use IO::File;
 use POSIX qw{floor fmod strftime};
 use Time::y2038;
 
@@ -299,7 +300,7 @@ my %attrib = (
     },
     firstderivative => 1,
     gravconst_r => sub {
-	$_[2] == 72 || $_[2] == 721 || $_[2] == 84
+	($_[2] == 72 || $_[2] == 721 || $_[2] == 84)
 	    or croak "Error - Illegal gravconst_r; must be 72, 721, or 84";
 	$_[0]{$_[1]} = $_[2];
 	return 1;		# sgp4r needs reinit if this changes.
@@ -421,14 +422,14 @@ like a static method.
 my %type_map = ();
 
 sub alias {
-    my $self = shift;
-    @_ % 2 and croak <<eod;
+    my ($self, @args) = @_;
+    @args % 2 and croak <<eod;
 Error - Must have even number of arguments for alias().
 eod
-    return wantarray ? %type_map : {%type_map} unless @_;
-    while (@_) {
-	my $name = shift;
-	my $class = shift or do {
+    return wantarray ? %type_map : {%type_map} unless @args;
+    while (@args) {
+	my $name = shift @args;
+	my $class = shift @args or do {
 	    delete $type_map{$name};
 	    next;
 	};
@@ -436,6 +437,7 @@ eod
 	load_module ($class);
 	$type_map{$name} = $class;
     }
+    return $self;
 }
 __PACKAGE__->alias (tle => __PACKAGE__);
 
@@ -497,13 +499,13 @@ be defaulted, and no attempt has been made to make this a pretty error.
     my $y2k = timegm (0, 0, 0, 1, 0, 100);	# Calc. time of 2000 Jan 1 0h UT
 
     sub ds50 {
-	my $self = shift;
-	my $epoch = @_ ? $_[0] : $self->{epoch};
+	my ($self, $epoch) = @_;
+	defined $epoch or $epoch = $self->{epoch};
 	my $rslt = ($epoch - $y2k) / SECSPERDAY + 18263;
-	ref $self && $self->{debug} and print <<eod;
+	(ref $self && $self->{debug}) and print <<eod;
 Debug ds50 ($epoch) = $rslt
 eod
-	$rslt;
+	return $rslt;
     }
 }	# End local symbol block
 
@@ -701,10 +703,10 @@ and the presence of such data will result in an exception being thrown.
 =cut
 
 sub parse {
-    my $self = shift;
+    my ($self, @args) = @_;
     my @rslt;
     my @data = grep {$_ && $_ !~ m/^\s*#/} map {chomp; $_}
-	map {ref $_ && croak <<eod; split '\n', $_} @_;
+	map {ref $_ && croak <<eod; split '\n', $_} @args;
 Error - Arguments to parse() must be scalar.
 eod
     while (@data) {
@@ -720,16 +722,16 @@ eod
 	if (length ($line) > 79 && substr ($line, 79, 1) eq 'G') {
 	    croak "G (internal) format data not supported";
 	} else {
-	    $line =~ m/^1(\s*\d+)/ && length ($1) == 6 or
-		croak "Invalid line 1 '$line'";
+	    ($line =~ m/^1(\s*\d+)/ && length ($1) == 6)
+		or croak "Invalid line 1 '$line'";
 	    length ($line) < 80 and $line .= ' ' x (80 - length ($line));
 	    @ele{qw{id classification international epoch firstderivative
 		secondderivative bstardrag ephemeristype elementnumber}} =
 		unpack 'x2A5A1x1A8x1A14x1A10x1A8x1A8x1A1x1A4', $line;
 	    $line = shift @data;
 	    $tle .= "$line\n";
-	    $line =~ m/^2(\s*\d+)/ && length ($1) == 6 or
-		croak "Invalid line 2 '$line'";
+	    ($line =~ m/^2(\s*\d+)/ && length ($1) == 6)
+		or croak "Invalid line 2 '$line'";
 	    length ($line) < 80 and $line .= ' ' x (80 - length ($line));
 	    @ele{qw{id_2 inclination rightascension eccentricity
 		argumentofperigee meananomaly meanmotion
@@ -895,13 +897,13 @@ use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
 *_nodelegate_pass = \&pass;
 
 sub pass {
-
+    my @args = @_;
     my @sky;
-    ref $_[$#_] eq 'ARRAY' and @sky = @{pop @_};
-    my $tle = shift;
-    my $sta = shift;
-    my $pass_start = shift || time ();
-    my $pass_end = shift || $pass_start + 7 * SECSPERDAY;
+    ref $args[-1] eq 'ARRAY' and @sky = @{pop @args};
+    my $tle = shift @args;
+    my $sta = shift @args;
+    my $pass_start = shift @args || time ();
+    my $pass_end = shift @args || $pass_start + 7 * SECSPERDAY;
     $pass_end >= $pass_start or croak <<eod;
 Error - End time must be after start time.
 eod
@@ -1025,11 +1027,11 @@ eod
 		    [find_first_true ($info[0]{time} - $step, $info[0]{time},
 			sub {($sta->azel ($tle->universal ($_[0])))[1] >=
 			$effective_horizon}), PASS_EVENT_RISE],
-		    [find_first_true ($info[$#info]{time}, $info[$#info]{time}
+		    [find_first_true ($info[-1]{time}, $info[-1]{time}
 			    + $step,
 			sub {($sta->azel ($tle->universal ($_[0])))[1] <
 			$effective_horizon}), PASS_EVENT_SET],
-		    [find_first_true ($info[0]{time}, $info[$#info]{time},
+		    [find_first_true ($info[0]{time}, $info[-1]{time},
 			sub {($sta->azel ($tle->universal ($_[0])))[1] >
 				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
 				PASS_EVENT_MAX],
@@ -1151,8 +1153,8 @@ eod
 
 	    unless ($want_exact) {
 		$info[0]{event} = PASS_EVENT_RISE;
-		$info[$#info]{event} = PASS_EVENT_SET;
-		$info[$#info]{elevation} = 0 if $info[$#info]{elevation} < 0;
+		$info[-1]{event} = PASS_EVENT_SET;
+		$info[-1]{elevation} = 0 if $info[-1]{elevation} < 0;
 					# Because -.6 degrees (which we
 					# get because no atmospheric
 					# refraction below the horizon)
@@ -1160,9 +1162,10 @@ eod
 		my ($last, $max);
 		foreach my $pt (@info) {
 		    $last or next;
-		    $last->{elevation} > $pt->{elevation} and $max ||= $last;
-		    $last->{illumination} != $pt->{illumination} and
-			$pt->{event} ||= $pt->{illumination};
+		    ($last->{elevation} > $pt->{elevation})
+			and ($max ||= $last);
+		    ($last->{illumination} != $pt->{illumination})
+			and ($pt->{event} ||= $pt->{illumination});
 		} continue {
 		    $last = $pt;
 		}
@@ -1255,7 +1258,7 @@ not.
     sub period {
 	my $self = shift;
 	my $code = $model_map{shift || $self->{model}} || \&_period;
-	$code->($self);
+	return $code->($self);
     }
 }
 
@@ -1323,18 +1326,19 @@ It does not under any circumstances manufacture another object.
 =cut
 
 sub rebless {
-    my $tle = shift;
+    my ($tle, @args) = @_;
     eval {$tle->isa(__PACKAGE__)} or croak <<eod;
 Error - You can only rebless an object of class @{[__PACKAGE__]}
         or a subclass thereof. The object you are trying to rebless
 	is of class @{[ref $tle]}.
 eod
     $tle->get ('reblessable') or return $tle;
-    @_ or do {
+    @args or do {
 	my $id = $tle->get ('id') or return $tle;
-	@_ = $status{$id} || 'tle';
+	@args = $status{$id} || 'tle';
     };
-    my $class = ref $_[0] eq 'HASH' ? $_[0]->{class} || $_[0]->{type} : shift
+    my $class = ref $args[0] eq 'HASH' ?
+	($args[0]->{class} || $args[0]->{type}) : shift @args
 	or return $tle;
     $class = $type_map{$class} if $type_map{$class};
     load_module ($class);
@@ -1345,7 +1349,7 @@ Error - You can only rebless an object into @{[__PACKAGE__]} or
 eod
     $tle->before_reblessing ();
     bless $tle, $class;
-    $tle->after_reblessing (@_);
+    $tle->after_reblessing (@args);
     return $tle;
 }
 
@@ -1375,7 +1379,7 @@ model.
     my $mu = 3.986005e5;	# km ** 3 / sec ** 2 -- for Earth.
     sub semimajor {
 	my $self = shift;
-	$self->{&TLE_INIT}{TLE_semimajor} ||= do {
+	return $self->{&TLE_INIT}{TLE_semimajor} ||= do {
 	    my $to2pi = $self->period / SGP_TWOPI;
 	    exp (log ($to2pi * $to2pi * $mu) / 3);
 	};
@@ -1396,29 +1400,31 @@ class can also be set.
 =cut
 
 sub set {
-    my $self = shift;
-    @_ % 2 and croak "The set method takes an even number of arguments.";
+    my ($self, @args) = @_;
+    @args % 2 and croak "The set method takes an even number of arguments.";
     my ($clear, $extant);
     if (ref $self) {
 	$extant = \%attrib;
     } else {
 	$self = $extant = \%static;
     }
-    while (@_) {
-	my $name = shift;
+    while (@args) {
+	my $name = shift @args;
+	my $val = shift @args;
 	exists $extant->{$name} or do {
-	    $self->SUPER::set ($name, shift);
+	    $self->SUPER::set ($name, $val);
 	    next;
 	};
 	defined $attrib{$name} or croak "Attribute $name is read-only.";
 	if (ref $attrib{$name} eq 'CODE') {
-	    $attrib{$name}->($self, $name, shift) and $clear = 1;
+	    $attrib{$name}->($self, $name, $val) and $clear = 1;
 	} else {
-	    $self->{$name} = shift;
+	    $self->{$name} = $val;
 	    $clear ||= $attrib{$name};
 	}
     }
     $clear and delete $self->{&TLE_INIT};
+    return $self;
 }
 
 
@@ -1515,9 +1521,9 @@ eod
 	local $Data::Dumper::Terse = 1;
 	print __PACKAGE__, " status = ", Dumper (\%status);
     } elsif ($cmd eq 'show') {
-	sort {$a->[0] <=> $b->[0]}
+	return (sort {$a->[0] <=> $b->[0]}
 	    map {[$_->{id}, $_->{type}, $_->{status}, $_->{name},
-	    $_->{comment}]} values %status;
+	    $_->{comment}]} values %status);
     } elsif ($cmd eq 'yaml') {	# <<<< Undocumented!!!
 	my $class = eval {require YAML::Syck; 'YAML::Syck'} ||
 	eval {require YAML; 'YAML'}
@@ -1530,6 +1536,7 @@ eod
 Error - '$cmd' is not a legal status() command.
 eod
     }
+    return;
 }
 
 =item $tle = $tle->sgp($time)
@@ -1552,8 +1559,7 @@ implementation.
 =cut
 
 sub sgp {
-    my $self = shift;
-    my $time = shift;
+    my ($self, $time) = @_;
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -1629,7 +1635,11 @@ eod
     my $a = $self->{meanmotion} +
 	    (2 * $self->{firstderivative} +
 	    3 * $self->{secondderivative} * $tsince) * $tsince;
-    $a = $parm->{a0} * ($self->{meanmotion} / $a) ** SGP_TOTHRD;
+    # $a is only magic inside certain constructions, but Perl::Critic
+    # either does not know this, or does not realize that it is a
+    # lexical variable here.
+    $a =	## no critic RequireLocalizedPunctuationVars
+	$parm->{a0} * ($self->{meanmotion} / $a) ** SGP_TOTHRD;
     my $e = $a > $parm->{q0} ? 1 - $parm->{q0} / $a : SGP_E6A;
     my $p = $a * (1 - $e * $e);
     my $xnodes = $self->{rightascension} + $parm->{xnodot} * $tsince;
@@ -1752,8 +1762,7 @@ eod
     $ydot = $rvdot * $vy + $ydot;
     $zdot = $rvdot * $vz + $zdot;
 
-    @_ = ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
-    goto &_convert_out;
+    return _convert_out($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
 
 
@@ -1773,8 +1782,7 @@ model can be used only for near-earth orbits.
 =cut
 
 sub sgp4 {
-    my $self = shift;
-    my $time = shift;
+    my ($self, $time) = @_;
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -2112,8 +2120,7 @@ eod
     my $ydot = $rdotk * $uy + $rfdotk * $vy;
     my $zdot = $rdotk * $uz + $rfdotk * $vz;
 
-    @_ = ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
-    goto &_convert_out;
+    return _convert_out($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
 
 
@@ -2136,8 +2143,7 @@ model can be used only for deep-space orbits.
 =cut
 
 sub sdp4 {
-    my $self = shift;
-    my $time = shift;
+    my ($self, $time) = @_;
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -2406,8 +2412,7 @@ eod
     my $ydot = $rdotk * $uy + $rfdotk * $vy;
     my $zdot = $rdotk * $uz + $rfdotk * $vz;
 
-    @_ = ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
-    goto &_convert_out;
+    return _convert_out($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
 
 
@@ -2428,8 +2433,7 @@ model can be used only for near-earth orbits.
 =cut
 
 sub sgp8 {
-    my $self = shift;
-    my $time = shift;
+    my ($self, $time) = @_;
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -2801,8 +2805,7 @@ eod
     my $ydot = $rdot * $uy + $rvdot * $vy;
     my $zdot = $rdot * $uz + $rvdot * $vz;
 
-    @_ = ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
-    goto &_convert_out;
+    return _convert_out ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
 
 
@@ -2823,8 +2826,7 @@ model can be used only for near-earth orbits.
 =cut
 
 sub sdp8 {
-    my $self = shift;
-    my $time = shift;
+    my ($self, $time) = @_;
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -3060,8 +3062,7 @@ EOD
     my $ydot = $rdot * $uy + $rvdot * $vy;
     my $zdot = $rdot * $uz + $rvdot * $vz;
 
-    @_ = ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
-    goto &_convert_out;
+    return _convert_out ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
 
 
@@ -3616,13 +3617,13 @@ eod
 #	NOT modified is T.
 
 sub _dpsec {
-    my $self = shift;
+    my ($self, @args) = @_;
     my $dpsp = $self->{&TLE_INIT}{TLE_deep};
-    my ($xll, $omgasm, $xnodes, $em, $xinc, $xn, $t) = @_;
+    my ($xll, $omgasm, $xnodes, $em, $xinc, $xn, $t) = @args;
     my @orig;
     $self->{debug}
 	and @orig = map {defined $_ ? $_ : 'undef'}
-	    map {ref $_ eq 'SCALAR' ? $$_ : $_} @_;
+	    map {ref $_ eq 'SCALAR' ? $$_ : $_} @args;
 
 #* ENTRANCE FOR DEEP SPACE SECULAR EFFECTS
 
@@ -3640,8 +3641,8 @@ sub _dpsec {
 
 	my ($delt);
 	while (1) {
-	    !$dpsp->{atime} || $t >= 0 && $dpsp->{atime} < 0 ||
-		    $t < 0 && $dpsp->{atime} >= 0 and do {
+	    (!$dpsp->{atime} || $t >= 0 && $dpsp->{atime} < 0 ||
+		    $t < 0 && $dpsp->{atime} >= 0) and do {
 
 #C
 #C EPOCH RESTART
@@ -3697,7 +3698,7 @@ eod
 #	returns xldot, xndot, and xnddt
 
 sub _dps_dot {
-    my $self = shift;
+    my ($self, $delt) = @_;
     my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
 #C
@@ -3752,8 +3753,7 @@ sub _dps_dot {
 #C INTEGRATOR
 #C
 
-    @_ and do {
-	my $delt = shift;
+    defined $delt and do {
 	$dpsp->{xli} = $dpsp->{xli} + $xldot * $delt + $xndot * $dpsp->{step2};
 	$dpsp->{xni} = $dpsp->{xni} + $xndot * $delt + $xnddt * $dpsp->{step2};
 	$dpsp->{atime} = $dpsp->{atime} + $delt;
@@ -3773,13 +3773,13 @@ sub _dps_dot {
 #	by reference, since they get modified. Sigh.
 
 sub _dpper {
-    my $self = shift;
+    my ($self, @args) = @_;
     my $dpsp = $self->{&TLE_INIT}{TLE_deep};
-    my ($em, $xinc, $omgasm, $xnodes, $xll, $t) = @_;
+    my ($em, $xinc, $omgasm, $xnodes, $xll, $t) = @args;
     my @orig;
     $self->{debug}
 	and @orig = map {defined $_ ? $_ : 'undef'}
-	    map {ref $_ eq 'SCALAR' ? $$_ : $_} @_;
+	    map {ref $_ eq 'SCALAR' ? $$_ : $_} @args;
 
 #C
 #C ENTRANCES FOR LUNAR-SOLAR PERIODICS
@@ -5819,8 +5819,8 @@ sub sgp4r {
 #* -----------------------------------------------------------------------------
 
 sub _r_gstime {
-    my $gstime;
     my ($jd) = @_;
+    my $gstime;
 #* ----------------------------  Locals  -------------------------------
 
     my ($temp, $tut1);
@@ -5920,7 +5920,7 @@ sub _r_dump {
     no warnings qw{uninitialized};
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
 	or croak "Sgp4r not initialized";
-    open (my $fh, '>>', 'perldump.out')
+    my $fh = IO::File->new('perldump.out', '>>')
 	or croak "Failed to open perldump.out: $!";
     print $fh ' ========== sgp4r initialization', "\n";
     print $fh ' SatNum = ', $self->get ('id'), "\n";
@@ -6076,7 +6076,7 @@ sub _make_tle {
     my $output;
 
     my $name = $self->get('name');
-    defined $name && $name ne ''
+    (defined $name && $name ne '')
 	and $output .= substr ($name, 0, 24) . "\n";
 
     my %ele;
@@ -6144,8 +6144,8 @@ sub _make_tle {
 #	of the whole thing, and returns it.
 
 sub _make_tle_checksum {
-    my $fmt = shift;
-    my $buffer = sprintf $fmt, @_;
+    my ($fmt, @args) = @_;
+    my $buffer = sprintf $fmt, @args;
     my $sum = 0;
     foreach (split '', $buffer) {
 	if ($_ eq '-') {
@@ -6155,7 +6155,7 @@ sub _make_tle_checksum {
 	}
     }
     $sum = $sum % 10;
-    sprintf "%-68s%i\n", substr ($buffer, 0, 68), $sum;
+    return sprintf "%-68s%i\n", substr ($buffer, 0, 68), $sum;
 }
 
 #	_set_illum
@@ -6168,7 +6168,7 @@ sub _make_tle_checksum {
 __PACKAGE__->alias (sun => 'Astro::Coord::ECI::Sun');
 __PACKAGE__->alias (moon => 'Astro::Coord::ECI::Moon');
 sub _set_illum {
-    my $body = $_[2];
+    my ($self, $name, $body) = @_;
     unless (ref $body) {
 	$type_map{$body} and $body = $type_map{$body};
 	load_module ($body);
@@ -6180,7 +6180,8 @@ Error - The illuminating body must be an Astro::Coord::ECI, or a
 	'@{[ref $body || $body]}'.
 eod
     ref $body or $body = $body->new ();
-    $_[0]->{$_[1]} = $body;
+    $self->{$name} = $body;
+    return 0;
 }
 
 #######################################################################
