@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.008_02';
+our $VERSION = '0.008_03';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -20,7 +20,10 @@ eod
 
 my @exe_files;
 my @clean_files;
-my @prereq = ();
+my @prereq = (
+    'Params::Util'	=> 0.25,
+    'Time::y2038'	=> 20081111,
+);
 
 print <<eod;
 

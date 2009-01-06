@@ -35,7 +35,10 @@ my %opt = $bldr->args ();
 
 my @exe_files;
 my @clean_files;
-my @prereq;
+my @prereq = (
+    'Params::Util'	=> 0.25,
+    'Time::y2038'	=> 20081111,    
+);
 
 print <<eod;
 
