@@ -117,11 +117,12 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.006_06';
+our $VERSION = '0.006_07';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
+use Params::Util 0.25 qw{_INSTANCE};
 use POSIX qw{floor strftime};	# For debugging
 use Time::y2038;
 
@@ -484,7 +485,7 @@ sub _flare_fixed {
     my $station = shift;
     {
 	local $@;
-	eval {$station->isa ('Astro::Coord::ECI')} or croak <<eod;
+	_INSTANCE($station, 'Astro::Coord::ECI') or croak <<eod;
 Error - The station must be a subclass of Astro::Coord::ECI.
 eod
     }
@@ -494,7 +495,7 @@ eod
 Error - End time must be after start time.
 eod
     unless ($self->get ('backdate')) {
-	my $real = $self->isa ('Astro::Coord::ECI::TLE::Set') ?
+	my $real = _INSTANCE($self, 'Astro::Coord::ECI::TLE::Set') ?
 	    $self->select ($start) : $self;
 	my $epoch = $real->get ('epoch');
 	$start = $epoch if $start < $epoch;
@@ -1642,7 +1643,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2006, 2007, 2008 by Thomas R. Wyant, III
+Copyright 2006, 2007, 2008, 2009 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE

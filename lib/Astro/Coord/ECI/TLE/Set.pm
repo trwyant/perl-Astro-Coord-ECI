@@ -136,8 +136,9 @@ use strict;
 use warnings;
 
 use Carp;
+use Params::Util 0.25 qw{_INSTANCE};
 
-our $VERSION = '0.004_03';
+our $VERSION = '0.004_04';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -190,20 +191,20 @@ sub add {
 	$class ||= ref $tle;
 	$ep{$tle->get ('epoch')} = $tle;
     }
-    foreach my $tle (map {eval {$_->isa(__PACKAGE__)} ?
+    foreach my $tle (map {_INSTANCE($_, __PACKAGE__) ?
 	    $_->members : $_} @args) {
 	my $aid = $tle->get ('id');
 	if (defined $id) {
-	    croak <<eod unless eval {$tle->isa($class)};
+	    _INSTANCE($tle, $class) or croak <<eod;
 Error - Additional member of @{[__PACKAGE__]} must be a
         subclass of $class
 eod
-	    croak <<eod if $aid != $id;
+	    $aid == $id or croak <<eod;
 Error - NORAD ID mismatch. Trying to add ID $aid to set defined
         as ID $id.
 eod
 	} else {
-	    croak <<eod unless eval{$tle->isa('Astro::Coord::ECI::TLE')};
+	    _INSTANCE($tle, 'Astro::Coord::ECI::TLE') or croak <<eod;
 Error - First member of @{[__PACKAGE__]} must be a subclass
         of Astro::Coord::ECI::TLE.
 eod
@@ -477,7 +478,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2006, 2007, 2008 by Thomas R. Wyant, III
+Copyright 2006, 2007, 2008, 2009 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE
