@@ -138,7 +138,7 @@ use warnings;
 use Carp;
 use Params::Util 0.25 qw{_INSTANCE};
 
-our $VERSION = '0.004_04';
+our $VERSION = '0.004_05';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -236,6 +236,15 @@ before you call aggregate(). Actually, any value that Perl will
 interpret as true will work. You might want a 'local' in front of all
 this.
 
+Optionally, the first argument may be a hash reference. The hash
+contains options that modify the function of this method. The only
+option at the moment is
+
+ select => $time
+
+which causes the object best representing the given time to be selected
+in any Astro::Coord::ECI::TLE::Set objects.
+
 =cut
 
 our $Singleton = 0;
@@ -243,17 +252,27 @@ our $Singleton = 0;
 sub aggregate {
     my ($class, @args) = @_;
     $class = ref $class if ref $class;
+    my $opt = ref $args[0] eq 'HASH' ? shift @args : {};
     my %data;
     foreach my $tle (@args) {
 	my $id = $tle->get ('id');
 	$data{$id} ||= [];
 	push @{$data{$id}}, $tle;
     }
-    return map {
-	(@{$data{$_}} > 1 || $Astro::Coord::ECI::TLE::Set::Singleton) ?
-	    $class->new (@{$data{$_}}) :
-	    @{$data{$_}} ? $data{$_}[0] : ()}
-    sort keys %data;
+    my @rslt;
+    my $limit = $Singleton ? 0 : 1;
+    foreach my $id (sort keys %data) {
+	my $items = @{$data{$id}};
+	if ($items > $limit) {
+	    my $set = $class->new(@{$data{$id}});
+	    exists $opt->{select}
+		and $set->select($opt->{select});
+	    push @rslt, $set;
+	} else {
+	    push @rslt, @{$data{$id}};
+	}
+    }
+    return @rslt;
 }
 
 
