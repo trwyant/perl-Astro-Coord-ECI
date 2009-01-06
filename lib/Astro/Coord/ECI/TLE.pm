@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.014_12';
+our $VERSION = '0.014_13';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -196,6 +196,7 @@ use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta embodies
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use IO::File;
+use Params::Util 0.25 qw{_CLASSISA _INSTANCE};
 use POSIX qw{floor fmod strftime};
 use Time::y2038;
 
@@ -908,7 +909,7 @@ sub pass {
 Error - End time must be after start time.
 eod
     unless ($tle->get ('backdate')) {
-	my $real = $tle->isa ('Astro::Coord::ECI::TLE::Set') ?
+	my $real = _INSTANCE($tle, 'Astro::Coord::ECI::TLE::Set') ?
 	    $tle->select ($pass_start) : $tle;
 	my $epoch = $real->get ('epoch');
 	$pass_start = $epoch if $pass_start < $epoch;
@@ -1327,7 +1328,7 @@ It does not under any circumstances manufacture another object.
 
 sub rebless {
     my ($tle, @args) = @_;
-    eval {$tle->isa(__PACKAGE__)} or croak <<eod;
+    _INSTANCE($tle, __PACKAGE__) or croak <<eod;
 Error - You can only rebless an object of class @{[__PACKAGE__]}
         or a subclass thereof. The object you are trying to rebless
 	is of class @{[ref $tle]}.
@@ -1342,7 +1343,7 @@ eod
 	or return $tle;
     $class = $type_map{$class} if $type_map{$class};
     load_module ($class);
-    eval {$class->isa(__PACKAGE__)} or croak <<eod;
+    _CLASSISA($class, __PACKAGE__) or croak <<eod;
 Error - You can only rebless an object into @{[__PACKAGE__]} or
         a subclass thereof. You are trying to rebless the object
 	into $class.
@@ -1482,7 +1483,7 @@ eod
 Error - The status (add => $id) call requires a type.
 eod
 	my $class = $type_map{$type} || $type;
-	$class->isa (__PACKAGE__) or croak <<eod;
+	_CLASSISA($class, __PACKAGE__) or croak <<eod;
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
 	my $status = shift || 0;
@@ -1505,7 +1506,7 @@ eod
 	    %status = ();
 	} else {
 	    my $class = $type_map{$type} || $type;
-	    $class->isa (__PACKAGE__) or croak <<eod;
+	    _CLASSISA($class, __PACKAGE__) or croak <<eod;
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
 	    foreach my $key (keys %status) {
@@ -7232,7 +7233,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006, 2007, 2008 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007, 2008, 2009 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE
