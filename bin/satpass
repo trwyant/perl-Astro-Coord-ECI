@@ -21,6 +21,7 @@ use Date::Manip;
 use File::Basename;
 use FileHandle;
 use Getopt::Long;
+use Params::Util 0.25 qw{_INSTANCE};
 use Pod::Usage;
 use POSIX qw{floor strftime};
 use Term::ReadLine;
@@ -41,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_09';
+our $VERSION = '0.019_10';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1963,7 +1964,7 @@ my $verb = lc (shift @_ || '');
 
 if (!$verb) {
     foreach my $body (@sky) {
-	if ($body->isa ('Astro::Coord::ECI::Star')) {
+	if (_INSTANCE($body, 'Astro::Coord::ECI::Star')) {
 	    my ($ra, $dec, $rng, $pmra, $pmdec, $vr)  = $body->position ();
 	    $rng /= PARSEC;
 	    $pmra = rad2deg ($pmra / 24 * 360 * cos ($ra)) * SPY2DPS;
@@ -1994,7 +1995,7 @@ eod
     my $class = 'Astro::Coord::ECI::' .
 	($special ? ucfirst ($lcn) : 'Star');
     foreach my $body (@sky) {
-	return if $body->isa ($class) &&
+	return if _INSTANCE($body, $class) &&
 		($special || $lcn eq lc $body->get ('name'));
 	}
     my $body = $class->new (debug => $parm{debug});
@@ -2048,7 +2049,7 @@ eod
     my $name = $_[0];
     my $lcn = lc $_[0];
     foreach my $body (@sky) {
-	next unless $body->isa ('Astro::Coord::ECI::Star') &&
+	next unless _INSTANCE($body, 'Astro::Coord::ECI::Star') &&
 		$lcn eq lc $body->get ('name');
 	die <<eod;
 Error - The sky already contains $_[0]. If you want to
@@ -2358,10 +2359,11 @@ eod
 #	_aggregate ();
 
 #	This is just a wrapper for
-#	Astro::Coord::ECI::TLE::Set->aggregate.
+#	Astro::Coord::ECI::TLE::Set->aggregate. You can pass a single
+#	hash ref for the options hash.
 
 sub _aggregate {
-Astro::Coord::ECI::TLE::Set->aggregate (@bodies);
+    Astro::Coord::ECI::TLE::Set->aggregate (@_, @bodies);
 }
 
 #	_display_timing ()
@@ -3078,13 +3080,12 @@ my $time = shift;
 my $choose = $cmdopt{choose} || [];
 my $data;
 if ($time) {
-    $data = [_aggregate (@bodies)];
+    $data = [_aggregate ()];
     }
   elsif ($cmdopt{epoch}) {
+    warn "Debug - Doing _aggregate() with epoch $cmdopt{epoch}";
     my $time = _parse_time ($cmdopt{epoch});
-    $data = [map {eval {$_->isa('Astro::Coord::ECI::TLE::Set')} ?
-	$_->select ($time) : $_}
-	_aggregate (@bodies)];
+    $data = [_aggregate({select => $time})];
     }
   else {
     $data = \@bodies;
