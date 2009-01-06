@@ -67,7 +67,7 @@ package Astro::Coord::ECI::Utils;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_03';
+our $VERSION = '0.009_04';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -904,7 +904,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006, 2007 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007, 2008, 2009 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE
