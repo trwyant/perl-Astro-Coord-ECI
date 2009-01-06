@@ -69,11 +69,12 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.019_05';
+our $VERSION = '0.019_06';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
+use Params::Util 0.25 qw{_CLASSISA};
 use POSIX qw{floor strftime};
 use Time::Local;
 
@@ -1812,7 +1813,8 @@ There. This took many more words to explain than it did to implement.
 
 sub represents {
     return defined ($_[1]) ?
-	$_[0]->represents()->isa ($_[1]) :
+##	$_[0]->represents()->isa($_[1]) :
+	_CLASSISA($_[0]->represents(), $_[1]) ? 1 : 0 :
 	(ref $_[0] || $_[0]);
 }
 
@@ -2673,7 +2675,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006, 2007, 2008 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007, 2008, 2009 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE

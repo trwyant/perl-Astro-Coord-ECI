@@ -44,12 +44,13 @@ package Astro::Coord::ECI::Sun;
 use strict;
 use warnings;
 
-our $VERSION = '0.007_07';
+our $VERSION = '0.007_08';
 
 use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
+use Params::Util 0.25 qw{_CLASSISA};
 use POSIX qw{floor strftime};
 use Time::y2038;
 
@@ -92,7 +93,7 @@ otherwise.
 sub new {
     my ($class, @args) = @_;
     ref $class and $class = ref $class;
-    if ($Singleton && $weaken && $class->isa(__PACKAGE__)) {
+    if ($Singleton && $weaken && _CLASSISA($class, __PACKAGE__)) {
 	if ($object) {
 	    $object->set (@args) if @args;
 	    return $object;
@@ -509,7 +510,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006, 2007, 2008 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007, 2008, 2009 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE
