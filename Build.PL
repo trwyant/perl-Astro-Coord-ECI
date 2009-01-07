@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.006_02';
+our $VERSION = '0.006_03';
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
@@ -74,7 +74,7 @@ if ($opt{n}) {
 my $stringmod = $] >= 5.008 ? '' : 'IO::String';
 
 if (@exe_files) {
-    push @prereq, 'Date::Manip' => 1.14, 'Time::y2038' => 0;
+    push @prereq, 'Date::Manip' => 1.14;
     foreach (['Astro::SIMBAD::Query' => 0, <<eod],
 Optional module Astro::SIMBAD::Query is needed if you wish to retrieve
 star positions directly from the SIMBAD catalog via the 'sky lookup'
@@ -85,6 +85,11 @@ eod
 Optional module Astro::SpaceTrack version 0.016 or higher is needed if
 you wish to retrieve orbital elements directly from Space Track or
 Celestrak into the executable.
+eod
+	    ['Geo::WebService::Elevation::USGS' => 0, <<eod],
+Optional module Geo::WebService::Elevation::USGS is needed if you
+wish to retrieve the elevations of ground positions from the USGS
+web site.
 eod
 	    [$stringmod => 0, <<eod],
 Optional module $stringmod is needed if you wish to pass commands to
@@ -103,9 +108,8 @@ eod
 	    ) {
 	my ($module, $version, $info) = @$_;
 	next unless $module;
-	my @mv = $version ? ($module, $version) : ($module);
-	eval "require @mv";	## no critic ProhibitStringyEval
-##	$@ or do {push @prereq, $module, $version; next};
+	eval "require $module";	## no critic ProhibitStringyEval
+	($@ || !$version) or eval {$module->VERSION($version)};
 	$@ or next;
 	print "\n", $info, "\n";
 	}
