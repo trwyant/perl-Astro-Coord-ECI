@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_10';
+our $VERSION = '0.019_11';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -280,7 +280,7 @@ satpass $VERSION - Satellite pass predictor
 based on Astro::Coord::ECI @{[Astro::Coord::ECI->VERSION]}
 Perl $Config{version} on $Config{osname}
 
-Copyright 2005, 2006, 2007, 2008 by Thomas R. Wyant, III.
+Copyright 2005, 2006, 2007, 2008, 2009 by Thomas R. Wyant, III.
 All rights reserved.
 
 Enter 'help' for help. See the help for terms of use.
@@ -5653,7 +5653,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT
 
-Copyright 2005, 2006, 2007, 2008 by Thomas R. Wyant, III
+Copyright 2005, 2006, 2007, 2008, 2009 by Thomas R. Wyant, III
 (F<wyant at cpan dot org>). All rights reserved.
 
 =head1 LICENSE
