@@ -23,12 +23,14 @@ META.yml
 README
 README.MacOS
 t/basic.t
+t/critic.t
 t/eci.t
 t/executable.t
 t/iridium.t
 t/iridium_status.t
 t/manifest.t
 t/moon.t
+t/perlcriticrc
 t/pod.t
 t/pod_coverage.t
 t/semimajor.t
