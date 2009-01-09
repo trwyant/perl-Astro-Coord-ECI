@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.019_11';
+our $VERSION = '0.019_12';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3651,7 +3651,7 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-I plan, probably in the first quarter of 2009, to restructure this
+I plan, probably in the first half of 2009, to restructure this
 package. The plan calls for moving all the .pm files to distribution
 Astro-Coord-ECI, publishing an App-Satpass2 package with a reworked
 version of the F<satpass> script, and abandoning development of the
@@ -3689,6 +3689,9 @@ and localtime;
 
 * Elimination of calls to UNIVERSAL::isa and UNIVERSAL::can as
 functions;
+
+* Elimination of support for SIMBAD 3, since the service itself has been
+completely superseded by SIMBAD 4.
 
 * Conversion of height lookup functionality to use
 Geo::WebService::Elevation::USGS. Note that this is an optional module,
