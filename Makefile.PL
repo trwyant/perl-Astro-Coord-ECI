@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.008_04';
+our $VERSION = '0.008_05';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -93,7 +93,7 @@ eod
 	    ) {
 	my ($module, $version, $info) = @$_;
 	next unless $module;
-	eval "require $module";	## no critic ProhibitStringyEval
+	eval "require $module";
 	($@ || !$version) or eval {$module->VERSION($version)};
 	$@ or next;
 	print "\n", $info, "\n";

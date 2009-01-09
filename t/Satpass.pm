@@ -95,11 +95,7 @@ sub satpass {
 
 sub not_available {
     foreach my $module (@_) {
-	# Perl::Critic wants us not to do this, but using 'require $fn'
-	# requires us to duplicate the bareword logic. That was not too
-	# bad when .pm was the only option for the file type, but when
-	# they added .pmc things got complex, and they might change again.
-	eval "require $module";	## no critic ProhibitStringyEval
+	eval "require $module";
 	return "Module $module can not be loaded." if $@;
     }
     return '';

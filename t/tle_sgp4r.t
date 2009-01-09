@@ -16,9 +16,7 @@ unless (-e $tle_file) {
 	"Shall I download? [y/n d:n]: ") =~ m/^y/i
 	or bail_out ("Skipped at tester request; $tle_file not downloaded");
     foreach (qw{File::Temp LWP::UserAgent Archive::Zip}) {
-	# Perl::Critic does not like the string eval, but it appears
-	# to me to be the handiest way to load modules in a loop.
-	eval "require $_; 1" or bail_out ("Unable to load $_");	## no critic
+	eval "require $_; 1" or bail_out ("Unable to load $_");
     }
     my $url = 'http://celestrak.com/publications/AIAA/2006-6753/AIAA-2006-6753.zip';
 

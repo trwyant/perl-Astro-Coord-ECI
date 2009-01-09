@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.006_03';
+our $VERSION = '0.006_04';
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
@@ -108,7 +108,7 @@ eod
 	    ) {
 	my ($module, $version, $info) = @$_;
 	next unless $module;
-	eval "require $module";	## no critic ProhibitStringyEval
+	eval "require $module";
 	($@ || !$version) or eval {$module->VERSION($version)};
 	$@ or next;
 	print "\n", $info, "\n";

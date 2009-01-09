@@ -67,7 +67,7 @@ package Astro::Coord::ECI::Utils;
 use strict;
 use warnings;
 
-our $VERSION = '0.009_04';
+our $VERSION = '0.009_05';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -619,7 +619,7 @@ to load the same module simply give the cached results.
 	# I considered Module::Load here, but it appears not to support
 	# .pmc files. No, it's not an issue at the moment, but it may be
 	# if Perl 6 becomes a reality.
-	$rslt{$module} = eval "require $module";	## no critic ProhibitStringyEval
+	$rslt{$module} = eval "require $module";
 	$@ and croak ($error{$module} = $@);
 	return $rslt{$module};
     }
