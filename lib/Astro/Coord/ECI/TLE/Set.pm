@@ -138,7 +138,7 @@ use warnings;
 use Carp;
 use Params::Util 0.25 qw{_INSTANCE};
 
-our $VERSION = '0.004_05';
+our $VERSION = '0.005';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be

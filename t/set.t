@@ -9,7 +9,7 @@ use t::SetDelegate;
 use Test;
 use Time::y2038;
 
-our $VERSION = '0.002_03';
+our $VERSION = '0.003';
 
 plan tests => 53, todo => [];
 

@@ -3,7 +3,7 @@ package main;
 use strict;
 use warnings;
 
-our $VERSION = '0.005_02';
+our $VERSION = '0.006';
 
 use t::Satpass;
 

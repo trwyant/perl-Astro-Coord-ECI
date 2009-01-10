@@ -14,7 +14,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.010_03';
+our $VERSION = '0.011';
 
 add_stopwords (<DATA>);
 
