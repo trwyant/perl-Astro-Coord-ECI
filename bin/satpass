@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.020';
+our $VERSION = '0.020_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2474,7 +2474,6 @@ sub _flatten {
 #	returns a suitable heading for this information.
 
 sub _format_local_az_rng {
-@_ or return ' azim     range    ';
 @_ or return ' azim     range    ';
 @_ == 2 && embodies ($_[0], 'Astro::Coord::ECI') &&
     embodies ($_[1], 'Astro::Coord::ECI') or die <<eod;
