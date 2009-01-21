@@ -1,4 +1,5 @@
 severity	= stern
+theme		= core
 
 [Perl::Critic::Policy::BuiltinFunctions::ProhibitStringyEval]
 
