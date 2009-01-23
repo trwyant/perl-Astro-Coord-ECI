@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015';
+our $VERSION = '0.015_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1575,7 +1575,7 @@ sub sgp {
     my $parm = $self->{&TLE_INIT}{TLE_sgp} ||= do {
 	$self->is_deep and croak <<EOD;
 Error - The SGP model is not valid for deep space objects.
-        Use the SDP4 or SDP8 models instead.
+        Use the SDP4, SDP4R, or SDP8 models instead.
 EOD
 	my $c1 = SGP_CK2 * 1.5;
 	my $c2 = SGP_CK2 / 4;
@@ -1796,7 +1796,7 @@ sub sgp4 {
     my $parm = $self->{&TLE_INIT}{TLE_sgp4} ||= do {
 	$self->is_deep and croak <<EOD;
 Error - The SGP4 model is not valid for deep space objects.
-        Use the SDP4 or SDP8 models instead.
+        Use the SDP4, SDP4R or SDP8 models instead.
 EOD
 
 
@@ -2001,7 +2001,7 @@ eod
     my $a = $parm->{aodp} * $tempa ** 2;
     my $e = $self->{eccentricity} - $tempe;
     my $xl = $xmp + $omega + $xnode + $parm->{xnodp} * $templ;
-    die <<eod if $e > 1 || $e < -1;
+    croak <<eod if $e > 1 || $e < -1;
 Error - Effective eccentricity > 1
     ID = @{[$self->get ('id')]}
     Epoch = @{[scalar gmtime $self->get ('epoch')]} GMT
@@ -2156,8 +2156,8 @@ sub sdp4 {
 
     my $parm = $self->{&TLE_INIT}{TLE_sdp4} ||= do {
 	$self->is_deep or croak <<EOD;
-Error - The SGP4 model is not valid for near-earth objects.
-        Use the SGP, SGP4, or SGP8 models instead.
+Error - The SDP4 model is not valid for near-earth objects.
+        Use the SGP, SGP4, SGP4R, or SGP8 models instead.
 EOD
 
 #*      Recover original mean motion (XNODP) and semimajor axis (AODP)
@@ -2447,7 +2447,7 @@ sub sgp8 {
     my $parm = $self->{&TLE_INIT}{TLE_sgp8} ||= do {
 	$self->is_deep and croak <<EOD;
 Error - The SGP8 model is not valid for deep space objects.
-        Use the SDP4 or SDP8 models instead.
+        Use the SDP4, SGP4R, or SDP8 models instead.
 EOD
 
 
@@ -2840,7 +2840,7 @@ sub sdp8 {
     my $parm = $self->{&TLE_INIT}{TLE_sdp8} ||= do {
 	$self->is_deep or croak <<EOD;
 Error - The SDP8 model is not valid for near-earth objects.
-        Use the SGP, SGP4 or SGP8 models instead.
+        Use the SGP, SGP4, SGP4R, or SGP8 models instead.
 EOD
 
 
@@ -4103,7 +4103,7 @@ use constant SGP4R_ERROR_6 => dualvar (6,
 sub _r_dpper {
     my ($self, $t, $eccp, $inclp, $nodep, $argpp, $mp) = @_;
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
-        or croak "Error - Sgp4r not initialized";
+        or confess "Programming error - Sgp4r not initialized";
 
 #* -------------------------- Local Variables --------------------------
     my ($alfdp, $betdp, $cosip, $cosop, $dalf, $dbet, $dls, $f2, $f3,
@@ -4286,9 +4286,9 @@ sub _r_dpper {
 sub _r_dscom {
     my ($self, $tc) = @_;
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
-        or croak "Error - Sgp4r not initialized";
+        or confess "Programming error - Sgp4r not initialized";
     my $init = $parm->{init}
-        or croak "Error - Sgp4r initialization not in progress";
+        or confess "Programming error - Sgp4r initialization not in progress";
 
 #* -------------------------- Local Variables --------------------------
     my ($c1ss, $c1l, $zcosis, $zsinis, $zsings, $zcosgs, $zes, $zel);
@@ -4554,9 +4554,9 @@ sub _r_dscom {
 sub _r_dsinit {
     my ($self, $t, $tc) = @_;
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
-        or croak "Error - Sgp4r not initialized";
+        or confess "Programming error - Sgp4r not initialized";
     my $init = $parm->{init}
-        or croak "Error - Sgp4r initialization not in progress";
+        or confess "Programming error - Sgp4r initialization not in progress";
 
 #* -------------------------- Local Variables --------------------------
     my ($ainv2, $aonv, $cosisq, $eoc, $f220, $f221, $f311, $f321, $f322,
@@ -4881,7 +4881,7 @@ sub _r_dspace {
     my ($self, $t, $tc, $atime, $eccm, $argpm, $inclm, $xli, $mm, $xni,
         $nodem, $dndt, $xn) = @_;
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
-        or croak "Error - Sgp4r not initialized";
+        or confess "Programming error - Sgp4r not initialized";
 
 #* -------------------------- Local Variables --------------------------
     my ($iretn, $iret);
@@ -5092,9 +5092,9 @@ sub _r_dspace {
 sub _r_initl {
     my ($self) = @_;
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
-        or croak "Error - Sgp4r not initialized";
+        or confess "Programming error - Sgp4r not initialized";
     my $init = $parm->{init}
-        or croak "Error - Sgp4r initialization not in progress";
+        or confess "Programming error - Sgp4r initialization not in progress";
 
 
 #* -------------------------- Local Variables --------------------------
@@ -5255,6 +5255,7 @@ sub _r_initl {
 
 sub _r_sgp4init {
     my ($self) = @_;
+    my $oid = $self->get('id');
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r} = {};
     my $init = $parm->{init} = {};
     # The following is modified in _r_initl
@@ -5309,11 +5310,11 @@ sub _r_sgp4init {
     $t= 0;
 
     $self->{eccentricity} > 1
-        and croak 'Error - Sgp4r TLE eccentricity > 1';
+        and croak "Error - OID $oid Sgp4r TLE eccentricity > 1";
     $self->{eccentricity} < 0
-        and croak 'Error - Sgp4r TLE eccentricity < 0';
+        and croak "Error - OID $oid Sgp4r TLE eccentricity < 0";
     $self->{meanmotion} < 0
-        and croak 'Error - Sgp4r TLE mean motion < 0';
+        and croak "Error - OID $oid Sgp4r TLE mean motion < 0";
     $self->_r_initl();
     if ($init->{rp} <  1) {
 #c            Write(*,*) '# *** SATN',Satn,' EPOCH ELTS SUB-ORBITAL *** '
@@ -5543,6 +5544,7 @@ sub _r_sgp4init {
 
 sub sgp4r {
     my ($self, $t) = @_;
+    my $oid = $self->get('id');
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r} ||= $self->_r_sgp4init ();
     my $time = $t;
     $t = ($t - $self->{epoch}) / 60;
@@ -5623,7 +5625,7 @@ sub sgp4r {
 #c     mean motion less than 0.0
     if ($xn <=  0) {
         $self->{model_error}= &SGP4R_ERROR_2;
-        croak 'Error - ', &SGP4R_ERROR_MEAN_MOTION;
+        croak "Error - OID $oid ", &SGP4R_ERROR_MEAN_MOTION;
     }
     $am= ($parm->{xke}/$xn)**&SGP_TOTHRD*$tempa**2;
     $xn= $parm->{xke}/$am**1.5;
@@ -5632,7 +5634,7 @@ sub sgp4r {
     if ($eccm >=  1  ||  $eccm < -0.001  ||  $am <  0.95) {
 #c         write(6,*) '# Error 1, Eccm = ',  Eccm, ' AM = ', AM
         $self->{model_error}= &SGP4R_ERROR_1;
-        croak 'Error - ', &SGP4R_ERROR_MEAN_ECCEN;
+	croak "Error - OID $oid ", &SGP4R_ERROR_MEAN_ECCEN;
     }
     if ($eccm <  0) {
         $eccm= 1e-06
@@ -5667,7 +5669,7 @@ sub sgp4r {
         }
         if ($eccp <  0  ||  $eccp >  1) {
             $self->{model_error}= &SGP4R_ERROR_3;
-            croak 'Error - ', &SGP4R_ERROR_INST_ECCEN;
+            croak "Error - OID $oid ", &SGP4R_ERROR_INST_ECCEN;
         }
 
     }
@@ -5718,7 +5720,7 @@ sub sgp4r {
 #c     semi-latus rectum < 0.0
     if ( $pl <  0 ) {
         $self->{model_error}= &SGP4R_ERROR_4;
-        croak 'Error - ', &SGP4R_ERROR_LATUSRECTUM;
+        croak "Error - OID $oid ", &SGP4R_ERROR_LATUSRECTUM;
     } else {
         $rl= $am*(1-$ecose);
         $rdotl= sqrt($am)*$esine/$rl;
@@ -5876,7 +5878,7 @@ sub _r_gstime {
 sub _r_getgravconst {
     my ($self) = @_;
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
-        or croak "Error - Sgp4r not initialized";
+        or confess "Programming error - Sgp4r not initialized";
 
     if ($self->{gravconst_r} == 721) {
         $parm->{radiusearthkm}= 6378.135;
@@ -5920,7 +5922,7 @@ sub _r_dump {
     my $self = shift;
     no warnings qw{uninitialized};
     my $parm = $self->{&TLE_INIT}{TLE_sgp4r}
-	or croak "Sgp4r not initialized";
+	or confess "Programming error - Sgp4r not initialized";
     my $fh = IO::File->new('perldump.out', '>>')
 	or croak "Failed to open perldump.out: $!";
     print $fh ' ========== sgp4r initialization', "\n";
@@ -6076,6 +6078,7 @@ sub _make_tle {
     my $self = shift;
     my $output;
 
+    my $oid = $self->get('id');
     my $name = $self->get('name');
     (defined $name && $name ne '')
 	and $output .= substr ($name, 0, 24) . "\n";
@@ -6087,7 +6090,8 @@ sub _make_tle {
 	    argumentofperigee meananomaly meanmotion
 	    revolutionsatepoch}) {
 	    defined ($ele{$_} = $self->get($_))
-		or croak ucfirst $_, "undefined; can not generate TLE";
+		or croak "OID $oid ", ucfirst $_,
+		    "undefined; can not generate TLE";
 	}
 	my $temp = SGP_TWOPI;
 	foreach (qw{meanmotion firstderivative secondderivative}) {
@@ -6123,7 +6127,6 @@ sub _make_tle {
 	    }
 	}
     }
-    my $oid = $self->get('id');
     $output .= _make_tle_checksum ('1%6s%s %-8s %-14s %10s %8s %8s %s %4s',
 	$oid, $self->get('classification'),
 	$self->get('international'),
