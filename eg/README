@@ -10,6 +10,14 @@ almanac
     and height (meters) on the command. The option -help gets you
     brief help.
 
+closest
+    This Perl script takes as input a time (suitable for Date::Manip), a
+    right ascension and declination (both in degrees) and a list of the
+    names of files containing TLE data. The output is the OID, right
+    ascension, declination, and angular separation (in degrees) of the
+    bodies closest to the given position as seen from Parliament House
+    in Australia.
+
 iridium
     This Perl script uses Astro::SpaceTrack (not included) to download
     Iridium data from http://celestrak.com/ and predict flares for the
@@ -22,6 +30,13 @@ iss
     orbital data from http://spaceflight.nasa.gov/realdata/elements/ and
     predict visibility for the next week from the given location, which
     is hard-coded as 80 Wellington Street Ottawa Ontario Canada.
+
+positions
+    This Perl script takes on its command line the names of files
+    containing TLE data. All are read, and the elevation, azimuth and
+    range of all satellites is displayed at one minute intervals for the
+    current GMT day. Output is supressed when the satellite is below the
+    horizon. The position is hard-wired to Parliament House, Australia.
 
 sh_script
     This shell script executes the satpass Perl script (which comes with

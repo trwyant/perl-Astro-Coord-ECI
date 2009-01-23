@@ -2,8 +2,10 @@ bin/satpass
 Build.PL
 Changes
 eg/almanac
+eg/closest
 eg/iridium
 eg/iss
+eg/positions
 eg/README
 eg/sh_script
 eg/tle_period.t

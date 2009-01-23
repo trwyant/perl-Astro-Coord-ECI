@@ -1,0 +1,94 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Astro::Coord::ECI;
+use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE::Set;
+use Astro::Coord::ECI::Utils qw{deg2rad rad2deg};
+
+use Date::Manip;
+use POSIX qw{strftime};
+use Time::y2038;
+
+@ARGV > 3 or die <<eod;
+
+Find the orbiting body closest to the given position at the given time
+as seen by from Parliament House, Canberra Australia.
+
+usage: closest time right_ascension declination tle_file ...
+
+The time is anything acceptable by Date::Manip. The right ascension and
+declination of the position of interest are given in decimal degrees.
+The tle_file arguments are the names of files containing satellite TLE
+orbital element sets.
+
+The output is the OID of the closest body at the given time, and its
+right ascension, declination, and angular separation from the given
+position in degrees, as seen from the observing station.
+
+eod
+
+my $station = Astro::Coord::ECI->new(
+    name => 'Parliament House, Canberra Australia',
+)->geodetic(
+    deg2rad(-35.308232),	# Latitude in radians
+    deg2rad(149.124495),	# Longitude in radians
+    0.603,			# Elevation above sea level in kilometers
+);
+
+my $time = UnixDate($ARGV[0], '%s')
+    or die "Invalid date/time '$ARGV[0]'\n";
+my (undef, $ra, $dec) = splice(@ARGV, 0, 3);
+
+# We arbitrarily set the distance to 10 parsecs to minimize the parallax
+# between the (unknown but much closer) actual location as observed from
+# the center of the Earth (which is what we set with the equatorial()
+# method) and the observed location from the observing station on the
+# surface of the Earth.
+
+my $target = Astro::Coord::ECI->new()->equatorial(
+    deg2rad($ra),
+    deg2rad($dec),
+    30.8568e13,
+    $time,
+);
+
+# We slurp all the files, parse their content into
+# Astro::Coord::ECI::TLE objects, and aggregate all objects with the
+# same OID into a single Astro::Coord::ECI::TLE::Set object. The
+# aggregation step is unnecessary if your input is known to contain only
+# one TLE data set for each OID.
+
+$/ = undef;
+my @tle = Astro::Coord::ECI::TLE::Set->aggregate(
+    Astro::Coord::ECI::TLE->parse(<>));
+
+my @closest;	# Closest bodies
+my $separation;	# Separation of closest body
+
+foreach my $body (@tle) {
+    eval {$body->universal($time); 1;} or do {
+	warn $@;
+	next;
+    };
+    my $angle = $station->angle($body, $target);
+    if (!defined $separation) {
+	$separation = $angle;
+	@closest = ($body);
+    } elsif ($angle == $separation) {
+	push @closest, $body;
+    } elsif ($angle < $separation) {
+	$separation = $angle;
+	@closest = ($body);
+    }
+}
+
+@closest or die "No bodies found. Did you look in the library?\n";
+my $fmt = "%6s  %6.2f  %6.2f  %6.2f\n";
+foreach my $body (@closest) {
+    my ($ra, $dec, $range) = $station->equatorial($body);
+    printf $fmt, $body->get('id'), rad2deg($ra), rad2deg($dec),
+	rad2deg($separation);
+}
