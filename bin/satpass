@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.020_01';
+our $VERSION = '0.020_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -83,6 +83,7 @@ my %parm = (
     flare_mag_day => -6,
     flare_mag_night => 0,
     geometric => 1,
+    gmt => 0,
     horizon => 20,	# Degrees
     lit => 1,
     local_coord => 'azel_rng',
@@ -123,6 +124,7 @@ my %mutator = (
     flare_mag_day => \&_set_unmodified,
     flare_mag_night => \&_set_unmodified,
     geometric => \&_set_unmodified,
+    gmt => \&_set_unmodified,
     height => \&_set_unmodified,
     horizon => \&_set_angle,
     latitude => \&_set_angle,
@@ -631,10 +633,10 @@ foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
 	}
     } else {
 	$descr = ('End ', 'Begin ')[$detail] . $id if $event eq 'twilight';
-	my $day = strftime $parm{date_format}, localtime $time;
+	my $day = strftime $parm{date_format}, _mytime($time);
 	print "$day\n" if $day ne $last;
 	$last = $day;
-	print strftime ($parm{time_format}, localtime $time), ' ',
+	print strftime ($parm{time_format}, _mytime($time)), ' ',
 	    ucfirst $descr, "\n";
 	}
     }
@@ -906,10 +908,11 @@ foreach my $fd (sort {$a->{time} <=> $b->{time}} @flares) {
 
     my $tle = $fd->{body}->universal ($time);
 
-    my $day = strftime ($parm{date_format}, localtime $time);
+    my $displaytime = floor($time + .5);
+    my $day = strftime ($parm{date_format}, _mytime($displaytime));
     print "$day\n" if $day ne $last_day && !$cmdopt{dump};
     $last_day = $day;
-    $time = strftime ($parm{time_format}, localtime floor ($time + .5));
+    $time = strftime ($parm{time_format}, _mytime($displaytime));
     my $name = ucfirst lc ($tle->get ('name') || $tle->get ('id'));
     my ($ctr_azm, $ctr_ele, $ctr_rng) = $sta->azel ($fd->{center}{body}, 0);
     if ($cmdopt{dump}) {
@@ -1337,12 +1340,13 @@ BEGIN {
 
 sub list {
 if (@bodies) {
-    my $dtfmt = "$parm{date_format} $parm{time_format}";
+    my $dtfmt = "$parm{date_format} $parm{time_format} " . ($parm{gmt}
+	? "(GMT)" : "(local)");
     print "\n";
     foreach my $tle (_select_observing_list ()) {
 	my $id = $tle->get ('id');
 	my $name = $tle->get ('name');
-	my $epoch = strftime "$dtfmt (local)", localtime $tle->get ('epoch');
+	my $epoch = strftime $dtfmt, _mytime($tle->get ('epoch'));
 	$name = $name ? " - $name" : '';
 	my $secs = floor ($tle->period + .5);
 	my $mins = floor ($secs / 60);
@@ -1553,7 +1557,9 @@ eod
 	    }
 	    foreach my $event (@{$pass->{events}}) {
 		my $time = $event->{time};
-		my $date = strftime ($parm{date_format}, localtime $time);
+		my $displaytime = floor($time + .5);
+		my $date = strftime ($parm{date_format},
+		    _mytime($displaytime));
 		if ($date ne $last_date) {
 		    print "$date\n" unless $cmdopt{dump};
 		    $last_date = $date;
@@ -1570,8 +1576,8 @@ eod
 			print Dumper ($event);
 		    }
 		} else {
-		    printf LINFMT, strftime ($parm{time_format}, localtime (
-			    floor ($time + .5))),
+		    printf LINFMT, strftime ($parm{time_format}, _mytime (
+			    $displaytime)),
 			$lcfmt->($sta, $tle),
 			rad2deg ($lat), rad2deg ($long), $alt,
 			$event_name[$event->{illumination}]->($event),
@@ -1582,8 +1588,8 @@ eod
 			    ->universal ($time);
 			my ($lat, $long, $alt) = $body->geodetic;
 			printf BGFMT, strftime (
-				$parm{time_format}, localtime (
-				    floor ($time + .5))),
+				$parm{time_format}, _mytime (
+				    $displaytime)),
 			    $lcfmt->($sta, $body),
 			    rad2deg ($lat), rad2deg ($long),
 			    $body->get ('name') || $body->get ('id') || '';
@@ -1622,7 +1628,7 @@ foreach my $body (@sky) {
     my $name;
     foreach (@table) {$_->[0] > $phase or next; $name = $_->[1]; last}
     printf "%s @{[$body->get ('name')]} phase %.0f deg, %s, %.0f%% illum.\n",
-	strftime ($dtfmt, localtime $time), $phase, $name, $illum * 100;
+	strftime ($dtfmt, _mytime($time)), $phase, $name, $illum * 100;
     }
 }
 }	# end of BEGIN block
@@ -1659,7 +1665,7 @@ my $sun = Astro::Coord::ECI::Sun->new ();
 printf <<eod, _format_location (),
 %s            name @{[$lcfmt->()]} %-*s illum
 eod
-	length (strftime $dtfmt, localtime time), 'epoch of data';
+	length (strftime $dtfmt, _mytime(time)), 'epoch of data';
 
 #	Tell aggregate() how to work.
 
@@ -1668,7 +1674,7 @@ local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
 my $when = time ();
 my $indent;
 while ($time <= $endtm) {
-    print strftime ($dtfmt, localtime $time), "\n";
+    print strftime ($dtfmt, _mytime($time)), "\n";
     foreach my $body (_select_observing_list ($time), @sky) {
 	$body->set(debug => $cmdopt{debug});
 	$body->universal ($time);
@@ -1678,7 +1684,7 @@ while ($time <= $endtm) {
 		($sta->azel ($sun->universal ($time)))[1] > $twilight ? 2 :
 		($body->azel ($sun))[1] > $body->dip() ? 1 : 0;
 	    printf "%16s %s %s %s\n", $name, $lcfmt->($sta, $body),
-		strftime ($dtfmt, localtime $body->get ('epoch')),
+		strftime ($dtfmt, _mytime($body->get ('epoch'))),
 		$lighting[$illum] || '';
 
 	    if ($body->can_flare ($cmdopt{questionable})) {
@@ -1764,7 +1770,7 @@ sub quarters {
 	    }
 	} else {
 	    my ($time, $quarter) = @$_;
-	    print strftime ($dtfmt, localtime $time), " $quarter\n";
+	    print strftime ($dtfmt, _mytime($time)), " $quarter\n";
 	}
     }
 
@@ -1926,7 +1932,7 @@ eod
 
 sub _show_time {
 defined $parm{$_[0]} ?
-    strftime ('%d-%b-%Y %H:%M:%S', localtime $parm{$_[0]}) :
+    strftime ('%d-%b-%Y %H:%M:%S', _mytime($parm{$_[0]})) :
     'undef'
 }
 
@@ -2829,6 +2835,15 @@ BEGIN {	# Begin local symbol block
     }
 
 }	# end local symbol block.
+
+#	@times = _mytime($time);
+
+#	Returns seconds, minutes, hours, and so on. It is localtime if
+#	the gmt parameter is false, or GMT if it is true.
+
+sub _mytime {
+    return $parm{gmt} ? gmtime($_[0]) : localtime($_[0]);
+}
 
 #	$angle = _parse_angle ($string)
 
@@ -5114,6 +5129,15 @@ versus the geometric horizon (elevation 0 degrees). If false, it
 is versus whatever the 'horizon' parameter specifies.
 
 The default is 1 (i.e. true).
+
+=for html <a name="gmt"></a>
+
+=item gmt (boolean)
+
+This parameter specifies whether output times are local (if false) or
+GMT (if true).
+
+The default is 0 (i.e. false).
 
 =for html <a name="height"></a>
 
