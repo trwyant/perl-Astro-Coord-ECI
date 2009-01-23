@@ -100,7 +100,7 @@ geocode
 Geocoder
 geocoder
 geodesy
-GMT
+gmt
 gmtime's
 Goran
 Green's
