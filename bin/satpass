@@ -42,7 +42,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.020_02';
+our $VERSION = '0.020_03';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1677,7 +1677,11 @@ while ($time <= $endtm) {
     print strftime ($dtfmt, _mytime($time)), "\n";
     foreach my $body (_select_observing_list ($time), @sky) {
 	$body->set(debug => $cmdopt{debug});
-	$body->universal ($time);
+	eval {$body->universal ($time); 1;}
+	    or do {
+	    carp $@;
+	    next;
+	};
 	my $name = $body->get ('name') || $body->get ('id') || 'body';
 	if ($body->represents ('Astro::Coord::ECI::TLE')) {
 	    my $illum = ($sta->azel ($body))[1] < 0 ? 10 :
