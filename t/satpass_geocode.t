@@ -47,6 +47,11 @@ set longitude -77.037684
 eod
 -test geocode U.S. location via http://rpc.geocoder.us/
 
+# BELOW HERE NOT TESTED BECAUSE GEOCODER.CA REQUIRES REGISTRATION FOR
+# THEIR FREE PORT.
+
+-end
+
 -skip not_available ('XML::Parser') || not_reachable ('http://rpc.geocoder.ca/')
 
 set country ca

@@ -67,13 +67,23 @@ package Astro::Coord::ECI::Utils;
 use strict;
 use warnings;
 
-our $VERSION = '0.010';
+our $VERSION = '0.010_01';
 our @ISA = qw{Exporter};
 
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
-use Time::y2038;
+
+BEGIN {
+    eval {
+	require Time::y2038;
+	Time::y2038->import();
+	1;
+    } or do {
+	require Time::Local;
+	Time::Local->import();
+    };
+}
 
 our @EXPORT;
 our @EXPORT_OK = qw{

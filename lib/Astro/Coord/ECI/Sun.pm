@@ -44,7 +44,7 @@ package Astro::Coord::ECI::Sun;
 use strict;
 use warnings;
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -52,7 +52,13 @@ use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Params::Util 0.25 qw{_CLASSISA};
 use POSIX qw{floor strftime};
-use Time::y2038;
+
+BEGIN {
+    eval {
+	require Time::y2038;
+	Time::y2038->import();
+    };
+}
 
 my %static = (
     id => 'Sun',

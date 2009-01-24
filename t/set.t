@@ -7,9 +7,19 @@ use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
 use t::SetDelegate;
 use Test;
-use Time::y2038;
 
-our $VERSION = '0.003';
+BEGIN {
+    eval {
+	require Time::y2038;
+	Time::y2038->import();
+	1;
+    } or do {
+	require Time::Local;
+	Time::Local->import();
+    };
+}
+
+our $VERSION = '0.003_01';
 
 plan tests => 53, todo => [];
 

@@ -7,7 +7,17 @@ use Astro::Coord::ECI;
 use Astro::Coord::ECI::Utils qw{deg2rad PERL2000 rad2deg};
 use POSIX qw{strftime floor};
 use Test;
-use Time::y2038;
+
+BEGIN {
+    eval {
+	require Time::y2038;
+	Time::y2038->import();
+	1;
+    } or do {
+	require Time::Local;
+	Time::Local->import();
+    };
+}
 
 BEGIN {plan tests => 65}
 

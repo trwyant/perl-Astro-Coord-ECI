@@ -8,7 +8,17 @@ use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Utils qw{deg2rad PI};
 use POSIX qw{strftime floor};
 use Test;
-use Time::y2038;
+
+BEGIN {
+    eval {
+	require Time::y2038;
+	Time::y2038->import();
+	1;
+    } or do {
+	require Time::Local;
+	Time::Local->import();
+    };
+}
 
 BEGIN {plan tests => 36}
 

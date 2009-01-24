@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015_01';
+our $VERSION = '0.015_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -198,7 +198,17 @@ use Data::Dumper;
 use IO::File;
 use Params::Util 0.25 qw{_CLASSISA _INSTANCE};
 use POSIX qw{floor fmod strftime};
-use Time::y2038;
+
+BEGIN {
+    eval {
+	require Time::y2038;
+	Time::y2038->import();
+	1;
+    } or do {
+	require Time::Local;
+	Time::Local->import();
+    };
+}
 
 {	# Local symbol block.
     my @const = qw{

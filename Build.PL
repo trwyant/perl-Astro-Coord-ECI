@@ -23,6 +23,10 @@ my %attr = (
     license => 'perl',
 );
 
+$mbv >= 0.08 and $attr{recommends} = {
+    'Time::y2038'	=> 20081111,
+};
+
 $mbv >= 0.28 and $attr{meta_merge} = {
     no_index => {
 	directory => [qw{inc t}],
@@ -37,7 +41,6 @@ my @exe_files;
 my @clean_files;
 my @prereq = (
     'Params::Util'	=> 0.25,
-    'Time::y2038'	=> 20081111,    
 );
 
 print <<eod;

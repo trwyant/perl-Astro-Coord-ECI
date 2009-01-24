@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.009_01';
+our $VERSION = '0.009_02';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -22,7 +22,6 @@ my @exe_files;
 my @clean_files;
 my @prereq = (
     'Params::Util'	=> 0.25,
-    'Time::y2038'	=> 20081111,
 );
 
 print <<eod;
@@ -147,6 +146,9 @@ $mmv >= 6.31 and $attr{LICENSE} = 'perl';
 
 $mmv >= 6.4501 and $attr{META_MERGE} = {
     build_requires => {
+    },
+    recommends => {
+	'Time::y2038' => 20081111,
     },
     resources => {
 	license => 'http://dev.perl.org/licenses/',
