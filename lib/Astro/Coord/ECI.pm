@@ -69,14 +69,13 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.020';
+our $VERSION = '0.020_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use Params::Util 0.25 qw{_CLASSISA};
 use POSIX qw{floor strftime};
-use Time::Local;
 
 use constant MINUSONEDEGREE => deg2rad (-1);
 
