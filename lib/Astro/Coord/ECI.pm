@@ -69,7 +69,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.020_02';
+our $VERSION = '0.020_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -2346,6 +2346,12 @@ Some of the usual values are:
  astronomical twilight: -18 degrees
 
 The default is -6 degrees (or, actually, the equivalent in radians).
+
+For example, to set nautical twilight you could do
+
+ $eci->set(twilight => deg2rad(-12));
+
+where C<deg2rad()> is imported from Astro::Coord::ECI::Utils.
 
 =back
 
