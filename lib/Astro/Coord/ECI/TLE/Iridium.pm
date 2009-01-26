@@ -117,7 +117,7 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -1513,7 +1513,7 @@ sub _reflection_fixed {
 
 	my $angle = _flare_calculate_angle_list (
 		$tle_vector, $mma, $illum_vector, $station_vector);
-	warn <<eod if $debug;
+	warn <<eod if $debug;	## no critic (RequireCarping)
         MMA $mma Angle: @{[defined $angle ? rad2deg ($angle) . ' degrees' :
 		'undefined']}
 eod

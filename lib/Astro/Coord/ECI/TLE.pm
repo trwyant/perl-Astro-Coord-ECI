@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015_03';
+our $VERSION = '0.015_04';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1048,7 +1048,7 @@ eod
 				PASS_EVENT_MAX],
 		);
 		$culmination = $time[2][0];
-		warn <<eod if $debug;
+		warn <<eod if $debug;	## no critic (RequireCarping)
 
 Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
 		    ]} $time[0][1]
@@ -1077,7 +1077,7 @@ eod
 			    $lighting[$litup] == $evt->{illumination}
 			    }),
 			    $evt->{illumination}];
-		    warn <<eod if $debug;
+		    warn <<eod if $debug;	## no critic (RequireCarping)
                  @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]} $evt->{illumination}
                  @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
 eod
@@ -1105,7 +1105,7 @@ eod
 		    next if $angle > $appulse_dist;
 		    push @time, [$when, PASS_EVENT_APPULSE,
 			appulse => {angle => $angle, body => $body}];
-		    warn <<eod if $debug;
+		    warn <<eod if $debug;	## no critic (RequireCarping)
                 $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]}
 eod
 		}
@@ -1119,7 +1119,8 @@ eod
 #		Generate the full data for the exact events.
 
 		my ($suntim, $rise);
-		warn "Contents of \@time: ", Dumper (\@time) if $debug;
+		warn "Contents of \@time: ", Dumper (\@time)	## no critic (RequireCarping)
+		    if $debug;
 		foreach (sort {$a->[0] <=> $b->[0]} @time) {
 		    my @event = @$_;
 		    my $time = shift @event;
@@ -1611,7 +1612,7 @@ EOD
 	my $xnodot = -2 * $d30 * $po2no;
 	my $c5 = .5 * $c4 * $sini0 * (3 + 5 * $cosi0) / (1 + $cosi0);
 	my $c6 = $c4 * $sini0;
-	$self->{debug} and warn <<eod;
+	$self->{debug} and warn <<eod;	## no critic (RequireCarping)
 Debug sgp initialization -
         A0 = $a0
         C5 = $c5
@@ -1658,7 +1659,7 @@ eod
     my $xls = mod2pi ($parm->{xlo} + ($self->{meanmotion} + $parm->{omgdt} +
 	    $parm->{xnodot} + ($self->{firstderivative} +
 	    $self->{secondderivative} * $tsince) * $tsince) * $tsince);
-    $self->{debug} and warn <<eod;
+    $self->{debug} and warn <<eod;	## no critic (RequireCarping)
 Debug sgp - atmospheric drag and gravity
         TSINCE = $tsince
         A = $a
@@ -1675,7 +1676,7 @@ eod
     my $axnsl = $e * cos ($omgas);
     my $aynsl = $e * sin ($omgas) - $parm->{c6} / $p;
     my $xl = mod2pi ($xls - $parm->{c5} / $p * $axnsl);
-    $self->{debug} and warn <<eod;
+    $self->{debug} and warn <<eod;	## no critic (RequireCarping)
 Debug sgp - long period periodics
         AXNSL = $axnsl
         AYNSL = $aynsl
@@ -1698,7 +1699,7 @@ eod
 	$tem2 > 1 and $tem5 = $tem2 / $tem5;
 	$eo1 += $tem5;
     }
-    $self->{debug} and warn <<eod;
+    $self->{debug} and warn <<eod;	## no critic (RequireCarping)
 Debug sgp - solve equation of Kepler
         U = $u
         EO1 = $eo1
@@ -1721,7 +1722,7 @@ eod
     my $sinu = $a / $r * ($sineo1 - $aynsl - $axnsl * $temp);
     my $cosu = $a / $r * ($coseo1 - $axnsl + $aynsl * $temp);
     my $su = _actan ($sinu, $cosu);
-    $self->{debug} and warn <<eod;
+    $self->{debug} and warn <<eod;	## no critic (RequireCarping)
 Debug sgp - short period preliminary quantities
         PL2 = $pl2
         R = $r
