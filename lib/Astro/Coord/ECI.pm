@@ -69,7 +69,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.020_03';
+our $VERSION = '0.020_04';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1991,10 +1991,19 @@ eod
 sub _call_time_set {
     my $self = shift;
     $self->can ('time_set') or return;
+    my $exception;
     unless ($self->{_no_set}++) {
-	$self->time_set ();
+	eval {$self->time_set (); 1;}
+	    or $exception = $@;
     }
-    return --$self->{_no_set} or delete $self->{_no_set};
+    --$self->{_no_set} or delete $self->{_no_set};
+    if ($exception) {
+	$self->{universal} = undef;
+	$self->{dynamical} = undef;
+	# Re-raise the exception not that we have cleaned up.
+	die $exception;	## no critic (RequireCarping)
+    }
+    return;
 }
 
 #	$coord->_check_coord (method => \@_)
