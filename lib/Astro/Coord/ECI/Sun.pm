@@ -44,7 +44,7 @@ package Astro::Coord::ECI::Sun;
 use strict;
 use warnings;
 
-our $VERSION = '0.008_01';
+our $VERSION = '0.008_02';
 
 use base qw{Astro::Coord::ECI};
 
@@ -143,7 +143,8 @@ potentially returned:
           2 = fall equinox, 3 = winter solstice.
 
 Twilight is calculated based on the current value of the twilight
-attribute of the $sun object.
+attribute of the $sun object. This attribute is inherited from
+L<Astro::Coord::ECI|Astro::Coord::ECI>, and documented there.
 
 =cut
 
