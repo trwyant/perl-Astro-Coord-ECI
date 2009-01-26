@@ -215,7 +215,7 @@ eod
 	s/-result\b\s*//m and do {
 	    # Perl::Critic does not like string evals, but it's the only
 	    # way to execute arbitrary code out of the data.
-	    $output = eval $_;	## no critic
+	    $output = eval $_;	## no critic (ProhibitStringyEval)
 	    die $@ if $@; next
 	};
 
@@ -226,7 +226,7 @@ eod
 	s/-skip\b\s*//m and do {
 	    # Perl::Critic does not like string evals, but it's the only
 	    # way to execute arbitrary code out of the data.
-	    $skip = eval $_;	## no critic
+	    $skip = eval $_;	## no critic (ProhibitStringyEval)
 	    die $@ if $@; next
 	};
 

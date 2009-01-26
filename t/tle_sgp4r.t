@@ -183,7 +183,7 @@ sub prompt {
     print STDERR @args;
     return
 	# We're a test module, and want to be fairly lightweight.
-	unless defined (my $input = <STDIN>);	## no critic ProhibitExplicitStdin
+	unless defined (my $input = <STDIN>);	## no critic (ProhibitExplicitStdin)
     chomp $input;
     return $input;
 }

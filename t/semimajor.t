@@ -5,7 +5,7 @@ use warnings;
 
 # The following is a quick ad-hoc way to get an object with a specified
 # period.
-package Astro::Coord::ECI::TLE::Period;	## no critic ProhibitMultiplePackages
+package Astro::Coord::ECI::TLE::Period;	## no critic (ProhibitMultiplePackages)
 
 use base qw{Astro::Coord::ECI::TLE};
 
@@ -23,7 +23,7 @@ use base qw{Astro::Coord::ECI::TLE};
 }
 
 # And now, back to our regularly-scheduled test.
-package main;	## no critic ProhibitMultiplePackages
+package main;	## no critic (ProhibitMultiplePackages)
 
 use Astro::Coord::ECI::TLE;
 use Test;

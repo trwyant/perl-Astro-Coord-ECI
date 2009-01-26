@@ -138,7 +138,7 @@ use warnings;
 use Carp;
 use Params::Util 0.25 qw{_INSTANCE};
 
-our $VERSION = '0.005';
+our $VERSION = '0.005_01';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -368,7 +368,7 @@ member's 'backdate' attribute is false.
 
 =cut
 
-sub select : method {	## no critic ProhibitBuiltInHomonyms
+sub select : method {	## no critic (ProhibitBuiltInHomonyms)
     my ($self, $time) = @_;
     if (defined $time) {
 	croak <<eod unless @{$self->{members}};

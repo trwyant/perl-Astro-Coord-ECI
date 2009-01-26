@@ -69,7 +69,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.020_01';
+our $VERSION = '0.020_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1126,7 +1126,7 @@ sub geodetic {
 	# The $b is _not_ a magic variable, since we are not inside
 	# any of the specialized blocks that make $b magic. Perl::Critic
 	# is simply confused.
-	$b = - $b	## no critic RequireLocalizedPunctuationVars
+	$b = - $b	## no critic (RequireLocalizedPunctuationVars)
 	    if $z < 0;	# Per Borkowski, for southern hemisphere.
 
 

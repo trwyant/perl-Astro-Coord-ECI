@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015_02';
+our $VERSION = '0.015_03';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1649,7 +1649,7 @@ eod
     # $a is only magic inside certain constructions, but Perl::Critic
     # either does not know this, or does not realize that it is a
     # lexical variable here.
-    $a =	## no critic RequireLocalizedPunctuationVars
+    $a =	## no critic (RequireLocalizedPunctuationVars)
 	$parm->{a0} * ($self->{meanmotion} / $a) ** SGP_TOTHRD;
     my $e = $a > $parm->{q0} ? 1 - $parm->{q0} / $a : SGP_E6A;
     my $p = $a * (1 - $e * $e);
