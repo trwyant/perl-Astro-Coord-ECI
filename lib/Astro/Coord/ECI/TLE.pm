@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015_04';
+our $VERSION = '0.015_05';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1713,6 +1713,7 @@ eod
     my $ecose = $axnsl * $coseo1 + $aynsl * $sineo1;
     my $esine = $axnsl * $sineo1 - $aynsl * $coseo1;
     my $el2 = $axnsl * $axnsl + $aynsl * $aynsl;
+    $el2 > 1 and croak "Error - Effective eccentricity > 1";
     my $pl = $a * (1 - $el2);
     my $pl2 = $pl * $pl;
     my $r = $a * (1 - $ecose);
@@ -2327,6 +2328,7 @@ eod
     my $xmam = $xmdf + $parm->{xnodp} * $templ;
     $self->_dpper (\$e, \$xinc, \$omgadf, \$xnode, \$xmam, $tsince);
     my $xl = $xmam + $omgadf + $xnode;
+    ($e > 1 || $e < -1) and croak "Error - Effective eccentricity > 1";
     my $beta = sqrt (1 - $e * $e);
     $xn = SGP_XKE / $a ** 1.5;
 
@@ -2741,6 +2743,7 @@ eod
 
     my $am = (SGP_XKE / $xn) ** SGP_TOTHRD;
     my $beta2m = 1 - $em * $em;
+    $beta2m < 0 and croak "Error - Effective eccentricity > 1";
     my $sinos = sin ($omgasm);
     my $cosos = cos ($omgasm);
     my $axnm = $em * $cosos;
@@ -2997,6 +3000,7 @@ EOD
 
     my $am = (SGP_XKE / $xn) ** SGP_TOTHRD;
     my $beta2m = 1 - $em * $em;
+    $beta2m < 0 and croak "Error - Effective eccentricity > 1";
     my $sinos = sin ($omgasm);
     my $cosos = cos ($omgasm);
     my $axnm = $em * $cosos;
