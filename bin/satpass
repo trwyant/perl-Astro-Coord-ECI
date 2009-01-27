@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.020_05';
+our $VERSION = '0.020_06';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -882,13 +882,8 @@ if ($cmdopt{debug}) {
 
 my @flares;
 foreach my $tle (@active) {
-    my $bm_start = time ();
-    push @flares, $tle->flare ($sta, $pass_start, $pass_end);
-
-
-#	Compute and display stats.
-
-    my $bm_end = time ();
+    push @flares, eval {$tle->flare ($sta, $pass_start, $pass_end)};
+    $@ and warn $@;
     }
 
 my $last_day = '';
@@ -1549,8 +1544,13 @@ eod
 	    visible => $parm{visible},
 	);
 
-	my @passes = $tle->pass (
-	    $sta, $pass_start, $pass_end, \@sky) or next;
+	my @passes = eval {$tle->pass (
+		$sta, $pass_start, $pass_end, \@sky)};
+	$@ and do {
+	    warn $@;
+	    next;
+	};
+       	@passes or next;
 
 	my $id = $tle->get ('id');
 	my $name = $tle->get ('name') || '';
