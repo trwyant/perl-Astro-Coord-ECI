@@ -185,7 +185,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015_05';
+our $VERSION = '0.015_06';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1572,6 +1572,7 @@ implementation.
 
 sub sgp {
     my ($self, $time) = @_;
+    my $oid = $self->get('id');
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -1713,7 +1714,7 @@ eod
     my $ecose = $axnsl * $coseo1 + $aynsl * $sineo1;
     my $esine = $axnsl * $sineo1 - $aynsl * $coseo1;
     my $el2 = $axnsl * $axnsl + $aynsl * $aynsl;
-    $el2 > 1 and croak "Error - Effective eccentricity > 1";
+    $el2 > 1 and croak "Error - OID $oid Sgp effective eccentricity > 1";
     my $pl = $a * (1 - $el2);
     my $pl2 = $pl * $pl;
     my $r = $a * (1 - $ecose);
@@ -1796,6 +1797,7 @@ model can be used only for near-earth orbits.
 
 sub sgp4 {
     my ($self, $time) = @_;
+    my $oid = $self->get('id');
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -2014,8 +2016,7 @@ eod
     my $e = $self->{eccentricity} - $tempe;
     my $xl = $xmp + $omega + $xnode + $parm->{xnodp} * $templ;
     croak <<eod if $e > 1 || $e < -1;
-Error - Effective eccentricity > 1
-    ID = @{[$self->get ('id')]}
+Error - OID $oid Sgp4 effective eccentricity > 1
     Epoch = @{[scalar gmtime $self->get ('epoch')]} GMT
     \$self->{bstardrag} = $self->{bstardrag}
     \$parm->{c4} = $parm->{c4}
@@ -2157,6 +2158,7 @@ model can be used only for deep-space orbits.
 
 sub sdp4 {
     my ($self, $time) = @_;
+    my $oid = $self->get('id');
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -2328,7 +2330,8 @@ eod
     my $xmam = $xmdf + $parm->{xnodp} * $templ;
     $self->_dpper (\$e, \$xinc, \$omgadf, \$xnode, \$xmam, $tsince);
     my $xl = $xmam + $omgadf + $xnode;
-    ($e > 1 || $e < -1) and croak "Error - Effective eccentricity > 1";
+    ($e > 1 || $e < -1)
+	and croak "Error - OID $oid Sdp4 effective eccentricity > 1";
     my $beta = sqrt (1 - $e * $e);
     $xn = SGP_XKE / $a ** 1.5;
 
@@ -2448,6 +2451,7 @@ model can be used only for near-earth orbits.
 
 sub sgp8 {
     my ($self, $time) = @_;
+    my $oid = $self->get('id');
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -2743,7 +2747,8 @@ eod
 
     my $am = (SGP_XKE / $xn) ** SGP_TOTHRD;
     my $beta2m = 1 - $em * $em;
-    $beta2m < 0 and croak "Error - Effective eccentricity > 1";
+    $beta2m < 0
+	and croak "Error - OID $oid Sgp8 effective eccentricity > 1";
     my $sinos = sin ($omgasm);
     my $cosos = cos ($omgasm);
     my $axnm = $em * $cosos;
@@ -2842,6 +2847,7 @@ model can be used only for near-earth orbits.
 
 sub sdp8 {
     my ($self, $time) = @_;
+    my $oid = $self->get('id');
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
@@ -3000,7 +3006,8 @@ EOD
 
     my $am = (SGP_XKE / $xn) ** SGP_TOTHRD;
     my $beta2m = 1 - $em * $em;
-    $beta2m < 0 and croak "Error - Effective eccentricity > 1";
+    $beta2m < 0
+	and croak "Error - OID $oid Sdp8 effective eccentricity > 1";
     my $sinos = sin ($omgasm);
     my $cosos = cos ($omgasm);
     my $axnm = $em * $cosos;
