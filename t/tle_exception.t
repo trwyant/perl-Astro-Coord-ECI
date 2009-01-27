@@ -35,7 +35,7 @@ my ($got, $want);
 # SGP
 
 $near->set(model => 'sgp');
-$want = qr{Effective eccentricity > 1};
+$want = qr{effective eccentricity > 1};
 
 eval {$near->universal($time)};
 $got = $@;
@@ -48,7 +48,7 @@ test($got, $want, 'SGP should give same failure on retry.');
 # SGP4
 
 $near->set(model => 'sgp4');
-$want = qr{Effective eccentricity > 1};
+$want = qr{effective eccentricity > 1};
 
 eval {$near->universal($time)};
 $got = $@;
@@ -61,7 +61,7 @@ test($got, $want, 'SGP4 should give same failure on retry.');
 # SDP4
 
 $deep->set(model => 'sdp4');
-$want = qr{Effective eccentricity > 1};
+$want = qr{effective eccentricity > 1};
 
 eval {$deep->universal($time)};
 $got = $@;
@@ -74,7 +74,7 @@ test($got, $want, 'SDP4 should give same failure on retry.');
 # SGP8
 
 $near->set(model => 'sgp8');
-$want = qr{Effective eccentricity > 1};
+$want = qr{effective eccentricity > 1};
 
 eval {$near->universal($time)};
 $got = $@;
@@ -87,7 +87,7 @@ test($got, $want, 'SGP8 should give same failure on retry.');
 # SDP8
 
 $deep->set(model => 'sdp8');
-$want = qr{Effective eccentricity > 1};
+$want = qr{effective eccentricity > 1};
 
 eval {$deep->universal($time)};
 $got = $@;
