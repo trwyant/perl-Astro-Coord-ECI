@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.007_01';
+our $VERSION = '0.007_02';
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
@@ -41,6 +41,7 @@ my @exe_files;
 my @clean_files;
 my @prereq = (
     'Params::Util'	=> 0.25,
+    perl		=> 5.006,
 );
 
 print <<eod;
