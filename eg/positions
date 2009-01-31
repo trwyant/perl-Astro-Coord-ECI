@@ -13,7 +13,7 @@ use POSIX qw{strftime};
 use Time::y2038;
 
 my $station = Astro::Coord::ECI->new(
-    name => 'Parliament House, Canberra Australia',
+    name => 'Parliament House, Canberra ACT, Australia',
 )->geodetic(
     deg2rad(-35.308232),	# Latitude in radians
     deg2rad(149.124495),	# Longitude in radians

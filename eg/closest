@@ -15,7 +15,7 @@ use Time::y2038;
 @ARGV > 3 or die <<eod;
 
 Find the orbiting body closest to the given position at the given time
-as seen by from Parliament House, Canberra Australia.
+as seen by from Parliament House, Canberra ACT, Australia.
 
 usage: closest time right_ascension declination tle_file ...
 
@@ -31,7 +31,7 @@ position in degrees, as seen from the observing station.
 eod
 
 my $station = Astro::Coord::ECI->new(
-    name => 'Parliament House, Canberra Australia',
+    name => 'Parliament House, Canberra ACT, Australia',
 )->geodetic(
     deg2rad(-35.308232),	# Latitude in radians
     deg2rad(149.124495),	# Longitude in radians
