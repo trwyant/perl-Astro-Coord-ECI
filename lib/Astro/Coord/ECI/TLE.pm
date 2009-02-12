@@ -106,6 +106,9 @@ The models implemented are:
   SDP8 - corresponds to SGP8, but for deep-space bodies;
   SGP4R - updates and combines SGP4 and SDP4.
 
+All the above models compute ECI coordinates in kilometers, and
+velocities along the same axes in kilometers per second.
+
 There are also some meta-models, with the smarts to run either a
 near-earth model or the corresponding deep-space model depending on the
 body the object represents:
@@ -185,7 +188,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015_06';
+our $VERSION = '0.015_08';
 
 use base qw{Astro::Coord::ECI Exporter};
 
