@@ -138,7 +138,13 @@ use warnings;
 use Carp;
 use Params::Util 0.25 qw{_INSTANCE};
 
-our $VERSION = '0.005_01';
+our @CARP_NOT = qw{
+    Astro::Coord::ECI::TLE::Iridium
+    Astro::Coord::ECI::TLE
+    Astro::Coord::ECI
+};
+
+our $VERSION = '0.005_02';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
