@@ -67,7 +67,7 @@ package Astro::Coord::ECI::Utils;
 use strict;
 use warnings;
 
-our $VERSION = '0.010_01';
+our $VERSION = '0.010_02';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -274,6 +274,10 @@ This subroutine calculates the square of the distance between the two
 sets of Cartesian coordinates. We do not take the square root here
 because of cases (e.g. the law of cosines) where we would just have
 to square the result again.
+
+B<Notice> that the subroutine does B<not> assume three-dimensional
+coordinates. If @coord1 and @coord2 have six entries, you will get a
+six-dimensional distance.
 
 =cut
 
