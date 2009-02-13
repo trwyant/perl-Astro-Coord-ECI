@@ -19,7 +19,7 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.003_01';
+our $VERSION = '0.004';
 
 plan tests => 53, todo => [];
 
