@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.020_07';
+our $VERSION = '0.020_08';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -996,6 +996,15 @@ goto \&{$handler};
 sub geocode_ca {
 _load_module ('LWP::UserAgent', 'geocode_ca');
 _load_module ('XML::Parser', 'geocode_ca');
+
+warn <<eod;
+
+Warning - Geocoding Canadian addresses is now unsupported, and probably
+        will not work anyway, because geocoder.ca has started requiring
+        registration to use its free port. My apologies for the
+        inconvenience.
+
+eod
 
 my $set_loc = @_;
 my $loc = shift @_ || $parm{location};
@@ -4153,6 +4162,10 @@ American Samoa is handled by L<geocode_us|/geocode_us>.
 =for html <a name="geocode_ca"></a>
 
 =item geocode_ca location
+
+B<Notice:> This command is unsupported as of satpass 0.021, and
+probably will not work anyway, since geocoder.ca has started
+requiring registration to use its free port.
 
 This command attempts to look up the given location (either street
 address or street intersection) at L<http://geocoder.ca/>. The results
