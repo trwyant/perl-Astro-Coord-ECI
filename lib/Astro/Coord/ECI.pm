@@ -69,7 +69,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.020_05';
+our $VERSION = '0.021';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;

@@ -44,7 +44,7 @@ package Astro::Coord::ECI::Sun;
 use strict;
 use warnings;
 
-our $VERSION = '0.008_02';
+our $VERSION = '0.009';
 
 use base qw{Astro::Coord::ECI};
 

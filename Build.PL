@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.007_02';
+our $VERSION = '0.008';
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
