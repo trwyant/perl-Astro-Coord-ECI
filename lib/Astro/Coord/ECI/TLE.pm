@@ -188,7 +188,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.015_08';
+our $VERSION = '0.015_09';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -6217,7 +6217,8 @@ eod
 
 #	Initialization
 
-%status = (	# As of 30-Sep-2008, from Kelso's document dated 29-Sep-2008
+%status = (	# As of 13-Feb-2009, from Kelso's document dated 29-Sep-2008,
+    		# hand-updated to show the demise of Iridium 33.
           '25432' => {
                        'comment' => '',
                        'status' => 0,
@@ -6843,8 +6844,8 @@ eod
                        'id' => 25777
                      },
           '24946' => {
-                       'comment' => '',
-                       'status' => 0,
+                       'comment' => 'Collided with Cosmos 2251',
+                       'status' => 2,
                        'name' => 'Iridium 33',
                        'class' => 'Astro::Coord::ECI::TLE::Iridium',
                        'type' => 'iridium',
