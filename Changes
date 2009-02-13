@@ -1,3 +1,41 @@
+0.021	13-Feb-2009	T. R. Wyant
+  General
+    Make Time::y2038 recommended rather than required, since
+      ActivePerl has problems with that module. We use it if
+      available, otherwise we fall back to the core modules
+      (and Time::Local if needed).
+    Add eg/closest and eg/positions, showing calculation of the
+      closest approach to a given point, and standalone calculation
+      of the positions of all bodies at a given time.
+    Correct '## no critic' in various places.
+  Astro::Coord::ECI 0.021
+    Trap any exceptions encountered when setting the time, set the time
+      to undef (since otherwise we're left in an inconsistent state)
+      and re-raise the exception.
+  Astro::Coord::ECI::TLE 0.016
+    Add OID number to exceptions related to orbital elements.
+    Correct error messages involving using a near-earth model on a
+      deep-space satellite or vice versa.
+    Document the units of the model results (km or km/sec).
+    Update canned Iridium status for the loss of Iridium 33 in a
+      collision with Cosmos 2251.
+  Astro::Coord::ECI::TLE::Set 0.006
+    Tell carp not to report Astro::Coord::ECI (and friends) errors
+      as originating in Astro::Coord::ECI::TLE::Set.
+  bin/satpass 0.021
+    Add gmt parameter which, if true, causes time output to be GMT.
+    Trap Astro::Coord::ECI::TLE modeling exceptions in the 'flare',
+      'pass', and 'position' commands, so that the whole command does
+      not abort when this happens. SIGINT still aborts the whole
+      command. Add -quiet option to supress error output.
+    Mark geocode_ca as unsupported and probably not working, since
+      they have started requiring registration for use of their
+      free port.
+  Build.PL
+    Change check for Astro::SIMBAD::Query to Astro::SIMBAD::Client
+  Makefile.PL
+    Change check for Astro::SIMBAD::Query to Astro::SIMBAD::Client
+
 0.020	09-Jan-2009	T. R. Wyant
   General
     Add Time::y2038 as prerequisite, and use in place of Time::Local and
