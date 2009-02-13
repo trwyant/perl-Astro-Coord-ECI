@@ -34,7 +34,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 55, 15, 23, 11, 108);
+my $asof = timegm (0, 0, 16, 13, 1, 109);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -51,8 +51,8 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of Dec. 22, 2008
-=================================
+Iridium status as of Feb. 12, 2009
+==================================
 
 Iridiums not listed in the following table are thought to be stable
 in orbit and capable of generating flares.
@@ -89,6 +89,7 @@ Jul. 19, 2008: Unusual changes in mean motion by Iridium 28
 Jul. 26, 2008: Iridium 95 moved to about 14 seconds behind Iridium 28
 Dec. 22, 2008: It is clear that Iridium 28 was no longer being controlled
                as of about Sep. 20, 2008 - probably since July 2008
+Feb. 10, 2009: Collision between Iridium 33 and Cosmos 2251
 
  NCat    Name           Status   Comment
  24836   Iridium 914    tum      Failed; was called Iridium 14
@@ -97,6 +98,7 @@ Dec. 22, 2008: It is clear that Iridium 28 was no longer being controlled
  24870   Iridium 17     tum?     Failed in August 2005?
  24871   Iridium 920    tum      Failed; was called Iridium 20
  24873   Iridium 921    tum      Failed; was called Iridium 21
+ 24946   Iridium 33     tum      Destroyed by a collision on Feb. 10, 2009
  24948   Iridium 28     unc      Assumed failed about July 19, 2008
  24967   Iridium 36     tum      Failed in January 2007
  25043   Iridium 38     tum      Failed in August 2003
@@ -257,7 +259,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated August 6, 2008**</strong></p>
+<p align="center"><strong>** Updated February 11, 2009**</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -267,12 +269,11 @@ Failures</a>.</p>
 <p><strong>Latest changes </strong>(see below for earlier
 changes): </p>
 
-<p>** In late July 2008, Iridium 95 (27375, 2002-005D), up till
-then a spare satellite in orbital plane 3, entered the
-operational constellation, evidently to replace Iridium 28
-(24948, 1997-051E). Initially, Iridium 28 remained close to its
-nominal position in the constellation, so had presumably failed
-on station.</p>
+<p>*** On February 10, 2009 at 16:56 UT, an Iridium Satellite,
+believed to be Iridium 33 (24946, 1997-051C) is reported to have
+been in collision with Cosmos 2251 (22675, 1993-036A) . See <a
+href="iridium33collision.htm">Iridium 33 collision</a>. Iridium
+33 is presumably no longer functional ***</p>
 
 <pre>Orbital  &lt;-------- Operational satellites --------&gt;   Spares (in current sequence)
 Plane
@@ -280,7 +281,10 @@ Plane 1:  <a href="iridium74and21.htm">21</a>  72  75  70  62  63  64  65  66  6
 href="iridium74and21.htm">74</a> (partial failure?)
 Plane 2:  22  23  76  25  45  46  47  20  49  26   3   11
 Plane 3:  55  <a href="iridium28and95.htm">95</a>  29  <a
-href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32  33  57  58  59  60   91  94  96;  
+href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32 <font
+color="#FF0000"><em><strong>(</strong></em></font><a
+href="iridium33collision.htm"><font color="#FF0000"><em><strong>33</strong></em></font></a><font
+color="#FF0000"><em><strong>)</strong></em></font> 57  58  59  60   91  94  96;  
 Plane 4:  19  34  35  <a href="iridium36and97.htm">97</a>   <a
 href="iridium5and51.htm">5</a>@  6   7   8   4  37  61   <a
 href="iridium5and51.htm">51</a> (partial failure?)@;  
@@ -363,6 +367,12 @@ Spacecom as Iridium 20, and correctly tracked, but under 25577
 which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
+
+<p>On February 10, 2009 at 16:56 UT, an Iridium Satellite,
+believed to be Iridium 33 (24946, 1997-051C) in reported to have
+been in collision with Cosmos 2251 (22675, 1993-036A) . See <a
+href="iridium33collision.htm">Iridium 33 collision</a>. Iridium
+33 is presumably no longer functional</p>
 
 <p>In late July 2008, Iridium 95 (27375, 2002-005D), up till then
 a spare satellite in orbital plane 3, entered the operational
