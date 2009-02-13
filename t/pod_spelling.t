@@ -185,6 +185,7 @@ revolutionsatepoch
 Rico
 rightascension
 Roehric
+ruggedizing
 Saemundsson's
 SATCAT
 Satpass
