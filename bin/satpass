@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.020_08';
+our $VERSION = '0.021';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3724,24 +3724,21 @@ are quite different than those of the Astro::Coord::ECI classes. It
 seemed desirable not to force those who only wanted the latter to
 download and install all the stuff required by the former.
 
-Changes in release 0.020 include:
+Changes in release 0.021 include:
 
-* Use of Time::y2038 instead of Time::Local functions and core gmtime
-and localtime;
+* Time::y2030 is recommended rather than required, since ActivePerl had
+trouble with the requirement.
 
-* Elimination of calls to UNIVERSAL::isa and UNIVERSAL::can as
-functions;
+* Elimination of support for geocoder.ca, which started requiring
+registration.
 
-* Elimination of support for SIMBAD 3, since the service itself has been
-completely superseded by SIMBAD 4.
+* Ruggedizing of flare, pass, and position, so that one bogus set of
+orbital elements does not abort the entire calculation.
 
-* Conversion of height lookup functionality to use
-Geo::WebService::Elevation::USGS. Note that this is an optional module,
-and you will need to install it to get this functionality.
-
-* Add overview documentation;
-
-* Add and correct documentation in various places.
+* Iridium 33 is marked as tumbling in the canned list of Iridium
+statuses. Since its collision with Cosmos 2251 on 10-Feb-2009, the
+question of its existence is problematic, but at least this change will
+prevent flares from being forecast. Stay tuned for further developments.
 
 =head1 DETAILS
 
