@@ -1,3 +1,8 @@
+0.022	15-Feb-2009	T. R. Wyant
+  General
+    Make new test t/tle_exception.t a developer test until I can figure
+      out why it only runs on my configuration.
+
 0.021	13-Feb-2009	T. R. Wyant
   General
     Make Time::y2038 recommended rather than required, since
