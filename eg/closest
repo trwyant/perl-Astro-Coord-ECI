@@ -61,7 +61,7 @@ my $target = Astro::Coord::ECI->new()->equatorial(
 # aggregation step is unnecessary if your input is known to contain only
 # one TLE data set for each OID.
 
-$/ = undef;
+local $/ = undef;
 my @tle = Astro::Coord::ECI::TLE::Set->aggregate(
     Astro::Coord::ECI::TLE->parse(<>));
 

@@ -28,7 +28,7 @@ my $delta = 60;			# Step size is 60 seconds
 my $timfmt = '%d-%b-%Y %H:%M:%S';	# Date/time format.
 my $dtafmt = "%s  %6.2f  %6.2f  %5.0f\n";
 
-$/ = undef;
+local $/ = undef;
 my @tle = Astro::Coord::ECI::TLE::Set->aggregate(
     Astro::Coord::ECI::TLE->parse(<>));
 
