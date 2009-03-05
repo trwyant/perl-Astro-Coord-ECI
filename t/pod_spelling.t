@@ -35,6 +35,7 @@ appulsed
 appulsing
 appulses
 argumentofperigee
+ascensional
 Astro
 Astrodynamics
 au
@@ -66,6 +67,7 @@ darwin
 DateTime
 datetime
 de
+declinational
 deg
 degreesDminutesMsecondsS
 des
@@ -232,6 +234,7 @@ Turbo
 TWOPI
 tz
 uk
+unreduced
 URI
 username
 USGS
