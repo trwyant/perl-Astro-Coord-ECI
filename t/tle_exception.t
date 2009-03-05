@@ -6,10 +6,10 @@ use warnings;
 use Astro::Coord::ECI::TLE;
 
 BEGIN {
-    unless ($ENV{DEVELOPER_TEST}) {
-	print "1..0 # skip Environment variable DEVELOPER_TEST not set.\n";
-	exit;
-    }
+##    unless ($ENV{DEVELOPER_TEST}) {
+##	print "1..0 # skip Environment variable DEVELOPER_TEST not set.\n";
+##	exit;
+##    }
     eval {
 	require Time::y2038;
 	Time::y2038->import();
