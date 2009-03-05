@@ -50,6 +50,17 @@ satellite given the NORAD orbital parameters, and
 B<Astro::Corod::ECI::TLE::Iridium> (a subclass of
 Astro::Coord::ECI::TLE) to predict Iridium flares.
 
+B<Note> that in version 0.022_01 the velocity code got a substantial
+rework, which is still in progress. This should give useful velocities
+where they are available, and no velocities at all where they are not.
+In general, locations specified in Earth-fixed coordinates are
+considered to share the rotational velocity of the Earth, and locations
+specified in inertial coordinates are considered to have undefined
+velocities unless a velocity was specified explicitly or produced by the
+object's model. This involved a change in the behavior of the eci()
+method when velocity was not specified but location was. See the next
+paragraph for my excuse.
+
 B<Caveat user:> This class and its subclasses should probably be
 considered alpha code, meaning that the public interface may not be
 completely stable. I will try not to change it, but given sufficient
@@ -69,7 +80,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.022';
+our $VERSION = '0.022_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -221,6 +232,7 @@ sub azel {
     };
 
     my ($azimuth, $range, $elevation);
+    my @velocity;
     if ($self->{inertial}) {
 
 	my @obj = $trn2->eci ();
@@ -233,14 +245,15 @@ sub azel {
 #	Kelso algorithm from
 #	http://celestrak.com/columns/v02n02/
 
-	for (my $i = 0; $i < 6; $i++) {
-	    $delta[$i] = $obj[$i] - $base[$i];
+	my $limit = @obj < @base ? @obj : @base;
+	foreach my $inx (0 .. $limit - 1) {
+	    $delta[$inx] = $obj[$inx] - $base[$inx];
 	}
 	my $thetag = thetag ($time);
 	my $theta = mod2pi ($thetag + $lambda);
-	my $sinlat = ($cache->{inertial}{sinphi} ||= sin ($phi));
+	my $sinlat = ($cache->{fixed}{sinphi} ||= sin ($phi));
 	my $sintheta = sin ($theta);
-	my $coslat = ($cache->{inertial}{cosphi} ||= cos ($phi));
+	my $coslat = ($cache->{fixed}{cosphi} ||= cos ($phi));
 	my $costheta = cos ($theta);
 	my $rterm = $costheta * $delta[0] + $sintheta * $delta[1];
 	my $ts = $sinlat * $rterm - $coslat * $delta[2];
@@ -264,10 +277,13 @@ sub azel {
 	    }
 	};
 
-	my @base = ($self->ecef ())[0, 1, 2];
-	my @tgt = ($trn2->ecef ())[0, 1, 2];
+	my @base = $self->ecef ();
+	my @tgt = $trn2->ecef ();
 	my @delta;
-	foreach my $ix (0 .. 2) {$delta[$ix] = $tgt[$ix] - $base[$ix]}
+	my $limit = @base < @tgt ? @base : @tgt;
+	foreach my $inx (0 .. $limit - 1) {
+	    $delta[$inx] = $tgt[$inx] - $base[$inx];
+	}
 
 #	We need to rotate the coordinate system in the X-Y plane by the
 #	longitude, followed by a rotation in the Z-X plane by 90
@@ -310,6 +326,16 @@ sub azel {
 	$range = sqrt ($delta[0] * $delta[0] + $delta[1] * $delta[1] +
 	    $delta[2] * $delta[2]);
 	$elevation = $range ? asin ($lclz / $range) : 0;
+	if (@delta > 3) {
+	    $velocity[0] = ($sinlamda * $delta[0] -		# Y
+		$coslamda * $delta[1]) / $range;
+	    $velocity[1] = -($coslamda * $sinphi * $delta[0] +	# X
+		$sinlamda * $sinphi * $delta[1] -
+		$cosphi * $delta[2]) / $range;
+	    $velocity[2] = $coslamda * $cosphi * $delta[0] +	# Z
+		$sinlamda * $cosphi * $delta[1] +
+		$sinphi * $delta[2];
+	}
 
     }
 
@@ -531,8 +557,16 @@ L</Earth-Centered, Earth-fixed (ECEF) coordinates> in kilometers, with
 the x axis being latitude 0 longitude 0, the y axis being latitude 0
 longitude 90 degrees east, and the z axis being latitude 90 degrees
 north. The velocities in kilometers per second are optional, and will
-default to the rotational velocity at the point being set. The object
-itself is returned.
+default to zero. ECEF velocities are considered to be relative to the
+surface of the Earth; when converting to ECI, the rotational velocity of
+the Earth will be added in.
+
+B<Note> that prior to version 0.022_01, the documentation said that the
+default velocity was the rotational velocity of the Earth. This was not
+correct B<in ECEF coordinates.> The functionality of the code itself in
+this respect did not change.
+
+The object itself is returned.
 
 This method can also be called as a class method, in which case it
 instantiates the desired object.
@@ -587,8 +621,7 @@ eod
 	croak <<eod;
 Error - The ecef() method must be called with either zero arguments (to
         retrieve coordinates), three arguments (to set coordinates,
-        with velocity defaulting to the rotational velocity of the
-        earth), or six arguments.
+        with velocity defaulting to zero) or six arguments.
 eod
     }
 
@@ -603,8 +636,9 @@ L</Earth-Centered Inertial (ECI) coordinates> in kilometers, time being
 universal time, the x axis being 0 hours L</Right Ascension> 0 degrees
 L</Declination>, y being 6 hours L</Right Ascension> 0 degrees
 L</Declination>, and z being 90 degrees north L</Declination>. The
-velocities in kilometers per second are optional, and will default to
-zero.
+velocities in kilometers per second are optional. If omitted, the object
+will be considered not to have a velocity. B<This is a change introduced
+with version 0.022_01.> Before that, the velocity defaulted to 0.
 
 The time argument is optional if the time represented by the object
 has already been set (e.g. by the universal() or dynamical() methods).
@@ -635,6 +669,10 @@ If the original coordinate setting was in a non-inertial system (e.g.
 ECEF or geodetic), the equinox_dynamical attribute will be set to the
 object's dynamical time.
 
+Velocities will be returned if they were originally provided. B<This is
+a change introduced in version 0.022_01.> Prior to that version,
+velocities were always returned.
+
 B<Caveat:> Velocities are also returned, but should not at this point
 be taken seriously unless they were originally set by the same method
 that is returning them, since I have not at this point got the velocity
@@ -657,11 +695,10 @@ eod
 
     }
 
-    @args == 3 and push @args, 0, 0, 0;
+##    @args == 3 and push @args, 0, 0, 0;
 
-    if (@args == 6) {
+    if (@args == 3 || @args == 6) {
 	foreach my $key (@kilatr) {delete $self->{$key}}
-##	$self->{_ECI_cache}{inertial}{eci} = \@args;
 	$self->{_ECI_cache} = {inertial => {eci => \@args}};
 	$self->{specified} = 'eci';
 	$self->{inertial} = 1;
@@ -800,12 +837,23 @@ has already been set (e.g. by the universal() or dynamical() methods).
 This method can also be called as a class method, in which case it
 instantiates the desired object. In this case the time is not optional.
 
+You may optionally pass velocity information in addition to position
+information. If you do this, the velocity in right ascension (in radians
+per second), declination (ditto), and range (in kilometers per second in
+recession) are passed after the position arguments, and before the $time
+argument if any.
+
 =item ($rightasc, $declin, $range) = $coord->equatorial ($time);
 
 This method returns the L</Equatorial> coordinates of the object at the
 given time. The time argument is optional if the time represented by
 the object has already been set (e.g. by the universal() or
 dynamical() methods).
+
+If velocities are available from the object (i.e. if it is an instance
+of Astro::Coord::ECI::TLE) the return will contain velocity in right
+ascension, declination, and range, the first two being in radians per
+second and the third in kilometers per second in recession.
 
 =item ($rightasc, $declin, $range) = $coord->equatorial ($coord2);
 
@@ -820,11 +868,20 @@ If the L<refraction|/refraction> attribute of the $coord object is
 true, the coordinates will be corrected for atmospheric refraction using
 the correct_for_refraction() method.
 
+=begin comment
+
 The algorithm is lifted pretty much verbatim from the Calculate_RADec
 subroutine of SGP4 Pascal Library Version 2.65 by T. S. Kelso,
 available at L<http://celestrak.com/software/tskelso-sw.asp>. Dr.
 Kelso credits the algorithm to "Methods of Orbit Determination" by
 Pedro Ramon Escobal, pages 401 - 402.
+
+=end comment
+
+If velocities are available from both objects (i.e. if both objects are
+Astro::Coord::ECI::TLE objects) the return will contain velocity in
+right ascension, declination, and range, the first two being in radians
+per second and the third in kilometers per second in recession.
 
 =cut
 
@@ -840,6 +897,8 @@ sub equatorial {
     $body or $time = $self->universal;
 
     unless (@args) {
+
+=begin comment
 
 	if ($body) {
 	    my ($azimuth, $elevation, $range) = $self->azel ($body, 0);
@@ -882,21 +941,71 @@ sub equatorial {
 	my $dec = atan2 ($z, sqrt ($rsq));
 	my $range = sqrt ($rsq + $z * $z);
 	return @{$self->{_ECI_cache}{inertial}{equatorial} = [$ra, $dec, $range]};
+
+=end comment
+
+=cut
+
+	unless ($body) {
+	    $self->{_ECI_cache}{inertial}{equatorial}
+		and return @{$self->{_ECI_cache}{inertial}{equatorial}};
+	}
+	my @rslt = $self->equatorial_unreduced($body);
+	$rslt[0] = mod2pi(atan2($rslt[0][0], $rslt[0][1]));
+	$rslt[1] = atan2($rslt[1][0], $rslt[1][1]);
+	if (@rslt >= 6) {
+	    $rslt[3] /= $rslt[2];
+	    $rslt[4] /= $rslt[2];
+	}
+	$body or $self->{_ECI_cache}{inertial}{equatorial} = \@rslt;
+	return @rslt;
     }
 
-    if (@args == 3) {
+    # The rotation matrix for equatorial to ECI is the inverse of the
+    # matrix for the opposite direction. Or it would be, except that
+    # that matrix assumed a negative value for the angle, in this one we
+    # assume a positive value for the angle, so the signs of the sine
+    # functions are reversed:
+    #
+    # +-                      -+   +-                      -+
+    # |  cos rasc -sin rasc  0 |   |  cos decl  0 -sin decl |
+    # |  sin rasc  cos rasc  0 | x |      0     1      0    | =
+    # |     0         0      1 |   |  sin decl  0  cos decl |
+    # +-                      -+   +-                      -+
+    #
+    # +-                                                 -+
+    # |  cos rasc cos decl  -sin rasc  -cos rasc sin decl |
+    # |  sin rasc cos decl   cos rasc  -sin rasc sin decl |
+    # |  sin decl                0      cos decl          |
+    # +-                                                 -+
+    #
+    if (@args == 3 || @args == 6) {
 	$body && croak <<eod;
 Error - You may not set the equatorial coordinates relative to an
         observer.
 eod
-	my ($ra, $dec, $range) = @args;
+	my ($ra, $dec, $range, @eqvel) = @args;
 	$ra = _check_right_ascension('right ascension' => $ra);
 	$dec = _check_latitude(declination => $dec);
-	my $z = $range * sin ($dec);
-	my $r = $range * cos ($dec);
-	my $x = $r * cos ($ra);
-	my $y = $r * sin ($ra);
-	$self->eci ($x, $y, $z, 0, 0, 0);
+	my $sin_dec = sin($dec);
+	my $cos_dec = cos($dec);
+	my $sin_ra = sin($ra);
+	my $cos_ra = cos($ra);
+	my $z = $range * $sin_dec;
+	my $r = $range * $cos_dec;
+	my $x = $r * $cos_ra;
+	my $y = $r * $sin_ra;
+	my @ecivel;
+	if (@eqvel) {
+	    $eqvel[0] *= $range;
+	    $eqvel[1] *= $range;
+	    $ecivel[0] = $eqvel[2] * $cos_ra * $cos_dec -
+		$eqvel[0] * $sin_ra - $eqvel[1] * $cos_ra * $sin_dec;
+	    $ecivel[1] = $eqvel[2] * $sin_ra * $cos_dec +
+		$eqvel[0] * $cos_ra - $eqvel[1] * $sin_ra * $sin_dec;
+	    $ecivel[2] = $eqvel[2] * $sin_dec + $eqvel[1] * $cos_dec;
+	}
+	$self->eci ($x, $y, $z, @ecivel);
 	$self->{_ECI_cache}{inertial}{equatorial} = \@args;
 	$self->{specified} = 'equatorial';
 	$self->{inertial} = 1;
@@ -904,11 +1013,144 @@ eod
 	croak <<eod;
 Error - The equatorial() method must be called with either zero or one
         arguments (to retrieve coordinates), or three or four arguments
-        (to set coordinates). There is currently no six or seven
-        argument version.
+        (to set coordinates), or six or seven arguments (to set
+        coordinates and velocity).
 eod
     }
     return $self;
+}
+
+
+=item my ($rasc, $decl, $range, $v_rasc, $v_decl, $v_r) = $coord->equatorial_unreduced($body);
+
+This method computes the unreduced equatorial position of the second ECI
+object as seen from the first. If the second argument is undefined,
+computes the equatorial position of the first object as seen from the
+center of the Earth. Unlike the equatorial() method itself, this method
+is an accessor only. This method would probably not be exposed except
+for the anticipation of the usefulness of $range and $v_r in satellite
+conjunction computations, and the desirability of not taking the time to
+make the two atan2() calls that are unneeded in this application.
+
+The 'unreduced' in the name of the method is intended to refer to the
+fact that the $rasc and $decl are not the right ascension and
+declination themselves, but the arguments to atan2() needed to compute
+them, and $v_rasc and $v_decl are in km/sec, rather than being divided
+by the range to get radians per second.
+
+The returned data are:
+
+$rasc is an array reference, which can be converted to the right
+ascension in radians by mod2pi(atan2($rasc->[0], $rasc->[1])).
+
+$decl is an array reference, which can be converted to the declination
+in radians by atan2($decl->[0], $decl->[1]).
+
+$range is the range in kilometers.
+
+$v_rasc is the velocity in the right ascensional direction in kilometers
+per second. It can be converted to radians per second by dividing by
+$range.
+
+$v_decl is the velocity in the declinational direction in kilometers per
+second. It can be converted to radians per second by dividing by $range.
+
+$v_r is the velocity in recession in kilometers per second. Negative
+values indicate that the objects are approaching.
+
+The velocities are only returned if they are available from the input
+objects.
+
+=cut
+
+sub equatorial_unreduced {
+
+    # Unpack the two objects.
+
+    my ($self, $body) = @_;
+
+    # Compute the relative positions if there are in fact two objects;
+    # otherwise just get the absolute position.
+
+    my @pos;
+    if ($body) {
+	@pos = $body->eci();
+	my @base = $self->eci($body->universal());
+	my $limit = @pos < @base ? @pos : @base;
+	foreach my $inx (0 .. $limit - 1) {
+	    $pos[$inx] -= $base[$inx];
+	}
+	splice @pos, $limit;
+    } else {
+	$self->{_ECI_cache}{inertial}{equatorial_unreduced} and return
+	    @{$self->{_ECI_cache}{inertial}{equatorial_unreduced}};
+	@pos = $self->eci();
+    }
+
+    # Rotate the coordinate system so that the second body lies in the
+    # X-Z plane. The matrix is
+    # +-                     -+
+    # | cos rasc -sin rasc  0 |
+    # | sin rasc  cos rasc  0 |
+    # |     0         0     1 |
+    # +-                     -+
+    # where rasc is -atan2(y,x). This means sin rasc = -y/h and
+    # cos rasc = x/h where h = sqrt(x*x + y*y). You postmultiply
+    # the matrix by the vector to get the new vector.
+
+    my $hypot_rasc = sqrt($pos[0] * $pos[0] + $pos[1] * $pos[1]);
+
+    # Now we need to rotate the coordinates in the new X-Z plane until
+    # the second body lies along the X axis. The matrix is
+    # +-                      -+
+    # | cos decl  0  -sin decl |
+    # |     0     1       0    |
+    # | sin decl  0   cos decl |
+    # +-                      -+
+    # where decl is -atan2(z,x') (in the new coordinate system), or
+    # -atan2(z,h) in the old coordinate system. This means that sin decl
+    # = z/h' and cos decl = x/h' where h' = sqrt(h*h + z*z). Again you
+    # postmultiply the matrix by the vector to get the result.
+
+    my $hypot_decl = sqrt($hypot_rasc * $hypot_rasc + $pos[2] * $pos[2]);
+
+    # But at this point we have the equatorial coordinates themselves in
+    # terms of the original coordinates and the various intermediate
+    # quantities needed to compute the matrix. So we only need the
+    # matrix if we need to deal with the velocities. For this, the
+    # velocity rotation matrix is
+    # +-                      -+   +-                     -+
+    # | cos decl  0  -sin decl |   | cos rasc -sin rasc  0 |
+    # |     0     1       0    | x | sin rasc  cos rasc  0 | =
+    # | sin decl  0   cos decl |   |     0         0     1 |
+    # +-                      -+   +-                     -+
+    #
+    # +-                                                -+
+    # | cos decl cos rasc  -cos decl sin rasc  -sin decl |
+    # | sin rasc            cos rasc               0     |
+    # | sin decl cos rasc  -sin decl sin rasc   cos decl |
+    # +-                                                 +
+
+    my @rslt = ([$pos[1], $pos[0]], [$pos[2], $hypot_rasc], $hypot_decl);
+    if (@pos >= 6) {
+	my $cos_rasc =  $pos[0]/$hypot_rasc;
+	my $sin_rasc = -$pos[1]/$hypot_rasc;
+	my $cos_decl =  $hypot_rasc/$hypot_decl;
+	my $sin_decl = -$pos[2]/$hypot_decl;
+	push @rslt,
+	    $sin_rasc * $pos[3] + $cos_rasc * $pos[4],
+	    $sin_decl * $cos_rasc * $pos[3]
+		- $sin_decl * $sin_rasc * $pos[4] + $cos_decl * $pos[5],
+	    # Computationally the following is the top row of the
+	    # matrix, but it is swapped to the bottom in the output for
+	    # consistency of returned data sequence.
+	    $cos_decl * $cos_rasc * $pos[3]
+		- $cos_decl * $sin_rasc * $pos[4] - $sin_decl * $pos[5];
+    }
+    $body
+	or $self->{_ECI_cache}{inertial}{equatorial_unreduced} = \@rslt;
+    return @rslt;
+
 }
 
 =item $coord = $coord->equinox_dynamical ($value);
@@ -2128,14 +2370,16 @@ eod
     my $sinth = sin ($thetag);
     @data[0, 1] = ($data[0] * $costh - $data[1] * $sinth,
 	    $data[0] * $sinth + $data[1] * $costh);
-    @data[3, 4] = ($data[3] * $costh - $data[4] * $sinth,
-	    $data[3] * $sinth + $data[4] * $costh);
     $self->{debug} and print <<eod;
 Debug eci - after rotation,
     (x, y) = (@data[0, 1])
 eod
-    $data[3] += $data[1] * $self->{angularvelocity};
-    $data[4] -= $data[0] * $self->{angularvelocity};
+    if (@data > 3) {
+	@data[3, 4] = ($data[3] * $costh - $data[4] * $sinth,
+		$data[3] * $sinth + $data[4] * $costh);
+	$data[3] -= $data[1] * $self->{angularvelocity};
+	$data[4] += $data[0] * $self->{angularvelocity};
+    }
     $self->set (equinox_dynamical => $self->dynamical);
     return @{$self->{_ECI_cache}{inertial}{eci} = \@data};
 }
@@ -2158,14 +2402,16 @@ sub _convert_eci_to_ecef {
     }
 
     my @ecef = $self->eci ();
-    $ecef[3] -= $ecef[1] * $self->{angularvelocity};
-    $ecef[4] += $ecef[0] * $self->{angularvelocity};
     my $costh = cos (- $thetag);
     my $sinth = sin (- $thetag);
     @ecef[0, 1] = ($ecef[0] * $costh - $ecef[1] * $sinth,
 	    $ecef[0] * $sinth + $ecef[1] * $costh);
-    @ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
-	    $ecef[3] * $sinth + $ecef[4] * $costh);
+    if (@ecef > 3) {
+	$ecef[3] += $ecef[1] * $self->{angularvelocity};
+	$ecef[4] -= $ecef[0] * $self->{angularvelocity};
+	@ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
+		$ecef[3] * $sinth + $ecef[4] * $costh);
+    }
     $self->{_ECI_cache}{fixed}{ecef} = \@ecef;
     return @ecef;
 }
