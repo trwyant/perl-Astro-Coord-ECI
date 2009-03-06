@@ -188,7 +188,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.016';
+our $VERSION = '0.016_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -1717,6 +1717,8 @@ eod
     my $ecose = $axnsl * $coseo1 + $aynsl * $sineo1;
     my $esine = $axnsl * $sineo1 - $aynsl * $coseo1;
     my $el2 = $axnsl * $axnsl + $aynsl * $aynsl;
+    $self->{debug}
+	and warn "Debug - OID $oid sgp effective eccentricity $el2\n";
     $el2 > 1 and croak "Error - OID $oid Sgp effective eccentricity > 1";
     my $pl = $a * (1 - $el2);
     my $pl2 = $pl * $pl;
@@ -2018,6 +2020,8 @@ eod
     my $a = $parm->{aodp} * $tempa ** 2;
     my $e = $self->{eccentricity} - $tempe;
     my $xl = $xmp + $omega + $xnode + $parm->{xnodp} * $templ;
+    $self->{debug}
+	and warn "Debug - OID $oid sgp4 effective eccentricity $e\n";
     croak <<eod if $e > 1 || $e < -1;
 Error - OID $oid Sgp4 effective eccentricity > 1
     Epoch = @{[scalar gmtime $self->get ('epoch')]} GMT
@@ -2333,6 +2337,8 @@ eod
     my $xmam = $xmdf + $parm->{xnodp} * $templ;
     $self->_dpper (\$e, \$xinc, \$omgadf, \$xnode, \$xmam, $tsince);
     my $xl = $xmam + $omgadf + $xnode;
+    $self->{debug}
+	and warn "Debug - OID $oid sdp4 effective eccentricity $e\n";
     ($e > 1 || $e < -1)
 	and croak "Error - OID $oid Sdp4 effective eccentricity > 1";
     my $beta = sqrt (1 - $e * $e);
@@ -2750,6 +2756,8 @@ eod
 
     my $am = (SGP_XKE / $xn) ** SGP_TOTHRD;
     my $beta2m = 1 - $em * $em;
+    $self->{debug}
+	and warn "Debug - OID $oid sgp8 effective eccentricity $em\n";
     $beta2m < 0
 	and croak "Error - OID $oid Sgp8 effective eccentricity > 1";
     my $sinos = sin ($omgasm);
@@ -3009,6 +3017,8 @@ EOD
 
     my $am = (SGP_XKE / $xn) ** SGP_TOTHRD;
     my $beta2m = 1 - $em * $em;
+    $self->{debug}
+	and warn "Debug - OID $oid sdp8 effective eccentricity $em\n";
     $beta2m < 0
 	and croak "Error - OID $oid Sdp8 effective eccentricity > 1";
     my $sinos = sin ($omgasm);
@@ -5655,6 +5665,8 @@ sub sgp4r {
     $am= ($parm->{xke}/$xn)**&SGP_TOTHRD*$tempa**2;
     $xn= $parm->{xke}/$am**1.5;
     $eccm= $eccm-$tempe;
+    $self->{debug}
+	and warn "Debug - OID $oid sgp4r effective eccentricity $eccm\n";
 #c   fix tolerance for error recognition
     if ($eccm >=  1  ||  $eccm < -0.001  ||  $am <  0.95) {
 #c         write(6,*) '# Error 1, Eccm = ',  Eccm, ' AM = ', AM
