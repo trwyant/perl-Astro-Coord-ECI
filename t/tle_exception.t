@@ -15,8 +15,10 @@ BEGIN {
 	Time::y2038->import();
 	1;
     } or do {
-	require Time::Local;
-	Time::Local->import();
+##	require Time::Local;
+##	Time::Local->import();
+	print "1..0 # skip Time::y2038 required.\n";
+	exit;
     };
     eval {
 	require Test::More;
