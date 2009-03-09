@@ -51,15 +51,18 @@ B<Astro::Corod::ECI::TLE::Iridium> (a subclass of
 Astro::Coord::ECI::TLE) to predict Iridium flares.
 
 B<Note> that in version 0.022_01 the velocity code got a substantial
-rework, which is still in progress. This should give useful velocities
-where they are available, and no velocities at all where they are not.
+rework, which is still in progress. I am attempting give useful
+velocities where they are available, and no velocities at all where they
+are not.  Unfortunately I have yet to locate any worked problems, so the
+velocity code is, in the most literal sense, untested.
+
 In general, locations specified in Earth-fixed coordinates are
 considered to share the rotational velocity of the Earth, and locations
 specified in inertial coordinates are considered to have undefined
 velocities unless a velocity was specified explicitly or produced by the
 object's model. This involved a change in the behavior of the eci()
 method when velocity was not specified but location was. See the next
-paragraph for my excuse.
+paragraph but one for my excuse.
 
 B<Caveat user:> This class and its subclasses should probably be
 considered alpha code, meaning that the public interface may not be
@@ -80,7 +83,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.022_02';
+our $VERSION = '0.022_03';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -220,6 +223,8 @@ Coordinate Systems, Part II" and available at
 F<http://celestrak.com/columns/v02n02/>. If the object represents fixed
 coordinates, the author's algorithm is used, but the author confesses
 needing to refer to Dr. Kelso's work to get the signs right.
+
+This method B<may> return velocities if they are available.
 
 =cut
 
@@ -673,10 +678,8 @@ Velocities will be returned if they were originally provided. B<This is
 a change introduced in version 0.022_01.> Prior to that version,
 velocities were always returned.
 
-B<Caveat:> Velocities are also returned, but should not at this point
-be taken seriously unless they were originally set by the same method
-that is returning them, since I have not at this point got the velocity
-transforms worked out.
+B<Caveat:> Velocities will be returned if they are available, but this
+code is still untested.
 
 =cut
 
@@ -744,6 +747,8 @@ This method returns the ecliptic latitude and longitude of the
 object at the given time. The time is optional if the time represented
 by the object has already been set (e.g. by the universal() or
 dynamical() methods).
+
+B<Caveat:> velocities are not returned by this method.
 
 =cut
 
@@ -897,54 +902,6 @@ sub equatorial {
     $body or $time = $self->universal;
 
     unless (@args) {
-
-=begin comment
-
-	if ($body) {
-	    my ($azimuth, $elevation, $range) = $self->azel ($body, 0);
-	    my $time = $body->universal ();
-	    my ($phi, $theta) = $self->geodetic ();
-	    $theta = mod2pi ($theta + thetag ($time));
-	    my $sin_theta = sin ($theta);
-	    my $cos_theta = cos ($theta);
-	    my $sin_phi = sin ($phi);
-	    my $cos_phi = cos ($phi);
-	    my $coselev = cos ($elevation);
-	    my $lxh = - cos ($azimuth) * $coselev;
-	    my $lyh = sin ($azimuth) * $coselev;
-	    my $lzh = sin ($elevation);
-	    my $sx = $sin_phi * $cos_theta;
-	    my $ex = - $sin_theta;
-	    my $zx = $cos_theta * $cos_phi;
-	    my $sy = $sin_phi * $sin_theta;
-	    my $ey = $cos_theta;
-	    my $zy = $sin_theta * $cos_phi;
-	    my $sz = - $cos_phi;
-	    my $ez = 0;
-	    my $zz = $sin_phi;
-	    my $lx = $sx * $lxh + $ex * $lyh + $zx * $lzh;
-	    my $ly = $sy * $lxh + $ey * $lyh + $zy * $lzh;
-	    my $lz = $sz * $lxh + $ez * $lyh + $zz * $lzh;
-	    my $declination = asin ($lz);
-	    my $cos_delta = sqrt (1 - $lz * $lz);
-	    my $sin_alpha = $ly / $cos_delta;
-	    my $cos_alpha = $lx / $cos_delta;
-	    my $right_ascension = mod2pi (atan2 ($sin_alpha,$cos_alpha));
-	    return ($right_ascension, $declination, $range);
-	}
-
-	return @{$self->{_ECI_cache}{inertial}{equatorial}}
-	    if $self->{_ECI_cache}{inertial}{equatorial};
-	my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->eci ();
-	my $ra = mod2pi (atan2 ($y, $x));	# Right ascension is always positive.
-	my $rsq = $x * $x + $y * $y;
-	my $dec = atan2 ($z, sqrt ($rsq));
-	my $range = sqrt ($rsq + $z * $z);
-	return @{$self->{_ECI_cache}{inertial}{equatorial} = [$ra, $dec, $range]};
-
-=end comment
-
-=cut
 
 	unless ($body) {
 	    $self->{_ECI_cache}{inertial}{equatorial}
