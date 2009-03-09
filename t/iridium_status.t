@@ -34,7 +34,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 30, 16, 18, 1, 109);
+my $asof = timegm (0, 15, 22, 9, 2, 109);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -234,7 +234,7 @@ eod
 25578IRIDIUM 11 [S]
 25777IRIDIUM 14 [S]
 25778IRIDIUM 21 [+]
-27372IRIDIUM 91 [S]
+27372IRIDIUM 91 [+]
 27373IRIDIUM 90 [S]
 27374IRIDIUM 94 [S]
 27375IRIDIUM 95 [+]
@@ -259,7 +259,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated February 11, 2009**</strong></p>
+<p align="center"><strong>** Updated March 09, 2009**</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -269,11 +269,15 @@ Failures</a>.</p>
 <p><strong>Latest changes </strong>(see below for earlier
 changes): </p>
 
-<p>*** On February 10, 2009 at 16:56 UT, an Iridium Satellite,
-believed to be Iridium 33 (24946, 1997-051C) is reported to have
-been in collision with Cosmos 2251 (22675, 1993-036A) . See <a
-href="iridium33collision.htm">Iridium 33 collision</a>. Iridium
-33 is presumably no longer functional ***</p>
+<p>*** In early March 2009, Iridium 91 (27372, 2002-005A) [note
+that some sources still label this satellite as Iridium 90] was
+raised to the operational orbit to fill the gap left by the loss
+of Iridium 33 ***</p>
+
+<p>*** On February 10, 2009 at 16:56 UT, Iridium 33 (24946,
+1997-051C) was in collision with Cosmos 2251 (22675, 1993-036A) .
+See <a href="iridium33collision.htm">Iridium 33 collision</a>.
+Iridium 33 is no longer functional ***</p>
 
 <pre>Orbital  &lt;-------- Operational satellites --------&gt;   Spares (in current sequence)
 Plane
@@ -281,10 +285,8 @@ Plane 1:  <a href="iridium74and21.htm">21</a>  72  75  70  62  63  64  65  66  6
 href="iridium74and21.htm">74</a> (partial failure?)
 Plane 2:  22  23  76  25  45  46  47  20  49  26   3   11
 Plane 3:  55  <a href="iridium28and95.htm">95</a>  29  <a
-href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32 <font
-color="#FF0000"><em><strong>(</strong></em></font><a
-href="iridium33collision.htm"><font color="#FF0000"><em><strong>33</strong></em></font></a><font
-color="#FF0000"><em><strong>)</strong></em></font> 57  58  59  60   91  94  96;  
+href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32  <a
+href="iridium33collision.htm">91</a>  57  58  59  60   94  96  
 Plane 4:  19  34  35  <a href="iridium36and97.htm">97</a>   <a
 href="iridium5and51.htm">5</a>@  6   7   8   4  37  61   <a
 href="iridium5and51.htm">51</a> (partial failure?)@;  
@@ -294,17 +296,18 @@ Plane 6:  18  42  40  39  80  <a href="iridium17and77.htm">77</a>  15  81  <a
 href="iridium38and82.htm">82</a>  41  43   <a
 href="iridium98.htm">98 (launched to plane 4, but has been migrated to plane 6)</a></pre>
 
-<pre>Original &lt;----- Failed -----&gt;       &lt;- Failed -&gt;    <em>Note that some of the failed</em>
-Orbital  (but still in orbit)       (decayed)      <em> satellites have drifted from</em>
-Plane                                          <em>     the original orbital planes</em>
+<pre>Original &lt;----- Failed -----&gt;       &lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
+Orbital  (but still in orbit)       (decayed)      <em> </em>
+Plane                                          <em>     </em>
 Plane 1:  73t
 Plane 2:  69t  24t  71t               48d
-Plane 3:  <a href="iridium28and95.htm">28</a>                          27d
+Plane 3:  <a href="iridium28and95.htm">28</a>   <a
+href="iridium33collision.htm"><font color="#FF0000">33</font></a>                     27d           <em>Iridium 33 was fragmented by the collison of February 10, 2009</em>
 Plane 4:  <a href="iridium36and97.htm">36</a>t
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          85d   <a
-href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em>
+href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
 Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
-href="iridium17and77.htm">17</a>      79d           <em>its original launch plane</em></pre>
+href="iridium17and77.htm">17</a>      79d           </pre>
 
 <p>t indicates satellites that have been reported as tumbling out
 of control. </p>
@@ -343,8 +346,8 @@ Iridium 27 (24947, 1997-051D) decayed on 1 February 2002 <br>
 Iridium 9 (24838, 1997-030C) decayed on 11 March 2003<br>
 (see <a href="http://www.satobs.org/seesat/Mar-2003/0116.html">http://www.satobs.org/seesat/Mar-2003/0116.html</a>)</p>
 
-<p>@ <a href="iridium5and51.htm">Iridium 51 *may* have replaced
-Iridium 5</a> in the operational constellation on 11 August 2001.</p>
+<p>@ <a href="iridium5and51.htm">Iridium 5 and Iridium 51 were
+confused</a> during August 2001.</p>
 
 <p>Note that the identities of various members of the Iridium
 constellation have been confused at various times in the past. <br>
@@ -368,11 +371,15 @@ which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
 
-<p>On February 10, 2009 at 16:56 UT, an Iridium Satellite,
-believed to be Iridium 33 (24946, 1997-051C) in reported to have
-been in collision with Cosmos 2251 (22675, 1993-036A) . See <a
-href="iridium33collision.htm">Iridium 33 collision</a>. Iridium
-33 is presumably no longer functional</p>
+<p>In early March 2009, Iridium 91 (27372, 2002-005A) [note that
+some sources still label this satellite as Iridium 90] was raised
+to the operational orbit to fill the gap left by the loss of
+Iridium 33.</p>
+
+<p>On February 10, 2009 at 16:56 UT, Iridium 33 (24946,
+1997-051C) was in collision with Cosmos 2251 (22675, 1993-036A) .
+See <a href="iridium33collision.htm">Iridium 33 collision</a>.
+Iridium 33 is no longer functional.</p>
 
 <p>In late July 2008, Iridium 95 (27375, 2002-005D), up till then
 a spare satellite in orbital plane 3, entered the operational
@@ -393,9 +400,9 @@ plane 6</a></p>
 <p>In early January 2007, Iridium 97 (27450,2002-031A), a spare
 satellite in orbital plane 4, entered the operational
 constellation, evidently to <a href="iridium36and97.htm">replace</a>
-Iridium 36 (24967, 1997-056C). Iridium 36 remained close to its
-nominal position in the constellation - it had evidently failed
-on station. </p>
+Iridium 36 (24967, 1997-056C). Iridium 36 initially remained
+close to its nominal position in the constellation - it had
+evidently failed on station. </p>
 
 <p>On or about January 10, 2006, Iridium 21 (25778, 199-032B),
 one of two spare satellites in orbital plane 1, was raised to
@@ -448,13 +455,13 @@ href="http://www.boeing.com/news/releases/2002/q1/nr_020211s.html">http://www.bo
 and <a href="http://spaceflightnow.com/delta/d290/status.html">http://spaceflightnow.com/delta/d290/status.html</a>
 for more details on the launch. This launch was directed at
 orbital plane 3, which previously had no spares. Perhaps
-surprisingly, there is so far no indication that it is intended
-to drift some of the spares to other orbital planes. Iridium 90
-(initially labelled as Iridium 91) was subesquently moved to
-orbital plane 5.</p>
+surprisingly, there was initially no indication that it was
+intended to drift some of the spares to other orbital planes.
+Hoever, Iridium 90 (initially labelled as Iridium 91) was
+subesquently moved to orbital plane 5.</p>
 
-<p>@ <a href="iridium5and51.htm">Iridium 51 *may* have replaced
-Iridium 5</a> in the operational constellation on 11 August 2001.</p>
+<p>@ <a href="iridium5and51.htm">Iridium 5 and Iridium 51 were
+confused</a> during August 2001.</p>
 
 <p>The previous change to the operational constellation was the <a
 href="iridium9and84.htm">replacement of Iridium 9 by Iridium 84</a>.</p>
