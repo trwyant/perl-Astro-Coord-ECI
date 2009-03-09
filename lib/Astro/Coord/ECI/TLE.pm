@@ -188,7 +188,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.016_01';
+our $VERSION = '0.016_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -6817,7 +6817,7 @@ eod
                      },
           '27372' => {
                        'comment' => '',
-                       'status' => 1,
+                       'status' => 0,
                        'name' => 'Iridium 91',
                        'class' => 'Astro::Coord::ECI::TLE::Iridium',
                        'type' => 'iridium',
