@@ -1,3 +1,21 @@
+0.023	09-Mar-2009	T. R. Wyant
+  General
+    Test t/tle_exception.t is no longer a developer test, but it will be
+      skipped unless the user has Time::y2038.
+  Astro::Coord::ECI 0.023
+    Add method equatorial_unreduced(), for those who are only interested
+      in range and velocity.
+    Attempt to straighten out velocities when transforming among ECEF,
+      ECI, and equatorial. No tests yet, though, so I have no idea if
+      it is right. Note that as a consequence of this change it is
+      possible to have an object without a velocity, since inertial
+      objects no longer default to 0 velocity.
+  Astro::Coord::ECI::TLE 0.017
+    Set Iridium 91 in service in canned status, reflecting updates by
+      Rod Sladen and T. S. Kelso. This is the real reason for the
+      release; otherwise I would have sat on it until I had velocity
+      tests.
+
 0.022	15-Feb-2009	T. R. Wyant
   General
     Make new test t/tle_exception.t a developer test until I can figure
