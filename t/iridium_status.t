@@ -34,7 +34,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 15, 22, 9, 2, 109);
+my $asof = timegm (0, 0, 0, 23, 4, 109);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -51,7 +51,7 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of Feb. 12, 2009
+Iridium status as of May 22, 2009
 ==================================
 
 Iridiums not listed in the following table are thought to be stable
@@ -86,10 +86,11 @@ May 4, 2007:   Iridium 98 has changed its inclination so that it is now
 Jan. 22, 2008: Iridium 90 has changed its inclination so that it is now
                a spare in its new plane.
 Jul. 19, 2008: Unusual changes in mean motion by Iridium 28
-Jul. 26, 2008: Iridium 95 moved to about 14 seconds behind Iridium 28
+Jul. 26, 2008: Iridium 95 moved to replace Iridium 28
 Dec. 22, 2008: It is clear that Iridium 28 was no longer being controlled
                as of about Sep. 20, 2008 - probably since July 2008
 Feb. 10, 2009: Collision between Iridium 33 and Cosmos 2251
+Mar. 2, 2009:  Iridium 91 was been placed into service to replace Iridium 33
 
  NCat    Name           Status   Comment
  24836   Iridium 914    tum      Failed; was called Iridium 14
@@ -114,7 +115,7 @@ Feb. 10, 2009: Collision between Iridium 33 and Cosmos 2251
  25578   Iridium 11     ?        Spare   was called Iridium 20
  25777   Iridium 14     ?        Spare   was called Iridium 14A
  25778   Iridium 21              Replaced Iridium 74   was called Iridium 21A
- 27372   Iridium 91     ?        Spare   was called Iridium 90
+ 27372   Iridium 91              Replaced Iridium 33 about Mar. 2, 2009   was called Iridium 90
  27373   Iridium 90     ?        Spare (new plane Jan. 2008)   was called Iridium 91
  27374   Iridium 94     ?        Spare
  27375   Iridium 95              Replaced Iridium 28 about July 26, 2008
