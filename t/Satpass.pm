@@ -201,7 +201,9 @@ eod
 
 	s/-read\b\s*//m and do {
 	    my $fh;
-	    open ($fh, '<', File::Spec->catfile (cwd, $_));
+	    my $fn = File::Spec->catfile(cwd, $_);
+	    open $fh, '<', $fn
+		or die "Failed to open $fn: $!";
 	    local $/ = undef;	# Slurp mode
 	    $output = <$fh>;
 	    close $fh;
@@ -279,7 +281,9 @@ eod
 
 	s/-write\b\s*//m and do {
 	    my $fh;
-	    open ($fh, '>', File::Spec->catfile (getcwd, $_));
+	    my $fn = File::Spec->catfile(getcwd, $_);
+	    open $fh, '>', $fn
+		or die "Failed to open $fn: $!\n";
 	    print $fh $data;
 	    close $fh;
 	    next;

@@ -535,12 +535,18 @@ eod
 eod
     skip ($skip, $got eq $data);
     unless ($skip || $got eq $data) {
-	open (my $fh, '>', "$file.expect");
-	print $fh $data;
-	close $fh;
-	open ($fh, '>', "$file.got");
-	print $fh $got;
-	close $fh;
+	if (open (my $fh, '>', "$file.expect")) {
+	    print $fh $data;
+	    close $fh;
+	} else {
+	    warn "Failed to open $file.expect: $!\n";
+	}
+	if (open (my $fh, '>', "$file.got")) {
+	    print $fh $got;
+	    close $fh;
+	} else {
+	    warn "Failed to open $file.got: $!\n";
+	}
 	warn <<eod;
 #
 # Expected and gotten information written to $file.expect and
