@@ -16,9 +16,20 @@ allow_includes	= 1
 
 severity	= harsh
 
+[Perl::Critic::Policy::InputOutput::RequireCheckedOpen]
+
+# For some reason the default is 3 ('harsh'). But IM(NS)HO this
+# kind of thing should be a 5. So:
+
+severity	= gentle
+
 [Perl::Critic::Policy::Subroutines::RequireArgUnpacking]
 
 short_subroutine_statements	= 3
+
+[Perl::Critic::Policy::Subroutines::RequireFinalReturn]
+
+terminal_funcs	= CORE::exit
 
 [Perl::Critic::Policy::TestingAndDebugging::ProhibitNoStrict]
 
