@@ -29,6 +29,7 @@ altazimuth
 AMSAT
 angulardiameter
 angularvelocity
+apoapsis
 App
 appulse
 appulsed
@@ -165,6 +166,7 @@ pbcopy
 pbpaste
 pc
 PE
+periapsis
 perigee
 perltime
 Persei
@@ -197,6 +199,7 @@ SDP
 sdp
 secondderivative
 semimajor
+semiminor
 SGP
 sgp
 SI
