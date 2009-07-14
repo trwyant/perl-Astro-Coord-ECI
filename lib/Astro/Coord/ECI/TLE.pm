@@ -188,7 +188,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.017';
+our $VERSION = '0.017_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -454,6 +454,30 @@ eod
     return $self;
 }
 __PACKAGE__->alias (tle => __PACKAGE__);
+
+
+=item $kilometers = $tle->apoapsis();
+
+This method returns the apoapsis of the orbit, in kilometers. Since
+Astro::Coord::ECI::TLE objects always represent bodies orbiting the
+Earth, this is more usually called apogee.
+
+=cut
+
+sub apoapsis {
+    my $self = shift;
+    return $self->{&TLE_INIT}{TLE_apoapsis} ||=
+	(1 + $self->get('eccentricity')) * $self->semimajor();
+}
+
+
+=item $kilometers = $tle->apogee();
+
+This method is simply a synonym for apoapsis().
+
+=cut
+
+*apogee = \&apoapsis;
 
 
 #	See Astro::Coord::ECI for docs.
@@ -1237,6 +1261,30 @@ eod
 }
 
 
+=item $kilometers = $tle->periapsis();
+
+This method returns the periapsis of the orbit, in kilometers. Since
+Astro::Coord::ECI::TLE objects always represent bodies orbiting the
+Earth, this is more usually called perigee.
+
+=cut
+
+sub periapsis {
+    my $self = shift;
+    return $self->{&TLE_INIT}{TLE_apoapsis} ||=
+	(1 - $self->get('eccentricity')) * $self->semimajor();
+}
+
+
+=item $kilometers = $tle->perigee();
+
+This method is simply a synonym for periapsis().
+
+=cut
+
+*perigee = \&periapsis;
+
+
 =item $seconds = $tle->period ($model);
 
 This method returns the orbital period of the object in seconds using
@@ -1399,6 +1447,26 @@ model.
 	    exp (log ($to2pi * $to2pi * $mu) / 3);
 	};
     }
+}
+
+
+=item $kilometers = $tle->semiminor();
+
+This method calculates the semiminor axis of the orbit, using the
+semimajor axis and the eccentricity, by the equation
+
+ b = a * sqrt(1 - e)
+
+where a is the semimajor axis and e is the eccentricity.
+
+=cut
+
+sub semiminor {
+    my $self = shift;
+    return $self->{&TLE_INIT}{TLE_semiminor} ||= do {
+	my $e = $self->get('eccentricity');
+	$self->semimajor() * sqrt(1 - $e * $e);
+    };
 }
 
 
