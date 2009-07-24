@@ -188,7 +188,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.017_01';
+our $VERSION = '0.017_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -461,6 +461,9 @@ __PACKAGE__->alias (tle => __PACKAGE__);
 This method returns the apoapsis of the orbit, in kilometers. Since
 Astro::Coord::ECI::TLE objects always represent bodies orbiting the
 Earth, this is more usually called apogee.
+
+Note that this is the distance from the center of the Earth, not the
+altitude.
 
 =cut
 
@@ -1266,6 +1269,9 @@ eod
 This method returns the periapsis of the orbit, in kilometers. Since
 Astro::Coord::ECI::TLE objects always represent bodies orbiting the
 Earth, this is more usually called perigee.
+
+Note that this is the distance from the center of the Earth, not the
+altitude.
 
 =cut
 
