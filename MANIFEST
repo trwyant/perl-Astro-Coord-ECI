@@ -35,13 +35,13 @@ t/moon.t
 t/perlcriticrc
 t/pod.t
 t/pod_coverage.t
-t/semimajor.t
 t/set.t
 t/SetDelegate.pm
 t/sgp4r.out
 t/star.t
 t/sun.t
 t/tle.t
+t/tle_apsides.t
 t/tle_exception.t
 t/tle_sgp4r.t
 t/tle_support.t
