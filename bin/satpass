@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.022_01';
+our $VERSION = '0.022_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -1053,10 +1053,6 @@ eod
 	}
     }
 }
-
-=for comment help bracket-matching editor }
-
-=cut
 
 
 ########################################################################
@@ -3112,28 +3108,7 @@ if ($time) {
     $data = \@bodies;
     }
 if (@$choose) {
-
-=begin comment
-
-    my @check = map {m/\D/ ? qr{@{[quotemeta $_]}}i : $_}
-	map {split '\s*,\s*', $_} @$choose;
-    my @keep;
-    foreach my $tle (@$data) {
-	my ($id, $name) = ($tle->get ('id'), $tle->get ('name') || '');
-	foreach my $test (@check) {
-	    next unless ref $test ? $name =~ m/$test/ : $id == $test;
-	    push @keep, $tle;
-	    last;
-	    }
-	}
-    $data = \@keep;
-
-=end comment
-
-=cut
-
     $data = _select_matching_bodies ($data, $choose);
-
     }
 @$data
 }
@@ -3154,60 +3129,6 @@ Programming Error - Parameter simbad_version set to '$parm{simbad_version}',
 eod
     }
 }
-
-#	@coordinates = _simbad3 ($query)
-
-#	Look up the given star in the SIMBAD catalog. This assumes
-#	SIMBAD 3, and SIMBAD 4 is already late and is known to affect
-#	this functionality, which is essentially a page scraper. They
-#	promise something like SOAP for this functionality. We'll see.
-
-#	We die on any error.
-
-=begin comment
-
-sub _simbad3 {
-    _load_module ('Astro::SIMBAD::Query');
-    my $query = shift;
-    my $qo = Astro::SIMBAD::Query->new (Target => $query, Error => 0,
-	Frame => 'FK5', Epoch => 2000, Equinox => 2000,
-	URL => $parm{simbad_url});
-    my $rslt = eval {$qo->querydb ()};
-    die <<eod if $@;
-Error - No entry found for $query, or
-        $parm{simbad_url} unreachable.
-eod
-
-    die <<eod unless $rslt->sizeof;
-Error - Can not find $query
-eod
-    die <<eod if $rslt->sizeof > 1;
-Error - More than one match found
-eod
-
-    my ($obj) = $rslt->objects;
-    my ($ra, $dec, $rng, $pm, $vrec) = map {$obj->$_} qw{ra dec plx pm
-	radial};
-    defined $ra && $ra =~ m/\S/ or die <<eod;
-Error - No position available for $query
-eod
-    foreach ($ra, $dec) {s/^\s+//; s/\s+$//; s/\s+/ /g; s/\s+0+\.0$//;}
-    $ra =~ s/\s/:/g;
-    $dec =~ s/\s/d/;
-    $dec =~ s/\s/m/;
-    $dec =~ s/\s/s/;
-    $rng = $rng ? 1000 / $rng : 10000;
-    my ($pmra, $pmdec) = map {$_ ? $_ / 1000 : 0} @$pm;
-    $pmra ||= 0;
-    $pmdec ||= 0;
-    $vrec ||= 0;
-    my @temp = ($ra, $dec, $rng, $pmra, $pmdec, $vrec + 0);
-    wantarray ? @temp : join ' ', @temp;
-}
-
-=end comment
-
-=cut
 
 
 #	@coordinates = _simbad4 ($query)

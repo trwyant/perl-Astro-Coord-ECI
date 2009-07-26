@@ -182,7 +182,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.017_03';
+our $VERSION = '0.017_04';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -974,20 +974,6 @@ sub pass {
     $pass_end >= $pass_start or croak <<eod;
 Error - End time must be after start time.
 eod
-
-=begin comment
-
-    unless ($tle->get ('backdate')) {
-	my $real = _INSTANCE($tle, 'Astro::Coord::ECI::TLE::Set') ?
-	    $tle->select ($pass_start) : $tle;
-	my $epoch = $real->get ('epoch');
-	$pass_start = $epoch if $pass_start < $epoch;
-	$pass_start <= $pass_end or return ();
-    }
-
-=end comment
-
-=cut
 
     $pass_start = $tle->max_effective_date($pass_start);
     $pass_start <= $pass_end or return;

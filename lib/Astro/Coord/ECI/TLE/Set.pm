@@ -39,8 +39,6 @@ Astro::Coord::ECI::TLE::Set - Represent a set of data for the same ID.
 
 =head1 DESCRIPTION
 
-=for comment help syntax-highlighting editor "
-
 This module is intended to represent a set of orbital elements,
 representing the same NORAD ID at different points in time. It
 can contain any number of objects of class Astro::Coord::ECI::TLE
@@ -124,8 +122,6 @@ containing Astro::Coord::ECI::TLE::Set object.
 
 The following methods should be considered public:
 
-=for comment help syntax-highlighting editor "
-
 =over
 
 =cut
@@ -145,7 +141,7 @@ our @CARP_NOT = qw{
     Astro::Coord::ECI
 };
 
-our $VERSION = '0.006_01';
+our $VERSION = '0.006_02';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be

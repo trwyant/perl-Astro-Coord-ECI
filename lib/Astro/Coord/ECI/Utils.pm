@@ -67,7 +67,7 @@ package Astro::Coord::ECI::Utils;
 use strict;
 use warnings;
 
-our $VERSION = '0.011';
+our $VERSION = '0.011_01';
 our @ISA = qw{Exporter};
 
 use Carp;
@@ -552,24 +552,6 @@ The input may not be less than 0.
 =cut
 
 sub jd2datetime {
-
-=begin comment
-
-    my ($day, $mon, $yr) = jd2date (@_);
-    my $hr = $day;
-    $day = floor ($day);
-    my $min = $hr = ($hr - $day) * 24;
-    $hr = floor ($hr);
-    my $sec = $min = ($min - $hr) * 60;
-    $min = floor ($min);
-    $sec = ($sec - $min) * 60;
-    wantarray and return ($sec, $min, $hr, $day, $mon, $yr);
-    return strftime ($DATETIMEFORMAT, $yr, $mon, $day, $hr, $min, $sec);
-
-=end comment
-
-=cut
-
     my ($time) = @_;
     return epoch2datetime(($time - JD_OF_EPOCH) * SECSPERDAY);
 }
@@ -831,24 +813,6 @@ in degrees.
 =cut
 
 sub rad2deg {return $_[0] / PI * 180}
-
-
-=begin comment
-
-#	($xprime, $yprime) = _rotate ($theta, $x, $y)
-
-#	Rotate coordinates in the Cartesian plane.
-#	The arguments are the angle and the coordinates, and
-#	the rotated coordinates 
-
-sub _rotate {
-    my ($theta, $x, $y) = @_;
-    my $costh = cos ($theta);
-    my $sinth = sin ($theta);
-    return ($x * $costh - $y * $sinth, $x * $sinth + $y * $costh);
-}
-
-=end comment
 
 =item $value = tan ($angle)
 
