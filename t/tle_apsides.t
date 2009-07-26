@@ -16,8 +16,8 @@ use base qw{Astro::Coord::ECI::TLE};
     sub new {
 	my ($class, %args) = @_;
 	my $self = $class->SUPER::new();
-	$self->{$pkg}{period} = $args{period};
-	$self->set(eccentricity => $args{eccentricity});
+	$self->{$pkg}{period} = delete $args{period};
+	$self->set(%args);
 	return $self;
     }
 
@@ -39,36 +39,40 @@ use Test;
     my $loc = tell(DATA);
     while (<DATA>) {
 	chomp;
-	s/^\s+//;
+	s{ \A \s+ }{}smx;
 	$_ or next;
 	substr($_, 0, 1) eq '#' and next;
-	$tests++;
+	m{ \A new \b }smx or $tests++;
     }
     plan (tests => $tests);
     seek (DATA, $loc, 0);
 }
 
 my $test = 0;
+my $tle;
 
 while (<DATA>) {
     chomp;
-    s/^\s+//;
+    s{ \A \s+ }{}smx;
     $_ or next;
     substr($_, 0, 1) eq '#' and next;
-    $test++;
-    my ($period, $eccentricity, $method, $want, $tolerance, $comment) = split '\s+', $_, 6;
-    defined $tolerance or $tolerance = 1;
-    my $tle = Astro::Coord::ECI::TLE::Period->new(
-	period => $period, eccentricity => $eccentricity);
-    my $got = $tle->$method();
-    print <<eod;
+    if (m{ \A new \b }smx) {
+	my ($method, $period, $eccentricity, $name) = split qr{\s+}, $_, 4;
+	$tle = Astro::Coord::ECI::TLE::Period->new(
+	    period => $period, eccentricity => $eccentricity, name => $name);
+    } else {
+	my ($method, $want, $tolerance) = split qr{\s+}, $_;
+	defined $tolerance or $tolerance = 1;
+	my $got = $tle->$method();
+	print <<eod;
 #
-# Test $test - $comment $method()
+# Test $test - @{[$tle->get('name')]} $method()
 #          Want: $want
 #           Got: $got
 #     Tolerance: $tolerance
 eod
-    ok(abs ($want - $got) <= $tolerance);
+	ok(abs ($want - $got) <= $tolerance);
+    }
 }
 
 1;
@@ -80,30 +84,30 @@ __DATA__
 # Algorithms"). Semimajor is the average of their perigee and apogee,
 # plus Meeus' radius of the Earth.
 
-# period eccentricity method expect tolerance comment
+new 7970.4 0.1849966 OID 00005 (Vanguard 1) Epoch 09198.49982685
+semimajor  8624.14 1
+periapsis  7029.14 1
+apoapsis  10219.14 1
+perigee    7029.14 1
+apogee    10219.14 1
 
- 7970.4 0.1849966 semimajor  8624.14 1 OID 00005 (Vanguard 1) Epoch 09198.49982685
- 7970.4 0.1849966 periapsis  7029.14 1 OID 00005 (Vanguard 1) Epoch 09198.49982685
- 7970.4 0.1849966 apoapsis  10219.14 1 OID 00005 (Vanguard 1) Epoch 09198.49982685
- 7970.4 0.1849966 perigee    7029.14 1 OID 00005 (Vanguard 1) Epoch 09198.49982685
- 7970.4 0.1849966 apogee    10219.14 1 OID 00005 (Vanguard 1) Epoch 09198.49982685
+new 5487.6 0.0007102 OID 25544 (ISS) Epoch 09197.89571571
+semimajor  6724.64 1
+periapsis  6720.14 1
+apoapsis   6729.14 1
+perigee    6720.14 1
+apogee     6729.14 1
 
- 5487.6 0.0007102 semimajor  6724.64 1 OID 25544 (ISS) Epoch 09197.89571571
- 5487.6 0.0007102 periapsis  6720.14 1 OID 25544 (ISS) Epoch 09197.89571571
- 5487.6 0.0007102 apoapsis   6729.14 1 OID 25544 (ISS) Epoch 09197.89571571
- 5487.6 0.0007102 perigee    6720.14 1 OID 25544 (ISS) Epoch 09197.89571571
- 5487.6 0.0007102 apogee     6729.14 1 OID 25544 (ISS) Epoch 09197.89571571
+new 43081.2 0.0134177 OID 20959 (Navstar 22) Epoch 09197.50368658
+semimajor 26561.14 1
+periapsis 26203.14 2
+apoapsis  26919.14 2
+perigee   26203.14 2
+apogee    26919.14 2
 
-43081.2 0.0134177 semimajor 26561.14 1 OID 20959 (Navstar 22) Epoch 09197.50368658
-43081.2 0.0134177 periapsis 26203.14 2 OID 20959 (Navstar 22) Epoch 09197.50368658
-43081.2 0.0134177 apoapsis  26919.14 2 OID 20959 (Navstar 22) Epoch 09197.50368658
-43081.2 0.0134177 perigee   26203.14 2 OID 20959 (Navstar 22) Epoch 09197.50368658
-43081.2 0.0134177 apogee    26919.14 2 OID 20959 (Navstar 22) Epoch 09197.50368658
-
-43107.0 0.7271065 semimajor 26572.14 1 OID 21118 (Molniya 1-80) Epoch 09197.37303507
-43107.0 0.7271065 periapsis  7251.14 1 OID 21118 (Molniya 1-80) Epoch 09197.37303507
-43107.0 0.7271065 apoapsis  45893.14 1 OID 21118 (Molniya 1-80) Epoch 09197.37303507
-43107.0 0.7271065 perigee    7251.14 1 OID 21118 (Molniya 1-80) Epoch 09197.37303507
-43107.0 0.7271065 apogee    45893.14 1 OID 21118 (Molniya 1-80) Epoch 09197.37303507
-
-
+new 43107.0 0.7271065 OID 21118 (Molniya 1-80) Epoch 09197.37303507
+semimajor 26572.14 1
+periapsis  7251.14 1
+apoapsis  45893.14 1
+perigee    7251.14 1
+apogee    45893.14 1
