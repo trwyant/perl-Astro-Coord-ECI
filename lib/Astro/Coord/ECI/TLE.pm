@@ -30,11 +30,15 @@ will need to substitute your own location where indicated.
     $your_height_above_sea_level_in_meters/1000);
  
  # Get all the Space Station data from NASA's human
- # spaceflight page. It is all direct-fetched, so no
- # password is needed.
+ # spaceflight page, with the optional effective date.
+ # The data are all direct-fetched, so no password is
+ # needed. Note that the -effective option requires
+ # Astro::SpaceTrack 0.40_01 or above. If you do not have
+ # this option available, set the 'backdate' attribute
+ # false on all the elements in @sats, below.
  
  my $st = Astro::SpaceTrack->new (direct => 1);
- my $data = $st->spaceflight ('-all');
+ my $data = $st->spaceflight ('-all', '-effective');
  $data->is_success or die $data->status_line;
  
  # Parse the fetched data, yielding TLE objects. Aggregate
@@ -45,16 +49,6 @@ will need to substitute your own location where indicated.
  
  my @sats = Astro::Coord::ECI::TLE::Set->aggregate(
      Astro::Coord::ECI::TLE->parse ($data->content));
-
- # Turn off the ability to use orbital elements before their
- # epoch. This is normally harmless, but in this case the
- # data may include predicted Space Shuttle data, in which
- # case we are really using the epoch of the first data set
- # as proxy for liftoff time.
- 
- foreach my $tle (@sats) {
-    $tle->set(backdate => 0);
- }
  
  # We want passes for the next 7 days.
   
@@ -188,13 +182,13 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.017_02';
+our $VERSION = '0.017_03';
 
 use base qw{Astro::Coord::ECI Exporter};
 
 use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta embodies
-    find_first_true load_module mod2pi PI PIOVER2 SECSPERDAY TWOPI
-    thetag};
+    find_first_true load_module max mod2pi PI PIOVER2 rad2deg SECSPERDAY
+    TWOPI thetag};
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
@@ -304,6 +298,15 @@ use constant SGP_RHO => .15696615;
 
 my %attrib = (
     backdate => 0,
+    effective => sub {
+	my ($self, $name, $value) = @_;
+	if (defined $value and $value =~ m{ \A (\d+) / (\d+) /
+		(\d+) : (\d+) : (\d+ [.] \d+) \z }smx) {
+	    $value = timegm (0, 0, 0, 1, 0, $1 - 1900) + (
+		(($2 - 1) * 24 + $3) * 60 + $4) * 60 + $5;
+	}
+	$self->{$name} = $value;
+    },
     classification => 0,
     international => 0,
     epoch => sub {
@@ -633,6 +636,27 @@ can select the correct member object before running the model.
 
 }	# End local symbol block
 
+=item $time = $tle->max_effective_date(...);
+
+This method returns the maximum date among its arguments and the
+effective date of the $tle object as set in the C<effective> attribute,
+if that is defined. If no effective date is set but the C<backdate>
+attribute is false, the C<epoch> of the object is used as the effective
+date. If there are no arguments and no effective date, C<undef> is
+returned.
+
+=cut
+
+sub max_effective_date {
+    my ($self, @args) = @_;
+    if (my $effective = $self->get('effective')) {
+	push @args, $effective;
+    } elsif (!$self->get('backdate')) {
+	push @args, $self->get('epoch');
+    }
+    return max(@args);
+}
+
 
 =item $tle = $tle->model($time)
 
@@ -651,16 +675,6 @@ new preferred model as soon as I:
 
 You need to call one of the Astro::Coord::ECI methods (e.g. geodetic ()
 or equatorial ()) to retrieve the position you just calculated.
-
-=cut
-
-=begin comment
-
-sub model {
-    return $_[0]->is_deep ? $_[0]->sdp4 ($_[1]) : $_[0]->sgp4 ($_[1]);
-}
-
-=end comment
 
 =cut
 
@@ -746,18 +760,30 @@ and the presence of such data will result in an exception being thrown.
 sub parse {
     my ($self, @args) = @_;
     my @rslt;
-    my @data = grep {$_ && $_ !~ m/^\s*#/} map {chomp; $_}
-	map {ref $_ && croak <<eod; split '\n', $_} @args;
+
+    my @data;
+    foreach my $datum (@args) {
+	ref $datum and croak <<eod;
 Error - Arguments to parse() must be scalar.
 eod
+	foreach my $line (split qr{\n}, $datum) {
+	    $line =~ s/ \s+ \z //smx;
+	    $line =~ m/ \A \s* [#] /smx and next;
+	    $line and push @data, $line;
+	}
+    }
+
     while (@data) {
 	my %ele = %static;
 	my $line = shift @data;
 	$line =~ s/\s+$//;
 	my $tle = "$line\n";
-	length ($line) < 50 and do {
-	    ($ele{name}, $line) = ($line, shift @data);
-	    $line =~ s/\s+$//;
+	$line =~ m{ \A 1 (\s* \d+) }smx and length $1 == 6 or do {
+	    if ($line =~ s{ \s* --effective \s+ (\S+) }{}smx) {
+		$ele{effective} = $1;
+	    }
+	    $line and $ele{name} = $line;
+	    $line = shift @data;
 	    $tle .= "$line\n";
 	};
 	if (length ($line) > 79 && substr ($line, 79, 1) eq 'G') {
@@ -948,6 +974,9 @@ sub pass {
     $pass_end >= $pass_start or croak <<eod;
 Error - End time must be after start time.
 eod
+
+=begin comment
+
     unless ($tle->get ('backdate')) {
 	my $real = _INSTANCE($tle, 'Astro::Coord::ECI::TLE::Set') ?
 	    $tle->select ($pass_start) : $tle;
@@ -955,6 +984,13 @@ eod
 	$pass_start = $epoch if $pass_start < $epoch;
 	$pass_start <= $pass_end or return ();
     }
+
+=end comment
+
+=cut
+
+    $pass_start = $tle->max_effective_date($pass_start);
+    $pass_start <= $pass_end or return;
 
     my @lighting = (
 	PASS_EVENT_SHADOWED,
@@ -1277,7 +1313,7 @@ altitude.
 
 sub periapsis {
     my $self = shift;
-    return $self->{&TLE_INIT}{TLE_apoapsis} ||=
+    return $self->{&TLE_INIT}{TLE_periapsis} ||=
 	(1 - $self->get('eccentricity')) * $self->semimajor();
 }
 
@@ -6139,6 +6175,57 @@ sub _r_dump {
     return;
 }
 
+=item $text = $tle->tle_verbose(...);
+
+This method returns a verbose version of the TLE data, with one data
+field per line, labeled. The optional arguments are key-value pairs
+affecting the formatting of the output. The only key implemented at the
+moment is
+
+ date_format
+   specifies the strftime() format used for dates
+   (default: '%d-%b-%Y %H:%M:%S').
+
+=cut
+
+sub tle_verbose {
+    my ($self, %args) = @_;
+    my $dtfmt = $args{date_format} || '%d-%b-%Y %H:%M:%S';
+    my $semimajor = $self->get('semimajor');	# Of reference ellipsoid.
+
+    my $result = <<EOD;
+NORAD ID: @{[$self->get ('id')]}
+    Name: @{[$self->get ('name') || 'unspecified']}
+    International launch designator: @{[$self->get ('international')]}
+    Epoch of data: @{[strftime $dtfmt, gmtime $self->get ('epoch')]} GMT
+EOD
+    if (defined (my $effective = $self->get('effective'))) {
+	$result .= <<EOD;
+    Effective date: @{[strftime $dtfmt, gmtime $effective]} GMT
+EOD
+    }
+    $result .= <<EOD;
+    Classification status: @{[$self->get ('classification')]}
+    Mean motion: @{[rad2deg ($self->get ('meanmotion'))]} degrees/minute
+    First derivative of motion: @{[rad2deg ($self->get ('firstderivative'))]} degrees/minute squared
+    Second derivative of motion: @{[rad2deg ($self->get ('secondderivative'))]} degrees/minute cubed
+    B Star drag term: @{[$self->get ('bstardrag')]}
+    Ephemeris type: @{[$self->get ('ephemeristype')]}
+    Inclination of orbit: @{[rad2deg ($self->get ('inclination'))]} degrees
+    Right ascension of ascending node: @{[rad2deg ($self->get ('rightascension'))]} degrees
+    Eccentricity: @{[$self->get ('eccentricity')]}
+    Argument of perigee: @{[rad2deg ($self->get ('argumentofperigee'))]} degrees from ascending node
+    Mean anomaly: @{[rad2deg ($self->get ('meananomaly'))]} degrees
+    Element set number: @{[$self->get ('elementnumber')]}
+    Revolutions at epoch: @{[$self->get ('revolutionsatepoch')]}
+    Period (derived): @{[$self->period()]} seconds
+    Semimajor axis (derived): @{[$self->semimajor()]} kilometers
+    Altitude at perigee (derived): @{[$self->periapsis() - $semimajor]} kilometers
+    Altitude at apogee (derived): @{[$self->apoapsis() - $semimajor]} kilometers
+EOD
+    return $result;
+}
+
 
 #######################################################################
 
@@ -6190,9 +6277,24 @@ sub _make_tle {
     my $output;
 
     my $oid = $self->get('id');
-    my $name = $self->get('name');
-    (defined $name && $name ne '')
-	and $output .= substr ($name, 0, 24) . "\n";
+    my @line0;
+
+    {
+	my $name;
+	defined ($name = $self->get('name'))
+	    and $name ne ''
+	    and push @line0, substr $name, 0, 24;
+    }
+
+    if (defined (my $effective = $self->get('effective'))) {
+	my $whole = floor($effective);
+	my ($sec, $min, $hr, undef, undef, $year, undef, $yday) =
+	    gmtime $effective;
+	push @line0, sprintf '--effective %04d/%03d/%02d:%02d:%06.3f',
+	    $year + 1900, $yday + 1, $hr, $min,
+	    $sec + ($effective - $whole);
+    }
+    @line0 and $output .= join (' ', @line0) . "\n";
 
     my %ele;
     {
