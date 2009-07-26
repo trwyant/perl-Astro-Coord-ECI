@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.022';
+our $VERSION = '0.022_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2355,28 +2355,7 @@ Modify "$name" "Sol/Earth" {
 }
 eod
 	} elsif ($cmdopt{verbose}) {
-	    print <<eod;
-
-NORAD ID: @{[$tle->get ('id')]}
-    Name: @{[$tle->get ('name') || 'unspecified']}
-    International launch designator: @{[$tle->get ('international')]}
-    Epoch of data: @{[strftime $dtfmt, gmtime $tle->get ('epoch')]} GMT
-    Classification status: @{[$tle->get ('classification')]}
-    Mean motion: @{[rad2deg ($tle->get ('meanmotion'))]} degrees/minute
-    First derivative of motion: @{[rad2deg ($tle->get ('firstderivative'))]} degrees/minute squared
-    Second derivative of motion: @{[rad2deg ($tle->get ('secondderivative'))]} degrees/minute cubed
-    B Star drag term: @{[$tle->get ('bstardrag')]}
-    Ephemeris type: @{[$tle->get ('ephemeristype')]}
-    Inclination of orbit: @{[rad2deg ($tle->get ('inclination'))]} degrees
-    Right ascension of ascending node: @{[rad2deg ($tle->get ('rightascension'))]} degrees
-    Eccentricity: @{[$tle->get ('eccentricity')]}
-    Argument of perigee: @{[rad2deg ($tle->get ('argumentofperigee'))]} degrees from ascending node
-    Mean anomaly: @{[rad2deg ($tle->get ('meananomaly'))]} degrees
-    Element set number: @{[$tle->get ('elementnumber')]}
-    Revolutions at epoch: @{[$tle->get ('revolutionsatepoch')]}
-    Period (derived): @{[$tle->period()]} seconds
-    Semimajor axis (derived): @{[$tle->semimajor()]} kilometers
-eod
+	    print "\n", $tle->tle_verbose(date_format => $dtfmt);
 	} else {
 	    print $tle->get ('tle');
 	}
