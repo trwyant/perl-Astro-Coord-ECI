@@ -135,6 +135,7 @@ package Astro::Coord::ECI::TLE::Set;
 use strict;
 use warnings;
 
+use Astro::Coord::ECI::Utils qw{max};
 use Carp;
 use Params::Util 0.25 qw{_INSTANCE};
 
@@ -144,7 +145,7 @@ our @CARP_NOT = qw{
     Astro::Coord::ECI
 };
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -164,7 +165,7 @@ sub new {
     $class = ref $class if ref $class;
     my $self = {
 	current => undef,	# Current member
-	members => [],		# [epoch, TLE].
+	members => [],		# [effective, TLE].
     };
     bless $self, $class;
     $self->add (@args) if @args;
@@ -175,11 +176,12 @@ sub new {
 =item $set->add ($member ...);
 
 This method adds members to the set. The initial member may be any
-initialized member of the Astro::Coord::ECI::TLE class, or any
-subclass thereof. Subsequent members must be the same class as
-the initial member, and represent the same NORAD ID. If not, an
-exception is thrown. If a prospective member has the same epoch
-as a current member, the prospective member is silently ignored.
+initialized member of the Astro::Coord::ECI::TLE class, or any subclass
+thereof. Subsequent members must be the same class as the initial
+member, and represent the same NORAD ID. If not, an exception is thrown.
+If a prospective member has the same effective date as a current member,
+the prospective member is silently ignored. If a member does not have an
+effective date, the epoch is used as a proxy for the effective date.
 
 The first member added becomes the current member for the purpose
 of delegating method calls. Adding subsequent members does not
@@ -192,10 +194,12 @@ sub add {
     my ($self, @args) = @_;
     my ($id, %ep, $class);
     foreach (@{$self->{members}}) {
-	my ($epoch, $tle) = @$_;
+	my ($effective, $tle) = @$_;
 	$id ||= $tle->get ('id');
 	$class ||= ref $tle;
-	$ep{$tle->get ('epoch')} = $tle;
+	$effective = $tle->get('effective');
+	defined $effective or $effective = $tle->get('epoch');
+	$ep{$effective} = $tle;
     }
     foreach my $tle (map {_INSTANCE($_, __PACKAGE__) ?
 	    $_->members : $_} @args) {
@@ -218,7 +222,8 @@ eod
 	    $id = $aid;
 	    $self->{current} = $tle;
 	}
-	my $aep = $tle->get ('epoch');
+	my $aep = $tle->get ('effective');
+	defined $aep or $aep = $tle->get('epoch');
 	next if $ep{$aep};
 	$ep{$aep} = $tle;
     }
@@ -318,11 +323,36 @@ sub clear {
     return $self;
 }
 
+=item $time = $set->max_effective_date(...);
+
+This method extends L<Astro::Coord::ECI::TLE/max_effective_date>
+appropriately for sets of elements.
+
+If there are arguments, their maximum is taken, the appropriate member
+element is set, and C<max_effective_date()> is called on that element,
+passing the date used to select the element. If there are no arguments,
+C<max_effective_date()> is called on the current element, with no
+arguments. If the set has no members, the maximum of the arguments is
+returned (or C<undef> if there are no arguments).
+
+=cut
+
+sub max_effective_date {
+    my ($self, @args) = @_;
+    @{ $self->{members} } or return max(@args);
+    if (@args) {
+	my $effective = max @args;
+	my $tle = $self->select($effective);
+	return $tle->max_effective_date($effective);
+    } else {
+	return $self->{current}->max_effective_date();
+    }
+}
 
 =item @tles = $set->members ();
 
 This method returns all members of the set, in ascending order by
-epoch.
+effective date.
 
 =cut
 
@@ -361,10 +391,10 @@ time, and returns that member. If called without an argument or with an
 undefined argument, it simply returns the currently-selected member.
 
 The 'best representative' member for a given time is chosen by
-considering all members in the set, ordered by ascending epoch. If all
-epochs are after the given time, the earliest epoch is chosen. If some
-epochs are on or before the given time, the latest epoch that is not
-after the given time is chosen.
+considering all members in the set, ordered by ascending effective date.
+If all epochs are after the given time, the earliest effective date is
+chosen. If some epochs are on or before the given time, the latest
+effective date that is not after the given time is chosen.
 
 The 'best representative' algorithm tries to select the element set that
 would actually be current at the given time. If no element set is
@@ -380,10 +410,10 @@ sub select : method {	## no critic (ProhibitBuiltInHomonyms)
 	croak <<eod unless @{$self->{members}};
 Error - Can not select a member object until you have added members.
 eod
-	my ($epoch, $current);
+	my ($effective, $current);
 	foreach (@{$self->{members}}) {
-	    ($epoch, $current) = @$_
-		unless defined $epoch && $_->[0] > $time;
+	    ($effective, $current) = @$_
+		unless defined $effective && $_->[0] > $time;
 	}
 	$self->{current} = $current;
     }
