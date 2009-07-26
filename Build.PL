@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_01';
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
@@ -147,6 +147,9 @@ eod
 my $vers = '';
 
 $bldr->requires ({@prereq});
+$bldr->build_requires({
+	'Test::More' => 0.40,
+    });
 $bldr->add_to_cleanup (@clean_files);
 $bldr->script_files (\@exe_files);
 
