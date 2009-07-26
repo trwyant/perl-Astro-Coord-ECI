@@ -117,7 +117,7 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.008';
+our $VERSION = '0.008_01';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -501,13 +501,9 @@ eod
     $end >= $start or croak <<eod;
 Error - End time must be after start time.
 eod
-    unless ($self->get ('backdate')) {
-	my $real = _INSTANCE($self, 'Astro::Coord::ECI::TLE::Set') ?
-	    $self->select ($start) : $self;
-	my $epoch = $real->get ('epoch');
-	$start = $epoch if $start < $epoch;
-	$start > $end and return ();
-    }
+
+    $start = $self->max_effective_date($start);
+    $start > $end and return;
 
     my @flares;
     my $illum = $self->get ('illum');
