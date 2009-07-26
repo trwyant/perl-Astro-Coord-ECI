@@ -42,6 +42,7 @@ t/star.t
 t/sun.t
 t/tle.t
 t/tle_apsides.t
+t/tle_effective.t
 t/tle_exception.t
 t/tle_sgp4r.t
 t/tle_support.t
