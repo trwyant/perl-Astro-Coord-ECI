@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# This shell script runs the satpass script and feeds it commands to
+# predict International Space Station visibility from a pre-programmed
+# location.
+
 #	Pass the commands in sh_data to the satpass script. The -filter
 #	prevents the front matter from being displayed.
 
@@ -15,7 +19,7 @@ st set direct 1
 #	Retrieve all International Space Station data from
 #	spaceflight.nasa.gov, not just the current element.
 
-st spaceflight -all iss
+st spaceflight -all -effective iss
 
 
 #	We need a location to work with. Substitude your own,
@@ -45,3 +49,5 @@ pass 'today noon' +7
 
 exit
 eod
+
+# ex: set textwidth=72 :

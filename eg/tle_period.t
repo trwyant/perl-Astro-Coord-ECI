@@ -1,5 +1,13 @@
 package main;
 
+# This script is not really a test, but is intended to demonstrate the
+# effect of the model chosen on the calculation of the satellite's
+# period. It is run from the distribution directory as
+#
+#   perl -Mblib eg/tle_period.t
+#
+# It needs as input the TLE file used to test sgp4r.
+
 use strict;
 use warnings;
 
@@ -81,3 +89,5 @@ eod
 }
 
 1;
+
+# ex: set textwidth=72 :
