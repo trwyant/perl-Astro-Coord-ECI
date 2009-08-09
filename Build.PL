@@ -7,7 +7,7 @@ use Module::Build;
 use Config;
 use FileHandle;
 
-our $VERSION = '0.008_01';
+our $VERSION = '0.008_02';
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
@@ -30,6 +30,9 @@ $mbv >= 0.08 and $attr{recommends} = {
 $mbv >= 0.28 and $attr{meta_merge} = {
     no_index => {
 	directory => [qw{inc t}],
+    },
+    resources => {
+	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
     },
 };
 

@@ -8,7 +8,7 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.010_01';
+our $VERSION = '0.010_02';
 
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
@@ -152,6 +152,7 @@ $mmv >= 6.4501 and $attr{META_MERGE} = {
 	'Time::y2038' => 20081111,
     },
     resources => {
+	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
 	license => 'http://dev.perl.org/licenses/',
     },
 };
