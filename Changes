@@ -8,7 +8,9 @@
       perigee.
     Add 'effective' attribute, with logic in the parse() method to
       parse Astro::SpaceTrack --effective date out of line 0 of the
-      TLE.
+      TLE. Thanks to Thomas Wehr for reporting the problem this
+      addresses, and T. S. Kelso for explaining what was needed to
+      fix it.
     Add method max_effective_date() to figure out what date to use,
       since things are becoming rather complicated.
     Add method tle_verbose() to centralize the verbose output of TLE.
