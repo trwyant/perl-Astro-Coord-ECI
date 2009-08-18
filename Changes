@@ -1,9 +1,9 @@
-0.023_01 27-Jul-2009	T. R. Wyant
+0.024 18-Aug-2009	T. R. Wyant
   General
     Require Test::More 0.40 for testing.
-  Astro::Coord::ECI 0.023_01
+  Astro::Coord::ECI 0.024
     Increment version. No other changes.
-  Astro::Coord::ECI::TLE 0.017_01
+  Astro::Coord::ECI::TLE 0.018
     Add methods semiminor(), apoapsis(), apogee(), periapsis(), and
       perigee.
     Add 'effective' attribute, with logic in the parse() method to
@@ -14,6 +14,9 @@
     Add method max_effective_date() to figure out what date to use,
       since things are becoming rather complicated.
     Add method tle_verbose() to centralize the verbose output of TLE.
+  Astro::Coord::ECI::TLE::Set 0.007
+    Add method max_effective_date() to do the right thing when there
+      is more than one TLE to consider.
 
 0.023	09-Mar-2009	T. R. Wyant
   General
