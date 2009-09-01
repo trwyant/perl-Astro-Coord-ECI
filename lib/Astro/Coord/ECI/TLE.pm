@@ -182,7 +182,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.018';
+our $VERSION = '0.018_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -5767,7 +5767,19 @@ sub sgp4r {
     if ($eccm >=  1  ||  $eccm < -0.001  ||  $am <  0.95) {
 #c         write(6,*) '# Error 1, Eccm = ',  Eccm, ' AM = ', AM
         $self->{model_error}= &SGP4R_ERROR_1;
-	croak "Error - OID $oid ", &SGP4R_ERROR_MEAN_ECCEN;
+	my $tfmt = '%d-%b-%Y %H:%M:%S';
+	my @data = "Error - OID $oid " . &SGP4R_ERROR_MEAN_ECCEN;
+	push @data, "eccentricity = $eccm";
+	foreach my $thing (qw{universal epoch effective}) {
+	    if (defined ( my $value = $self->can($thing) ?
+		    $self->$thing() :
+		    $self->get($thing))) {
+		push @data, strftime("$thing = $tfmt", gmtime $value);
+	    } else {
+		push @data, "$thing is undefined";
+	    }
+	}
+	croak join '; ', @data
     }
     if ($eccm <  0) {
         $eccm= 1e-06
