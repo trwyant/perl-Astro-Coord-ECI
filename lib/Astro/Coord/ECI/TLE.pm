@@ -5,8 +5,9 @@ propagation models
 
 =head1 SYNOPSIS
 
-The following is a semi-brief script to calculate Iridium flares. You
-will need to substitute your own location where indicated.
+The following is a semi-brief script to calculate International Space
+Station visibility. You will need to substitute your own location where
+indicated.
 
  use Astro::SpaceTrack;
  use Astro::Coord::ECI;
@@ -182,7 +183,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.018_01';
+our $VERSION = '0.018_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
