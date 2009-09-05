@@ -215,6 +215,7 @@ Smart's
 solstices
 SPACETRACK
 Spacetrack
+STDERR
 Storable
 strasbg
 SunTime
