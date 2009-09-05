@@ -141,7 +141,7 @@ our @CARP_NOT = qw{
     Astro::Coord::ECI
 };
 
-our $VERSION = '0.007';
+our $VERSION = '0.007_01';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
@@ -473,6 +473,71 @@ sub set_selected {
     return $delegate->set (@args);
 }
 
+=item $valid = $set->validate($options, $time ...);
+
+This method calls C<validate()> on each of the members of the set,
+removing from the set any members that fail to validate. The number of
+members remaining in the set is returned.
+
+The $options argument is itself optional. If passed, it is a reference
+to a hash of option names and values. See
+L<Astro::Coord::ECI::TLE/validate> for the details.
+
+Each member of the set will be validated at the time it would first be
+used for computations (if that is defined) and at the time its successor
+in the set (if any) would first be used for computation. In addition,
+each member will be validated at any of the C<$time> arguments that
+happens to fall between these two times.
+
+If a member is removed, validate() will call itself recursively to
+ensure that the new set is still valid.
+
+=cut
+
+sub validate {
+    my ( $self, @args ) = @_;
+    my $opt = ref $args[0] eq 'HASH' ? shift @args : {};
+
+    my @members = map { [ @{ $_ } ] } @{ $self->{members} };
+    $members[0][1]->get('backdate') and $members[0][0] = undef;
+    foreach my $inx (0 .. $#members - 1) {
+	$members[$inx][2] = $members[$inx + 1][0];
+    }
+
+    my @valid;
+    foreach ( @members ) {
+	my ($start, $tle, $end) = @{ $_ };
+	my @check = grep { defined $_ } $start, $end;
+	foreach my $time ( @args ) {
+	    defined $end and $time > $end and next;
+	    defined $start and $time < $start and next;
+	    push @check, $time;
+	}
+	$tle->validate($opt, @check) and push @valid, [$start, $tle];
+    }
+
+    @valid == @members and return @members;
+
+    @valid or do {
+	$self->clear();
+	return 0;
+    };
+
+    defined $valid[0][0]
+	or $valid[0][0] = $valid[0][1]->get('effective');
+    defined $valid[0][0]
+	or $valid[0][0] = $valid[0][1]->get('epoch');
+
+    my $time;
+    $self->{current} and $time = $self->{current}->get('epoch');
+
+    $self->{members} = \@valid;
+
+    defined $time and $self->select($time);
+
+    return $self->validate($opt, @args);
+}
+
 
 #	The AUTOLOAD routine does not define methods, it simply
 #	simulates them. This is because there is no good way to
@@ -544,3 +609,4 @@ relating in any way to this software.
 
 =cut
 
+# ex: set textwidth=72 :
