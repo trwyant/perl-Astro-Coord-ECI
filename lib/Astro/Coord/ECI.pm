@@ -83,7 +83,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.024';
+our $VERSION = '0.024_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -293,7 +293,7 @@ sub azel {
 #	We need to rotate the coordinate system in the X-Y plane by the
 #	longitude, followed by a rotation in the Z-X plane by 90
 #	degrees minus the latitude. In linear algebra, this is the
-#	theta matrix premultiplied by the phi matrix, which is
+#	lambda matrix premultiplied by the phi matrix, which is
 #
 #	+-                           -+   +-                     -+
 #	|  cos(90-phi) 0 -sin(90-phi) |   |  sin(phi) 0 -cos(phi) |
@@ -2906,3 +2906,5 @@ implied. The author will not be liable for any damages of any sort
 relating in any way to this software.
 
 =cut
+
+# ex: set textwidth=72 :
