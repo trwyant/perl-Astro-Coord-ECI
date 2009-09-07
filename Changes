@@ -1,3 +1,19 @@
+0.025 07-Sep-2009	T. R. Wyant
+  Astro::Coord::ECI 0.035
+    Correct documentation of matrix math in azel() method.
+  Astro::Coord::ECI::TLE 0.019
+    Add and document validate() method.
+    Make max_effective_date() ignore undef arguments.
+    More verbose message for bad eccentricity in sgp4r.
+    Correct description of synopsis to match what it actually does.
+  Astro::Coord::ECI::TLE::Set 0.008
+    Add and document validate() method.
+  bin/satpass 0.024
+    Add validate command.
+  Build.PL
+    Remove need for Module::Build for configuration, since I also
+      supply Makefile.PL.
+
 0.024 18-Aug-2009	T. R. Wyant
   General
     Require Test::More 0.40 for testing.
