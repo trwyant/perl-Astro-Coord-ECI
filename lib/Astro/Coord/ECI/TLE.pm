@@ -190,7 +190,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.018_03';
+our $VERSION = '0.019';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -663,6 +663,20 @@ sub max_effective_date {
 	push @args, $self->get('epoch');
     }
     return max( grep {defined $_} @args );
+}
+
+
+=item $tle = $tle->members();
+
+This method simply returns the object it is called on. It exists for
+convenience in getting back validated objects when iterating over a
+mixture of L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> and
+L<Astro::Coord::ECI::TLE::Set|Astro::Coord::ECI::TLE::Set> objects.
+
+=cut
+
+sub members {
+    return shift;
 }
 
 

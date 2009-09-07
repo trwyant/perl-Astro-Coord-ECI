@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.023_01';
+our $VERSION = '0.024';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2381,7 +2381,7 @@ eod
     my @valid;
     foreach my $tle (_select_observing_list ($pass_start)) {
 	$tle->validate(\%cmdopt, $pass_start, $pass_end) or next;
-	push @valid, $tle->can('members') ? $tle->members() : $tle;
+	push @valid, $tle->members();
     }
     @bodies = @valid;
     return;
