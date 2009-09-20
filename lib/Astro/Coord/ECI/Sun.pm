@@ -44,7 +44,7 @@ package Astro::Coord::ECI::Sun;
 use strict;
 use warnings;
 
-our $VERSION = '0.009';
+our $VERSION = '0.009_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -488,6 +488,10 @@ eod
     $self->equinox_dynamical ($time);
     return $self;
 }
+
+# The Sun is normally positioned in inertial coordinates.
+
+sub _initial_inertial { return 1 }
 
 1;
 

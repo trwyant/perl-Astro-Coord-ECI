@@ -83,7 +83,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.025';
+our $VERSION = '0.025_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -122,6 +122,7 @@ sub new {
     my ($class, @args) = @_;
     ref $class and $class = ref $class;
     my $self = bless {%static}, $class;
+    $self->{inertial} = $self->_initial_inertial();
     @args and $self->set (@args);
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
@@ -2372,6 +2373,17 @@ sub _convert_eci_to_ecef {
     $self->{_ECI_cache}{fixed}{ecef} = \@ecef;
     return @ecef;
 }
+
+#	$value = $self->_initial_inertial
+#
+#	Return the initial setting of the inertial attribute. At this
+#	level we are assumed not inertial until we acquire a position.
+#	This is not part of the public interface, but may be used by
+#	subclasses to set an initial value for this read-only attribute.
+#	Setting the coordinates explicitly will still set the {inertial}
+#	attribute appropriately.
+
+sub _initial_inertial{ return };
 
 #	$value = _local_mean_delta ($coord)
 

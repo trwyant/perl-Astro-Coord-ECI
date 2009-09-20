@@ -190,7 +190,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.019';
+our $VERSION = '0.019_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -6324,6 +6324,11 @@ sub _convert_out {
 
     return $self;
 }
+
+# Initial value of the 'inertial' attribute. TLEs are assumed to be
+# inertial until set otherwise.
+
+sub _initial_inertial{ return 1 };
 
 # *equinox_dynamical = \&Astro::Coord::ECI::equinox_dynamical;
 

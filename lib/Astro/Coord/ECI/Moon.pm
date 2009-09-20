@@ -43,7 +43,7 @@ package Astro::Coord::ECI::Moon;
 use strict;
 use warnings;
 
-our $VERSION = '0.006';
+our $VERSION = '0.006_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -505,6 +505,9 @@ eod
     return $self;
 }
 
+# The moon is normally positioned in inertial coordinates.
+
+sub _initial_inertial { return 1 }
 
 1;
 
