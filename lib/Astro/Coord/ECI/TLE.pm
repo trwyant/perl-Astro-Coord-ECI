@@ -89,6 +89,24 @@ indicated.
     }
  }
 
+=head1 NOTICE
+
+The C<rightascension> attribute is deprecated (and about time!). You
+should use the C<ascendingnode> attribute instead.
+
+Currently, C<rightascension> and <ascendingnode> are equivalent.
+
+At the first release in 2010, there will be a warning generated the
+first time the C<rightascension> attribute is used.
+
+At the first release after June 30 2010 (or the second release in 2010,
+whichever is later), there will be a warning generated every time the
+C<rightascension> attribute is used.
+
+At the first release in 2011 (or the second release after June 30 2010,
+or the third release after December 31 2009, whichever is latest), the
+C<rightascension> attribute will disappear.
+
 =head1 DESCRIPTION
 
 This module implements the NORAD orbital propagation models described
@@ -190,7 +208,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.019_01';
+our $VERSION = '0.019_02';
 
 use base qw{Astro::Coord::ECI Exporter};
 
@@ -285,7 +303,7 @@ use constant SGP_RHO => .15696615;
 # XNDD60 => secondderivative
 # BSTAR => bstardrag
 # XINCL => inclination
-# XNODE0 => rightascension
+# XNODE0 => ascendingnode
 # E0 => eccentricity
 # OMEGA0 => argumentofperigee
 # XM0 => meananomaly
@@ -343,7 +361,17 @@ eod
 	return 0;
     },
     model_error => 0,
-    rightascension => 1,
+    rightascension => sub {
+##	warnings::warnif(
+##	    deprecated =>
+##	    'The rightascension attribute is deprecated. Use ascendingnode instead.',
+##	);
+	$_[0]{ascendingnode} = $_[2];
+	return 1;
+    },
+    ## TODO get rid of the above once rightascension is deprecated out
+    # of existence. Ditto the accessor, below.
+    ascendingnode => 1,
     eccentricity => 1,
     argumentofperigee => 1,
     meananomaly => 1,
@@ -571,6 +599,13 @@ L</Attributes> section for a description of the attributes.
 
 {
     my %accessor = (
+	rightascension => sub {
+##	    warnings::warnif(
+##		deprecated =>
+##		'The rightascension attribute is deprecated. Use ascendingnode instead.',
+##	    );
+	    return $_[0]{ascendingnode};
+	},
 	tle => sub {$_[0]{$_[1]} ||= $_[0]->_make_tle()},
     );
     sub get {
@@ -822,7 +857,7 @@ eod
 	    ($line =~ m/^2(\s*\d+)/ && length ($1) == 6)
 		or croak "Invalid line 2 '$line'";
 	    length ($line) < 80 and $line .= ' ' x (80 - length ($line));
-	    @ele{qw{id_2 inclination rightascension eccentricity
+	    @ele{qw{id_2 inclination ascendingnode eccentricity
 		argumentofperigee meananomaly meanmotion
 		revolutionsatepoch}} =
 		unpack 'x2A5x1A8x1A8x1A7x1A8x1A8x1A11A5', $line;
@@ -847,7 +882,7 @@ eod
 #	From here is conversion to the units expected by the
 #	models.
 
-	foreach (qw{rightascension argumentofperigee meananomaly
+	foreach (qw{ascendingnode argumentofperigee meananomaly
 		    inclination}) {
 	    $ele{$_} *= SGP_DE2RA;
 	}
@@ -1724,7 +1759,7 @@ EOD
 	my $p0 = $a0 * (1 - $self->{eccentricity} * $self->{eccentricity});
 	my $q0 = $a0 * (1 - $self->{eccentricity});
 	my $xlo = $self->{meananomaly} + $self->{argumentofperigee} +
-	    $self->{rightascension};
+	    $self->{ascendingnode};
 	my $d10 = $c3 * $sini0 * $sini0;
 	my $d20 = $c2 * (7 * $cosi0 * $cosi0 - 1);
 	my $d30 = $c1 * $cosi0;
@@ -1776,7 +1811,7 @@ eod
 	$parm->{a0} * ($self->{meanmotion} / $a) ** SGP_TOTHRD;
     my $e = $a > $parm->{q0} ? 1 - $parm->{q0} / $a : SGP_E6A;
     my $p = $a * (1 - $e * $e);
-    my $xnodes = $self->{rightascension} + $parm->{xnodot} * $tsince;
+    my $xnodes = $self->{ascendingnode} + $parm->{xnodot} * $tsince;
     my $omgas = $self->{argumentofperigee} + $parm->{omgdt} * $tsince;
     my $xls = mod2pi ($parm->{xlo} + ($self->{meanmotion} + $parm->{omgdt} +
 	    $parm->{xnodot} + ($self->{firstderivative} +
@@ -2111,7 +2146,7 @@ eod
 
     my $xmdf = $self->{meananomaly} + $parm->{xmdot} * $tsince;
     my $omgadf = $self->{argumentofperigee} + $parm->{omgdot} * $tsince;
-    my $xnoddf = $self->{rightascension} + $parm->{xnodot} * $tsince;
+    my $xnoddf = $self->{ascendingnode} + $parm->{xnodot} * $tsince;
     my $omega = $omgadf;
     my $xmp = $xmdf;
     my $tsq = $tsince * $tsince;
@@ -2441,7 +2476,7 @@ eod
 
     my $xmdf = $self->{meananomaly} + $parm->{xmdot} * $tsince;
     my $omgadf = $self->{argumentofperigee} + $parm->{omgdot} * $tsince;
-    my $xnoddf = $self->{rightascension} + $parm->{xnodot} * $tsince;
+    my $xnoddf = $self->{ascendingnode} + $parm->{xnodot} * $tsince;
     my $tsq = $tsince * $tsince;
     my $xnode = $xnoddf + $parm->{xnodcf} * $tsq;
     my $tempa = 1 - $parm->{c1} * $tsince;
@@ -2834,7 +2869,7 @@ eod
 
     my $xmam = mod2pi ($self->{meananomaly} + $parm->{xlldot} * $tsince);
     my $omgasm = $self->{argumentofperigee} + $parm->{omgdt} * $tsince;
-    my $xnodes = $self->{rightascension} + $parm->{xnodot} * $tsince;
+    my $xnodes = $self->{ascendingnode} + $parm->{xnodot} * $tsince;
 
 #>>>	The simplified and full logic have been swapped for clarity.
 
@@ -3105,7 +3140,7 @@ EOD
     my $xmamdf = $self->{meananomaly} + $parm->{xlldot} * $tsince;
     my $omgasm = $self->{argumentofperigee} + $parm->{omgdt} * $tsince +
 	$z7 * $parm->{xgdt1};
-    my $xnodes = $self->{rightascension} + $parm->{xnodot} * $tsince +
+    my $xnodes = $self->{ascendingnode} + $parm->{xnodot} * $tsince +
 	$z7 * $parm->{xhdt1};
     my $xn = $parm->{xnodp};
     my ($em, $xinc);
@@ -3292,8 +3327,8 @@ sub _dpinit {
     my $xqncl  =  $self->{inclination};
     my $xmao = $self->{meananomaly};
     my $xpidot = $omgdt + $xnodot;
-    my $sinq  =  sin ($self->{rightascension});
-    my $cosq  =  cos ($self->{rightascension});
+    my $sinq  =  sin ($self->{ascendingnode});
+    my $cosq  =  cos ($self->{ascendingnode});
 
 
 #*	Initialize lunar & solar terms
@@ -3500,7 +3535,7 @@ sub _dpinit {
 	$fasx2 = .13130908;
 	$fasx4 = 2.8843198;
 	$fasx6 = .37448087;
-	$xlamo = $xmao + $self->{rightascension} +
+	$xlamo = $xmao + $self->{ascendingnode} +
 	    $self->{argumentofperigee} - $thgr;
 	$bfact = $xlldot + $xpidot - DS_THDT;
 	$bfact = $bfact + $ssl + $ssg + $ssh;
@@ -3602,7 +3637,7 @@ sub _dpinit {
 	$temp = 2 * $temp1 * DS_ROOT54;
 	$d5421 = $temp * $f542 * $g521;
 	$d5433 = $temp * $f543 * $g533;
-	$xlamo = $xmao + $self->{rightascension} + $self->{rightascension} -
+	$xlamo = $xmao + $self->{ascendingnode} + $self->{ascendingnode} -
 	    $thgr - $thgr;
 	$bfact = $xlldot + $xnodot + $xnodot - DS_THDT - DS_THDT;
 	$bfact = $bfact + $ssl + $ssh + $ssh;
@@ -4465,8 +4500,8 @@ sub _r_dscom {
 #* ----------------- DEEP SPACE PERIODICS INITIALIZATION ---------------
     $init->{xn}= $parm->{meanmotion};
     $init->{eccm}= $parm->{eccentricity};
-    $init->{snodm}= sin($parm->{rightascension});
-    $init->{cnodm}= cos($parm->{rightascension});
+    $init->{snodm}= sin($parm->{ascendingnode});
+    $init->{cnodm}= cos($parm->{ascendingnode});
     $init->{sinomm}= sin($parm->{argumentofperigee});
     $init->{cosomm}= cos($parm->{argumentofperigee});
     $init->{sinim}= sin($parm->{inclination});
@@ -4913,7 +4948,7 @@ sub _r_dsinit {
             $parm->{d5421}=  $temp*$f542*$g521;
             $parm->{d5433}=  $temp*$f543*$g533;
             $parm->{xlamo}= 
-                fmod($parm->{meananomaly}+$parm->{rightascension}+$parm->{rightascension}-$theta-$theta,
+                fmod($parm->{meananomaly}+$parm->{ascendingnode}+$parm->{ascendingnode}-$theta-$theta,
                 &SGP_TWOPI);
 
             $parm->{xfact}= $parm->{mdot}+ $parm->{dmdt}+ 2 *
@@ -4938,7 +4973,7 @@ sub _r_dsinit {
             $parm->{del3}= 3*$parm->{del1}*$f330*$g300*$q33*$aonv;
             $parm->{del1}= $parm->{del1}*$f311*$g310*$q31*$aonv;
             $parm->{xlamo}=
-                fmod($parm->{meananomaly}+$parm->{rightascension}+$parm->{argumentofperigee}-$theta,
+                fmod($parm->{meananomaly}+$parm->{ascendingnode}+$parm->{argumentofperigee}-$theta,
                 &SGP_TWOPI);
             $parm->{xfact}= $parm->{mdot}+ $init->{xpidot}- $rptim+
                 $parm->{dmdt}+ $parm->{domdt}+ $parm->{dnodt}-
@@ -5416,7 +5451,7 @@ sub _r_sgp4init {
     # The following may be modified for deep space
     $parm->{eccentricity} = $self->{eccentricity};
     $parm->{inclination} = $self->{inclination};
-    $parm->{rightascension} = $self->{rightascension};
+    $parm->{ascendingnode} = $self->{ascendingnode};
     $parm->{argumentofperigee} = $self->{argumentofperigee};
     $parm->{meananomaly} = $self->{meananomaly};
 
@@ -5566,7 +5601,7 @@ sub _r_sgp4init {
             $self->_r_dscom ($tc);
 
             $self->_r_dpper ($t, \$parm->{eccentricity},
-                \$parm->{inclination}, \$parm->{rightascension},
+                \$parm->{inclination}, \$parm->{ascendingnode},
                 \$parm->{argumentofperigee}, \$parm->{meananomaly});
             $init->{argpm}= 0;
             $init->{nodem}= 0;
@@ -5741,7 +5776,7 @@ sub sgp4r {
 #* ----------- UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG ---------
     $xmdf= $parm->{meananomaly}+ $parm->{mdot}*$t;
     $omgadf= $parm->{argumentofperigee}+ $parm->{argpdot}*$t;
-    $xnoddf= $parm->{rightascension}+ $parm->{nodedot}*$t;
+    $xnoddf= $parm->{ascendingnode}+ $parm->{nodedot}*$t;
     $argpm= $omgadf;
     $mm= $xmdf;
     $t2= $t*$t;
@@ -6098,7 +6133,7 @@ sub _r_dump {
     print $fh ' Bstar = ', $self->{bstardrag}, "\n";
     print $fh ' Ecco = ', $parm->{eccentricity}, "\n";
     print $fh ' Inclo = ', $parm->{inclination}, "\n";
-    print $fh ' nodeo = ', $parm->{rightascension}, "\n";
+    print $fh ' nodeo = ', $parm->{ascendingnode}, "\n";
     print $fh ' Argpo = ', $parm->{argumentofperigee}, "\n";
     print $fh ' No = ', $parm->{meanmotion}, "\n";
     print $fh ' Mo = ', $parm->{meananomaly}, "\n";
@@ -6232,7 +6267,7 @@ EOD
     B Star drag term: @{[$self->get ('bstardrag')]}
     Ephemeris type: @{[$self->get ('ephemeristype')]}
     Inclination of orbit: @{[rad2deg ($self->get ('inclination'))]} degrees
-    Right ascension of ascending node: @{[rad2deg ($self->get ('rightascension'))]} degrees
+    Right ascension of ascending node: @{[rad2deg ($self->get ('ascendingnode'))]} degrees
     Eccentricity: @{[$self->get ('eccentricity')]}
     Argument of perigee: @{[rad2deg ($self->get ('argumentofperigee'))]} degrees from ascending node
     Mean anomaly: @{[rad2deg ($self->get ('meananomaly'))]} degrees
@@ -6369,7 +6404,7 @@ sub _make_tle {
     my %ele;
     {
 	foreach (qw{firstderivative secondderivative bstardrag
-	    inclination rightascension eccentricity
+	    inclination ascendingnode eccentricity
 	    argumentofperigee meananomaly meanmotion
 	    revolutionsatepoch}) {
 	    defined ($ele{$_} = $self->get($_))
@@ -6381,7 +6416,7 @@ sub _make_tle {
 	    $temp /= SGP_XMNPDA;
 	    $ele{$_} /= $temp;
 	}
-	foreach (qw{rightascension argumentofperigee meananomaly
+	foreach (qw{ascendingnode argumentofperigee meananomaly
 		    inclination}) {
 	    $ele{$_} /= SGP_DE2RA;
 	}
@@ -6417,7 +6452,7 @@ sub _make_tle {
 	$self->get('ephemeristype'), $self->get('elementnumber'),
     );
     $output .= _make_tle_checksum ('2%6s%9.4f%9.4f %-7s%9.4f%9.4f%12.8f%5s',
-	$oid, @ele{qw{inclination rightascension eccentricity
+	$oid, @ele{qw{inclination ascendingnode eccentricity
 	    argumentofperigee meananomaly meanmotion revolutionsatepoch}},
     );
     return $output;
@@ -7252,6 +7287,11 @@ The default is equivalent to 10 degrees.
 This attribute contains the argument of perigee (angular distance from
 ascending node to perigee) of the orbit, in radians.
 
+=item ascendingnode (numeric, parse)
+
+This attribute contains the right ascension of the ascending node
+of the orbit at the epoch, in radians.
+
 =item backdate (boolean, static)
 
 This attribute determines whether the pass() method will go back before
@@ -7456,8 +7496,9 @@ launch, at the epoch.
 
 =item rightascension (numeric, parse)
 
-This attribute contains the right ascension of the ascending node
-of the orbit at the epoch, in radians.
+This attribute contains the right ascension of the ascending node of the
+orbit at the epoch, in radians. B<This attribute is deprecated in favor
+of the ascendingnode attribute.>
 
 =item secondderivative (numeric, parse)
 

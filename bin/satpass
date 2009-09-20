@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.024';
+our $VERSION = '0.024_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -2325,7 +2325,7 @@ sub tle {
 	if ($cmdopt{celestia}) {
 	    my $name = $tle->get('name') || $tle->get('id') || 'unspecified';
 	    my $incl = rad2deg($tle->get('inclination'));
-	    my $ascnod = rad2deg($tle->get('rightascension'));
+	    my $ascnod = rad2deg($tle->get('ascendingnode'));
 	    print <<eod;
 
 # Keplerian elements for $name
