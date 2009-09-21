@@ -2,6 +2,7 @@ bin/satpass
 Build.PL
 Changes
 eg/almanac
+eg/azimuth
 eg/closest
 eg/iridium
 eg/iss

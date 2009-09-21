@@ -10,6 +10,10 @@ almanac
     and height (meters) on the command. The option -help gets you
     brief help.
 
+azimuth
+    This Perl script finds the next time the Sun passes a given azimuth
+    (defaulting to 180 degrees) at Number 10 Downing Street.
+
 closest
     This Perl script takes as input a time (suitable for Date::Manip), a
     right ascension and declination (both in degrees) and a list of the
@@ -56,3 +60,5 @@ tle_period.t
     t directory. The sgp4-ver.tle file is not distributed by me, since I
     am not authorized to redistribute TLEs. The file is available in
     http://celestrak.com/publications/AIAA/2006-6753/AIAA-2006-6753.zip
+
+# ex: set textwidth=72 autoindent :

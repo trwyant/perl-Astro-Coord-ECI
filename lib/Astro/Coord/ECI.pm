@@ -83,7 +83,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.025_01';
+our $VERSION = '0.025_02';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -1608,6 +1608,67 @@ sub mean_angular_velocity {
     return $self->can ('period') ?
 	TWOPI / $self->period :
 	$self->{angularvelocity};
+}
+
+=item $time = $coord->next_azimuth( $body, $azimuth );
+
+This method returns the next time the given C<$body> passes the given
+C<$azimuth> as seen from the given C<$coord>, calculated to the nearest
+second. The start time is the current time setting of the C<$body>
+object.
+
+=cut
+
+sub next_azimuth {
+    my ( $self, $body, $azimuth ) = @_;
+    ref $self or croak <<eod;
+Error - The next_azimuth() method may not be called as a class method.
+eod
+
+    $body->represents(__PACKAGE__) or croak <<eod;
+Error - The argument to next_meridian() must be a subclass of
+        @{[__PACKAGE__]}.
+eod
+
+    my $want = shift;
+    defined $want and $want = $want ? 1 : 0;
+
+    my $denom = $body->mean_angular_velocity -
+	$self->mean_angular_velocity;
+    my $retro = $denom >= 0 ? 0 : 1;
+    ($denom = abs ($denom)) < 1e-11 and croak <<eod;
+Error - The next_azimuth() method will not work for geosynchronous
+        bodies.
+eod
+
+    my $apparent = TWOPI / $denom;
+    my $begin = $self->universal;
+    my $delta = floor( $apparent / 8 );
+    my $end = $begin + $delta;
+
+    my $begin_angle = mod2pi(
+	( $self->azel( $body->universal( $begin ) ) )[0] - $azimuth );
+    my $end_angle = mod2pi(
+	( $self->azel( $body->universal( $end ) ) )[0] - $azimuth );
+    while ( $begin_angle < PI || $end_angle >= PI ) {
+	$begin_angle = $end_angle;
+	$begin = $end;
+	$end = $end + $delta;
+	$end_angle = mod2pi(
+	    ( $self->azel( $body->universal( $end ) ) )[0] - $azimuth );
+    }
+
+    while ($end - $begin > 1) {
+	my $mid = floor (($begin + $end) / 2);
+	my $mid_angle = mod2pi(
+	    ( $self->azel( $body->universal( $mid ) ) )[0] - $azimuth );
+	( $begin, $end ) = ( $mid_angle >= PI ) ?
+	    ( $mid, $end ) : ( $begin, $mid );
+    }
+
+    $body->universal ($end);
+    $self->universal ($end);
+    return $end;
 }
 
 
