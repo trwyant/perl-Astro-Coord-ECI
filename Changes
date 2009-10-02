@@ -1,3 +1,19 @@
+0.026 02-Oct-2009	T. R. Wyant
+  Astro::Coord::ECI 0.026
+    Default the {inertial} attribute appropriately.
+    Add the next_azimuth() method to compute when a body passes the
+      given azimuth. Thanks to Lixus Zoran for suggesting this on the
+      geo-perl mailing list.
+  Astro::Coord::ECI::Moon 0.007
+    Default the {inertial} attribute appropriately.
+  Astro::Coord::ECI::Sun 0.010
+    Default the {inertial} attribute appropriately.
+  Astro::Coord::ECI::TLE 0.020
+    Default the {inertial} attribute appropriately.
+    Deprecate the {rightascension} attribute in favor of the
+      {ascendingnode} attribute. See the POD for the
+      deprecation plan.
+
 0.025 07-Sep-2009	T. R. Wyant
   Astro::Coord::ECI 0.035
     Correct documentation of matrix math in azel() method.
