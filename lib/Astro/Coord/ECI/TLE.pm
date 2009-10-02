@@ -208,7 +208,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.019_02';
+our $VERSION = '0.020';
 
 use base qw{Astro::Coord::ECI Exporter};
 
