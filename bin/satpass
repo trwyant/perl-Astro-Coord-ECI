@@ -52,7 +52,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.024_01';
+our $VERSION = '0.024_02';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3623,14 +3623,14 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-The C<validate> command has been added to try to deal with uncomputable
-(at least by me) predicted Space Shuttle TLEs sometimes published by
-NASA on their Human Space Flight web site. This command takes a time
-range, computes positions at the beginning and end of that range (and
-possibly other times as well) and throws out any TLEs where the
-computation fails. You may wish to issue this command before doing pass
-computations on data from the NASA Human Space Flight web site. It is
-probably not necessary to issue it otherwise.
+The C<validate> command was added to satpass 0.024 try to deal with
+uncomputable (at least by me) predicted Space Shuttle TLEs sometimes
+published by NASA on their Human Space Flight web site. This command
+takes a time range, computes positions at the beginning and end of that
+range (and possibly other times as well) and throws out any TLEs where
+the computation fails. You may wish to issue this command before doing
+pass computations on data from the NASA Human Space Flight web site. It
+is probably not necessary to issue it otherwise.
 
 I plan, hopefully in the second half of 2009, to restructure this
 package. The plan calls for moving all the .pm files to distribution
