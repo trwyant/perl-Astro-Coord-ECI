@@ -19,6 +19,8 @@ lib/Astro/Coord/ECI/TLE.pm
 lib/Astro/Coord/ECI/TLE/Iridium.pm
 lib/Astro/Coord/ECI/TLE/Set.pm
 lib/Astro/Coord/ECI/Utils.pm
+LICENSES/Artistic
+LICENSES/Copying
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP
