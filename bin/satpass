@@ -101,6 +101,7 @@ my %parm = (
     prompt => 'satpass>',
 ##    simbad_url => 'simbad.harvard.edu',
 ##    simbad_version => 3,
+    refraction => 1,
     simbad_url => 'simbad.u-strasbg.fr',
     simbad_version => 4,
     singleton => 0,
@@ -145,6 +146,7 @@ my %mutator = (
     model => \&_set_unmodified,
     perltime => \&_set_perltime,
     prompt => \&_set_unmodified,
+    refraction => \&_set_unmodified,
     simbad_url => \&_set_unmodified,
     simbad_version => \&_set_simbad_version,
     singleton => \&_set_unmodified,
@@ -2733,7 +2735,7 @@ Error - You must set height, latitude, and longitude to use this
         function.
 eod
     Astro::Coord::ECI->new (
-	    refraction => 1,
+	    refraction => $parm{refraction},
 	    name => $parm{location} || 'Station',
 	    id => 'station',
 	    )
@@ -5296,6 +5298,15 @@ The default is 0 (i.e. false).
 This parameter specifies the string used to prompt for commands.
 
 The default is 'satpass>'.
+
+=for html <a name="refraction"></a>
+
+=item refraction (boolean)
+
+This parameter specifies whether atmospheric refraction should be taken
+into account in the azel() calculation.
+
+The default is 1 (i.e. true).
 
 =for html <a name="simbad_url"></a>
 

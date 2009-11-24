@@ -214,9 +214,15 @@ $coord2 object.
 As a side effect, the time of the $coord object may be set from the
 $coord2 object.
 
-If the L<refraction|/refraction> attribute of the $coord object is
-true, the elevation will be corrected for atmospheric refraction using
-the correct_for_refraction() method.
+By default, atmospheric refraction is taken into account in the
+calculation of elevation, using the C<correct_for_refraction()> method.
+This better represents the observed position in the sky when the object
+is above the horizon, but produces a gap in the data when the object
+passes below the horizon, since I have no refraction equations for rock.
+
+If you want to ignore atmospheric refraction (and not have a gap in your
+data), set the L<refraction|/refraction> attribute of the $coord object
+to any value Perl considers false (e.g. 0).
 
 The basic algorithm comes from T. S. Kelso's "Computers and Satellites"
 column in "Satellite Times", November/December 1995, titled "Orbital
