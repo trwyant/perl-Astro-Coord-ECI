@@ -3,9 +3,11 @@ package main;
 use strict;
 use warnings;
 
+use lib qw{ inc };
+
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
-use t::SetDelegate;
+use Astro::Coord::ECI::SetDelegate;
 use Test;
 
 BEGIN {
@@ -254,8 +256,11 @@ eod
 {	# Begin local symbol block.
 
     my $set1 = Astro::Coord::ECI::TLE::Set->new (
-	t::SetDelegate->new (id => 99999, name => 'Anonymous',
-	epoch => timegm (0, 0, 0, 1, 6, 106)));
+	Astro::Coord::ECI::SetDelegate->new (
+	    id => 99999,
+	    name => 'Anonymous',
+	    epoch => timegm (0, 0, 0, 1, 6, 106)
+	));
     my $set2 = Astro::Coord::ECI::TLE::Set->new ();
     eval {$set2->add ($set1)};
     $test++;
@@ -271,10 +276,13 @@ eod
 
 {	# Begin local symbol block.
     my $set = Astro::Coord::ECI::TLE::Set->new (
-	t::SetDelegate->new (id => 22222, name => 'Anonymous',
-	epoch => timegm (0, 0, 0, 2, 6, 106)));
+	Astro::Coord::ECI::SetDelegate->new (
+	    id => 22222,
+	    name => 'Anonymous',
+	    epoch => timegm (0, 0, 0, 2, 6, 106)
+	));
     my $skip = $set ? '' : 'Failed to instantiate set';
-    foreach ([delegate => 't::SetDelegate'],
+    foreach ([delegate => 'Astro::Coord::ECI::SetDelegate'],
 	    [nodelegate => 'Astro::Coord::ECI::TLE::Set'],
 	    ) {
 	my ($method, $expect) = @$_;
@@ -295,7 +303,8 @@ eod
     my $set = Astro::Coord::ECI::TLE::Set->new ();
     my $status = 'empty';
     foreach ([members => 1], [delegate => 0],
-	    [add => t::SetDelegate->new (id => 333333,
+	    [add => Astro::Coord::ECI::SetDelegate->new (
+		id => 333333,
 		name => 'Nobody',
 		epoch => timegm (0, 0, 0, 2, 6, 106))],
 	    [members => 1], [delegate => 1],

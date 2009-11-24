@@ -28,10 +28,7 @@ CVS/
 ^sladen\.expect$
 ^sladen\.got$
 ^t/Satpass\.pm$
-^t/pod_spelling\.t$
 ^t/iridium\.dat$
-^t/satpass\.t$
-^t/satpass_geocode\.t$
 ^t/sgp4-ver\.tle$
 ^t/tle_make\.t$
 ^tags$

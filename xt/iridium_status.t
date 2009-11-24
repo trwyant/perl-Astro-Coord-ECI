@@ -8,16 +8,13 @@ use POSIX qw{strftime};
 use Test;
 use Time::Local;
 
-unless ($ENV{DEVELOPER_TEST}) {
-    print "1..0 # skip Environment variable DEVELOPER_TEST not set.\n";
-    exit;
-}
-
-eval {require LWP::UserAgent};
-if ($@) {
+eval {
+    require LWP::UserAgent;
+    1;
+} or do {
     print "1..0 # skip LWP::UserAgent not available\n";
     exit;
-}
+};
 
 plan tests => 6;
 

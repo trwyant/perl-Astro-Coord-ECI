@@ -1,11 +1,9 @@
-package t::SetDelegate;
+package Astro::Coord::ECI::SetDelegate;
 
 use strict;
 use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
-
-our $VERSION = '0.003';
 
 sub new {
     my ($class, @args) = @_;

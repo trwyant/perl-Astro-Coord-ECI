@@ -7,14 +7,12 @@ BEGIN {
     eval {
 	require Test::Spelling;
 	Test::Spelling->import();
-    };
-    $@ and do {
+	1;
+    } or do {
 	print "1..0 # skip Test::Spelling not available.\n";
 	exit;
     };
 }
-
-our $VERSION = '0.011';
 
 add_stopwords (<DATA>);
 

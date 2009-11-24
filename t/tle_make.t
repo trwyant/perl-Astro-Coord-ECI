@@ -3,6 +3,9 @@ package main;
 use strict;
 use warnings;
 
+# Note that this test is not distributed because I do not have the
+# right to distribute the TLE data.
+
 use Astro::Coord::ECI::TLE;
 use Test;
 

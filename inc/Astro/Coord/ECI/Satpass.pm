@@ -1,4 +1,4 @@
-package t::Satpass;
+package Astro::Coord::ECI::Satpass;
 
 use strict;
 use warnings;

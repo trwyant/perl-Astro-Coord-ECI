@@ -3,9 +3,9 @@ package main;
 use strict;
 use warnings;
 
-our $VERSION = '0.006';
+use lib qw{ inc };
 
-use t::Satpass;
+use Astro::Coord::ECI::Satpass;
 
 eval {require SOAP::Lite};
 if ($@) {
@@ -26,7 +26,7 @@ if ($@) {	# Shouldn't happen since SOAP::Lite loaded.
     }
 }
 
-t::Satpass::satpass (*DATA);
+Astro::Coord::ECI::Satpass::satpass (*DATA);
 
 1;
 __END__
