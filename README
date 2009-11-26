@@ -1,4 +1,6 @@
-Astro-satpass
+Astro-satpass is Copyright (C) 2005-2009 Thomas R. Wyant, III
+
+DESCRIPTION
 
 This package contains classes needed to predict satellite visibility,
 and a demonstration application (satpass) that makes use of these
@@ -15,14 +17,23 @@ Astro::Coord::ECI::TLE::Set - Aggregation of TLEs, with ability
     to use the correct TLE depending on time.
 Astro::Coord::ECI::Utils - Constants and utility subroutines.
 
-This package is installable by the usual incantation:
+INSTALLATION
 
-    gunzip Astro-satpass-9.999.tar.gz
-    tar -xf Astro-satpass-9.999.tar
+This package is installable by either of the two usual incantations:
+
+    tar -xzf Astro-satpass-9.999.tar
     perl Makefile.PL
     make
     make test
     make install
+
+or
+
+    tar -xzf Astro-satpass-9.999.tar
+    perl Build.PL
+    ./Build
+    ./Build test
+    sudo ./Build install
 
 You should substitute the appropriate program name for 'make', eg nmake
 (typically) under MSWin32, or mms or mmk under VMS. See
@@ -33,4 +44,12 @@ Of course, since it's pure Perl, you can just expand the kit and drop
 the .pm files into the Astro/Coord/ECI directory (creating it if
 necessary) in the appropriate place in your @INC directories.
 
-Tom Wyant
+LICENSING INFORMATION
+
+This package is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
