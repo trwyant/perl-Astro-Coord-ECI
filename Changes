@@ -1,3 +1,16 @@
+0.026_01	28-Nov-2009	T. R. Wyant
+  All modules' versions set to 0.026_01. In the future all modules in
+    a given release will have the same version number.
+  Convert all modules to the CPAN-recommended license.
+  Author tests no longer rely on environment variable DEVELOPER_TEST.
+    Instead, they are executed by ./Build authortest. This means author
+    tests are no longer available via the ExtUtils::MakeMaker build.
+  Astro::Coord::ECI
+    Modify correct_for_refraction() to work down to (and a bit below)
+      the horizon setting if that is negative. Thanks to Vidar Tyldum
+      Hansen of Kongsberg Satellite Services AS for identifying the
+      need for this, and working with me on it.
+  
 0.026 02-Oct-2009	T. R. Wyant
   Astro::Coord::ECI 0.026
     Default the {inertial} attribute appropriately.
