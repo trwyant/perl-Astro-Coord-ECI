@@ -8,8 +8,6 @@ use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
 use Getopt::Std;
 
-our $VERSION = '0.011';
-
 my %opt;
 getopts ('ny', \%opt) or die <<eod;
 The only legal options are
