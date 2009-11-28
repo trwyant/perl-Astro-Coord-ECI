@@ -219,6 +219,7 @@ calculation of elevation, using the C<correct_for_refraction()> method.
 This better represents the observed position in the sky when the object
 is above the horizon, but produces a gap in the data when the object
 passes below the horizon, since I have no refraction equations for rock.
+See the C<correct_for_refraction()> documentation for details.
 
 If you want to ignore atmospheric refraction (and not have a gap in your
 data), set the L<refraction|/refraction> attribute of the $coord object
