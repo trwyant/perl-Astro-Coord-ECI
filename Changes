@@ -10,6 +10,9 @@
       the horizon setting if that is negative. Thanks to Vidar Tyldum
       Hansen of Kongsberg Satellite Services AS for identifying the
       need for this, and working with me on it.
+  satpass
+    Add the 'refraction' parameter, to allow the user to turn off
+      atmospheric refraction (it is on by default).
   
 0.026 02-Oct-2009	T. R. Wyant
   Astro::Coord::ECI 0.026
