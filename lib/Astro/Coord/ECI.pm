@@ -83,7 +83,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.026';
+our $VERSION = '0.026_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -91,7 +91,7 @@ use Data::Dumper;
 use Params::Util 0.25 qw{_CLASSISA};
 use POSIX qw{floor strftime};
 
-use constant MINUSONEDEGREE => deg2rad (-1);
+use constant TWO_DEGREES => deg2rad( 2 );
 
 my %mutator;	# Attribute mutators. We define these just after the
 		# set() method, for convenience.
@@ -423,14 +423,19 @@ if (eval {require Storable; 1}) {
 =item $elevation = $coord->correct_for_refraction ($elevation);
 
 This method corrects the given angular elevation for atmospheric
-refraction. This is done only if the corrected elevation would be
-non-negative. Sorry for the discontinuity thus introduced, but I did
-not have a corresponding algorithm for refraction through magma.
+refraction. This is done only if the elevation has a reasonable chance
+of being visible; that is, if the elevation before correction is not
+more than two degrees below either the 'horizon' attribute or zero,
+whichever is lesser. Sorry for the discontinuity thus introduced, but I
+did not wish to carry the refraction calculation too low because I am
+uncertain about the behavior of the algorithm, and I do not have a
+corresponding algorithm for refraction through magma.
 
-This method can also be called as a class method. It is really only
-exposed for testing purposes (hence the cumbersome name). The azel()
-method calls it for you if the L<refraction|/refraction> attribute
-is true.
+This method can also be called as a class method, in which case the
+correction is applied only if the uncorrected elevation is greater than
+minus two degrees. It is really only exposed for testing purposes (hence
+the cumbersome name). The azel() method calls it for you if the
+L<refraction|/refraction> attribute is true.
 
 The algorithm for atmospheric refraction comes from Thorfinn
 Saemundsson's article in "Sky and Telescope", volume 72, page 70
@@ -445,12 +450,20 @@ sub correct_for_refraction {
     my $elevation = shift;
 
 
-#	We can exclude anything with an elevation <= -1 degree because
-#	the maximum deflection is about 35 minutes of arc. This is
-#	not portable to (e.g.) Venus.
+    # If called as a static method, our effective horizon is zero. If
+    # called as a normal method, our effective horizon is the lesser of
+    # the 'horizon' setting or zero.
+
+    my $horizon = ref $self ? min( 0, $self->get( 'horizon' ) ) : 0;
 
 
-    if ($elevation > MINUSONEDEGREE) {
+    # We exclude anything with an elevation <= 2 degrees below our
+    # effective horizon; this is presumed to be not visible, since the
+    # maximum deflection is about 35 minutes of arc. This is not
+    # portable to (e.g.) Venus.
+
+
+    if ( $elevation > $horizon - TWO_DEGREES ) {
 
 
 #	Thorsteinn Saemundsson's algorithm for refraction, as reported
@@ -477,12 +490,10 @@ Debug correct_for_refraction
     correction: $correction minutes of arc
 eod
 
-#	End of Thorsteinn's algorithm. To be consistent with the
-#	documentation, we do not correct the elevation unless the
-#	correction would place the body above the horizon.
+#	End of Thorsteinn's algorithm.
 
 	$correction = deg2rad ($correction / 60);
-	$elevation += $correction if $correction + $elevation >= 0;
+	$elevation += $correction;
     }
     return $elevation;
 }
