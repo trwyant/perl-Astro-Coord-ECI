@@ -11,7 +11,7 @@ use Carp;
 sub ACTION_authortest {
     my ( $self, @args ) = @_;
 
-    $self->depends_on( 'build' );
+    $self->depends_on( 'build', 'distmeta' );
     $self->test_files( qw{ t xt } );
     $self->depends_on( 'test' );
 
