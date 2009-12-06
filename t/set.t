@@ -377,7 +377,7 @@ eod
 {	# Local symbol block.
 
     my ($id, $name);
-    INIT {($id, $name) = (99999, 'Anonymous')};
+    BEGIN {($id, $name) = (99999, 'Anonymous')};
     sub dummy {
 	(my $epoch = shift) or die <<eod;
 Error - You must specify the epoch.
