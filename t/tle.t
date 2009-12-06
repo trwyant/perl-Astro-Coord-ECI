@@ -72,7 +72,7 @@ eod
 }
 
 1;
-__END__
+__DATA__
 
 -rem
 
