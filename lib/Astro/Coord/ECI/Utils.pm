@@ -31,7 +31,7 @@ tag gets you all of them.
  SECSPERDAY = the number of seconds in a day
  TWOPI = twice the circle ratio
 
-=head2 The following global variable is exportable:
+=head2 The following global variables are exportable:
 
 =head3 $DATETIMEFORMAT
 
@@ -858,6 +858,110 @@ sub thetag {
 	    + (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
 }
 
+#	$epoch_time = _parse_time_iso_8601
+#
+#	Parse ISO 8601 date/time. I do not intend to expose this, since
+#	it will probably go away when the satpass script is dropped. It
+#	would actually be in that script except for the fact that it can
+#	be more easily tested here, and because of the possibility that
+#	it will be used in App::Satpass2.
+{
+
+    my %special_day_offset = (
+	yesterday => -SECSPERDAY(),
+	today => 0,
+	tomorrow => SECSPERDAY(),
+    );
+
+    sub _parse_time_iso_8601 {
+	my ( $string ) = @_;
+
+	my @zone;
+	$string =~ s/ \s* (?: ( Z ) |
+		( [+-] ) ( \d{2} ) :? ( \d{2} )? ) \z //smx
+	    and @zone = ( $1, $2, $3, $4 );
+	my @date;
+
+	# ISO 8601 date
+	if ( $string =~ m{ \A
+		( \d{4} \D? | \d{2} \D )			# year: $1
+		(?: ( \d{1,2} ) \D?				# month: $2
+		    (?: ( \d{1,2} ) (?: \s* | \D? )		# day: $3
+			(?: ( \d{1,2} ) \D?			# hour: $4
+			    (?: ( \d{1,2} ) \D?			# minute: $5
+				(?: ( \d{1,2} ) \D?		# second: $6
+				    ( \d* )			# fract: $7
+				)?
+			    )?
+			)?
+		    )?
+		)?
+		\z
+	    }smx ) {
+	    @date = ( $1, $2, $3, $4, $5, $6, $7, undef );
+
+	# special-case 'yesterday', 'today', and 'tomorrow'.
+	} elsif ( $string =~ m{ \A
+		( yesterday | today | tomorrow )	# day: $1
+		(?: \D* ( \d{1,2} ) \D?			# hour: $2
+		    (?: ( \d{1,2} ) \D?			# minute: $3
+			(?: ( \d{1,2} ) \D?		# second: $4
+			    ( \d* )			# fract: $5
+			)?
+		    )?
+		)?
+		\z }smx ) {
+	    my @today = @zone ? gmtime : localtime;
+	    @date = ( $today[5] + 1900, $today[4] + 1, $today[3], $2, $3,
+		$4, $5, $special_day_offset{$1} );
+
+	} else {
+
+	    return;
+
+	}
+
+
+	my $offset = pop @date || 0;
+	if ( @zone && !$zone[0] ) {
+	    my ( $zulu, $sign, $hr, $min ) = @zone;
+	    $offset -= $sign . ( ( $hr * 60 + ( $min || 0 ) ) * 60 )
+	}
+
+	foreach ( @date ) {
+	    defined $_ and s/ \D+ //smxg;
+	}
+
+	if ( $date[0] < 70 ) {
+	    $date[0] += 100;
+	} elsif ( $date[0] >= 100 ) {
+	    $date[0] -= 1900;
+	}
+	defined $date[1] and --$date[1];
+	defined $date[2] or $date[2] = 1;
+	my $frc = pop @date;
+
+	foreach ( @date ) {
+	    defined $_ or $_ = 0;
+	}
+
+	my $time;
+	if ( @zone ) {
+	    $time = timegm( reverse @date );
+	} else {
+	    $time = timelocal( reverse @date );
+	}
+
+	if ( defined $frc  && $frc ne '') {
+	    my $denom = 1 . ( 0 x length $frc );
+	    $time += $frc / $denom;
+	}
+
+	return $time + $offset;
+    }
+
+}
+
 1;
 
 __END__
@@ -893,3 +997,5 @@ without any warranty; without even the implied warranty of
 merchantability or fitness for a particular purpose.
 
 =cut
+
+# ex: set textwidth=72 :

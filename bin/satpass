@@ -17,7 +17,6 @@ use Astro::Coord::ECI::Utils qw{:all};
 use Carp qw{confess};
 use Config;
 use Data::Dumper;
-use Date::Manip;
 use File::Basename;
 use FileHandle;
 use Getopt::Long;
@@ -113,8 +112,6 @@ my %parm = (
     );
 $parm{tz} = $ENV{TZ} if $ENV{TZ};
 
-my ($tz_init) = grep {m/^TZ=/} Date_Init ();
-
 my %macro;
 
 my %mutator = (
@@ -191,15 +188,6 @@ my $inifil = $ENV{SATPASSINI} ? $ENV{SATPASSINI} :
 
 sub _format_location;	# Predeclare, so I do not need explicit STDOUT.
 sub _time ();		# Predeclare, since I intend to redefine.
-
-#	The problem we're solving with the following is that
-#	Date::Manip assumes an epoch of midnight January 1 1970, but
-#	MacPerl takes the Mac OS 9 epoch of January 1 1904, local.
-#	Rather than get Date::Manip patched, we just fudge the
-#	results where needed.
-
-my $date_manip_fudge = 
-    $^O eq 'MacOS' ? timegm (0, 0, 0, 1, 0, 1970) : 0;
 
 my $rl;
 $rl = Term::ReadLine->new ('Predict satellite passes') if -t STDIN;
@@ -1856,12 +1844,13 @@ $parm{$_[0]} = $_[1];
 sub _set_lowercase {$parm{$_[0]} = lc $_[1]}
 
 sub _set_perltime {
-$parm{$_[0]} = $_[1];
-if ($_[1]) {
-    Date_Init ("TZ=GMT");
-    }
-  else {
-    Date_Init ($parm{tz} ? "TZ=$parm{tz}" : $tz_init);
+    $parm{$_[0]} = $_[1];
+    if ( _parse_time_absolute_use_perltime() ) {
+	if ( $_[1] ) {
+	    _parse_time_absolute_init_perltime();
+	} else {
+	    _parse_time_absolute_init( $parm{tz} );
+	}
     }
 }
 
@@ -1919,14 +1908,15 @@ eod
 }
 
 sub _set_tz {
-if ($_[1] || looks_like_number ($_[1])) {
-    $ENV{TZ} = $parm{$_[0]} = $_[1];
-    Date_Init ("TZ=$_[1]") unless $parm{perltime};
-    }
-  else {
-    $parm{$_[0]} = undef;
-    delete $ENV{TZ};
-    Date_Init ($tz_init) unless $parm{perltime};
+    if ($_[1] || looks_like_number ($_[1])) {
+	$ENV{TZ} = $parm{$_[0]} = $_[1];
+	$parm{perltime} and _parse_time_absolute_use_perltime()
+	    or _parse_time_absolute_init( $_[1] );
+    } else {
+	$parm{$_[0]} = undef;
+	delete $ENV{TZ};
+	$parm{perltime} and _parse_time_absolute_use_perltime()
+	    or _parse_time_absolute_init();
     }
 }
 
@@ -2958,12 +2948,14 @@ BEGIN {	# Begin local symbol block.
 	    $last_time_set - $delta;
 	}
       else {
-	$last_time_set = (UnixDate ($time, '%s') || die <<eod
+	defined( my $parsed_time =
+	    _parse_time_absolute( $time ) )
+	    or die <<eod;
 Error - Invalid time '$time'
 eod
-	    ) + $date_manip_fudge;
-	$parm{perltime} and $last_time_set =
-	    timelocal gmtime $last_time_set;
+	$last_time_set = $parsed_time;
+	$parm{perltime} and _parse_time_absolute_use_perltime()
+	    and $last_time_set = timelocal gmtime $last_time_set;
 	$initial_time_set = $last_time_set;
 	}
     }
@@ -2975,6 +2967,60 @@ eod
 
 }	# End local symbol block.
 
+
+#	$seconds_since_epoch = _parse_time_absolute( $string )
+
+#	Parse the given time using the first of the following mechanisms
+#	which is available:
+#	    Date::Manip::UnixDate
+#	    an internal quasi-ISO-8601 parser.
+
+BEGIN {
+    eval {
+	require Date::Manip;
+
+	my $tz_init = grep { m/ \A TZ= /smx } Date::Manip::Date_Init();
+
+	*_parse_time_absolute_init = sub {
+	    my ( $tz ) = @_;
+	    Date::Manip::Date_Init( defined $tz ? "TZ=$tz" : $tz_init );
+	    return;
+	};
+
+	*_parse_time_absolute_init_perltime = sub {
+	    Date::Manip::Date_Init( 'TZ=GMT' );
+	    return;
+	};
+
+    #	The problem we're solving with the following is that
+    #	Date::Manip assumes an epoch of midnight January 1 1970, but
+    #	MacPerl takes the Mac OS 9 epoch of January 1 1904, local.
+    #	Rather than get Date::Manip patched, we just fudge the
+    #	results where needed.
+
+	my $date_manip_fudge = 
+	    $^O eq 'MacOS' ? timegm (0, 0, 0, 1, 0, 1970) : 0;
+
+	*_parse_time_absolute = sub {
+	    my ( $string ) = @_;
+	    defined( my $time = Date::Manip::UnixDate( $string, '%s' ) )
+		or return;
+	    return $time + $date_manip_fudge;
+	};
+
+	my $ver = Date::Manip->VERSION();
+	$ver =~ s/ _ //smxg;
+	*_parse_time_absolute_use_perltime = $ver < 6 ? sub { 1 } : sub { 0 };
+
+    } || do {
+
+	*_parse_time_absolute_init = sub {};
+	*_parse_time_absolute_init_perl = sub {};
+	*_parse_time_absolute =
+	    \&Astro::Coord::ECI::Utils::_parse_time_iso_8601;
+	*_parse_time_absolute_use_perltime = sub { 0 };
+    };
+}
 
 #	@tree = _parse_xml ($data, $command_name)
 
@@ -3625,6 +3671,12 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
+L<Date::Manip|Date::Manip> requires Perl 5.010 as of its version 6.0.
+Because of this, L<Date::Manip|Date::Manip> is no longer required,
+though it will be used if it is present. A simple-minded ISO-8601 date
+parser will be used if L<Date::Manip|Date::Manip> is not available. See
+L</SPECIFYING DATES> for the details.
+
 The C<validate> command was added to satpass 0.024 try to deal with
 uncomputable (at least by me) predicted Space Shuttle TLEs sometimes
 published by NASA on their Human Space Flight web site. This command
@@ -3634,13 +3686,14 @@ the computation fails. You may wish to issue this command before doing
 pass computations on data from the NASA Human Space Flight web site. It
 is probably not necessary to issue it otherwise.
 
-I plan, hopefully in the second half of 2009, to restructure this
-package. The plan calls for moving all the .pm files to distribution
-Astro-Coord-ECI, publishing an App-Satpass2 package with a reworked
-version of the F<satpass> script, and abandoning development of the
-Astro-satpass package. My intent is that in the last release of the
-Astro-satpass package, the banner displayed by the F<satpass> script
-will direct the user to App-Satpass2.
+I plan, hopefully before mid-2010 (though the date has a tendency to
+recede as fast as time advances), to restructure this package. The plan
+calls for moving all the .pm files to distribution Astro-Coord-ECI,
+publishing an App-Satpass2 package with a reworked version of the
+F<satpass> script, and abandoning development of the Astro-satpass
+package. My intent is that in the last release of the Astro-satpass
+package, the banner displayed by the F<satpass> script will direct the
+user to App-Satpass2.
 
 Most of the functionality of the App-Satpass2 distribution will be in
 the App::Satpass2 class. A minimal F<satpass2> script will be provided
@@ -5269,25 +5322,35 @@ The default is 'model'.
 
 =item perltime (boolean)
 
+This parameter is a wart occasioned by the failure of
+L<Date::Manip|Date::Manip> to understand summer time prior to version 6.
+It is ignored if you are using L<Date::Manip|Date::Manip> 6.0 or
+greater, or if you are using the internal ISO-8601 parser, since neither
+needs this mechanism.
+
+If you are using a L<Date::Manip|Date::Manip> prior to 6.0, you should
+read on. This includes anyone not using Perl 5.010 or later, since Perl
+5.010 is required for L<Date::Manip|Date::Manip> 6.0 and above.
+
 This parameter specifies the time zone mechanism for date input. If
-false (i.e. 0 or an empty string), Date::Manip does the conversion.
-If true (typically 1), Date::Manip is told that the time zone is GMT,
-and the time zone conversion is done by gmtime (timelocal ($time)).
+false (i.e. 0 or an empty string), L<Date::Manip|Date::Manip> does the
+conversion.  If true (typically 1), L<Date::Manip|Date::Manip> is told
+that the time zone is GMT, and the time zone conversion is done by
+C<gmtime( timelocal( $time ) )>.
 
 The problem this attempts to fix is that, in jurisdictions that do
-summer time, Date::Manip appears (to me, at least) to give the wrong
-time if the current time is not summer time but the time converted is.
-That is to say, with a time zone of EST5EDT, in January, 'jan 1 noon'
-converts to 5:00 PM GMT. But 'jul 1 noon' does also, and it seems to
-me that this should give 4:00 PM GMT.
+summer time, Date::Manip gives the wrong time if the current time is not
+summer time but the time converted is.  That is to say, with a time zone
+of EST5EDT, in January, 'jan 1 noon' converts to 5:00 PM GMT. But 'jul 1
+noon' does also, but should convert to 4:00 PM GMT.
 
 If you turn this setting on, 'jul 1 noon' comes out 4:00 PM GMT even
 if done in January. If you plan to parse times B<with zones> (e.g.
 'jul 1 noon edt'), you should turn this setting off.
 
-I confess to considering this a wart. If I figure out how to get
-behavior I consider more straightforward out of Date::Manip, I will
-no-op this attribute and deprecate its use.
+Note that at at some point this setting will be no-oped and its use
+deprecated, though given the state of things this may well not happen
+until this script itself starts requiring Perl 5.010.
 
 The default is 0 (i.e. false).
 
@@ -5497,15 +5560,43 @@ needs quotes.
 =head2 Absolute time
 
 Any time string not beginning with '+' or '-' is assumed to be an
-absolute time, and is fed to B<Date::Manip> for parsing. See the
-documentation for that module for all the possibilities. Some of
-them are:
+absolute time. If L<Date::Manip|Date::Manip> is available, the string is
+fed to that for parsing. See the documentation for that module for all
+the possibilities. Some of them are:
 
  today        'today noon'        'next monday'
  tomorrow     'yesterday 10:00'   'nov 10 2:00 pm'
 
-B<Date::Manip> has at least some support for locales, so check
-L<Date::Manip> before you assume you must enter dates in English.
+L<Date::Manip|Date::Manip> has at least some support for locales, so
+check L<Date::Manip|Date::Manip> before you assume you must enter dates
+in English.
+
+If C<Date::Manip> is not available, this script will do the best it can
+with an internal parsing routine. This routine accepts ISO-8601 dates,
+but not ordinal day specifications (e.g. 2009365 for December 31 2009)
+or week specifications (e.g. 2009W0101 for January 4 2009 (if that is in
+fact the correct interpretation of the spec)).
+
+The internal routine is rather permissive about punctuation: any
+non-digit character is accepted, and multiple whitespace characters are
+accepted between date and time, and between time and zone. Years can be
+two- or four-digit, with two-digit years representing years between 1970
+and 2069, inclusive. Any other date or time field can be shortened if it
+has trailing punctuation or is the last field specified before the zone.
+
+In addition, the internal routine accepts the strings 'yesterday',
+'today', and 'tomorrow' in lieu of a date. If time is not specified,
+these represent midnight.
+
+So, using the internal parser the following are valid:
+
+ today     'today 12:00'  '2009/2/1 6:00Z' (i.e. February 1)
+ tomorrow  yesterday6:00
+
+As a refresher, ISO-8601 dates are numeric and specified as year, month,
+and day. If all fields are full-width (4 digits for years, 2 for
+everything else) no punctuation at all is needed, other than in an
+optional zone specification.
 
 =head2 Relative time
 

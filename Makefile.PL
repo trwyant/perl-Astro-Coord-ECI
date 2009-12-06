@@ -56,7 +56,6 @@ if ($opt{n}) {
 my $stringmod = $] >= 5.008 ? '' : 'IO::String';
 
 if (@exe_files) {
-    push @prereq, 'Date::Manip' => 1.14;
     foreach (['Astro::SIMBAD::Client' => 0, <<eod],
 Optional module Astro::SIMBAD::Client is needed if you wish to retrieve
 star positions directly from the SIMBAD catalog via the 'sky lookup'
@@ -147,6 +146,7 @@ $mmv >= 6.4501 and $attr{META_MERGE} = {
 	'Test::More' => 0.40,
     },
     recommends => {
+	'Date::Manip' => 1.14,
 	'Time::y2038' => 20081111,
     },
     resources => {

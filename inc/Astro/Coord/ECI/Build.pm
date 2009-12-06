@@ -6,13 +6,109 @@ use warnings;
 use base qw{ Module::Build };
 
 use Carp;
+use File::Spec;
 
+my @generated_dir = qw{ xt generated };
+my @hide = qw{ Date::Manip Time::y2038 };
+
+{
+    my $done;
+    my $hider;
+
+    sub _get_hider {
+	$done and return $hider;
+	$done = 1;
+	foreach my $module ( qw{
+		Test::Without::Module
+		Devel::Hide
+	    } ) {
+	    eval "require $module; 1"
+		and return ( $hider = $module );
+	}
+	return $hider;
+    }
+}
+
+sub _get_tests_without_optional_modules {
+    my @args = @_;
+    _get_hider() or return;
+    my @cleanup;
+    @args or @args = _get_general_tests();
+    foreach my $path ( @args ) {
+	push @cleanup, File::Spec->catfile( @generated_dir,
+	    ( File::Spec->splitpath( $path ) )[2] );
+    }
+    return @cleanup;
+}
+
+{
+
+    my @general_tests;
+
+    sub _get_general_tests {
+	@general_tests and return @general_tests;
+	my $th;
+	opendir $th, 't'
+	    or die "Unable to open directory t: $!\n";
+	while ( defined( my $fn = readdir $th ) ) {
+	    '.' eq substr $fn, 0, 1 and next;
+	    my $path = File::Spec->catfile( 't', $fn );
+	    -f $path or next;
+	    push @general_tests, $path;
+	}
+	closedir $th;
+	return @general_tests;
+    }
+}
+
+
+sub ACTION_make_optional_modules_tests {
+    my ( $self, @args ) = @_;
+
+    my $hider = _get_hider() or do {
+#	warn "Neither Devel::Hide nor Test::Without::Module available\n";
+	return;
+    };
+
+    my $gendir = File::Spec->catdir( @generated_dir );
+
+    -d $gendir
+	or mkdir $gendir
+	or die "Unable to create $gendir: $!\n";
+
+    foreach my $ip ( _get_general_tests() ) {
+	my ( $op ) = _get_tests_without_optional_modules( $ip );
+	-f $op and next;
+	local $/ = undef;
+	open my $ih, '<', $ip or die "Unable to open $ip: $!\n";
+	my $content = <$ih>;
+	close $ih;
+	print "Creating $op\n";
+	open my $oh, '>', $op or die "Unable to open $op: $!\n";
+	print { $oh } <<EOD;
+package main;
+
+use strict;
+use warnings;
+
+use $hider qw{ @hide };
+
+require '$ip';
+EOD
+	close $oh;
+    }
+}
 
 sub ACTION_authortest {
     my ( $self, @args ) = @_;
 
-    $self->depends_on( 'build', 'distmeta' );
-    $self->test_files( qw{ t xt } );
+    my @depends_on = ( qw{ build make_optional_modules_tests } );
+    -e 'META.yml' or push @depends_on, 'distmeta';
+    $self->depends_on( @depends_on );
+    my @test_files = qw{ t xt };
+    my $gendir = File::Spec->catdir( @generated_dir );
+    -d $gendir and push @test_files, $gendir;
+    $self->test_files( @test_files );
     $self->depends_on( 'test' );
 
     return;
@@ -61,6 +157,18 @@ are not present.
 
 This test is sensitive to the C<verbose=1> argument, but not to the
 C<--test_files> argument.
+
+=item make_optional_modules_tests
+
+This action creates the tests in the F<xt/generated> directory. These
+generally duplicate the tests in the F<t> directory, but the optional
+modules are made unavailable using either
+L<Test::Without::Module|Test::Without::Module> or
+L<Devel::Hide|Devel::Hide>, in that order. If neither of these modules
+is available, nothing is done.
+
+There should be no need to invoke this action directly, since the
+C<authortest> action depends on it.
 
 =back
 

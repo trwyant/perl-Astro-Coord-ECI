@@ -27,13 +27,13 @@ CVS/
 ^sgp4r/
 ^sladen\.expect$
 ^sladen\.got$
-^t/Satpass\.pm$
 ^t/iridium\.dat$
 ^t/sgp4-ver\.tle$
 ^t/tle_make\.t$
 ^tags$
 ^USED_BY$
 ^usual\.dat$
+^xt/generated
 \.old$
 \.svn/
 \.swp$

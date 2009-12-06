@@ -22,9 +22,11 @@ my %attr = (
     get_options => {y => {}, n => {}},
     dynamic_config => 1,
     license => 'perl',
+    add_to_cleanup => [ qw{ xt/generated } ],
 );
 
 $mbv >= 0.08 and $attr{recommends} = {
+    'Date::Manip'	=> 1.14,
     'Time::y2038'	=> 20081111,
 };
 
@@ -85,7 +87,7 @@ if ($opt{n}) {
 my $stringmod = $] >= 5.008 ? '' : 'IO::String';
 
 if (@exe_files) {
-    push @prereq, 'Date::Manip' => 1.14;
+#   push @prereq, 'Date::Manip' => 1.14;
     foreach (['Astro::SIMBAD::Client' => 0, <<eod],
 Optional module Astro::SIMBAD::Client is needed if you wish to retrieve
 star positions directly from the SIMBAD catalog via the 'sky lookup'
