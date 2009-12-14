@@ -5639,7 +5639,6 @@ sub _r_sgp4init {
 
 
     delete $parm->{init};
-####    $ENV{DEVELOPER_TEST} and $self->_r_dump ();
     return $parm;
 }
 
