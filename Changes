@@ -1,3 +1,20 @@
+0.026_02	14-Dec-2009	T. R. Wyant
+  The Astro::Coord::ECI azel() method now returns velocities if
+    these are available. The transverse velocities (azimuthal and
+    elevational) are NOT corrected for the Coriolis effect.
+  Added Astro::Nova to the Astro::Coord::ECI 'SEE ALSO' section.
+  Date::Manip is no longer required. If it is not available, the
+    'satpass' script will use a home-grown pseudo-ISO-8601 parser
+    instead. The t/parse_time.t test was added to make sure this works
+    as advertized.
+  Have 'authortest' run the normal tests without any of the optional
+    modules. This requires either Test::Without::Module or Devel::Hide.
+    If neither is available, 'authortest' will not attempt these tests.
+  Remove the last vestiges of the $ENV{DEVELOPER_TEST} machinery.
+  Rewrote xt/manifest.t to use Test::More.
+
+------------------------------------------------------------------------
+
 0.026_01	28-Nov-2009	T. R. Wyant
   All modules' versions set to 0.026_01. In the future all modules in
     a given release will have the same version number.
