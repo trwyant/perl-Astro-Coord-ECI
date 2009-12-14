@@ -141,7 +141,7 @@ our @CARP_NOT = qw{
     Astro::Coord::ECI
 };
 
-our $VERSION = '0.026_01';
+our $VERSION = '0.026_02';
 
 use constant ERR_NOCURRENT => <<eod;
 Error - Can not call %s because there is no current member. Be
