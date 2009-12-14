@@ -37,7 +37,8 @@ argumentofperigee
 ascendingnode
 ascensional
 Astro
-Astrodynamics
+astrodynamics
+astrometry
 au
 autoheight
 azel
@@ -133,6 +134,7 @@ Kazimierz
 Kelso
 Kelso's
 lib
+libnova
 LLC
 ls
 Lune
@@ -153,6 +155,7 @@ mmas
 Moon's
 MoonPhase
 MSWin
+Mueller
 NORAD
 NORAD's
 nouvelles
@@ -220,6 +223,7 @@ solstices
 SPACETRACK
 Spacetrack
 STDERR
+Steffen
 Storable
 strasbg
 SunTime

@@ -3023,16 +3023,21 @@ L<http://rt.cpan.org/>.
 
 =head1 SEE ALSO
 
-The B<Astro> package by Chris Phillips. This contains three function-based
-modules: B<Astro::Coord>, which provides various astronomical coordinate
-conversions, plus the calculation of various ephemeris variables;
-B<Astro::Time> contains time and unit conversions, and B<Astro::Misc>
-contains various calculations unrelated to position and time.
+The L<Astro|Astro> package by Chris Phillips. This contains three
+function-based modules: L<Astro::Coord|Astro::Coord>, which provides
+various astronomical coordinate conversions, plus the calculation of
+various ephemeris variables; L<Astro::Time|Astro::Time> contains time
+and unit conversions, and L<Astro::Misc|Astro::Misc> contains various
+calculations unrelated to position and time.
 
 The B<Astro-Coords> package by Tim Jenness. This contains various modules
 to do astronomical calculations, and includes coordinate conversion and
 calculation of planetary orbits based on orbital elements. Requires
 SLALIB from L<http://www.starlink.rl.ac.uk/Software/software_store.htm>.
+
+The L<Astro::Nova|Astro::Nova> module by Steffen Mueller, which wraps
+(and bundles) the libnova celestial mechanics, astrometry and
+astrodynamics library found at L<http://libnova.sourceforge.net/>.
 
 =head1 AUTHOR
 
