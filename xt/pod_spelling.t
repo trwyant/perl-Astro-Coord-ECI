@@ -85,6 +85,7 @@ EDT
 edt
 edu
 elementnumber
+elevational
 ELP
 ephemeristype
 Escobal
@@ -93,6 +94,7 @@ exportable
 ff
 firstderivative
 foo
+Foucault
 fr
 Francou
 Fugina
@@ -136,6 +138,8 @@ ls
 Lune
 ly
 magics
+Magliacane
+Magliacane's
 magma
 Mariana
 max
@@ -182,6 +186,7 @@ reblessable
 reblessed
 reblesses
 reblessing
+recessional
 ref
 reportable
 revolutionsatepoch

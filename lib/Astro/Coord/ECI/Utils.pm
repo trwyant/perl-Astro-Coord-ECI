@@ -94,7 +94,8 @@ our @EXPORT_OK = qw{
 	find_first_true intensity_to_magnitude jcent2000 jd2date
 	jd2datetime jday2000 julianday load_module looks_like_number max
 	min mod2pi nutation_in_longitude nutation_in_obliquity obliquity
-	omega rad2deg tan theta0 thetag};
+	omega rad2deg tan theta0 thetag vector_cross_product
+	vector_dot_product vector_magnitude vector_unitize };
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -856,6 +857,83 @@ sub thetag {
     return mod2pi (4.89496121273579 + 6.30038809898496 *
 	    jday2000 ($time))
 	    + (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
+}
+
+=item $a = vector_cross_product( $b, $c );
+
+This subroutine computes and returns the vector cross product of $b and
+$c. Vectors are represented by array references.  The cross product is
+only defined if both arrays have 3 elements.
+
+=cut
+
+sub vector_cross_product {
+    my ( $b, $c ) = @_;
+    @{ $b } == 3 and @{ $c } == 3
+	or confess 'Programming error - vector_cross_product arguments',
+	    ' must be references to arrays of length 3';
+    return [
+	$b->[1] * $c->[2] - $b->[2] * $c->[1],
+	$b->[2] * $c->[0] - $b->[0] * $c->[2],
+	$b->[0] * $c->[1] - $b->[1] * $c->[0],
+    ];
+}
+
+=item $a = vector_dot_product( $b, $c );
+
+This subroutine computes and returns the vector dot product of $b and
+$c. Vectors are represented by array references. The dot product is only
+defined if both arrays have the same number of elements.
+
+=cut
+
+sub vector_dot_product {
+    my ( $b, $c ) = @_;
+    @{ $b } == @{ $c }
+	or confess 'Programming error - vector_dot_product arguments ',
+	    'must be references to arrays of the same length';
+    my $prod = 0;
+    my $size = @{ $b } - 1;
+    foreach my $inx ( 0 .. $size ) {
+	$prod += $b->[$inx] * $c->[$inx];
+    }
+    return $prod;
+}
+
+=item $a = vector_magnitude( $b );
+
+This subroutine computes and returns the magnitude of vector $b. The
+vector is represented by an array reference.
+
+=cut
+
+sub vector_magnitude {
+    my ( $b ) = @_;
+    'ARRAY' eq ref $b
+	or confess 'Programming error - vector_magnitude argument ',
+    'must be a reference to an array';
+    my $mag = 0;
+    my $size = @{ $b } - 1;
+    foreach my $inx ( 0 .. $size ) {
+	$mag += $b->[$inx] * $b->[$inx];
+    }
+    return sqrt $mag;
+}
+
+=item $a = vector_unitize( $b );
+
+This subroutine computes and returns a unit vector pointing in the same
+direction as $b. The vectors are represented by array references.
+
+=cut
+
+sub vector_unitize {
+    my ( $b ) = @_;
+    'ARRAY' eq ref $b
+	or confess 'Programming error - vector_unitize argument ',
+    'must be a reference to an array';
+    my $mag = vector_magnitude( $b );
+    return [ map { $_ / $mag } @{ $b } ];
 }
 
 #	$epoch_time = _parse_time_iso_8601

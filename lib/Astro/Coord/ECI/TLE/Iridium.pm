@@ -893,16 +893,16 @@ eod
 sub _flare_transform_coords_list {
     my @args = @_;
     my @ref = $args[0]->eci ();
-    my $X = _list_normalize ([@ref[3 .. 5]]);
-    my $Y = _list_cross_product (_list_normalize ([@ref[0 .. 2]]), $X);
-    my $Z = _list_cross_product ($X, $Y);
+    my $X = vector_unitize ([@ref[3 .. 5]]);
+    my $Y = vector_cross_product (vector_unitize ([@ref[0 .. 2]]), $X);
+    my $Z = vector_cross_product ($X, $Y);
     my @coord = ($X, $Y, $Z);
     my @rslt;
     foreach my $loc (@args) {
 	my @eci = $loc->eci ();
 	my $pos = [$eci[0] - $ref[0], $eci[1] - $ref[1], $eci[2] - $ref[2]];
 	foreach my $inx (0 .. 2) {
-	    $eci[$inx] = _list_dot_product ($pos, $coord[$inx])
+	    $eci[$inx] = vector_dot_product ($pos, $coord[$inx])
 	}
 	push @rslt, [@eci[0 .. 2]];
     }
@@ -930,13 +930,13 @@ sub _flare_calculate_angle_list {
 
     my @eci;
     foreach my $inx (0 .. 2) {
-	$eci[$inx] = _list_dot_product ($illum, $transform_vector[$mma][$inx])
+	$eci[$inx] = vector_dot_product ($illum, $transform_vector[$mma][$inx])
     }
     return unless $eci[2] > 0;
     $eci[2] = - $eci[2];
     $illum = [$eci[0], $eci[1], $eci[2]];
     foreach my $inx (0 .. 2) {
-	$eci[$inx] = _list_dot_product ($station, $transform_vector[$mma][$inx])
+	$eci[$inx] = vector_dot_product ($station, $transform_vector[$mma][$inx])
     }
     return unless $eci[2] > 0;
     $station = [$eci[0], $eci[1], $eci[2]];
@@ -996,8 +996,8 @@ my $atm_extinct = $self->get ('extinction');
 #	Calculate the range to the satellite, and to the reflection of
 #	the Sun, from the observer.
 
-my $sat_range = _list_magnitude ($station_vector);
-my $illum_range = _list_magnitude ([
+my $sat_range = vector_magnitude ($station_vector);
+my $illum_range = vector_magnitude ([
 	$illum_vector->[0] - $station_vector->[0],
 	$illum_vector->[1] - $station_vector->[1],
 	$illum_vector->[2] - $station_vector->[2],
@@ -1167,7 +1167,7 @@ my ($virtual_image, $image_vector) = do {
 
     my @eci;
     foreach my $inx (0 .. 2) {
-	$eci[$inx] = _list_dot_product ($illum_vector, $transform_vector[$mma][$inx]);
+	$eci[$inx] = vector_dot_product ($illum_vector, $transform_vector[$mma][$inx]);
 	}
     $eci[2] = - $eci[2];
     my $image_vector = [@eci];
@@ -1177,7 +1177,7 @@ my ($virtual_image, $image_vector) = do {
 #	    X-Y plane.
 
     foreach my $inx (0 .. 2) {
-	$eci[$inx] = _list_dot_product ($image_vector,
+	$eci[$inx] = vector_dot_product ($image_vector,
 		$inverse_transform_vector[$mma][$inx]);
 	}
     $image_vector = [@eci];
@@ -1187,9 +1187,9 @@ my ($virtual_image, $image_vector) = do {
 #	    facing in the X direction.
 
     my @ref = $self->eci ();
-    my $X = _list_normalize ([@ref[3 .. 5]]);
-    my $Y = _list_cross_product (_list_normalize ([@ref[0 .. 2]]), $X);
-    my $Z = _list_cross_product ($X, $Y);
+    my $X = vector_unitize ([@ref[3 .. 5]]);
+    my $Y = vector_cross_product (vector_unitize ([@ref[0 .. 2]]), $X);
+    my $Z = vector_cross_product ($X, $Y);
 
 #	    Invert this to get the reverse rotation.
 
@@ -1199,7 +1199,7 @@ my ($virtual_image, $image_vector) = do {
 #	    illuminator.
 
     foreach my $inx (0 .. 2) {
-	$eci[$inx] = _list_dot_product ($image_vector, $coord[$inx]) + $ref[$inx];
+	$eci[$inx] = vector_dot_product ($image_vector, $coord[$inx]) + $ref[$inx];
 	}
 
 #	    Manufacture an object representing the virtual image, and
@@ -1246,8 +1246,8 @@ my $sub_vector = do {
 	->universal ($time)->eci ())[0 .. 2]];
     $n = [$n->[0] - $a->[0], $n->[1] - $a->[1], $n->[2] - $a->[2]];
     my $q_p = [$q->[0] - $p->[0], $q->[1] - $p->[1], $q->[2] - $p->[2]];
-    my $k = _list_dot_product ([$a->[0] - $p->[0], $a->[1] - $p->[1], $a->[2] - $p->[2]], $n) /
-	_list_dot_product ($q_p, $n);
+    my $k = vector_dot_product ([$a->[0] - $p->[0], $a->[1] - $p->[1], $a->[2] - $p->[2]], $n) /
+	vector_dot_product ($q_p, $n);
     [$q_p->[0] * $k + $p->[0], $q_p->[1] * $k + $p->[1], $q_p->[2] * $k + $p->[2]];
     };
 my $sub_point = Astro::Coord::ECI->universal ($time)->
@@ -1336,70 +1336,6 @@ sub _list_angle {
     my $c = distsq ($A, $B);
 
     return acos (($b + $c - $a) / sqrt (4 * $b * $c));
-}
-
-#	$a = _list_cross_product ($b, $c);
-
-#	This subroutine takes as input two list references, both of
-#	which must refer to 3-element lists, and returns the vector
-#	cross product of the two lists as another list reference.
-
-sub _list_cross_product {
-    my ($b, $c) = @_;
-    (@$b == 3 && @$c == 3) or confess <<eod;
-Programming error - _list_cross_product arguments must be length 3.
-eod
-    return [
-	$b->[1] * $c->[2] - $b->[2] * $c->[1],
-	$b->[2] * $c->[0] - $b->[0] * $c->[2],
-	$b->[0] * $c->[1] - $b->[1] * $c->[0],
-    ];
-}
-
-#	$a = _list_dot_product ($b, $c);
-
-#	This subroutine takes as input two list references, both of
-#	which must refer to 3-element lists, and returns the vector
-#	dot product of the two lists as another list reference.
-
-sub _list_dot_product {
-    my ($b, $c) = @_;
-    (@$b == 3 && @$c == 3) or confess <<eod;
-Programming error - _list_dot_product arguments must be length 3.
-eod
-    return $b->[0] * $c->[0] + $b->[1] * $c->[1] + $b->[2] * $c->[2];
-}
-
-#	$a = _list_magnitude ($b);
-
-#	This subroutine takes as input a list reference, which must
-#	refer to a 3-element list, and returns the magnitude (i.e. the
-#	square root of the sum of the squares of the elements) of the
-#	vector represented by the list.
-
-sub _list_magnitude {
-    my ($list) = @_;
-    @$list == 3 or confess <<eod;
-Programming error - _list_magnitude argument must be length 3.
-eod
-    return sqrt ($list->[0] * $list->[0] + $list->[1] * $list->[1] +
-	    $list->[2] * $list->[2]);
-}
-
-#	$a = _list_normalize ($b);
-
-#	This subroutine takes as input a list reference, which must
-#	refer to a 3-element list, and returns a reference to a list
-#	that represents a unit vector pointing in the same direction
-#	as the vector that the original list represents.
-
-sub _list_normalize {
-    my ($list) = @_;
-    @$list == 3 or confess <<eod;
-Programming error - _list_normalize arguments must be length 3.
-eod
-    my $mag = _list_magnitude ($list);
-    return [$list->[0] / $mag, $list->[1] / $mag, $list->[2] / $mag];
 }
 
 =item $value = $tle->get ($name);
