@@ -354,8 +354,10 @@ foreach ([GRS80 => 38, -80, 1, 0, -75, 35800,
 		timegm (0, 0, 5, 27, 7, 105),
 		45.682, 171.906, 37355.457],
 	) {
-    my ($elps, $olat, $olong, $oelev, $slat, $slong, $selev,
-	$time, $expalt, $expazm, $exprng) = @$_;
+    my ($elps, $olat, $olong, $oelev,
+	$slat, $slong, $selev,
+	$time,
+	$expalt, $expazm, $exprng) = @$_;
 print <<eod;
 # Debug - reference ellipsoid = '$elps'
 eod
