@@ -21,8 +21,6 @@ BEGIN {
     };
 }
 
-our $VERSION = '0.004';
-
 plan tests => 53, todo => [];
 
 my $test = 0;
