@@ -94,18 +94,19 @@ indicated.
 The C<rightascension> attribute is deprecated (and about time!). You
 should use the C<ascendingnode> attribute instead.
 
-Currently, C<rightascension> and <ascendingnode> are equivalent.
+Currently, C<rightascension> and C<ascendingnode> are equivalent.
 
-At the first release in 2010, there will be a warning generated the
-first time the C<rightascension> attribute is used.
+As scheduled, with this release a warning is generated the first time
+the C<rightascension> attribute is used. This warning can be supressed
+by asserting C<< no warnings qw{ deprecated }; >> at the point the
+warning is issued. But you really should convert the warning code to use
+the C<ascendingnode> attribute.
 
-At the first release after June 30 2010 (or the second release in 2010,
-whichever is later), there will be a warning generated every time the
-C<rightascension> attribute is used.
+At the first release after June 30 2010 there will be a warning
+generated every time the C<rightascension> attribute is used.
 
 At the first release in 2011 (or the second release after June 30 2010,
-or the third release after December 31 2009, whichever is latest), the
-C<rightascension> attribute will disappear.
+whichever is later), the C<rightascension> attribute will disappear.
 
 =head1 DESCRIPTION
 
@@ -322,6 +323,7 @@ use constant SGP_RHO => .15696615;
 #		must make the needed changes to the attribute, and
 #		return 0 or 1, interpreted as above.
 
+my $rightascension_deprecated = 0;	## TODO get rid of this
 my %attrib = (
     backdate => 0,
     effective => sub {
@@ -362,10 +364,11 @@ eod
     },
     model_error => 0,
     rightascension => sub {
-##	warnings::warnif(
-##	    deprecated =>
-##	    'The rightascension attribute is deprecated. Use ascendingnode instead.',
-##	);
+	$rightascension_deprecated++
+	    or warnings::warnif(
+	    deprecated =>
+	    'The Astro::Coord::ECI::TLE rightascension attribute is deprecated. Use ascendingnode instead',
+	);
 	$_[0]{ascendingnode} = $_[2];
 	return 1;
     },
@@ -600,10 +603,11 @@ L</Attributes> section for a description of the attributes.
 {
     my %accessor = (
 	rightascension => sub {
-##	    warnings::warnif(
-##		deprecated =>
-##		'The rightascension attribute is deprecated. Use ascendingnode instead.',
-##	    );
+	    $rightascension_deprecated++
+		or warnings::warnif(
+		deprecated =>
+		'The Astro::Coord::ECI::TLE rightascension attribute is deprecated. Use ascendingnode instead',
+	    );
 	    return $_[0]{ascendingnode};
 	},
 	tle => sub {$_[0]{$_[1]} ||= $_[0]->_make_tle()},
