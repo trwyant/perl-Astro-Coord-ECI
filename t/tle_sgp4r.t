@@ -183,7 +183,10 @@ sub prompt {
     print STDERR @args;
     return
 	# We're a test module, and want to be fairly lightweight.
-	unless defined (my $input = <STDIN>);	## no critic (ProhibitExplicitStdin)
+	unless defined (my $input = <STDIN>)	## no critic (ProhibitExplicitStdin)
+	;	# semicolon must be after annotation, or Perl::Critic
+		# may think it's a block annotation, not a single-line
+		# annotation.
     chomp $input;
     return $input;
 }
