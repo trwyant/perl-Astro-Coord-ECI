@@ -29,6 +29,7 @@ tag gets you all of them.
  PI = the circle ratio, computed as atan2 (0, -1)
  PIOVER2 = half the circle ratio
  SECSPERDAY = the number of seconds in a day
+ SECS_PER_SIDERIAL_DAY = seconds in a siderial day
  TWOPI = twice the circle ratio
 
 =head2 The following global variables are exportable:
@@ -88,7 +89,7 @@ BEGIN {
 our @EXPORT;
 our @EXPORT_OK = qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
-	PERL2000 PI PIOVER2 SECSPERDAY TWOPI acos asin
+	PERL2000 PI PIOVER2 SECSPERDAY SECS_PER_SIDERIAL_DAY TWOPI acos asin
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
 	dynamical_delta embodies epoch2datetime equation_of_time
 	find_first_true intensity_to_magnitude jcent2000 jd2date
@@ -111,6 +112,7 @@ use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant PI => atan2 (0, -1);
 use constant PIOVER2 => PI / 2;
 use constant SECSPERDAY => 86400;
+use constant SECS_PER_SIDERIAL_DAY => 86164.0905;	# Appendix I, page 408.
 ### use constant SOLAR_RADIUS => 1392000 / 2;	# Meeus, Appendix I, page 407.
 use constant TWOPI => PI * 2;
 
@@ -1064,7 +1066,7 @@ Thomas R. Wyant, III (F<wyant at cpan dot org>)
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2005-2009, Thomas R. Wyant, III
+Copyright (C) 2005-2010, Thomas R. Wyant, III
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl 5.10.0. For more details, see the full text
