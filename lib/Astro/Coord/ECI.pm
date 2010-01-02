@@ -91,6 +91,7 @@ use Data::Dumper;
 use Params::Util 0.25 qw{_CLASSISA};
 use POSIX qw{floor strftime};
 
+use constant AZEL_ROTATION => TWOPI / SECS_PER_SIDERIAL_DAY;
 use constant TWO_DEGREES => deg2rad( 2 );
 
 my %mutator;	# Attribute mutators. We define these just after the
@@ -256,21 +257,12 @@ computation (velocity = coordinate at time T + 1 second minus coordinate
 at time T) for an arbitrarily-selected orbit of the International Space
 Station and found the following maximum differences:
 
- Azimuthal velocity: 0.003 degrees/second
- Elevational velocity: 0.012 degrees/second
+ Azimuthal velocity: 0.0025 degrees/second
+ Elevational velocity: 0.0089 degrees/second
  Velocity in recession: 3.92 cm/second (!)
 
-B<Caveat:> The transverse velocity calculation does not take into
-account the fact that the frame of reference itself is rotating (i.e.
-the Foucault pendulum/Coriolis effect), though it does take into account
-any instantaneous motion of the two objects due to the Earth's rotation.
-If you call this method using two locations on the Earth's surface you
-will get a small azimuthal and/or elevational velocity, even though
-these should be zero.  This omission may help explain some of the
-differences reported in the above table. It also may be fixed in a
-future release; good references on how to do the calculations (so I
-don't have to slog through the math myself) might make this happen
-sooner.
+This indicates to me that there is something seriously wrong with my
+transverse velocities, but I have no clue what it is. I<Caveat user.>
 
 =cut
 
@@ -356,10 +348,6 @@ sub azel {
 	# We have velocities. To convert them, we start by transforming
 	# them into the same local Cartesian coordinate system used for
 	# positions.
-	#
-	# TODO - Account for the Foucault pendulum effect. The Foucault
-	# rotation is 2 * pi * sin( phi ) radians clockwise per siderial
-	# day, where phi is the latitude, this per Wikipedia.
 
 	my $velx = $costheta * $sinphi * $delta[3] +
 	    $sintheta * $sinphi * $delta[4] - $cosphi * $delta[5];
@@ -368,6 +356,16 @@ sub azel {
 	    $sintheta * $cosphi * $delta[4] + $sinphi * $delta[5];
 
 	my $vel_vec = [ $velx, $vely, $velz ];
+
+	# Because we are in a rotating frame of reference, we need a
+	# vector representing its rotation so that we can subtract this
+	# from the calculated inertial velocities to get the apparent
+	# rotational velocity in the frame of reference. We get this
+	# from the vector cross product of position vector and a vector
+	# pointing along the original ECEF Z-axis.
+
+	my $frame_rot_vec = vector_unitize(
+	    vector_cross_product( [ -$cosphi, 0, $sinphi ], $pos_vec) );
 
 	# To get the azimuthal angular velocity in radians per second
 	# (_not_ radians of azimuth, which vary with distance from the
@@ -380,7 +378,9 @@ sub azel {
 
 	my $azvec = vector_unitize(
 	    vector_cross_product( $pos_vec, [ 0, 0, 1 ] ) );
-	$velocity[0] = vector_dot_product( $azvec, $vel_vec ) / $range;
+	$velocity[0] = vector_dot_product( $azvec, $vel_vec ) / $range
+	- vector_dot_product( $azvec, $frame_rot_vec ) * AZEL_ROTATION
+	;
 
 	# Similarly, we get the elevational angular velocity in radians
 	# per second by computing a unit vector in the elevational
@@ -391,7 +391,9 @@ sub azel {
 
 	my $elvec = vector_unitize(
 	    vector_cross_product( $azvec, $pos_vec ) );
-	$velocity[1] = vector_dot_product( $elvec, $vel_vec ) / $range;
+	$velocity[1] = vector_dot_product( $elvec, $vel_vec ) / $range
+	- vector_dot_product( $elvec, $frame_rot_vec ) * AZEL_ROTATION
+	;
 
 	# The radial velocity in recession is the easy one, and comes
 	# directly from John A. Magliacane's 'Predict' program. It is
