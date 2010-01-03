@@ -30,6 +30,7 @@ tag gets you all of them.
  PIOVER2 = half the circle ratio
  SECSPERDAY = the number of seconds in a day
  SECS_PER_SIDERIAL_DAY = seconds in a siderial day
+ SPEED_OF_LIGHT = speed of light in kilometers per second
  TWOPI = twice the circle ratio
 
 =head2 The following global variables are exportable:
@@ -89,7 +90,8 @@ BEGIN {
 our @EXPORT;
 our @EXPORT_OK = qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
-	PERL2000 PI PIOVER2 SECSPERDAY SECS_PER_SIDERIAL_DAY TWOPI acos asin
+	PERL2000 PI PIOVER2 SECSPERDAY SECS_PER_SIDERIAL_DAY
+	SPEED_OF_LIGHT TWOPI acos asin
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
 	dynamical_delta embodies epoch2datetime equation_of_time
 	find_first_true intensity_to_magnitude jcent2000 jd2date
@@ -113,6 +115,7 @@ use constant PI => atan2 (0, -1);
 use constant PIOVER2 => PI / 2;
 use constant SECSPERDAY => 86400;
 use constant SECS_PER_SIDERIAL_DAY => 86164.0905;	# Appendix I, page 408.
+use constant SPEED_OF_LIGHT => 299792.458;	# KM/sec, per NIST.
 ### use constant SOLAR_RADIUS => 1392000 / 2;	# Meeus, Appendix I, page 407.
 use constant TWOPI => PI * 2;
 

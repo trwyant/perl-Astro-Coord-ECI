@@ -264,6 +264,11 @@ Station and found the following maximum differences:
 This indicates to me that there is something seriously wrong with my
 transverse velocities, but I have no clue what it is. I<Caveat user.>
 
+If velocities are available I<and> you have provided a non-zero value
+for the C<frequency> attribute, you will get the Doppler shift as the
+seventh element of the returned array. The I<caveats> about velocity in
+recession apply to the Doppler shift as well.
+
 =cut
 
 sub azel {
@@ -403,6 +408,13 @@ sub azel {
 
 	$velocity[2] = vector_dot_product( $pos_vec, $vel_vec ) /
 	    vector_magnitude( $pos_vec );
+
+	# If the frequency is defined, we provide the Doppler shift as
+	# well.
+
+	if ( defined( my $freq = $self->get( 'frequency' ) ) ) {
+	    $velocity[3] = - $freq * $velocity[2] / SPEED_OF_LIGHT;
+	}
 
     }
 
@@ -2205,6 +2217,7 @@ eod
 					# accesses this directly for
 					# speed.
     flattening => \&_set_custom_ellipsoid,
+    frequency => \&_set_value,
     horizon => \&_set_value,
     id => \&_set_id,
     inertial => undef,
@@ -2638,6 +2651,14 @@ set to the flattening factor for the named ellipsoid. If you set this
 attribute, the ellipsoid attribute will become undefined.
 
 The default is appropriate to the default ellipsoid.
+
+=item frequency (numeric, Hertz)
+
+This attribute represents the frequency on which the body transmits, in
+Hertz. If specified, the C<azel()> method will return the Doppler shift
+if velocities are available.
+
+The default is C<undef>.
 
 =item horizon (numeric, radians)
 
