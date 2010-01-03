@@ -1,3 +1,18 @@
+0.026_03	02-Jan-2010	T. R. Wyant
+  Add exportable constants SPEED_OF_LIGHT (in kilometers per second) and
+    SECS_PER_SIDERIAL_DAY to Astro::Coord::ECI::Utils.
+  Add attribute frequency (in Hertz) to Astro::Coord::ECI.
+  Have the Astro::Coord::ECI->azel() method return Doppler shift as the
+    seventh element of the returned array if velocities are available
+    AND the frequency attribute is set.
+  Attempt to correct the transverse velocities calculated by
+    Astro::Coord::ECI->azel() for the rotation of the coordinate system.
+    I am not convinced the corrections (or indeed the transverse
+    velocities themselves) are correct.
+  The first time the Astro::Coord::ECI::TLE rightascension attribute is
+    used in a given script, issue a warning that it is deprecated.
+  Update copyrights to 2010.
+
 0.026_02	14-Dec-2009	T. R. Wyant
   The Astro::Coord::ECI azel() method now returns velocities if
     these are available. The transverse velocities (azimuthal and
@@ -12,8 +27,6 @@
     If neither is available, 'authortest' will not attempt these tests.
   Remove the last vestiges of the $ENV{DEVELOPER_TEST} machinery.
   Rewrote xt/manifest.t to use Test::More.
-
-------------------------------------------------------------------------
 
 0.026_01	28-Nov-2009	T. R. Wyant
   All modules' versions set to 0.026_01. In the future all modules in
