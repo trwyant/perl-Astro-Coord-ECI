@@ -97,7 +97,7 @@ should use the C<ascendingnode> attribute instead.
 Currently, C<rightascension> and C<ascendingnode> are equivalent.
 
 As scheduled, with this release a warning is generated the first time
-the C<rightascension> attribute is used. This warning can be supressed
+the C<rightascension> attribute is used. This warning can be suppressed
 by asserting C<< no warnings qw{ deprecated }; >> at the point the
 warning is issued. But you really should convert the warning code to use
 the C<ascendingnode> attribute.
@@ -6293,7 +6293,7 @@ The $options argument is itself optional. If passed, it is a reference
 to a hash of option names and values. At the moment the only option used
 is
 
- quiet => 1 to supress output to STDERR.
+ quiet => 1 to suppress output to STDERR.
 
 If the C<quiet> option is not specified, or is specified as a false
 value, validation failures will produce output to STDERR.
