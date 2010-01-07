@@ -1124,7 +1124,6 @@ eod
 	    while ($want_visible) {
 		my $time = $info[0]{time} - $step;
 		last if $elev < $effective_horizon;
-		my ($lat, $long, $alt) = $tle->geodetic;
 		my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
 		$litup = 0 if $litup == 1 &&
 		    ($tle->azel ($illum->universal ($time), $want_lit))[1]
@@ -1171,34 +1170,6 @@ Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
 		    ]} $time[2][1]
 eod
 
-#		Compute visibility changes.
-
-		my $last;
-		foreach my $evt (@info) {
-		    $last or next;
-		    $evt->{illumination} == $last->{illumination} and next;
-		    my ($suntim, $rise) =
-			$sta->universal ($last->{time})->
-			next_elevation ($sun, $twilight);
-		    push @time, [find_first_true ($last->{time}, $evt->{time},
-			sub {
-			    my $litup = $_[0] < $suntim ?
-				2 - $rise : 1 + $rise;
-			    $litup = 0 if $litup == 1 &&
-				($tle->azel ($illum->universal ($_[0]),
-					$want_lit))[1] < $tle->dip ();
-			    $lighting[$litup] == $evt->{illumination}
-			    }),
-			    $evt->{illumination}];
-		    warn <<eod if $debug;	## no critic (RequireCarping)
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]} $evt->{illumination}
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]]} $time[2][1]
-eod
-		} continue {
-		    $last = $evt;
-		}
-
-
 #		Compute nearest approach to background bodies
 
 #		Note (fortuitous discovery) the ISS travels 1.175
@@ -1236,13 +1207,13 @@ eod
 		    if $debug;
 		foreach (sort {$a->[0] <=> $b->[0]} @time) {
 		    my @event = @$_;
-		    my $time = shift @event;
+		    my ( $time, $evnt_name ) = @event;
 		    ($suntim, $rise) =
 			$sta->universal ($time)->next_elevation ($sun,
 			    $twilight)
 			if !$suntim || $time >= $suntim;
-		    my ($azm, $elev, $rng) = $sta->azel ($tle->universal
-			($time));
+		    my ($azm, $elev, $rng) = $sta->azel (
+			$tle->universal ($time));
 		    my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
 		    $litup = 0 if $litup == 1 &&
 			($tle->azel ($illum->universal ($time),
@@ -1251,7 +1222,7 @@ eod
 			azimuth => $azm,
 			body => $tle,
 			elevation => $elev,
-			event => @event,
+			event => $evnt_name,
 			illumination => $lighting[$litup],
 			range => $rng,
 			station => $sta,
@@ -1259,17 +1230,57 @@ eod
 		    };
 		}
 
+		# Compute illumination changes
+
+		{
+		    my @illum;
+		    my $prior;
+		    foreach my $evt ( @info ) {
+			$prior or next;
+			$prior->{illumination} == $evt->{illumination}
+			    and next;
+			my ($suntim, $rise) =
+			    $sta->universal ($prior->{time})->
+			    next_elevation ($sun, $twilight);
+			my $time = 
+			    find_first_true ($prior->{time}, $evt->{time},
+			    sub {
+				my $litup = $_[0] < $suntim ?
+				    2 - $rise : 1 + $rise;
+				$litup = 0 if $litup == 1 &&
+				    ($tle->azel ($illum->universal ($_[0]),
+					    $want_lit))[1] < $tle->dip ();
+				$lighting[$litup] == $evt->{illumination}
+				});
+			my ($azm, $elev, $rng) = $sta->azel (
+			    $tle->universal ($time));
+			push @illum, {
+			    azimuth => $azm,
+			    body => $tle,
+			    elevation => $elev,
+			    event => $evt->{illumination},
+			    illumination => $evt->{illumination},
+			    range => $rng,
+			    station => $sta,
+			    time => $time,
+			};
+		    } continue {
+			$prior = $evt;
+		    }
+		    push @info, @illum;
+		}
+
 
 #		Sort the data, and eliminate duplicates.
 
 		my @foo = sort {$a->{time} <=> $b->{time}} @info;
-		$last = undef;
+		my $prior = undef;
 		@info = ();
 		foreach my $evt (@foo) {
-		    push @info, $evt unless defined $last &&
-			$evt->{time} == $last->{time} &&
+		    push @info, $evt unless defined $prior &&
+			$evt->{time} == $prior->{time} &&
 			$evt->{event} != PASS_EVENT_APPULSE;
-		    $last = $evt;
+		    $prior = $evt;
 		}
 	    }
 
