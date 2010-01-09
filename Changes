@@ -1,3 +1,8 @@
+0.027		08-Jan-2010	T. R. Wyant
+  Correct (I hope!) the computation of illumination changes in the
+    Astro::Coord::ECI::TLE pass() method. The original could miss them
+    in the first or last minute of the pass.
+
 0.026_03	02-Jan-2010	T. R. Wyant
   Add exportable constants SPEED_OF_LIGHT (in kilometers per second) and
     SECS_PER_SIDERIAL_DAY to Astro::Coord::ECI::Utils.
