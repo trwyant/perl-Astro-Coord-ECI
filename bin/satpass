@@ -51,7 +51,7 @@ my $xml_parser;
 #	Initialization
 #
 
-our $VERSION = '0.027';
+our $VERSION = '0.028';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s

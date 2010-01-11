@@ -1,3 +1,8 @@
+0.028		11-Jan-2010	T. R. Wyant
+  Fix bug introduced in 0.027, in which the Astro::Coord::ECI::TLE
+    pass() method failed to include the {appulse} data when an appulse
+    was found.
+
 0.027		08-Jan-2010	T. R. Wyant
   Correct (I hope!) the computation of illumination changes in the
     Astro::Coord::ECI::TLE pass() method. The original could miss them
