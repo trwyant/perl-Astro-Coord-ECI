@@ -4,16 +4,10 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::TLE;
+use Time::Local;
 
 BEGIN {
-    eval {
-	require Time::y2038;
-	Time::y2038->import();
-	1;
-    } or do {
-	print "1..0 # skip Time::y2038 required.\n";
-	exit;
-    };
+
     eval {
 	require Test::More;
 	Test::More->import();
@@ -31,9 +25,10 @@ my ($near, $deep) = Astro::Coord::ECI::TLE->parse(<<eod);
 2 11801  46.7916 230.4354 7318036  47.4722  10.4117  2.28537848
 eod
 
-my $time = timegm(0, 0, 0, 1, 3, 2009);
-my $test = 0;
+my $time = 61196688000	# 01-Apr-3909 00:00:00 GMT, epoch 1-Jan-1970.
+    + timegm( 0, 0, 0, 1, 0, 70 );	# Adjust for system epoch.
 
+my $test = 0;
 
 plan(tests => 14);
 
