@@ -3,6 +3,9 @@ use 5.006;	# for 'our'.
 use strict;
 use warnings;
 
+use lib qw{ inc };
+
+use Astro::Coord::ECI::Recommend;
 use Config;
 use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
@@ -21,6 +24,8 @@ my @clean_files;
 my @prereq = (
     'Params::Util'	=> 0.25,
 );
+
+Astro::Coord::ECI::Recommend->recommend();
 
 print <<eod;
 
@@ -144,10 +149,6 @@ $mmv >= 6.31 and $attr{LICENSE} = 'perl';
 $mmv >= 6.4501 and $attr{META_MERGE} = {
     build_requires => {
 	'Test::More' => 0.40,
-    },
-    recommends => {
-	'Date::Manip' => 1.14,
-	'Time::y2038' => 20081111,
     },
     resources => {
 	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',

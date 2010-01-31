@@ -6,6 +6,7 @@ use warnings;
 use lib qw{ inc };
 
 use Astro::Coord::ECI::Build;
+use Astro::Coord::ECI::Recommend;
 use Module::Build;
 use Config;
 use FileHandle;
@@ -25,11 +26,6 @@ my %attr = (
     add_to_cleanup => [ qw{ xt/generated } ],
 );
 
-$mbv >= 0.08 and $attr{recommends} = {
-    'Date::Manip'	=> 1.14,
-    'Time::y2038'	=> 20081111,
-};
-
 $mbv >= 0.28 and $attr{meta_merge} = {
     no_index => {
 	directory => [qw{inc t}],
@@ -41,6 +37,8 @@ $mbv >= 0.28 and $attr{meta_merge} = {
 
 $mbv >= 0.34
     and $attr{auto_configure_requires} = 0;	# Don't require Module::Build
+
+Astro::Coord::ECI::Recommend->recommend();
 
 my $bldr = Astro::Coord::ECI::Build->new (%attr);
 
