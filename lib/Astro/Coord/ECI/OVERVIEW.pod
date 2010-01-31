@@ -1,6 +1,6 @@
 =head1 NAME
 
-Astro::Coord::ECI Overview Documentation
+Astro::Coord::ECI::OVERVIEW - Overview of Astro::Coord::ECI and friends
 
 =head1 MOTIVATION
 
@@ -9,7 +9,7 @@ visibility. This is not quite rocket science, but like many endeavors
 the devil is in the details, which in part accounts for the complexity
 of the package.
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Any system to forecast the visibility of an object in the sky needs to
 be told a few things: where you are, where the object in the sky is, and
@@ -123,10 +123,10 @@ All distances, both input and output, are in kilometers.
 Forecasting satellite visibility is an activity on the border between
 aeronautics and astronomy. It needs technical words, and borrows from
 both these disciplines, tending to prefer the aeronautical term when
-there is conflict. There is a fairly exhaustive L<TERMINOLOGY AND
-CONVENTIONS|Astro::Coord::ECI/TERMINOLOGY AND CONVENTIONS> section in
-the documentation for L<Astro::Coord::ECI|Astro::Coord::ECI>, but a few
-key terms will be covered here:
+there is conflict. There is a fairly exhaustive
+L<TERMINOLOGY AND CONVENTIONS|Astro::Coord::ECI/TERMINOLOGY AND CONVENTIONS>
+section in the documentation for L<Astro::Coord::ECI|Astro::Coord::ECI>,
+but a few key terms will be covered here:
 
 =head2 Body
 
@@ -148,19 +148,18 @@ time to which time-dependent calculations are referred. For example, the
 position of a star or planet may be given in epoch J2000, meaning the
 coordinates for Julian year 2000.
 
-But in orbital calculations it refers to the 'as-of' date of the orbital
-data, and that is the meaning used most often in this documentation.
-
-The epoch is important for L<TLE|/TLE> data because this data has a limited
-'shelf life', and the farther from the epoch you are the worse the
-predictions are. In extreme cases the model itself fails because it
-cannot handle the type of orbit predicted.
+But in orbital calculations it can also be used as a proxy for the
+'as-of' date of the orbital data. This is important for L<TLE|/TLE> data
+because this data has a limited 'shelf life', and the farther from the
+epoch you are the worse the predictions are. In extreme cases the model
+itself fails because it cannot handle the type of orbit predicted.
 
 Typically the 'shelf life' of a L<TLE|/TLE> is a couple weeks for casual
 use, though data for satellites in near-Earth orbits (defined as a
 period of less than two and a half hours) are usually updated every
 couple days.  In extreme cases (e.g. the first arc of a Space Shuttle
-flight) the model may fail within a couple days of the epoch.
+flight) the model may fail within a couple days of the epoch. See the
+L<TLE|/TLE> documentation for more information.
 
 =head2 OID
 
@@ -197,16 +196,57 @@ A common variant of this format is sometimes called 'NASA TLE'. The
 format is the same, but the two lines of model data are preceded by a
 line containing the common name of the L<body|/Body> being modeled.
 
-The TLE data has a 'shelf-life', measured from its L<epoch|/Epoch>. For
-casual use week-old data are usually fine, but in extreme cases (e.g. a
-Space Shuttle launch) the orbit models can fail completely within a
-couple days of the L<epoch|/Epoch>.
+In practice, TLE data have an effective date, and a shelf life measured
+from that effective date. Unfortunately, the TLE data do not contain
+either of these.
+
+NASA's Human Space Flight data, available from
+L<http://spaceflight.nasa.gov/realdata/elements/>, specify an effective
+date (see the C<Vector Time> information on that web page), but this is
+not part of the TLE. The L<Astro::SpaceTrack|Astro::SpaceTrack> package
+is capable of returning this data by jamming it onto the first line of a
+NASA TLE, and this package's
+L<< Astro::Coord::ECI::TLE->parse()|Astro::Coord::ECI::TLE/parse >> is
+capable of populating the object from this information. If an effective
+date is needed but not available, the L<epoch|/Epoch> is used.
+
+For casual use, the 'shelf life' of a set of TLE data is a week or so.
+But this can vary based on circumstances. For example, if the data
+represent a coasting arc for a shuttle launch, the shelf life may be a
+matter of minutes. For something like the International Space Station,
+the shelf life is cut short when the station is boosted into a higher
+orbit. One would hope that the Human Space Flight data would take
+account of this, but in fact it appears not always to do so.
 
 Given a chunk of TLE data, the
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>
 L<parse()|Astro::Coord::ECI::TLE/parse> method can be used to turn it
 into L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> or
 L<Astro::Coord::ECI::TLE::Iridium|Astro::Coord::ECI::TLE::Iridium> objects.
+
+Most sources of data provide only a single current TLE for a given
+object. If you are processing historical data from Space Track, or if
+you are processing NASA Human Space Flight data, you may have multiple
+TLEs for a given object. In this case, you should use the
+L<< Astro::Coord::ECI::TLE::Set->aggregate()|Astro::Coord::ECI::TLE::Set/aggregate >>
+method to aggregate all the data for a given satellite into a single
+L<Astro::Coord::ECI::TLE::Set|Astro::Coord::ECI::TLE::Set> object. This
+object behaves pretty much like an
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> object, but when doing
+things like pass calculations, it selects the appropriate TLE data for a
+given time from its contents. The C<aggregate()> method does B<not> need
+for all its input to represent the same satellite; it returns an array
+of objects, with the input appropriately assigned. If there is only a
+single L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> object for a
+given OID, this object is B<not> wrapped in a set, to avoid the overhead
+involved.
+
+Even with all this, if you anticipate that you may use data far from its
+effective date, or that you may have bad data, you should call the
+L<< Astro::Coord::ECI::TLE->validate()|Astro::Coord::ECI::TLE/validate >>
+method before doing pass calculations. Among other things, this gives
+the L<Astro::Coord::ECI::TLE::Set|Astro::Coord::ECI::TLE::Set> object a
+chance to groom its own data.
 
 This package does not deal with the acquisition of TLE data. See
 L</WHERE TO GET TLE DATA>, below, for that.
@@ -220,12 +260,12 @@ modules, and briefly states their function.
 =head2 Astro::Coord::ECI
 
 The L<Astro::Coord::ECI|Astro::Coord::ECI> module is the base for the
-inheritance tree. It provides position and time transformations, and
-doubles as the object used to represent a location fixed to the surface
-of the Earth.
+inheritance tree. It provides position and time transformations to its
+subclasses, and doubles as the object used to represent a location fixed
+to the surface of the Earth.
 
 For the latter use you probably would construct the object by calling
-L<Astro::Coord::ECI-E<gt>geodetic()|Astro::Coord::ECI/geodetic> method,
+L<< Astro::Coord::ECI->geodetic()|Astro::Coord::ECI/geodetic >> method,
 passing it the latitude and longitude B<in radians>, and the height
 above sea level B<in meters>. The
 L<Astro::Coord::ECI::Utils|Astro::Coord::ECI::Utils> module exports a
@@ -238,11 +278,11 @@ Other prime meridians are not supported.
 
 The L<Astro::Coord::ECI::Moon|Astro::Coord::ECI::Moon> module is a
 subclass of L<Astro::Coord::ECI|Astro::Coord::ECI> which represents the
-Moon. All you have to do to use it is to instantiate it (say, with C<my
-$moon = Astro::Coord::ECI::Moon-E<gt>new()>), and then set the time with
-something like C<$moon-E<gt>universal($time)>, where the $time is a Perl
-time, such as is returned by the time() built-in. Then you can retrieve
-the position using one of the methods inherited from
+Moon. All you have to do to use it is to instantiate it (say, with
+C<< my $moon = Astro::Coord::ECI::Moon->new() >>), and then set the time
+with something like C<< $moon->universal($time) >>, where the $time is a
+Perl time, such as is returned by the time() built-in. Then you can
+retrieve the position using one of the methods inherited from
 L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 You can pass an L<Astro::Coord::ECI::Moon|Astro::Coord::ECI::Moon>
@@ -267,7 +307,9 @@ position can be retrieved using one of the methods inherited from
 L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 You can pass an L<Astro::Coord::ECI::Star|Astro::Coord::ECI::Star>
-object to the and it will report on close approaches to the star. How
+object to the
+L<< Astro::Coord::ECI::TLE->pass()|Astro::Coord::ECI::TLE/pass >>
+method, and it will report on close approaches to the star. How
 close depends on the setting of the
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> object's 'appulse'
 attribute. This defaults to 0, which means no appulse calculations are
@@ -277,11 +319,11 @@ done.
 
 The L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> module is a
 subclass of L<Astro::Coord::ECI|Astro::Coord::ECI> which represents the
-Sun. All you have to do to use it is to instantiate it (say, with C<my
-$moon = Astro::Coord::ECI::Sun-E<gt>new()>), and then set the time with
-something like C<$moon-E<gt>universal($time)>, where the $time is a Perl
-time, such as is returned by the time() built-in. Then you can retrieve
-the position using one of the methods inherited from
+Sun. All you have to do to use it is to instantiate it (say, with
+C<< my $sun = Astro::Coord::ECI::Sun->new() >>), and then set the time
+with something like C<< $sun->universal($time) >>, where the $time is a
+Perl time, such as is returned by the time() built-in. Then you can
+retrieve the position using one of the methods inherited from
 L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 This object is implicitly used by the
@@ -304,15 +346,15 @@ The L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> module is a
 subclass of L<Astro::Coord::ECI|Astro::Coord::ECI> which represents a
 satellite or other body in orbit around the Earth. This representation
 is in terms of one of a number of related computational models, defined
-in I<Space Track Report Number 3> and I<Revisiting Spacetrack Report
-#3>, both of which are available at
+in I<Space Track Report Number 3> and
+I<Revisiting Spacetrack Report #3>, both of which are available at
 L<http://celestrak.com/NORAD/documentation/>.
 
 It is possible to construct an
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> object by setting the
 requisite attributes directly, but it is probably more convenient to do
 so using the
-L<Astro::Coord::ECI::TLE-E<gt>parse()|Astro::Coord::ECI::TLE/parse>
+L<< Astro::Coord::ECI::TLE->parse()|Astro::Coord::ECI::TLE/parse >>
 method. This method accepts L<TLE|/TLE> data, and returns an array of
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> objects parsed from the
 data.
@@ -321,9 +363,9 @@ The position of a satellite is computed by setting the time represented
 by the object. This is typically done using the
 L<universal()|Astro::Coord::ECI/universal> method (inherited from
 L<Astro::Coord::ECI|Astro::Coord::ECI>), by passing it a Perl time (i.e.
-the kind returned by the time() built-in. Once the position is computed,
-it can be retrieved by using any of the positional methods defined on
-L<Astro::Coord::ECI|Astro::Coord::ECI>.
+the kind returned by the time() built-in). Once the position is
+computed, it can be retrieved by using any of the positional methods
+defined on L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 This module also offers the L<pass()|Astro::Coord::ECI::TLE/pass>
 method, which calculates visible passes over an observer's location
@@ -341,7 +383,9 @@ times before the L<epoch|/Epoch> of the data. It defaults to true
 because that represents the general case. But you may wish to set it
 false (e.g. by something like C<$tle-E<gt>set(backdate =E<gt> 0);>) if
 you are using the predicted data downloaded from the L<NASA Human Space
-Flight> web site.
+Flight> web site. You may also wish to call the
+L<validate()|Astro::Coord::ECI::TLE/validate> method before making pass
+calculations if you suspect that your TLE data may not all be valid.
 
 =head2 Astro::Coord::ECI::TLE::Iridium
 
@@ -378,9 +422,9 @@ principle that one of its contained objects is the current object, which
 is used to satisfy data requests. So the most important override is of
 the L<universal()|Astro::Coord::ECI/universal> method, which selects as
 the current object the one best representing the given time. In this
-context, 'best' means the object having the most recent L<epoch|/Epoch>
-before the given time. If there is no such object, the object having the
-earliest L<epoch|/Epoch> is used.
+context, 'best' means the object having the most recent effective date
+(or L<epoch|/Epoch>) before the given time. If there is no such object,
+the object having the earliest L<epoch|/Epoch> is used.
 
 There are a couple other small magics involved in
 L<Astro::Coord::ECI::TLE::Set|Astro::Coord::ECI::TLE::Set>:
