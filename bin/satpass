@@ -3674,7 +3674,7 @@ L<Date::Manip|Date::Manip> requires Perl 5.010 as of its version 6.0.
 Because of this, L<Date::Manip|Date::Manip> is no longer required,
 though it will be used if it is present. A simple-minded ISO-8601 date
 parser will be used if L<Date::Manip|Date::Manip> is not available. See
-L</SPECIFYING DATES> for the details.
+L</SPECIFYING TIMES> for the details.
 
 The C<validate> command was added to satpass 0.024 try to deal with
 uncomputable (at least by me) predicted Space Shuttle TLEs sometimes
