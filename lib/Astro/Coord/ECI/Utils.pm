@@ -73,11 +73,13 @@ our $VERSION = '0.028';
 our @ISA = qw{Exporter};
 
 use Carp;
+use Config;
 use Data::Dumper;
 use POSIX qw{floor strftime};
 
 BEGIN {
     eval {
+	$Config{use64bitint} and return 0;
 	require Time::y2038;
 	Time::y2038->import();
 	1;
