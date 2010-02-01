@@ -125,14 +125,6 @@ use Carp;
 use Params::Util 0.25 qw{_INSTANCE};
 use POSIX qw{floor strftime};	# For debugging
 
-BEGIN {
-    eval {
-	require Time::y2038;
-	Time::y2038->import();
-	1;
-    };
-}
-
 use constant ATTRIBUTE_KEY => '_sub_TLE_Iridium';
 use constant DEFAULT_MAX_MIRROR_ANGLE => deg2rad (10);
 use constant MMAAREA => 1.88 * .86;	# Area of MMA, in square meters.

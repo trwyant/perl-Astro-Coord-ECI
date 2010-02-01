@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Config;
 
 sub recommend {
     my @recommend;
@@ -12,9 +13,13 @@ sub recommend {
 	defined( my $recommendation = $code->() ) or next;
 	push @recommend, $recommendation;
     }
-    @recommend and warn <<'EOD', @recommend;
+    @recommend and warn <<'EOD', @recommend,
 
 The following optional modules were not found:
+EOD
+    <<'EOD';
+It is not necessary to install these now. If you decide to install them
+later, this software will make use of them when it finds them.
 EOD
     return;
 }
@@ -41,10 +46,13 @@ EOD
 
     my %misbehaving_os = map { $_ => 1 } qw{ MSWin32 cygwin };
 
+    # NOTE WELL
+    #
+    # The description here must match the actual time module loading and
+    # exporting logic in Astro::Coord::ECI::Utils.
+
     sub _recommend_time_y2038 {
 	eval { require Time::y2038; 1 } and return;
-	require Config;
-	$Config::Config{use64bitint} eq 'define' and return;
 	my $recommendation = <<'EOD';
     * Time::y2038 is not installed.
       This module is not required, but if installed allows you to do
@@ -55,6 +63,13 @@ EOD
       Unfortunately, Time::y2038 has been known to misbehave when
       running under $^O, so you may be better off just accepting the
       restricted time range.
+EOD
+	( $Config{use64bitint} || $Config{use64bitall} )
+	    and $recommendation .= <<'EOD';
+      Since your Perl appears to support 64-bit integers, you may well
+      not need Time::y2038 to do computations for times outside the
+      so-called 'usual range.' It will be used, though, if it is
+      available.
 EOD
 	return $recommendation;
     }

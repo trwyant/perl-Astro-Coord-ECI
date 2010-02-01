@@ -213,26 +213,15 @@ our $VERSION = '0.028';
 
 use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{deg2rad dynamical_delta embodies
+use Astro::Coord::ECI::Utils qw{ deg2rad dynamical_delta embodies
     find_first_true load_module max mod2pi PI PIOVER2 rad2deg SECSPERDAY
-    TWOPI thetag};
+    TWOPI thetag :time };
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use IO::File;
 use Params::Util 0.25 qw{_CLASSISA _INSTANCE};
 use POSIX qw{floor fmod strftime};
-
-BEGIN {
-    eval {
-	require Time::y2038;
-	Time::y2038->import();
-	1;
-    } or do {
-	require Time::Local;
-	Time::Local->import();
-    };
-}
 
 {	# Local symbol block.
     my @const = qw{

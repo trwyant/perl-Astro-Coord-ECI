@@ -3,7 +3,7 @@ package main;
 use strict;
 use warnings;
 
-my ( $mock_time, $time_y2038 );
+my ( $mock_time );
 
 BEGIN {
     eval {
@@ -18,15 +18,6 @@ BEGIN {
     };
 
     eval {
-	require Time::y2038;
-	Time::y2038->import();
-	$time_y2038 = 1;
-    } or do {
-	require Time::Local;
-	Time::Local->import();
-    };
-
-    eval {
 	require Test::MockTime;
 	Test::MockTime->import( qw{ set_fixed_time restore_time } );
 
@@ -34,9 +25,9 @@ BEGIN {
     };
 }
 
-use Astro::Coord::ECI::Utils ();
+use Astro::Coord::ECI::Utils qw{ :time };
 
-if ( $mock_time && $time_y2038 ) {
+if ( $mock_time && Time::y2038->can( 'VERSION' ) ) {
 
     # This is yukky, but we have to do it because if
     # Astro::Coord::ECI::Utils was able to import Time::y2038, the

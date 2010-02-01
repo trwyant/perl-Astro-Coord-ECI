@@ -5,20 +5,9 @@ use warnings;
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Sun;
-use Astro::Coord::ECI::Utils qw{deg2rad};
+use Astro::Coord::ECI::Utils qw{ deg2rad :time };
 use POSIX qw{strftime floor};
 use Test;
-
-BEGIN {
-    eval {
-	require Time::y2038;
-	Time::y2038->import();
-	1;
-    } or do {
-	require Time::Local;
-	Time::Local->import();
-    };
-}
 
 BEGIN {plan tests => 67}
 

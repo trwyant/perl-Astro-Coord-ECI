@@ -15,9 +15,31 @@ utility subroutines used by B<Astro::Coord::ECI> and its descendents.
 What ended up here was anything that was essentially a subroutine, not
 a method.
 
+Because figuring out how to convert to and from Perl time bids fair to
+become complicated, this module is also responsible for figuring out how
+that is done, and exporting whatever is needful to export. See C<:time>
+below for the gory details.
+
 This package exports nothing by default. But all the constants,
-variables, and subroutines documented below are exportable, and the :all
-tag gets you all of them.
+variables, and subroutines documented below are exportable, and the
+following export tags may be used:
+
+=over
+
+=item :all
+
+This imports everything exportable into your name space.
+
+=item :time
+
+This imports the time routines into your name space. If
+L<Time::y2038|Time::y2038> is available, it will be loaded, and both
+this tag and C<:all> will import C<gmtime>, C<localtime>, C<timegm>, and
+C<timelocal> into your name space. Otherwise, C<Time::Local|Time::Local>
+will be loaded, and both this tag and C<:all> will import C<timegm> and
+C<timelocal> into your name space.
+
+=back
 
 =head2 The following constants are exportable:
 
@@ -73,24 +95,34 @@ our $VERSION = '0.028';
 our @ISA = qw{Exporter};
 
 use Carp;
-use Config;
+## use Config;
 use Data::Dumper;
 use POSIX qw{floor strftime};
 
+my @time_routines;
+
 BEGIN {
+
+    # NOTE WELL
+    #
+    # The logic here should be consistent with the optional-module text
+    # emitted by inc/Astro/Coord/ECI/Recommend.pm.
+    #
     eval {
-	$Config{use64bitint} and return 0;
+##	$Config{use64bitint} and return 0;
 	require Time::y2038;
 	Time::y2038->import();
+	@time_routines = ( qw{ gmtime localtime timegm timelocal } );
 	1;
     } or do {
 	require Time::Local;
 	Time::Local->import();
+	@time_routines = ( qw{ timegm timelocal } );
     };
 }
 
 our @EXPORT;
-our @EXPORT_OK = qw{
+our @EXPORT_OK = ( qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
 	PERL2000 PI PIOVER2 SECSPERDAY SECS_PER_SIDERIAL_DAY
 	SPEED_OF_LIGHT TWOPI acos asin
@@ -100,11 +132,13 @@ our @EXPORT_OK = qw{
 	jd2datetime jday2000 julianday load_module looks_like_number max
 	min mod2pi nutation_in_longitude nutation_in_obliquity obliquity
 	omega rad2deg tan theta0 thetag vector_cross_product
-	vector_dot_product vector_magnitude vector_unitize };
+	vector_dot_product vector_magnitude vector_unitize },
+	@time_routines );
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
-    );
+    time => \@time_routines,
+);
 
 use constant AU => 149597870;		# 1 astronomical unit, per
 					# Meeus, Appendix I pg 407.
@@ -254,7 +288,7 @@ argument list as needed.
 
 The functionality is the same as B<Time::Local::timegm>, but this
 function lacks timegm's limited date range. These days, though,
-Time::y2038::timegm is probably preferred over this subroutine.
+Time::y2038::timegm may be preferred over this subroutine.
 
 =cut
 

@@ -27,17 +27,6 @@ use Term::ReadLine;
 use Text::Abbrev;
 use Text::ParseWords;
 
-BEGIN {
-    eval {
-	require Time::y2038;
-	Time::y2038->import();
-	1;
-    } or do {
-	require Time::Local;
-	Time::Local->import();
-    };
-}
-
 my (
 	$clipboard_unavailable,
 	$io_string_unavailable,

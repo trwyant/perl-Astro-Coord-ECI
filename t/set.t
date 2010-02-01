@@ -8,18 +8,8 @@ use lib qw{ inc };
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::SetDelegate;
+use Astro::Coord::ECI::Utils qw{ :time };
 use Test;
-
-BEGIN {
-    eval {
-	require Time::y2038;
-	Time::y2038->import();
-	1;
-    } or do {
-	require Time::Local;
-	Time::Local->import();
-    };
-}
 
 plan tests => 53, todo => [];
 

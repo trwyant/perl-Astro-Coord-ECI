@@ -14,11 +14,10 @@ use warnings;
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
-use Astro::Coord::ECI::Utils qw{deg2rad rad2deg};
+use Astro::Coord::ECI::Utils qw{ deg2rad rad2deg :time };
 
 use Date::Manip;
 use POSIX qw{strftime};
-use Time::y2038;
 
 @ARGV > 3 or die <<eod;
 

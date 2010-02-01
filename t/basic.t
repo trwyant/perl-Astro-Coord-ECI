@@ -7,17 +7,6 @@ use Astro::Coord::ECI::Utils qw{:all};
 use POSIX qw{strftime floor};
 use Test;
 
-BEGIN {
-    eval {
-	require Time::y2038;
-	Time::y2038->import();
-	1;
-    } or do {
-	require Time::Local;
-	Time::Local->import();
-    };
-}
-
 BEGIN {plan tests => 57}
 
 ##use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407

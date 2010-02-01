@@ -108,6 +108,7 @@ geodesy
 gmt
 gmtime's
 Goran
+gory
 Green's
 Gregorian
 harvard

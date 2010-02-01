@@ -10,11 +10,9 @@ use warnings;
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
-use Astro::Coord::ECI::Utils qw{deg2rad rad2deg};
+use Astro::Coord::ECI::Utils qw{ deg2rad rad2deg :time };
 
 use POSIX qw{strftime};
-
-use Time::y2038;
 
 my $station = Astro::Coord::ECI->new(
     name => 'Parliament House, Canberra ACT, Australia',
