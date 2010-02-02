@@ -1,3 +1,22 @@
+0.028_01	02-Feb-2010	T. R. Wyant
+  Date::Manip and Time::y2038 are no longer 'recommended' but 'optional'.
+    This means not telling the tool chain about them, but doing custom
+    checks, and custom, gentler messages about why you might (or might
+    not!) want these modules.
+  Centralize the decision about what time routines to use in
+    Astro::Coord::ECI::Utils, and have it export to the other modules,
+    the tests, the 'satpass' script, and the example scripts.
+  Rewrite t/parse_date.t so that it no longer needs Time::y2038.
+    Instead, it uses precomputed times, which it offsets for the target
+    system's epoch when it runs.
+  The above was done in an attempt to clarify the role of the optional
+    modules, and cases where they might not be desirable. Thanks to
+    Christopher Sylvain for identifying the problems and working with me
+    on their solution.
+  Rewrite the time portions Astro::Coord::ECI::OVERVIEW to better
+    reflect the current state of the time handling. Plus, retitle it so
+    that hopefully it will actually appear in the distribution.
+
 0.028		11-Jan-2010	T. R. Wyant
   Fix bug introduced in 0.027, in which the Astro::Coord::ECI::TLE
     pass() method failed to include the {appulse} data when an appulse
