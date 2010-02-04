@@ -1,3 +1,7 @@
+0.029		04-Feb-2010	T. R. Wyant
+  No changes since 0.028_01, but with CPAN testers being green bird, I
+    thought a production release in order.
+
 0.028_01	02-Feb-2010	T. R. Wyant
   Date::Manip and Time::y2038 are no longer 'recommended' but 'optional'.
     This means not telling the tool chain about them, but doing custom
