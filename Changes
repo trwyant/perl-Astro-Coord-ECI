@@ -1,3 +1,7 @@
+0.029_01	07-Feb-2010	T. R. Wyant
+  Trap possible exception from gmtime when generating the sgp4r
+    'mean eccentricity < 0 or >= 1' error in Astro::Coord::ECI::TLE.
+
 0.029		04-Feb-2010	T. R. Wyant
   No changes since 0.028_01, but with CPAN testers being green bird, I
     thought a production release in order.
