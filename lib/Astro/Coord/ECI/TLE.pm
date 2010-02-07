@@ -5827,7 +5827,7 @@ sub sgp4r {
 #c   fix tolerance for error recognition
     if ($eccm >=  1  ||  $eccm < -0.001  ||  $am <  0.95) {
 #c         write(6,*) '# Error 1, Eccm = ',  Eccm, ' AM = ', AM
-        $self->{model_error}= &SGP4R_ERROR_1;
+        $self->{model_error} = &SGP4R_ERROR_1;
 	my $tfmt = '%d-%b-%Y %H:%M:%S';
 	my @data = "Error - OID $oid " . &SGP4R_ERROR_MEAN_ECCEN;
 	push @data, "eccentricity = $eccm";
@@ -5835,7 +5835,11 @@ sub sgp4r {
 	    if (defined ( my $value = $self->can($thing) ?
 		    $self->$thing() :
 		    $self->get($thing))) {
-		push @data, strftime("$thing = $tfmt", gmtime $value);
+		local $@ = undef;
+		my $diag = eval {
+		    strftime( "$thing = $tfmt", gmtime $value ) };
+		defined $diag or $diag = "$thing = $value";
+		push @data, $diag;
 	    } else {
 		push @data, "$thing is undefined";
 	    }
