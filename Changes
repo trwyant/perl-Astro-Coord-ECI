@@ -1,3 +1,8 @@
+0.029_02	09-Feb-2010	T. R. Wyant
+  Use explicit tolerances for fractional results in the Julian date
+    conversion tests in t/basic.t. This is for Strawberry Perl under
+    ReactOS 0.3.11, which seem to have a case of the .999999s.
+
 0.029_01	07-Feb-2010	T. R. Wyant
   Trap possible exception from gmtime when generating the sgp4r
     'mean eccentricity < 0 or >= 1' error in Astro::Coord::ECI::TLE.
