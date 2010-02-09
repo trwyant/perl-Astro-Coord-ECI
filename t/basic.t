@@ -269,7 +269,7 @@ foreach (
 	4.81,
 	9,
 	57,		# 1957
-    ], [jd => 2436116.31]],
+    ], [jd => [ 2436116.31, .005] ]],
     [date2jd => [
 	12,
 	27,
@@ -277,7 +277,7 @@ foreach (
 	-1567,		# 333
     ], [jd => 1842713.0]],
     [jd2date => [2436116.31], [
-	day => 4.81,
+	day => [ 4.81, .005],
 	mon => 9,
 	yr => 57,	# 1957
     ]],
@@ -287,7 +287,7 @@ foreach (
 	yr => -1567,	# 333
     ]],
     [jd2date => [1507900.13], [
-	day => 28.63,
+	day => [ 28.63, .005],
 	mon => 4,
 	yr => -2484,	# -584
     ]],
@@ -349,16 +349,21 @@ eod
     foreach my $got (@got) {
 	my $name = shift @want;
 	defined (my $want = shift @want) or next;
-	my $tolerance = $want;
-	$tolerance =~ s/\.$//;
-	if ($want =~ m/\./) {
-	    $tolerance =~ s/.*\././;
-	    $tolerance =~ s/\d/0/g;
-	    $tolerance =~ s/0$/1/;
+	my $tolerance;
+	if ( ref $want eq 'ARRAY' ) {
+	    ( $want, $tolerance ) = @{ $want };
 	} else {
-	    $tolerance = 1;
+	    $tolerance = $want;
+	    $tolerance =~ s/\.$//;
+	    if ($want =~ m/\./) {
+		$tolerance =~ s/.*\././;
+		$tolerance =~ s/\d/0/g;
+		$tolerance =~ s/0$/1/;
+	    } else {
+		$tolerance = 1;
+	    }
+	    $tolerance /= 2;
 	}
-	$tolerance /= 2;
 	$test++;
 	print <<eod;
 #
