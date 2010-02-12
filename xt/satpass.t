@@ -7,11 +7,11 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI::Satpass;
 
-eval {require Astro::SpaceTrack};
-if ($@) {
+eval { require Astro::SpaceTrack; 1 }
+    or do {
     print "1..0 # skip Astro::SpaceTrack not available\n";
     exit;
-}
+};
 
 Astro::Coord::ECI::Satpass::satpass (*DATA);
 
