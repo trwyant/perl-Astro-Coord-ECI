@@ -82,54 +82,14 @@ if ($opt{n}) {
 	}
     }
 
-my $stringmod = $] >= 5.008 ? '' : 'IO::String';
-
 if (@exe_files) {
 #   push @prereq, 'Date::Manip' => 1.14;
-    foreach (['Astro::SIMBAD::Client' => 0, <<eod],
-Optional module Astro::SIMBAD::Client is needed if you wish to retrieve
-star positions directly from the SIMBAD catalog via the 'sky lookup'
-command.
-eod
-	    ['Astro::SpaceTrack' => 0.016, <<eod],
-Optional module Astro::SpaceTrack version 0.016 or higher is needed if
-you wish to retrieve orbital elements directly from Space Track or
-Celestrak into the executable.
-eod
-	    ['Geo::WebService::Elevation::USGS' => 0, <<eod],
-Optional module Geo::WebService::Elevation::USGS is needed if you
-wish to retrieve the elevations of ground positions from the USGS
-web site.
-eod
-	    [$stringmod => 0, <<eod],
-Optional module $stringmod is needed if you wish to pass commands to
-the executable on its command line or to write macros under a version
-of Perl earlier than 5.8.
-eod
-	    ['SOAP::Lite' => 0, <<eod],
-Optional module SOAP::Lite is needed if you wish to use Geocoder.us to
-translate street addresses directly to latitudes and longitudes.
-eod
-	    ['XML::Parser' => 0, <<eod],
-Optional module XML::Parser is needed if you wish to use
-gisdata.usgs.gov to find the height above sea level at a given latitude
-and longitude.
-eod
-	    ) {
-	my ($module, $version, $info) = @$_;
-	next unless $module;
-	eval "require $module";
-	($@ || !$version) or eval {$module->VERSION($version)};
-	$@ or next;
-	print "\n", $info, "\n";
-	}
     if ($^O eq 'MSWin32') {
 	@exe_files = map {"bin/$_"} @exe_files;
 	foreach (@exe_files) {`pl2bat $_`}
 	@clean_files = @exe_files =
 	    grep {-e $_} map {"$_.bat"} @exe_files;
-	}
-      elsif ($^O eq 'VMS') {
+    } elsif ($^O eq 'VMS') {
 	foreach my $fni (map {"[.bin]$_"} @exe_files) {
 	    my $fno = "$fni.com";
 	    my $fhi = FileHandle->new ("<$fni") or die <<eod;
@@ -144,11 +104,10 @@ eod
 	    while (<$fhi>) {print $fho $_}
 	    }
 	@clean_files = @exe_files = map {"[.bin]$_.com"} @exe_files;
-	}
-      else {
+    } else {
 	@exe_files = map {"bin/$_"} @exe_files;
-	}
     }
+}
 
 ##my $vers = $] >= 5.008 ? '-5.8' : '';
 my $vers = '';

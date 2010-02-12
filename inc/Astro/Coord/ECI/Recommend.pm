@@ -8,23 +8,56 @@ use Config;
 
 sub recommend {
     my @recommend;
-    foreach my $thing ( qw{ date_manip time_y2038 } ) {
-	my $code = __PACKAGE__->can( "_recommend_$thing" ) or next;
+    my $pkg_hash = __PACKAGE__ . '::';
+    no strict qw{ refs };
+    foreach my $subroutine (
+	sort keys %$pkg_hash ) {
+	$subroutine =~ m/ \A _recommend_ \w+ \z /smx or next;
+	my $code = __PACKAGE__->can( $subroutine ) or next;
 	defined( my $recommendation = $code->() ) or next;
-	push @recommend, $recommendation;
+	push @recommend, "\n" . $recommendation;
     }
     @recommend and warn <<'EOD', @recommend,
 
 The following optional modules were not found:
 EOD
     <<'EOD';
+
 It is not necessary to install these now. If you decide to install them
 later, this software will make use of them when it finds them.
 EOD
     return;
 }
 
+sub _recommend_astro_simbad_client {
+    local $@ = undef;
+    eval { require Astro::SIMBAD::Client; 1 } and return;
+    return <<'EOD';
+    * Astro::SIMBAD::Client is not installed.
+      This module is required for the 'satpass' script's 'sky lookup'
+      command, but is otherwise unused by this package. If you do not
+      intend to use this functionality, Astro::SIMBAD::Client is not
+      needed.
+EOD
+}
+
+sub _recommend_astro_spacetrack {
+    local $@ = undef;
+    eval {
+	require Astro::SpaceTrack;
+	Astro::SpaceTrack->VERSION( 0.016 );
+	1;
+    } and return;
+    return <<'EOD';
+    * Astro::SpaceTrack version 0.016 or higher is not installed.
+      This module is required for the 'satpass' script's 'st' command,
+      but is otherwise unused by this package. If you do not intend to
+      use this functionality, Astro::SpaceTrack is not needed.
+EOD
+}
+
 sub _recommend_date_manip {
+    local $@ = undef;
     eval { require Date::Manip; 1 } and return;
     my $recommendation = <<'EOD';
     * Date::Manip is not installed.
@@ -40,6 +73,43 @@ EOD
       Perl 5.10.
 EOD
     return $recommendation;
+}
+
+sub _recommend_geo_webservice_elevation_usgs {
+    local $@ = undef;
+    eval { require Geo::WebService::Elevation::USGS; 1 } and return;
+    return <<'EOD';
+    * Geo::WebService::Elevation::USGS is not installed.
+      This module is required for the 'satpass' script's 'height'
+      command, but is otherwise unused by this package. If you do not
+      intend to use this functionality, Geo::WebService::Elevation::USGS
+      is not needed.
+EOD
+}
+
+sub _recommend_io_string {
+    local $@ = undef;
+    $] >= 5.008 and $Config{useperlio} and return;
+    eval { require IO::String; 1 } and return;
+    return <<'EOD';
+    * IO::String is not installed.
+      You appear to have a version of Perl earlier than 5.8, or one
+      which is not configured to use perlio. Under this version of Perl
+      IO::String is required by the 'satpass' script if you wish to pass
+      commands on the command line, or to define macros. If you do not
+      intend to do these things, IO::String is not needed.
+EOD
+}
+
+sub _recommend_soap_lite {
+    local $@ = undef;
+    eval { require SOAP::Lite; 1 } and return;
+    return <<'EOD';
+    * SOAP::Lite is not installed.
+      This module is required for the 'satpass' script's 'geocode'
+      command, but is otherwise unused by this package. If you do not
+      intend to use this functionality, SOAP::Lite is not needed.
+EOD
 }
 
 {
