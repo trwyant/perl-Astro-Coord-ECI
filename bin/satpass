@@ -173,7 +173,8 @@ my $inifil = $ENV{SATPASSINI} ? $ENV{SATPASSINI} :
     $^O eq 'VMS' ? "SYS\$LOGIN:$inifn" :
     $^O eq 'MacOS' ? $inifn :
     $ENV{HOME} ? "$ENV{HOME}/$inifn" :
-    $ENV{LOGDIR} ? "$ENV{LOGDIR}/$inifn" : undef;
+    $ENV{LOGDIR} ? "$ENV{LOGDIR}/$inifn" :
+    $ENV{USERPROFILE} ? "$ENV{USERPROFILE}/$inifn" : undef;
 
 sub _format_location;	# Predeclare, so I do not need explicit STDOUT.
 sub _time ();		# Predeclare, since I intend to redefine.
@@ -3378,7 +3379,8 @@ sub _tilde_expand {
 		"Error - No such user as '$1'.\n";
 	    $info[7]
 	} :
-	$^O eq 'VMS' ? '/sys$login' : ($ENV{HOME} || $ENV{LOGDIR})%e;
+	$^O eq 'VMS' ? '/sys$login' : ($ENV{HOME} || $ENV{LOGDIR} ||
+	    $ENV{USERPROFILE})%e;
     $rslt
 }
 
