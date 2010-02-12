@@ -1,7 +1,16 @@
+0.029_03	12-Feb-2010	T. R. Wyant
+  Consolidate all optional module logic, to eliminate duplicate code
+    between Makefile.PL and Build.PL, and so the messages all have the
+    same 'look and feel.' Dropped XML::Parser from the list, since it
+    is no longer used directly by any supported code.
+  Add the Heavens Above web site to Astro::Coord::ECI's 'SEE ALSO'.
+  Have the satpass script look in $ENV{USERPROFILE} for the
+    initialization file, in addition to all the other possibilities.
+
 0.029_02	09-Feb-2010	T. R. Wyant
   Use explicit tolerances for fractional results in the Julian date
     conversion tests in t/basic.t. This is for Strawberry Perl under
-    ReactOS 0.3.11, which seem to have a case of the .999999s.
+    ReactOS 0.3.11, which seems to have a case of the .999999s.
 
 0.029_01	07-Feb-2010	T. R. Wyant
   Trap possible exception from gmtime when generating the sgp4r
