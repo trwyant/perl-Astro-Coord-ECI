@@ -3062,6 +3062,9 @@ The L<Astro::Nova|Astro::Nova> module by Steffen Mueller, which wraps
 (and bundles) the libnova celestial mechanics, astrometry and
 astrodynamics library found at L<http://libnova.sourceforge.net/>.
 
+The L<http://www.heavens-above.com/> web site, which does B<not> use
+this code, but does provide similar functionality.
+
 =head1 AUTHOR
 
 Thomas R. Wyant, III (F<wyant at cpan dot org>)
