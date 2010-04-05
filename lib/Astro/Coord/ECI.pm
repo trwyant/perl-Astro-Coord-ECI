@@ -2724,13 +2724,17 @@ Some of the usual values are:
  nautical twilight: -12 degrees
  astronomical twilight: -18 degrees
 
-The default is -6 degrees (or, actually, the equivalent in radians).
-
 For example, to set nautical twilight you could do
 
- $eci->set(twilight => deg2rad(-12));
+ $eci->set( twilight => 'nautical' );
+
+or, equivalently,
+
+ $eci->set( twilight => deg2rad( -12 ) );
 
 where C<deg2rad()> is imported from Astro::Coord::ECI::Utils.
+
+The default is -6 degrees (or, actually, the equivalent in radians).
 
 =back
 
