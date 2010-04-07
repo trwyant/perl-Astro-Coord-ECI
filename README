@@ -24,18 +24,24 @@ Most Perl users will want to install using their favorite of either
 gets you everything. ActivePerl users will want to use ActiveState's
 'ppi', and install Astro-satpass.
 
-If for some reason neither of these works for you, you can use either of
-the following two incantations:
+If for some reason neither of these works for you, you can download the
+distribution and expand it using something like
 
-    tar -xzf Astro-satpass-9.999.tar
+    tar -xzf Astro-satpass-9.999.tar.gz
+
+Users of MSWin32 (and perhaps other operating systems) may need to
+convert the line endings in the expanded files from Unix to their native
+system before proceeding.
+
+Then, issue one of the following two incantations:
+
     perl Makefile.PL
     make
     make test
-    make install
+    sudo make install
 
 or
 
-    tar -xzf Astro-satpass-9.999.tar
     perl Build.PL
     ./Build
     ./Build test
@@ -45,6 +51,11 @@ You should substitute the appropriate program name for 'make', eg nmake
 (typically) under MSWin32, or mms or mmk under VMS. See
 ftp://ftp.microsoft.com/Softlib/MSLFILES/nmake15.exe for a copy of
 nmake for MSWin32 if you need it.
+
+Unix users may want to use 'su' rather than 'sudo' for the install.
+Non-unix users may need to be logged in to an administrative or
+otherwise privileged accout, and turn on privileges (if applicable) for
+the install.
 
 Of course, since it's pure Perl, you can just expand the kit and drop
 the .pm files into the Astro/Coord/ECI directory (creating it if
