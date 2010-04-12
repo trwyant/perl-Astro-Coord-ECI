@@ -35,6 +35,15 @@ iss
     predict visibility for the next week from the given location, which
     is hard-coded as 80 Wellington Street Ottawa Ontario Canada.
 
+passes
+    This Perl script is kind of a "poor man's satpass", which downloads
+    TLE data for the requested satellites (Astro::SpaceTrack and a Space
+    Track account are required), and lists rise and set times in
+    chronological order. You specify your location, Space Track account
+    information, and other options either on the command line, in an
+    initialization file, or both places. The --help option gets you the
+    documentation.
+
 positions
     This Perl script takes on its command line the names of files
     containing TLE data. All are read, and the elevation, azimuth and
