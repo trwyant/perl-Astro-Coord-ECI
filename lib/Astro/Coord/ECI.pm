@@ -22,8 +22,8 @@ Astro::Coord::ECI - Manipulate geocentric coordinates
  print "The Sun is ", rad2deg ($elevation),
      " degrees above the horizon.\n";
 
-See the Astro::Coord::ECI::TLE documentation for an example involving
-satellite pass prediction.
+See the L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> documentation
+for an example involving satellite pass prediction.
 
 =head1 DESCRIPTION
 
