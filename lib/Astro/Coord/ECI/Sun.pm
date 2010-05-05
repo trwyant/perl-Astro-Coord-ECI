@@ -20,7 +20,13 @@ Astro::Coord::ECI::Sun - Compute the position of the Sun.
      geodetic ($lat, $long, $alt);
  my ($time, $rise) = $sta->next_elevation ($sun);
  print "Sun @{[$rise ? 'rise' : 'set']} is ",
-     scalar localtime $time, "\n";
+     scalar gmtime $time, " UT\n";
+
+Although this example computes the Sun rise or set in Washington DC USA,
+the time is displayed in Universal Time. This is because I did not want
+to complicate the example by adding machinery to convert the time to the
+correct zone for Washington DC (which is UT - 5 except when Summer Time
+is in effect, when it is UT - 4).
 
 =head1 DESCRIPTION
 
@@ -525,3 +531,5 @@ without any warranty; without even the implied warranty of
 merchantability or fitness for a particular purpose.
 
 =cut
+
+# ex: set textwidth=72 :
