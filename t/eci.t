@@ -8,7 +8,7 @@ use Astro::Coord::ECI::Utils qw{ deg2rad PERL2000 rad2deg :time };
 use POSIX qw{strftime floor};
 use Test;
 
-BEGIN {plan tests => 65}
+BEGIN {plan tests => 72}
 
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
@@ -654,7 +654,56 @@ foreach ([[], 'Astro::Coord::ECI'],
 #      Expected: $want
 eod
     $want =~ m/\D/ ? ok ($got eq $want) : ok ($got == $want);
+}
+
+# Tests 66-68: Conversion of geodetic location to Maidenhead Locator
+#     System. Reference implementation is at
+#     http://home.arcor.de/waldemar.kebsch/The_Makrothen_Contest/fmaidenhead.html
+
+foreach (
+    [ 38.898748, -77.037684, 3, 'FM18lv' ],
+    [ 38.898748, -77.037684, 2, 'FM18' ],
+    [ 38.898748, -77.037684, 1, 'FM' ],
+) {
+    my ( $lat, $lon, $prec, $want ) = @{$_};
+    my ( $got ) = Astro::Coord::ECI->new()->geodetic(
+	deg2rad( $lat ),
+	deg2rad( $lon ),
+	0,
+    )->maidenhead( $prec );
+    $test++;
+    print <<"EOD";
+# Test $test: Latitude $lat, longitude $lon in Maidenhead system
+#           Got: $got
+#      Expected: $want
+EOD
+    ok( $got eq $want );
+}
+
+# Tests 69-72: Maidenhead to geodetic. Same reference implementation
+
+foreach (
+    [ 'FM18LV', 3, 38.896, -77.042 ],	# Reference gives -77.041
+    [ 'FM18',   1, 38.5,   -77.0   ],
+) {
+    my ( $loc, $prec, $want_lat, $want_lon ) = @{$_};
+    my ( $got_lat, $got_lon ) = Astro::Coord::ECI->new()->
+    maidenhead( $loc )->geodetic();
+    foreach (
+	[ latitude => $want_lat, $got_lat ],
+	[ longitude => $want_lon, $got_lon ],
+    ) {
+	my ( $dim, $want, $got ) = @{$_};
+	my $check = sprintf "%.${prec}f", rad2deg( $got );
+	$test++;
+	print <<"EOD";
+# Test $test: Maidenhead $loc $dim
+#           Got: $check
+#      Expected: $want
+EOD
+	ok( $want == $check );
     }
+}
 
 # need to test:
 #    dip

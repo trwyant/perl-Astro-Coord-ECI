@@ -1679,6 +1679,117 @@ sub local_time {
     return $self->local_mean_time() + equation_of_time($dyntim);
 }
 
+=item ( $location, $height ) = $coord->maidenhead( $precision );
+
+This method returns the location in the Maidenhead Locator System.
+Height above the reference ellipsoid is not part of the system, but is
+returned anyway, in kilometers. The $precision is optional, and is an
+integer in the range 1 to 4, the default being 4.
+
+Note that precisions greater than 4 are not defined by the standard.
+This method extends the system by alternating letters (base 24) with
+digits (base 10), but this will change, possibly without notice, if the
+standard is extended in a manner incompatible with this implementation.
+
+=item $coord->maidenhead( $location, $height );
+
+This method sets the geodetic location in the Maidenhead Locator System.
+Height above the reference ellipsoid is not part of the system, but is
+accepted anyway, in kilometers, defaulting to 0.
+
+Locations longer than 8 characters are not defined by the standard. This
+method extends precision by assuming alternate letters (base 24) and
+digits (base 10), but this will change, possibly without notice, if the
+standard is extended in a manner incompatible with this implementation.
+
+The object itself is returned, to allow call chaining.
+
+=cut
+{
+
+    my $alpha = 'abcdefghijklmnopqrstuvwxyz';
+
+    sub maidenhead {
+	my ( $self, @args ) = @_;
+	$args[0] or $args[0] = 4;
+	if ( @args > 1 || $args[0] =~ m/ \D /smx ) {
+	    my ( $loc, $alt ) = @args;
+	    defined $alt or $alt = 0;
+
+	    my $precision = length $loc;
+	    $precision % 2
+		and croak "Invalid Maidenhead locator; length must be even";
+	    $precision /= 2;
+
+	    my $lat = 0.5;
+	    my $lon = 0.5;
+	    my @chars = split qr{}smx, $loc;
+	    foreach my $base ( reverse _maidenhead_bases( $precision ) ) {
+		foreach ( $lat, $lon ) {
+		    my $chr = pop @chars;
+		    if ( $base > 10 ) {
+			( my $inx = index $alpha, lc $chr ) < 0
+			    and croak 'Invalid Maidenhead locator; ',
+				"'$chr' is not a letter";
+			my $limit = @chars > 1 ? $base - 1 : $base;
+			$inx > $limit
+			    and croak 'Invalid Maidenhead locator; ',
+				"'$chr' is greater than '",
+				substr( $alpha, $limit, 1 ), "'";
+			$_ += $inx;
+			$_ /= $base;
+		    } else {
+			$chr =~ m/ \D /
+			    and croak 'Invalid Maidenhead locator; ',
+				"'$chr' is not a digit";
+			$_ += $chr;
+			$_ /= $base;
+		    }
+		}
+	    }
+
+	    $self->geodetic(
+		deg2rad( $lat * 180 - 90 ),
+		deg2rad( $lon * 360 - 180 ),
+		$alt
+	    );
+	    return $self;
+
+	} else {
+	    my ( $precision ) = @args;
+
+	    my ( $lat, $lon, $alt ) = $self->geodetic();
+	    $lat = ( rad2deg( $lat ) + 90 ) / 180;
+	    $lon = ( rad2deg( $lon ) + 180 ) / 360;
+
+	    my $rslt;
+	    foreach my $base ( _maidenhead_bases( $precision) ) {
+		foreach ( $lon, $lat ) {
+		    $_ *= $base;
+		    my $inx = floor( $_ );
+		    $_ -= $inx;
+		    $rslt .= $base > 10 ? substr( $alpha, $inx, 1 ) : $inx;
+		}
+	    }
+
+	    defined $rslt and 2 <= length $rslt
+		and substr( $rslt, 0, 2 ) = uc substr $rslt, 0, 2;
+
+	    return ( $rslt, $alt );
+	}
+    }
+
+    sub _maidenhead_bases {
+	my ( $precision ) = @_;
+	my @bases;
+	foreach my $inx ( 1 .. $precision ) {
+	    push @bases, $inx % 2 ? 24 : 10;
+	}
+	$bases[0] = 18;
+	return @bases;
+    }
+}
+
 =item $value = $coord->mean_angular_velocity();
 
 This method returns the mean angular velocity of the body in radians
