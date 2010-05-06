@@ -15,7 +15,7 @@ use Pod::Usage;
 use POSIX qw{ strftime };
 use Time::Local;
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 # Map -want-events values to TLE event codes.
 my %wanted_event_map = (
@@ -35,12 +35,14 @@ my %delta_number_up = (
 my %opt = (
     'body-template'	=> '%N%t',
     'event-template'	=> '%V %L %T',
-    finish	=> '+7',
-    height	=> 0,
-    horizon	=> 0,
-    join	=> '%n%t',
-    start	=> 'today',
+    finish		=> '+7',
+    geometric		=> 0,
+    height		=> 0,
+    horizon		=> 0,
+    join		=> '%n%t',
+    start		=> 'today',
     'time-format'	=> '%d-%b-%Y %H:%M:%S',
+    twilight		=> 6,
     'want-events'	=> 'rmlt',
 );
 
@@ -48,9 +50,10 @@ my %opt = (
 my @lgl_opt = (
     'help|?' => sub { pod2usage( { verbose => 2 } ) },
     qw{
-	body-template=s event-template=s finish=s gmt! height=f
-	horizon=f join=s latitude=f longitude=f password=s split start=s
-	time-format=s username=s want-events=s visible!
+	body-template=s event-template=s finish=s geometric! gmt!
+	height=f horizon=f join=s latitude=f longitude=f password=s
+	split start=s time-format=s twilight=f username=s want-events=s
+	visible!
     }
 );
 
@@ -103,6 +106,8 @@ my $finish = $opt{finish} =~ m/ \A [+] \d+ \z /smx ?
 # Convert horizon to radians.
 my $horizon = deg2rad( $opt{horizon} );
 
+# Convert twilight to radians, and negate.
+my $twilight = deg2rad( - $opt{twilight} );
 
 # Instantiate an object to access the Space Track web site.
 my $st = Astro::SpaceTrack->new(
@@ -146,8 +151,10 @@ foreach my $tle ( @of_interest ) {
     }
 
     $tle->set(
-	visible => $opt{visible},	# Visible passes only if true.
+	geometric => $opt{geometric},	# Rise/set vs. geometric horizon
 	horizon => $horizon,		# Horizon.
+	twilight => $twilight,		# Twilight.
+	visible => $opt{visible},	# Visible passes only if true.
     );
 
     $tle->validate( $start, $finish )	# Sanity-check the data, and
@@ -289,6 +296,8 @@ sub load_want {
     my @event;
     BEGIN {
 	%effector = (
+	    a => sub { return sprintf '%.1f', rad2deg( $_[0]{azimuth} ) },
+	    e => sub { return sprintf '%.1f', rad2deg( $_[0]{elevation} ) },
 	    i => sub { return $_[0]{body}->get( 'international' ) },
 	    l => sub { return $_[0]{illumination} + 0; },
 	    L => sub { return $_[0]{illumination} . '' },
@@ -413,6 +422,9 @@ This option specifies the template used to insert information about the
 satellite into the output. The templating system is described under the
 C<-event-template> option, below.
 
+The %a (azimuth) and %e (elevation) specifications do nothing useful in
+a C<-body-template>.
+
 The default is '%N%t' (i.e. the name of the satellite, followed by a
 horizontal tab).
 
@@ -425,6 +437,8 @@ All characters in the template are output verbatim, except for the '%',
 which is magic. Data from the event are substituted into the output
 according to the character that follows the '%', as follows:
 
+ a - azimuth of event in degrees from north;
+ e - elevation of event in degrees above geometric horizon;
  i - international launch designator of satellite;
  l - illumination (lit or not, PASS_EVENT_* numeric code,
      undefined in -body-template);
@@ -449,7 +463,7 @@ be what you expect or want, and that it may change without notice.
 All times are formatted according to the value of the C<-time-format>
 option.
 
-The default template is '%E %L %T' (that is, the name of the event,
+The default template is '%V %L %T' (that is, the name of the event,
 whether the satellite is lit or shadowed, and the time of the event).
 
 =item -finish iso_time_or_days
@@ -459,6 +473,17 @@ string such as is legal for C<-start>, or a plus sign followed by an
 integer, which is the number of days after the C<-start> time.
 
 The default is '+7'.
+
+=item -geometric
+
+This option specifies that rise and set take place when the satellite
+crosses the geometric horizon, regardless of the setting of the
+C<-horizon> option. If not asserted, rise and set take place when the
+satellite crosses the elevation specified by the C<-horizon> option.
+
+This option can be negated by specifying C<-nogeometric>.
+
+The default is C<-nogeometric>
 
 =item -gmt
 
@@ -555,10 +580,19 @@ The default is C<-nosplit>.
 
 =item -time-format strftime_format
 
-This option sets the strftime(3) format used to format the time.
+This option sets the strftime(3) format used to format the time in the
+output.
 
 The default is '%d-%b-%Y %H:%M:%S' (that is, day, month name, four-digit
 year, hour, minute, second).
+
+=item -twilight degrees_below_horizon
+
+This options sets the number of degrees the Sun is below the horizon at
+the beginning or end of twilight. Unlike the C<satpass> script, you must
+specify a number.
+
+The default is 6, which corresponds to civil twilight.
 
 =item -username spacetrack_username
 
