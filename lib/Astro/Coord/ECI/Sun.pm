@@ -22,11 +22,11 @@ Astro::Coord::ECI::Sun - Compute the position of the Sun.
  print "Sun @{[$rise ? 'rise' : 'set']} is ",
      scalar gmtime $time, " UT\n";
 
-Although this example computes the Sun rise or set in Washington DC USA,
-the time is displayed in Universal Time. This is because I did not want
-to complicate the example by adding machinery to convert the time to the
-correct zone for Washington DC (which is UT - 5 except when Summer Time
-is in effect, when it is UT - 4).
+Although this example computes the Sun rise or set in Washington D.C.
+USA, the time is displayed in Universal Time. This is because I did not
+want to complicate the example by adding machinery to convert the time
+to the correct zone for Washington D.C. (which is UT - 5 except when
+Summer Time is in effect, when it is UT - 4).
 
 =head1 DESCRIPTION
 
