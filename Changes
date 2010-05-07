@@ -1,3 +1,13 @@
+0.031		06-May-2010	T. R. Wyant
+  Add the maidenhead() method to Astro::Coord::ECI, to get or set
+    geodetic position in the Maidenhead Locator System.
+  Update install instructions in README to include cpan, cpanp, or ppi
+    as appropriate.
+  Add example script eg/passes to download TLEs and predict passes in
+    one fell swoop.
+  Change the output in the Astro::Coord::ECI::Sun example to UT, and add
+    a note why. Thanks to Richard Hardwick for raising this issue.
+
 0.030		26-Feb-2010	T. R. Wyant
   Update copyright in README to 2010.
 
