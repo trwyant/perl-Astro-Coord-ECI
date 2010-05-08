@@ -134,6 +134,12 @@ EOD
       running under $^O, so you may be better off just accepting the
       restricted time range.
 EOD
+	5.012 <= $] and return $recommendation .= <<'EOD';
+      Since you appear to have Perl 5.012 or above, you may well not
+      need Time::y2038, since at Perl 5.012 extended time functionality
+      was bundled into the core. It will be used, though, if it is
+      available.
+EOD
 	( $Config{use64bitint} || $Config{use64bitall} )
 	    and $recommendation .= <<'EOD';
       Since your Perl appears to support 64-bit integers, you may well
