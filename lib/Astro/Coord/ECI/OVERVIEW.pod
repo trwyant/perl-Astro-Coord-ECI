@@ -267,7 +267,7 @@ to the surface of the Earth.
 For the latter use you probably would construct the object by calling
 L<< Astro::Coord::ECI->geodetic()|Astro::Coord::ECI/geodetic >> method,
 passing it the latitude and longitude B<in radians>, and the height
-above sea level B<in meters>. The
+above sea level B<in kilometers>. The
 L<Astro::Coord::ECI::Utils|Astro::Coord::ECI::Utils> module exports a
 L<deg2rad|Astro::Coord::ECI::Utils/deg2rad> function to convert degrees
 to radians. Remember that latitude is negative south of the equator, and
@@ -515,13 +515,12 @@ this data for you, and you need no username or password.
 =head2 Heavens Above
 
 Heavens Above at L<http://www.heavens-above.com/> does visibility
-predictions, and will give you L<TLE|/TLE> data if you drill down far enough
-on an individual satellite. I do not know where they get their data. I
-have observed it to be a day or so behind Space Track, but they also
-carry data from classified satellites (which Space Track does not), so I
-don't know where they get their data.  You can create an account for
-yourself, but this is not necessary to use the site. Astro::SpaceTrack
-does not retrieve data from this site.
+predictions, and will give you L<TLE|/TLE> data if you drill down far
+enough on an individual satellite. I do not know where they get their
+data. I have observed it to be a day or so behind Space Track, but they
+also carry data from classified satellites (which Space Track does not).
+You can create an account for yourself, but this is not necessary to use
+the site. Astro::SpaceTrack does not retrieve data from this site.
 
 =head1 AUTHOR
 
@@ -538,3 +537,7 @@ of the licenses in the directory LICENSES.
 This program is distributed in the hope that it will be useful, but
 without any warranty; without even the implied warranty of
 merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :
