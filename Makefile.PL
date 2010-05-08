@@ -105,6 +105,12 @@ my %attr = (
 
 $mmv >= 6.31 and $attr{LICENSE} = 'perl';
 
+$mmv >= 6.4501 and $attr{META_ADD} = {
+    no_index => {
+	directory => [ qw{ inc t xt } ],
+    },
+};
+
 $mmv >= 6.4501 and $attr{META_MERGE} = {
     build_requires => {
 	'Test::More' => 0.40,

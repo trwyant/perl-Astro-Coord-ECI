@@ -28,7 +28,7 @@ my %attr = (
 
 $mbv >= 0.28 and $attr{meta_merge} = {
     no_index => {
-	directory => [qw{inc t}],
+	directory => [qw{ inc t xt }],
     },
     resources => {
 	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
@@ -118,6 +118,9 @@ $bldr->build_requires({
     });
 $bldr->add_to_cleanup (@clean_files);
 $bldr->script_files (\@exe_files);
+
+use YAML;
+print Dump( $bldr );
 
 $bldr->create_build_script ();
 
