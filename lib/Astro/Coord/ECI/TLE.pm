@@ -223,6 +223,12 @@ use IO::File;
 use Params::Util 0.25 qw{_CLASSISA _INSTANCE};
 use POSIX qw{floor fmod strftime};
 
+BEGIN {
+    local $@;
+    eval {require Scalar::Util; Scalar::Util->import ('dualvar'); 1}
+	or *dualvar = sub {$_[0]};
+}
+
 {	# Local symbol block.
     my @const = qw{
 	PASS_EVENT_NONE
@@ -233,6 +239,10 @@ use POSIX qw{floor fmod strftime};
 	PASS_EVENT_MAX
 	PASS_EVENT_SET
 	PASS_EVENT_APPULSE
+	BODY_TYPE_UNKNOWN
+	BODY_TYPE_DEBRIS
+	BODY_TYPE_ROCKET_BODY
+	BODY_TYPE_PAYLOAD
     };
     our @EXPORT_OK = @const;
     our %EXPORT_TAGS = (
@@ -532,6 +542,76 @@ At this level it does nothing.
 =cut
 
 sub before_reblessing {}
+
+=item $type = $tle->body_type ()
+
+This method returns the type of the body as one of the BODY_TYPE_*
+constants. This is derived from the common name using an algorithm
+similar to the one used by the Space Track web site. This algorithm will
+not work if the common name is not available, or if it does not conform
+to the Space Track naming conventions. Known or suspected differences
+from the algorithm described at the bottom of the Satellite Box Score
+page include:
+
+* The C<Astro::Coord::ECI::TLE> algorithm is not case-sensitive. The
+Space Track algorithm appears to assume all upper-case.
+
+* The C<Astro::Coord::ECI::TLE> algorithm looks for words (that is,
+alphanumeric strings delimited by non-alphanumeric characters), whereas
+the Space Track documentation seems to say it just looks for substrings.
+However, implementing the documented algorithm literally results in OID
+20479 'DEBUT (ORIZURU)' being classified as debris, whereas Space Track
+returns it in response to a query for name 'deb' that excludes debris.
+
+The possible returns are:
+
+C<< BODY_TYPE_UNKNOWN => dualvar( 0, 'unknown' ) >> if the value of the
+C<name> attribute is C<undef>, or if it is empty or contains only
+white space.
+
+C<< BODY_TYPE_DEBRIS => dualvar( 1, 'debris' ) >> if the value of the
+C<name> attribute contains one of the words 'deb', 'debris', 'coolant',
+'shroud', or 'westford needles', all checks being case-insensitive.
+
+C<< BODY_TYPE_ROCKET_BODY => dualvar( 2, 'rocket body' ) >> if the body
+is not debris, but the value of the C<name> attribute contains one of
+the strings 'r/b', 'akm' (for 'apogee kick motor') or 'pkm' (for
+'perigee kick motor') all checks being case-insensitive.
+
+C<< BODY_TYPE_PAYLOAD => dualvar( 3, 'payload' ) >> if the body is not
+unknown, debris, or a rocket body.
+
+The above constants are not exported by default, but they are exportable
+either by name or using the C<:constants> tag.
+
+If L<Scalar::Util|Scalar::Util> does not export C<dualvar()>, the
+constants are defined to be numeric. The cautious programmer will
+therefore test them using numeric tests.
+
+=cut
+
+use constant BODY_TYPE_UNKNOWN => dualvar( 0, 'unknown' );
+use constant BODY_TYPE_DEBRIS => dualvar( 1, 'debris' );
+use constant BODY_TYPE_ROCKET_BODY => dualvar( 2, 'rocket body' );
+use constant BODY_TYPE_PAYLOAD => dualvar( 3, 'payload' );
+
+sub body_type {
+    my ( $self ) = @_;
+    defined( my $name = $self->get( 'name' ) )
+	or return BODY_TYPE_UNKNOWN;
+    $name =~ m/ \A \s* \z /smx
+	and return BODY_TYPE_UNKNOWN;
+    ( $name =~ m/ \b deb \b /smxi
+	|| $name =~ m/ \b debris \b /smxi
+	|| $name =~ m/ \b coolant \b /smxi
+	|| $name =~ m/ \b shroud \b /smxi
+	|| $name =~ m/ \b westford \s+ needles \b /smxi )
+	and return BODY_TYPE_DEBRIS;
+    ( $name =~ m{ \b r/b \b }smxi
+	|| $name =~ m/ \b [ap] km \b /smxi )
+	and return BODY_TYPE_ROCKET_BODY;
+    return BODY_TYPE_PAYLOAD;
+}
 
 
 =item $tle->can_flare ()
@@ -990,12 +1070,6 @@ the object:
   * visible	# Pass() reports only illuminated passes
 
 =cut
-
-BEGIN {
-    local $@;
-    eval {require Scalar::Util; Scalar::Util->import ('dualvar'); 1}
-	or *dualvar = sub {$_[0]};
-}
 
 use constant PASS_EVENT_NONE => dualvar (0, '');	# Guaranteed false.
 use constant PASS_EVENT_SHADOWED => dualvar (1, 'shdw');
@@ -3280,6 +3354,7 @@ sub time_set {
     $self->$model ($self->universal);
     return;
 }
+
 
 
 #######################################################################

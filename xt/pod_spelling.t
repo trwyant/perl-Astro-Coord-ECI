@@ -22,6 +22,7 @@ all_pod_files_spelling_ok ();
 __DATA__
 Above's
 accreted
+akm
 Alasdair
 altazimuth
 AMSAT
@@ -68,6 +69,7 @@ darwin
 DateTime
 datetime
 de
+deb
 declinational
 deg
 degreesDminutesMsecondsS
@@ -168,6 +170,7 @@ OID
 op
 oped
 orbitaux
+orizuru
 Palau
 parametres
 pbcopy
@@ -179,6 +182,7 @@ perigee
 perltime
 Persei
 pg
+pkm
 pm
 pp
 pre
@@ -259,6 +263,7 @@ valeurs
 Vallado
 ver
 webcmd
+westford
 WGS
 Willmann
 Wyant
