@@ -119,8 +119,5 @@ $bldr->build_requires({
 $bldr->add_to_cleanup (@clean_files);
 $bldr->script_files (\@exe_files);
 
-use YAML;
-print Dump( $bldr );
-
 $bldr->create_build_script ();
 
