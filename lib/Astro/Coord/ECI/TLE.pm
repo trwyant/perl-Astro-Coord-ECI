@@ -732,7 +732,10 @@ Actually, in the spirit of UNIVERSAL::can, it returns a reference to
 the code if the model exists, and undef otherwise.
 
 This is really for the benefit of Astro::Coord::ECI::TLE::Set, so it
-can select the correct member object before running the model.
+knows it needs to select the correct member object before running the
+model.
+
+This method can be called as a static method, or even as a subroutine.
 
 =cut
 
