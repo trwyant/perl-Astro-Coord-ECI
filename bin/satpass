@@ -419,7 +419,13 @@ eod
 
 #	Do pseudo tilde expansion.
 
-    $redout =~ s/^(>+)(~.*)/ $1 . _tilde_expand ($2) /e;
+    eval {
+	$redout =~ s/^(>+)(~.*)/ $1 . _tilde_expand ($2) /e;
+	1;
+    } or do {
+	warn $@;
+	next;
+    };
 
 #	Special-case 'exit' to drop out of the input loop.
 
