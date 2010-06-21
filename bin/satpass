@@ -5731,10 +5731,6 @@ L<Astro::Coord::ECI> acknowledges those without whom this code would not
 exist. But the script has its own issues, and I would like to
 acknowledge here those who made this script better:
 
-Goran Gasparovic of MIT, who asked for (and supplied information for)
-the ability to display results in apparent equatorial coordinates,
-rather than azimuth and elevation.
-
 Imacat of Tavern IMACAT in Taiwan, for helping me to work out a satpass
 script testing problem.
 
