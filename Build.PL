@@ -6,6 +6,7 @@ use warnings;
 use lib qw{ inc };
 
 use Astro::Coord::ECI::Build;
+use Astro::Coord::ECI::Meta;
 use Astro::Coord::ECI::Recommend;
 use Module::Build;
 use Config;
@@ -13,13 +14,20 @@ use FileHandle;
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
+my $meta = Astro::Coord::ECI::Meta->new();
+
 my %attr = (
     dist_author => 'Tom Wyant (wyant at cpan dot org)',
     dist_abstract => 'Classes and app to compute satellite visibility',
     module_name => 'Astro::Coord::ECI',
     dist_name => 'Astro-satpass',
     dist_version_from => 'lib/Astro/Coord/ECI.pm',
-
+    requires => $meta->requires(
+	perl => $meta->requires_perl(),
+    ),
+    build_requires => {
+	'Test::More' => 0.40,
+    },
     get_options => {y => {}, n => {}},
     dynamic_config => 1,
     license => 'perl',
@@ -32,11 +40,14 @@ $mbv >= 0.28 and $attr{meta_merge} = {
     },
     resources => {
 	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
+	license => 'http://dev.perl.org/licenses/',
     },
 };
 
+# Don't require Module::Build if we are making a distribution, since the
+# user may choose to use ExtUtils::MakeMaker.
 $mbv >= 0.34
-    and $attr{auto_configure_requires} = 0;	# Don't require Module::Build
+    and $attr{auto_configure_requires} = !$meta->distribution();
 
 Astro::Coord::ECI::Recommend->recommend();
 
@@ -46,10 +57,6 @@ my %opt = $bldr->args ();
 
 my @exe_files;
 my @clean_files;
-my @prereq = (
-    'Params::Util'	=> 0.25,
-    perl		=> 5.006,
-);
 
 print <<eod;
 
@@ -83,7 +90,6 @@ if ($opt{n}) {
     }
 
 if (@exe_files) {
-#   push @prereq, 'Date::Manip' => 1.14;
     if ($^O eq 'MSWin32') {
 	@exe_files = map {"bin/$_"} @exe_files;
 	foreach (@exe_files) {`pl2bat $_`}
@@ -109,15 +115,9 @@ eod
     }
 }
 
-##my $vers = $] >= 5.008 ? '-5.8' : '';
-my $vers = '';
-
-$bldr->requires ({@prereq});
-$bldr->build_requires({
-	'Test::More' => 0.40,
-    });
 $bldr->add_to_cleanup (@clean_files);
 $bldr->script_files (\@exe_files);
 
 $bldr->create_build_script ();
 
+# ex: set textwidth=72 :

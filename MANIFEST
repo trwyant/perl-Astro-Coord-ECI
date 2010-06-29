@@ -12,6 +12,7 @@ eg/README
 eg/sh_script
 eg/tle_period.t
 inc/Astro/Coord/ECI/Build.pm
+inc/Astro/Coord/ECI/Meta.pm
 inc/Astro/Coord/ECI/Recommend.pm
 inc/Astro/Coord/ECI/Satpass.pm
 inc/Astro/Coord/ECI/SetDelegate.pm

@@ -5,6 +5,7 @@ use warnings;
 
 use lib qw{ inc };
 
+use Astro::Coord::ECI::Meta;
 use Astro::Coord::ECI::Recommend;
 use Config;
 use ExtUtils::MakeMaker qw{WriteMakefile prompt};
@@ -21,9 +22,6 @@ eod
 
 my @exe_files;
 my @clean_files;
-my @prereq = (
-    'Params::Util'	=> 0.25,
-);
 
 Astro::Coord::ECI::Recommend->recommend();
 
@@ -89,11 +87,13 @@ my $vers = '';
 
 (my $mmv = ExtUtils::MakeMaker->VERSION) =~ s/_//g;
 
+my $meta = Astro::Coord::ECI::Meta->new();
+
 my %attr = (
     NAME => 'Astro::Coord::ECI',
     DISTNAME => 'Astro-satpass',
     VERSION_FROM => 'lib/Astro/Coord/ECI.pm',
-    PREREQ_PM => { @prereq },
+    PREREQ_PM => $meta->requires(),
     PL_FILES => {},	# Prevent old MakeMaker from running Build.PL
     EXE_FILES => \@exe_files,
     'dist' => {COMPRESS => 'gzip', SUFFIX => 'gz'},
@@ -115,11 +115,15 @@ $mmv >= 6.4501 and $attr{META_MERGE} = {
     build_requires => {
 	'Test::More' => 0.40,
     },
+    dynamic_config => 1,
     resources => {
 	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
 	license => 'http://dev.perl.org/licenses/',
     },
 };
 
+$mmv >= 6.4701 and $attr{MIN_PERL_VERSION} = 5.006;
+
 WriteMakefile (%attr);
 
+# ex: set textwidth=72 :
