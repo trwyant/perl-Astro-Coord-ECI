@@ -96,17 +96,14 @@ should use the C<ascendingnode> attribute instead.
 
 Currently, C<rightascension> and C<ascendingnode> are equivalent.
 
-As scheduled, with this release a warning is generated the first time
+As scheduled, with this release a warning is generated every time
 the C<rightascension> attribute is used. This warning can be suppressed
 by asserting C<< no warnings qw{ deprecated }; >> at the point the
 warning is issued. But you really should convert the warning code to use
 the C<ascendingnode> attribute.
 
-At the first release after June 30 2010 there will be a warning
-generated every time the C<rightascension> attribute is used.
-
-At the first release in 2011 (or the second release after June 30 2010,
-whichever is later), the C<rightascension> attribute will disappear.
+At the first release in 2011 the C<rightascension> attribute will
+disappear.
 
 =head1 DESCRIPTION
 
@@ -322,7 +319,6 @@ use constant SGP_RHO => .15696615;
 #		must make the needed changes to the attribute, and
 #		return 0 or 1, interpreted as above.
 
-my $rightascension_deprecated = 0;	## TODO get rid of this
 my %attrib = (
     backdate => 0,
     effective => sub {
@@ -363,8 +359,7 @@ eod
     },
     model_error => 0,
     rightascension => sub {
-	$rightascension_deprecated++
-	    or warnings::warnif(
+	warnings::warnif(
 	    deprecated =>
 	    'The Astro::Coord::ECI::TLE rightascension attribute is deprecated. Use ascendingnode instead',
 	);
@@ -672,8 +667,7 @@ L</Attributes> section for a description of the attributes.
 {
     my %accessor = (
 	rightascension => sub {
-	    $rightascension_deprecated++
-		or warnings::warnif(
+	    warnings::warnif(
 		deprecated =>
 		'The Astro::Coord::ECI::TLE rightascension attribute is deprecated. Use ascendingnode instead',
 	    );
