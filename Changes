@@ -1,3 +1,31 @@
+0.032		03-Jul-2010	T. R. Wyant
+  Have Astro::Coord::ECI::TLE complain every time the rightascension
+    attribute is accessed. This is being deprecated in favor of the
+    ascendingnode attribute. Elimination is scheduled for the first
+    release in 2011.
+  Consolidate prerequisites into inc/Astro/Coord/ECI/Meta.pm.
+  Don't require Module::Build for configuration when building a
+    distribution. This is controlled by environment variable
+    MAKING_MODULE_DISTRIBUTION.
+  Document that Astro::Coord::ECI::TLE::Iridium will probably not work
+    for Iridium Next satellites, to be launched starting about 2015.
+  Move acknowledgment of Goran Gasparovic from bin/satpass to
+    lib/Astro/Coord/ECI.pm, since that's where the code is and where the
+    acknowledgment should have been all along, and so it does not get
+    lost when bin/satpass is superseded by App::Satpass2.
+  Fix fatal error in satpass when tilde-expanding a non-existent user
+    name. It's still an error, just not fatal.
+  Tweak the documentation of Astro::Coord::ECI::TLE->is_valid_model(),
+    to make it clearer why it was provided, and make it obvious that it
+    can be called as a static method.
+  Fix bug in precession of equatorial coordinates, which would cause an
+    error if no observing station was passed to the subroutine.
+  Add Astro::Coord::ECI::TLE method body_type(), which computes the type
+    of the body from the common name using an algorithm similar to the
+    one documented on Space Track's Satellite Box Score page.
+  Weaken recommendation of Time::y2038 when run under Perl 5.12 and
+    above, since I really don't think it's needed.
+
 0.031		06-May-2010	T. R. Wyant
   Add the maidenhead() method to Astro::Coord::ECI, to get or set
     geodetic position in the Maidenhead Locator System.
