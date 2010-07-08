@@ -5,7 +5,7 @@ use warnings;
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Star;
-use Astro::Coord::ECI::Utils qw{ deg2rad PI :time };
+use Astro::Coord::ECI::Utils qw{ :time deg2rad PI };
 use POSIX qw{strftime floor};
 use Test;
 

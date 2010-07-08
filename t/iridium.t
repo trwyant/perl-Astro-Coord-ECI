@@ -6,7 +6,7 @@ use warnings;
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Iridium;
-use Astro::Coord::ECI::Utils qw{ deg2rad :time };
+use Astro::Coord::ECI::Utils qw{ :time deg2rad };
 use Cwd;
 use File::Spec;
 use FileHandle;

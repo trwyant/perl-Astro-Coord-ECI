@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI;
-use Astro::Coord::ECI::Utils qw{ deg2rad PERL2000 rad2deg :time };
+use Astro::Coord::ECI::Utils qw{ :time deg2rad PERL2000 rad2deg };
 use POSIX qw{strftime floor};
 use Test;
 

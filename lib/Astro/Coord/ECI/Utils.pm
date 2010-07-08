@@ -41,6 +41,9 @@ C<timelocal> into your name space.
 
 =back
 
+Under Perl 5.6 you may find that, if you use any of the above tags, you
+need to specify them first in your import list.
+
 =head2 The following constants are exportable:
 
  AU = number of kilometers in an astronomical unit

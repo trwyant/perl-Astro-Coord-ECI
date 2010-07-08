@@ -210,9 +210,9 @@ our $VERSION = '0.032';
 
 use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{ deg2rad dynamical_delta embodies
+use Astro::Coord::ECI::Utils qw{ :time deg2rad dynamical_delta embodies
     find_first_true load_module max mod2pi PI PIOVER2 rad2deg SECSPERDAY
-    TWOPI thetag :time };
+    TWOPI thetag };
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
