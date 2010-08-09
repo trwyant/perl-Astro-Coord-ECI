@@ -18,7 +18,7 @@ BEGIN {
     eval {
 	require Test::Perl::Critic;
 	Test::Perl::Critic->import(
-	    -profile => File::Spec->catfile(qw{xt perlcriticrc})
+	    -profile => File::Spec->catfile(qw{ xt author perlcriticrc })
 	);
 	1;
     } or do {

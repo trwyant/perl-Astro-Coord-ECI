@@ -34,7 +34,7 @@ CVS/
 ^tags$
 ^USED_BY$
 ^usual\.dat$
-^xt/generated
+^xt/author/generated
 \.old$
 \.svn/
 \.swp$

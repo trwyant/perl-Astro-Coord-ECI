@@ -31,7 +31,7 @@ my %attr = (
     get_options => {y => {}, n => {}},
     dynamic_config => 1,
     license => 'perl',
-    add_to_cleanup => [ qw{ xt/generated } ],
+    add_to_cleanup => [ qw{ xt/author/generated } ],
 );
 
 $mbv >= 0.28 and $attr{meta_merge} = {

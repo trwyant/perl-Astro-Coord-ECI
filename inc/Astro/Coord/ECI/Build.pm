@@ -8,7 +8,7 @@ use base qw{ Module::Build };
 use Carp;
 use File::Spec;
 
-my @generated_dir = qw{ xt generated };
+my @generated_dir = qw{ xt author generated };
 my @hide = qw{ Date::Manip Time::y2038 };
 
 {
@@ -105,7 +105,7 @@ sub ACTION_authortest {
     my @depends_on = ( qw{ build make_optional_modules_tests } );
     -e 'META.yml' or push @depends_on, 'distmeta';
     $self->depends_on( @depends_on );
-    my @test_files = qw{ t xt };
+    my @test_files = qw{ t xt/author };
     my $gendir = File::Spec->catdir( @generated_dir );
     -d $gendir and push @test_files, $gendir;
     $self->test_files( @test_files );
@@ -146,12 +146,12 @@ This module provides the following action:
 =item authortest
 
 This action runs not only those tests which appear in the F<t>
-directory, but those that appear in the F<xt> directory. The F<xt> tests
-are provided for information only, since some of them (notably
-F<xt/critic.t> and F<xt/pod_spelling.t>) are very sensitive to the
-configuration under which they run.
+directory, but those that appear in the F<xt/author> directory. The
+F<xt/author> tests are provided for information only, since some of them
+(notably F<xt/author/critic.t> and F<xt/author/pod_spelling.t>) are very
+sensitive to the configuration under which they run.
 
-Some of the F<xt> tests require modules that are not named as
+Some of the F<xt/author> tests require modules that are not named as
 requirements. These should disable themselves if the required modules
 are not present.
 
@@ -160,9 +160,9 @@ C<--test_files> argument.
 
 =item make_optional_modules_tests
 
-This action creates the tests in the F<xt/generated> directory. These
-generally duplicate the tests in the F<t> directory, but the optional
-modules are made unavailable using either
+This action creates the tests in the F<xt/author/generated> directory.
+These generally duplicate the tests in the F<t> directory, but the
+optional modules are made unavailable using either
 L<Test::Without::Module|Test::Without::Module> or
 L<Devel::Hide|Devel::Hide>, in that order. If neither of these modules
 is available, nothing is done.
