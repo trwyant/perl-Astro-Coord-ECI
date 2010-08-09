@@ -95,8 +95,8 @@ sub satpass {
 
 sub not_available {
     foreach my $module (@_) {
-	eval "require $module";
-	return "Module $module can not be loaded." if $@;
+	eval "require $module; 1"
+	    or return "Module $module can not be loaded.";
     }
     return '';
 }

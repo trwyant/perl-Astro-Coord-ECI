@@ -1,5 +1,8 @@
 package main;
 
+use strict;
+use warnings;
+
 use Test::More 0.40;
 
 use Astro::Coord::ECI::TLE;

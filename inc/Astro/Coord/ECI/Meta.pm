@@ -26,7 +26,7 @@ sub requires {
     my ( $self, @extra ) = @_;
 ##  if ( ! $self->distribution() ) {
 ##  }
-    return {
+    return +{
 	'Params::Util'	=> 0.25,
 	@extra,
     };

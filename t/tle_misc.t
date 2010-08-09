@@ -46,7 +46,7 @@ test_body_type( $tle, 'Foosat', BODY_TYPE_PAYLOAD );
 
 test_body_type( $tle, 'Debut', BODY_TYPE_PAYLOAD );
 
-sub test_body_type {
+sub test_body_type {	## no critic (RequireArgUnpacking)
     my ( $body, $name, $want ) = @_;
     $body->set( name => $name );
     @_ = ( eval { $body->body_type() } == $want,

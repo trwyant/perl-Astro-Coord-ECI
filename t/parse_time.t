@@ -17,11 +17,10 @@ BEGIN {
 	exit;
     };
 
-    eval {
+    $mock_time = eval {
 	require Test::MockTime;
 	Test::MockTime->import( qw{ set_fixed_time restore_time } );
-
-	$mock_time = 1;
+	1;
     };
 }
 
@@ -35,7 +34,7 @@ if ( $mock_time && Time::y2038->can( 'VERSION' ) ) {
     # module's namespace, and Test::MockTime's CORE::GLOBAL override
     # will not be seen.
 
-    no warnings qw{ redefine once };
+    no warnings qw{ redefine once };	## no critic (ProhibitNoWarnings)
     *Astro::Coord::ECI::Utils::time = \&Test::MockTime::time;
     *Astro::Coord::ECI::Utils::localtime = \&Test::MockTime::localtime;
     *Astro::Coord::ECI::Utils::gmtime = \&Test::MockTime::gmtime;
@@ -128,7 +127,7 @@ SKIP: {
 
 }
 
-sub gmt {
+sub gmt {	## no critic (RequireArgUnpacking)
     my ( $string, @gmt ) = @_;
     my $want = timegm( @gmt );
     my $got = eval {
@@ -139,7 +138,7 @@ sub gmt {
     goto &is;
 }
 
-sub lcl {
+sub lcl {	## no critic (RequireArgUnpacking)
     my ( $string, @local ) = @_;
     my $want = timelocal( @local );
     my $got = eval {

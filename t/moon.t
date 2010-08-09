@@ -144,7 +144,7 @@ eod
 
 {	# Local symbol block.
     my $skip;
-    eval {
+    eval {	## no critic (RequireCheckingReturnValueOfEval)
 	local $@;
 	$skip = "Can not load Scalar::Util.";
 	require Scalar::Util;

@@ -14,6 +14,7 @@ use Test;
 plan tests => 53, todo => [];
 
 my $test = 0;
+my $success;
 
 {	# Begin local symbol block.
     my $set = eval {Astro::Coord::ECI::TLE::Set->new ()};
@@ -28,17 +29,18 @@ eod
 
     foreach ([first => 2, 6, 2006], [second => 4, 6, 2006]) {
 	my $which = shift @$_;
-	eval {1};	# Clear error indicator.
-	eval {$set->add (dummy (timegm (0, 0, 0, @$_), 99999,
-		'Anonymous'))}
-	    unless $skip;
+	$success = $skip ? undef : eval {
+	    $set->add(dummy( timegm( 0, 0, 0, @$_ ), 99999,
+		    'Anonymous' ) );
+	    1;
+	};
 	$test++;
 	print <<eod;
 #
 # Test $test - Add $which member.
 eod
 	print "    Error: $@\n" if $@;
-	skip ($skip, !$@);
+	skip( $skip, $success );
     }
 
 
@@ -82,21 +84,21 @@ eod
 	my $expect = timegm (0, 0, 0, @$_);
 	$test++;
 	my ($tle, $got);
-	eval {1};	# Clear error indicator.
 	$skip or $tle = eval {$set->universal ($time)};
-	($tle && !$@) and $got = eval {$tle->get ('epoch')};
+	$tle and $got = eval {$tle->get ('epoch')};
+	$success = $tle && $got;
 	print <<eod;
 #
 # Test $test - Set universal() $what set members - resultant epoch.
 #      Time: @{[scalar gmtime $time]} GMT
 #    Expect: @{[scalar gmtime $expect]} GMT
 eod
-	print $skip ? <<eod : $@ ? <<eod : <<eod;
+	print $skip ? <<eod : $success ? <<eod : <<eod;
 #   Skipped
 eod
-#     Error: $@
-eod
 #       Got: @{[scalar gmtime $got]} GMT
+eod
+#     Error: $@
 eod
 	$got ||= 0;
 	skip ($skip, $expect == $got);
@@ -146,16 +148,16 @@ eod
 eod
     skip ($skip, @members == 2);
 
-    eval {1};	# Clear error indicator.
-    eval {$set->set_all (name => 'Nemo')} unless $skip;
+    $success = $skip ? undef : eval { $set->set_all (name => 'Nemo') };
     $test++;
     print <<eod;
 #
 # Test $test - \$set->set (name => 'Nemo')
 #    Expected: no exception
-#         Got: @{[$@ || 'no exception']}
+#         Got: @{[ $success ? 'no exception' :
+              ( $@ || 'unrecorded exception' ) ]}
 eod
-    skip ($skip, !$@);
+    skip ( $skip, $success );
 
     foreach ([0, 2, 6, 2006],
 	    [1, 4, 6, 2006],
@@ -250,9 +252,11 @@ eod
 	    epoch => timegm (0, 0, 0, 1, 6, 106)
 	));
     my $set2 = Astro::Coord::ECI::TLE::Set->new ();
-    eval {$set2->add ($set1)};
+    eval {	## no critic (RequireCheckingReturnValueOfEval)
+	$set2->add( $set1 )
+    };
     $test++;
-    my $got = $set2->members ();
+    my $got = $set2->members();
     print <<eod;
 #
 # Test $test - Add a set to another set.
@@ -378,3 +382,5 @@ eod
 }	# End of local symbol block.
 
 1;
+
+# ex: set textwidth=72 :

@@ -7,16 +7,26 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI::Satpass;
 
-eval {require SOAP::Lite};
-if ($@) {
-    print "1..0 # skip Soap::Lite not available\n";
-    exit;
+BEGIN {
+
+    eval {
+	require SOAP::Lite;
+	1;
+    } or do {
+	print "1..0 # skip Soap::Lite not available\n";
+	exit;
+    };
+
+    eval {
+	require LWP::UserAgent;
+	1;
+    } or do {	# Shouldn't happen since SOAP::Lite loaded.
+	print "1..0 # skip LWP::UserAgent not available\n";
+	exit;
+    };
+
 }
-eval {require LWP::UserAgent};
-if ($@) {	# Shouldn't happen since SOAP::Lite loaded.
-    print "1..0 # skip LWP::UserAgent not available\n";
-    exit;
-}
+
 {
     my $ua = LWP::UserAgent->new ();
     my $rslt = $ua->get ('http://rpc.geocoder.us/');

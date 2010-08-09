@@ -39,51 +39,51 @@ my $want;
 $near->set(model => 'sgp');
 $want = qr{effective eccentricity > 1};
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP model failure.');
+fails( $near, universal => $time, $want,
+    'SGP model failure' );
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP should give same failure on retry.');
+fails( $near, universal => $time, $want,
+    'SGP should give same failure on retry' );
 
 # SGP4
 
 $near->set(model => 'sgp4');
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP4 model failure.');
+fails( $near, universal => $time, $want,
+    'SGP4 model failure' );
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP4 should give same failure on retry.');
+fails( $near, universal => $time, $want,
+    'SGP4 should give same failure on retry' );
 
 # SDP4
 
 $deep->set(model => 'sdp4');
 
-eval {$deep->universal($time)};
-like($@, $want, 'SDP4 model failure.');
+fails( $deep, universal => $time, $want,
+    'SDP4 model failure' );
 
-eval {$deep->universal($time)};
-like($@, $want, 'SDP4 should give same failure on retry.');
+fails( $deep, universal => $time, $want,
+    'SDP4 should give same failure on retry' );
 
 # SGP8
 
 $near->set(model => 'sgp8');
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP8 model failure.');
+fails( $near, universal => $time, $want,
+    'SGP8 model failure' );
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP8 should give same failure on retry.');
+fails( $near, universal => $time, $want,
+    'SGP8 should give same failure on retry' );
 
 # SDP8
 
 $deep->set(model => 'sdp8');
 
-eval {$deep->universal($time)};
-like($@, $want, 'SDP8 model failure.');
+fails( $deep, universal => $time, $want,
+    'SDP8 model failure' );
 
-eval {$deep->universal($time)};
-like($@, $want, 'SDP8 should give same failure on retry.');
+fails( $deep, universal => $time, $want,
+    'SDP8 should give same failure on retry' );
 
 # SGP4R
 
@@ -91,16 +91,29 @@ $near->set(model => 'sgp4r');
 $deep->set(model => 'sgp4r');
 $want = qr{Mean eccentricity < 0 or > 1};
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP4R model failure (near-Earth).');
+fails( $near, universal => $time, $want,
+    'SGP4R model failure (near-Earth)' );
 
-eval {$near->universal($time)};
-like($@, $want, 'SGP4R should give same failure on retry (near-Earth).');
+fails( $near, universal => $time, $want,
+    'SGP4R should give same failure on retry (near-Earth)' );
 
-eval {$deep->universal($time)};
-like($@, $want, 'SGP4R model failure (deep-space).');
+fails( $deep, universal => $time, $want,
+    'SGP4R model failure (deep-space).');
 
-eval {$deep->universal($time)};
-like($@, $want, 'SGP4R should give same failure on retry (deep-space).');
+fails( $deep, universal => $time, $want,
+    'SGP4R should give same failure on retry (deep-space)' );
+
+sub fails {	## no critic (RequireArgUnpacking)
+    my ( $obj, $method, @args ) = @_;
+    my $name = pop @args;
+    my $want = pop @args;
+    if ( eval { $obj->$method( @args ); 1 } ) {
+	@_ = ( "$name failed to throw error" );
+	goto &fail;
+    } else {
+	@_ = ( $@, $want, $name );
+	goto &like;
+    }
+}
 
 1;

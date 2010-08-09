@@ -301,7 +301,9 @@ sub can {
     $@ and return;
     $rslt and return $rslt;
 
-    return eval {$self->{current}->can($method)};
+    return eval {	## no critic (RequireCheckingReturnValueOfEval)
+	$self->{current}->can($method)
+    };
 }
 
 
