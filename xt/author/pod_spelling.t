@@ -189,6 +189,7 @@ pre
 psiprime
 rad
 Ramon
+rcs
 readonly
 rebless
 reblessable

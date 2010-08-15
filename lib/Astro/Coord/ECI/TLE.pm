@@ -329,6 +329,7 @@ my %attrib = (
 		(($2 - 1) * 24 + $3) * 60 + $4) * 60 + $5;
 	}
 	$self->{$name} = $value;
+	return 0;
     },
     classification => 0,
     international => 0,
@@ -382,6 +383,7 @@ eod
     interval => 0,	# Interval for pass() positions, if positive.
     ds50 => undef,	# Read-only
     epoch_dynamical => undef,	# Read-only
+    rcs => 0,		# Radar cross-section
     tle => undef,	# Read-only
     illum => \&_set_illum,
     reblessable => sub {
@@ -882,6 +884,13 @@ external format. Internal format (denoted by a 'G' in column 79 of line
 1 of the set, not counting the common name if any) is not supported,
 and the presence of such data will result in an exception being thrown.
 
+There are two pieces of ad-hoc data that will be parsed from the name
+portion of a NASA TLE and put into the appropriate attribute:
+C<< --effective effective_date >> and C<< --rcs radar_cross_section >>.
+These go in the C<effective> and C<rcs> attributes, respectively. If,
+after removing these ad-hoc entries, the name is the empty string, the
+body is considered not to have a name.
+
 =cut
 
 sub parse {
@@ -906,10 +915,14 @@ eod
 	$line =~ s/\s+$//;
 	my $tle = "$line\n";
 	$line =~ m{ \A 1 (\s* \d+) }smx and length $1 == 6 or do {
-	    if ($line =~ s{ \s* --effective \s+ (\S+) }{}smx) {
-		$ele{effective} = $1;
+	    my %adhoc;
+	    $line =~ s{ \s* -- ( [-\w]+ ) \s+ ( \S+ ) }
+		{ _parse_adhoc( \%adhoc, $1, $2 ) }smxge;
+	    foreach my $name ( qw{ effective rcs } ) {
+		exists $adhoc{$name}
+		    and $ele{$name} = delete $adhoc{$name};
 	    }
-	    $line and $ele{name} = $line;
+	    $line ne '' and $ele{name} = $line;
 	    $line = shift @data;
 	    $tle .= "$line\n";
 	};
@@ -968,6 +981,12 @@ eod
 	push @rslt, $body;
     }
     return @rslt;
+}
+
+sub _parse_adhoc {
+    my ( $hash, $name, $value ) = @_;
+    $hash->{$name} = $value;
+    return '';
 }
 
 # Parse information for the above from
@@ -7404,6 +7423,14 @@ Setting the L<epoch|/item_epoch> also modifies this attribute.
 This attribute contains the orbital eccentricity, with the
 implied decimal point inserted.
 
+=item effective (numeric, parse)
+
+This attribute contains the effective date of the TLE, as a Perl time in
+seconds since the epoch. As a convenience, it can be set in the format
+used by NASA to specify this, as year/day/hour:minute:second, where all
+fields are numeric, and the day is the day number of the year, January 1
+being 1, and December 31 being either 365 or 366.
+
 =item elementnumber (numeric, parse)
 
 This attribute contains the element set number of the data set. In
@@ -7557,6 +7584,11 @@ The default is undef.
 =item name (string, parse (three-line sets only))
 
 This attribute contains the common name of the body.
+
+=item rcs (string, parse)
+
+This attribute represents the radar cross-section of the body, in square
+meters.
 
 =item reblessable (boolean)
 

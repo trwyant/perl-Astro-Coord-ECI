@@ -9,8 +9,7 @@ use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
 use Time::Local;
 
-plan('no_plan');
-# plan(tests => 3);
+plan( tests => 18 );
 
 my $epoch = timelocal(0, 0, 0, 1, 3, 109);	# April 1 2009;
 my $backdate = Astro::Coord::ECI::TLE->new(
@@ -57,5 +56,23 @@ is($set->max_effective_date($epoch), $epoch,
     '$set->max_effective_date($epoch) is $epoch');
 is($set->select(), $backdate,
     '$set->max_effective_date($epoch) selects $backdate');
+
+SKIP: {
+
+    my ( $tle ) = eval { Astro::Coord::ECI::TLE->parse( <<'EOD' ) };
+Satellite X --effective 1980/275/12:00:00.0 --rcs 25.0
+1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    8
+2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  105
+EOD
+    ok( $tle, 'Parse TLE with --effective and --rcs specs' )
+	or skip ( 'Failed to parse TLE', 2 );
+
+    cmp_ok( $tle->get( 'effective' ), '==', timegm( 0, 0, 12, 1, 9, 80 ),
+	'Effective date is noon October 1 1980' );
+
+    cmp_ok( $tle->get( 'rcs' ), '==', 25,
+	'Radar cross-section is 25' );
+
+}
 
 1;
