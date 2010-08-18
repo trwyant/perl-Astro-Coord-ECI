@@ -210,14 +210,13 @@ our $VERSION = '0.032';
 
 use base qw{Astro::Coord::ECI Exporter};
 
-use Astro::Coord::ECI::Utils qw{ :time deg2rad dynamical_delta embodies
-    find_first_true load_module max mod2pi PI PIOVER2 rad2deg SECSPERDAY
-    TWOPI thetag };
+use Astro::Coord::ECI::Utils qw{ :params :time deg2rad dynamical_delta
+    embodies find_first_true load_module max mod2pi PI PIOVER2 rad2deg
+    SECSPERDAY TWOPI thetag };
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use IO::File;
-use Params::Util 0.25 qw{_CLASSISA _INSTANCE};
 use POSIX qw{floor fmod strftime};
 
 BEGIN {
@@ -1570,7 +1569,7 @@ It does not under any circumstances manufacture another object.
 
 sub rebless {
     my ($tle, @args) = @_;
-    _INSTANCE($tle, __PACKAGE__) or croak <<eod;
+    _instance( $tle, __PACKAGE__ ) or croak <<eod;
 Error - You can only rebless an object of class @{[__PACKAGE__]}
         or a subclass thereof. The object you are trying to rebless
 	is of class @{[ref $tle]}.
@@ -1585,7 +1584,7 @@ eod
 	or return $tle;
     $class = $type_map{$class} if $type_map{$class};
     load_module ($class);
-    _CLASSISA($class, __PACKAGE__) or croak <<eod;
+    _classisa( $class, __PACKAGE__ ) or croak <<eod;
 Error - You can only rebless an object into @{[__PACKAGE__]} or
         a subclass thereof. You are trying to rebless the object
 	into $class.
@@ -1745,7 +1744,7 @@ eod
 Error - The status (add => $id) call requires a type.
 eod
 	my $class = $type_map{$type} || $type;
-	_CLASSISA($class, __PACKAGE__) or croak <<eod;
+	_classisa( $class, __PACKAGE__ ) or croak <<eod;
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
 	my $status = shift || 0;
@@ -1768,7 +1767,7 @@ eod
 	    %status = ();
 	} else {
 	    my $class = $type_map{$type} || $type;
-	    _CLASSISA($class, __PACKAGE__) or croak <<eod;
+	    _classisa( $class, __PACKAGE__ ) or croak <<eod;
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
 	    foreach my $key (keys %status) {

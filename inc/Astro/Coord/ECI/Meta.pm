@@ -27,7 +27,15 @@ sub requires {
 ##  if ( ! $self->distribution() ) {
 ##  }
     return +{
-	'Params::Util'	=> 0.25,
+	'Carp'		=> 0,
+	'Data::Dumper'	=> 0,
+	'Exporter'	=> 0,
+	'IO::File'	=> 0,
+	'POSIX'		=> 0,
+	'Scalar::Util'	=> 0,
+	'constant'	=> 0,
+	'strict'	=> 0,
+	'warnings'	=> 0,
 	@extra,
     };
 }

@@ -20,7 +20,6 @@ use Data::Dumper;
 use File::Basename;
 use FileHandle;
 use Getopt::Long;
-use Params::Util 0.25 qw{_INSTANCE};
 use Pod::Usage;
 use POSIX qw{floor strftime};
 use Term::ReadLine;
@@ -1981,7 +1980,7 @@ my $verb = lc (shift @_ || '');
 
 if (!$verb) {
     foreach my $body (@sky) {
-	if (_INSTANCE($body, 'Astro::Coord::ECI::Star')) {
+	if ( _instance( $body, 'Astro::Coord::ECI::Star' ) ) {
 	    my ($ra, $dec, $rng, $pmra, $pmdec, $vr)  = $body->position ();
 	    $rng /= PARSEC;
 	    $pmra = rad2deg ($pmra / 24 * 360 * cos ($ra)) * SPY2DPS;

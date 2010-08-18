@@ -126,7 +126,6 @@ our $VERSION = '0.032';
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
-use Params::Util 0.25 qw{_INSTANCE};
 use POSIX qw{floor strftime};	# For debugging
 
 use constant ATTRIBUTE_KEY => '_sub_TLE_Iridium';
@@ -488,7 +487,7 @@ sub _flare_fixed {
     my $station = shift;
     {
 	local $@;
-	_INSTANCE($station, 'Astro::Coord::ECI') or croak <<eod;
+	_instance( $station, 'Astro::Coord::ECI' ) or croak <<eod;
 Error - The station must be a subclass of Astro::Coord::ECI.
 eod
     }

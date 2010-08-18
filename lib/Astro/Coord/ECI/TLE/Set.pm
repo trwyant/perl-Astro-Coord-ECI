@@ -131,9 +131,8 @@ package Astro::Coord::ECI::TLE::Set;
 use strict;
 use warnings;
 
-use Astro::Coord::ECI::Utils qw{max};
+use Astro::Coord::ECI::Utils qw{ :params max };
 use Carp;
-use Params::Util 0.25 qw{_INSTANCE};
 
 our @CARP_NOT = qw{
     Astro::Coord::ECI::TLE::Iridium
@@ -197,11 +196,11 @@ sub add {
 	defined $effective or $effective = $tle->get('epoch');
 	$ep{$effective} = $tle;
     }
-    foreach my $tle (map {_INSTANCE($_, __PACKAGE__) ?
+    foreach my $tle (map {_instance( $_, __PACKAGE__ ) ?
 	    $_->members : $_} @args) {
 	my $aid = $tle->get ('id');
 	if (defined $id) {
-	    _INSTANCE($tle, $class) or croak <<eod;
+	    _instance( $tle, $class ) or croak <<eod;
 Error - Additional member of @{[__PACKAGE__]} must be a
         subclass of $class
 eod
@@ -210,7 +209,7 @@ Error - NORAD ID mismatch. Trying to add ID $aid to set defined
         as ID $id.
 eod
 	} else {
-	    _INSTANCE($tle, 'Astro::Coord::ECI::TLE') or croak <<eod;
+	    _instance( $tle, 'Astro::Coord::ECI::TLE' ) or croak <<eod;
 Error - First member of @{[__PACKAGE__]} must be a subclass
         of Astro::Coord::ECI::TLE.
 eod

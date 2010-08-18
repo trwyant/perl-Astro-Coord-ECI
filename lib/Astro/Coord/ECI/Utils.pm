@@ -101,6 +101,7 @@ use Carp;
 ## use Config;
 use Data::Dumper;
 use POSIX qw{floor strftime};
+use Scalar::Util qw{ blessed };
 
 my @time_routines;
 
@@ -135,11 +136,13 @@ our @EXPORT_OK = ( qw{
 	jd2datetime jday2000 julianday load_module looks_like_number max
 	min mod2pi nutation_in_longitude nutation_in_obliquity obliquity
 	omega rad2deg tan theta0 thetag vector_cross_product
-	vector_dot_product vector_magnitude vector_unitize },
+	vector_dot_product vector_magnitude vector_unitize
+       	_classisa _instance },
 	@time_routines );
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
+    params => [ qw{ _classisa _instance } ],
     time => \@time_routines,
 );
 
@@ -978,6 +981,32 @@ sub vector_unitize {
     'must be a reference to an array';
     my $mag = vector_magnitude( $b );
     return [ map { $_ / $mag } @{ $b } ];
+}
+
+#	_classisa( 'Foo', 'Bar' );
+#
+#	Returns true if Foo->isa( 'Bar' ) is true, and false otherwise.
+#	In particular, returns false if the first argument is a
+#	reference.
+
+sub _classisa {
+    my ( $invocant, $class ) = @_;
+    ref $invocant and return;
+    defined $invocant or return;
+    return $invocant->isa( $class );
+}
+
+#	_instance( $foo, 'Bar' );
+#
+#	Returns true if $foo is an instance of 'Bar', and false
+#	otherwise. In particular, returns false if $foo is not a
+#	reference, or if it is not blessed.
+
+sub _instance {
+    my ( $object, $class ) = @_;
+    ref $object or return;
+    blessed( $object ) or return;
+    return $object->isa( $class );
 }
 
 #	$epoch_time = _parse_time_iso_8601
