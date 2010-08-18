@@ -805,7 +805,7 @@ eod
 =item $coord = $coord->ecliptic ($latitude, $longitude, $range, $time);
 
 This method sets the L</Ecliptic> coordinates represented by the object
-in terms of L</Ecliptic latitude> and L<Ecliptic longitude> in radians,
+in terms of L</Ecliptic latitude> and L</Ecliptic longitude> in radians,
 and the range to the object in kilometers, time being universal time.
 The object itself is returned.
 
@@ -912,7 +912,7 @@ eod
 =item $coord->equatorial ($rightasc, $declin, $range, $time);
 
 This method sets the L</Equatorial> coordinates represented by the
-object in terms of L<Right Ascension> and L</Declination> in radians,
+object in terms of L</Right Ascension> and L</Declination> in radians,
 and the range to the object in kilometers, time being universal
 time. The object itself is returned.
 

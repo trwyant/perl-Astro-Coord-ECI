@@ -4722,7 +4722,8 @@ elements, or any other location supported by Astro::SpaceTrack.
 What comes after the 'st' is the name of an B<Astro::SpaceTrack> method,
 followed by any arguments to that method. If the method returns orbital
 elements, those elements will be added to the observing list. You can
-use 'st help' to get brief help, or see L<Astro::SpaceTrack>.
+use 'st help' to get brief help, or see
+L<Astro::SpaceTrack|Astro::SpaceTrack>.
 
 In addition to the legal B<Astro::SpaceTrack> methods, 'show' has been
 made a synonym to 'get', for consistency. Also, as of satpass 0.006_13,
@@ -5077,7 +5078,7 @@ The default is 0.
 This parameter specifies the name of the reference ellipsoid to be used
 to model the shape of the earth. Any reference ellipsoid supported by
 Astro::Coord::ECI may be used. For details,
-see L<Astro::Coord::ECI>.
+see L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 The default is 'WGS84'.
 
@@ -5457,7 +5458,7 @@ as parameters complain mightily about not knowing what time zone they
 are in. Otherwise, don't bother.
 
 If you find you need to bother, see the TIMEZONES section of
-L<Date::Manip> for more information.
+L<Date::Manip|Date::Manip> for more information.
 
 This parameter is not set at all by default, and will not appear
 in the 'show' output until it has been set.
@@ -5726,9 +5727,9 @@ For prior changes, see F<Changes>.
 
 =head1 ACKNOWLEDGMENTS
 
-L<Astro::Coord::ECI> acknowledges those without whom this code would not
-exist. But the script has its own issues, and I would like to
-acknowledge here those who made this script better:
+L<Astro::Coord::ECI|Astro::Coord::ECI> acknowledges those without whom
+this code would not exist. But the script has its own issues, and I
+would like to acknowledge here those who made this script better:
 
 Imacat of Tavern IMACAT in Taiwan, for helping me to work out a satpass
 script testing problem.

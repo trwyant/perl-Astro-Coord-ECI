@@ -103,8 +103,8 @@ as follows:
  2 => failed - no predictable flares.
 
 Celestrak-style statuses ('+', 'S', and '-' respectively) are accepted
-on input. See L<Astro::SpaceTrack> method iridium_status for a way to
-get current Iridium constellation status.
+on input. See L<Astro::SpaceTrack|Astro::SpaceTrack> method
+iridium_status for a way to get current Iridium constellation status.
 
 =head2 Methods
 
