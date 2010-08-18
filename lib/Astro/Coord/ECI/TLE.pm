@@ -6475,85 +6475,103 @@ sub _initial_inertial{ return 1 };
 #	a TLE in the case where $self->get('tle') was called but the
 #	object was not initialized by the parse() method.
 
-sub _make_tle {
-    my $self = shift;
-    my $output;
+{
 
-    my $oid = $self->get('id');
-    my @line0;
+    my %hack = (
+	effective => sub {
+	    my ( $self, $name, $value ) = @_;
+	    my $whole = floor($value);
+	    my ($sec, $min, $hr, undef, undef, $year, undef, $yday) =
+		gmtime $value;
+	    return (
+		'--effective',
+		sprintf '%04d/%03d/%02d:%02d:%06.3f',
+		$year + 1900, $yday + 1, $hr, $min,
+		$sec + ($value - $whole)
+	    );
+	},
+	rcs => sub {
+	    my ( $self, $name, $value ) = @_;
+	    return ( '--rcs', $value );
+	},
+    );
 
-    {
-	my $name;
-	defined ($name = $self->get('name'))
-	    and $name ne ''
-	    and push @line0, substr $name, 0, 24;
-    }
+    sub _make_tle {
+	my $self = shift;
+	my $output;
 
-    if (defined (my $effective = $self->get('effective'))) {
-	my $whole = floor($effective);
-	my ($sec, $min, $hr, undef, undef, $year, undef, $yday) =
-	    gmtime $effective;
-	push @line0, sprintf '--effective %04d/%03d/%02d:%02d:%06.3f',
-	    $year + 1900, $yday + 1, $hr, $min,
-	    $sec + ($effective - $whole);
-    }
-    @line0 and $output .= join (' ', @line0) . "\n";
+	my $oid = $self->get('id');
+	my @line0;
 
-    my %ele;
-    {
-	foreach (qw{firstderivative secondderivative bstardrag
-	    inclination ascendingnode eccentricity
-	    argumentofperigee meananomaly meanmotion
-	    revolutionsatepoch}) {
-	    defined ($ele{$_} = $self->get($_))
-		or croak "OID $oid ", ucfirst $_,
-		    "undefined; can not generate TLE";
+	{
+	    my $name;
+	    defined ($name = $self->get('name'))
+		and $name ne ''
+		and push @line0, substr $name, 0, 24;
 	}
-	my $temp = SGP_TWOPI;
-	foreach (qw{meanmotion firstderivative secondderivative}) {
-	    $temp /= SGP_XMNPDA;
-	    $ele{$_} /= $temp;
+
+	foreach my $name ( sort keys %hack ) {
+	    defined( my $value = $self->get( $name ) ) or next;
+	    push @line0, $hack{$name}->( $self, $name, $value );
 	}
-	foreach (qw{ascendingnode argumentofperigee meananomaly
-		    inclination}) {
-	    $ele{$_} /= SGP_DE2RA;
-	}
-	foreach my $key (qw{eccentricity}) {
-	    local $_ = sprintf '%.7f', $ele{$key};
-	    s/.*?\.//;
-	    $ele{$key} = $_;
-	}
-	my $epoch = $self->get('epoch');
-	my $epoch_dayfrac = sprintf '%.8f', ($epoch / SECSPERDAY);
-	$epoch_dayfrac =~ s/.*?\././;
-	my $epoch_daynum = strftime '%y%j', gmtime ($epoch);
-	$ele{epoch} = $epoch_daynum . $epoch_dayfrac;
-	$ele{firstderivative} = sprintf (
-	    '%.8f', $ele{firstderivative});
-	$ele{firstderivative} =~ s/([-+]?)[\s0]*\./$1./;
-	foreach my $key (qw{secondderivative bstardrag}) {
-	    if ($ele{$key}) {
-		local $_ = sprintf '%.4e', $ele{$key};
-		s/\.//;
-		my ($mantissa, $exponent) = split 'e', $_;
-		$exponent++;
-		$ele{$key} = sprintf '%s%+1d', $mantissa, $exponent;
-	    } else {
-		$ele{$key} = '00000-0';
+	@line0 and $output .= join (' ', @line0) . "\n";
+
+	my %ele;
+	{
+	    foreach (qw{firstderivative secondderivative bstardrag
+		inclination ascendingnode eccentricity
+		argumentofperigee meananomaly meanmotion
+		revolutionsatepoch}) {
+		defined ($ele{$_} = $self->get($_))
+		    or croak "OID $oid ", ucfirst $_,
+			"undefined; can not generate TLE";
+	    }
+	    my $temp = SGP_TWOPI;
+	    foreach (qw{meanmotion firstderivative secondderivative}) {
+		$temp /= SGP_XMNPDA;
+		$ele{$_} /= $temp;
+	    }
+	    foreach (qw{ascendingnode argumentofperigee meananomaly
+			inclination}) {
+		$ele{$_} /= SGP_DE2RA;
+	    }
+	    foreach my $key (qw{eccentricity}) {
+		local $_ = sprintf '%.7f', $ele{$key};
+		s/.*?\.//;
+		$ele{$key} = $_;
+	    }
+	    my $epoch = $self->get('epoch');
+	    my $epoch_dayfrac = sprintf '%.8f', ($epoch / SECSPERDAY);
+	    $epoch_dayfrac =~ s/.*?\././;
+	    my $epoch_daynum = strftime '%y%j', gmtime ($epoch);
+	    $ele{epoch} = $epoch_daynum . $epoch_dayfrac;
+	    $ele{firstderivative} = sprintf (
+		'%.8f', $ele{firstderivative});
+	    $ele{firstderivative} =~ s/([-+]?)[\s0]*\./$1./;
+	    foreach my $key (qw{secondderivative bstardrag}) {
+		if ($ele{$key}) {
+		    local $_ = sprintf '%.4e', $ele{$key};
+		    s/\.//;
+		    my ($mantissa, $exponent) = split 'e', $_;
+		    $exponent++;
+		    $ele{$key} = sprintf '%s%+1d', $mantissa, $exponent;
+		} else {
+		    $ele{$key} = '00000-0';
+		}
 	    }
 	}
+	$output .= _make_tle_checksum ('1%6s%s %-8s %-14s %10s %8s %8s %s %4s',
+	    $oid, $self->get('classification'),
+	    $self->get('international'),
+	    @ele{qw{epoch firstderivative secondderivative bstardrag}},
+	    $self->get('ephemeristype'), $self->get('elementnumber'),
+	);
+	$output .= _make_tle_checksum ('2%6s%9.4f%9.4f %-7s%9.4f%9.4f%12.8f%5s',
+	    $oid, @ele{qw{inclination ascendingnode eccentricity
+		argumentofperigee meananomaly meanmotion revolutionsatepoch}},
+	);
+	return $output;
     }
-    $output .= _make_tle_checksum ('1%6s%s %-8s %-14s %10s %8s %8s %s %4s',
-	$oid, $self->get('classification'),
-	$self->get('international'),
-	@ele{qw{epoch firstderivative secondderivative bstardrag}},
-	$self->get('ephemeristype'), $self->get('elementnumber'),
-    );
-    $output .= _make_tle_checksum ('2%6s%9.4f%9.4f %-7s%9.4f%9.4f%12.8f%5s',
-	$oid, @ele{qw{inclination ascendingnode eccentricity
-	    argumentofperigee meananomaly meanmotion revolutionsatepoch}},
-    );
-    return $output;
 }
 
 #	$output = _make_tle_checksum($fmt ...);
