@@ -1,4 +1,4 @@
-use 5.006;	# for 'our'.
+use 5.006002;	# for 'our'.
 
 use strict;
 use warnings;
@@ -122,7 +122,7 @@ $mmv >= 6.4501 and $attr{META_MERGE} = {
     },
 };
 
-$mmv >= 6.4701 and $attr{MIN_PERL_VERSION} = 5.006;
+$mmv >= 6.4701 and $attr{MIN_PERL_VERSION} = $meta->requires_perl();
 
 WriteMakefile (%attr);
 
