@@ -9,41 +9,6 @@ use IO::File;
 use Test;
 
 my $tle_file = File::Spec->catfile ('t', 'sgp4-ver.tle');
-unless (-e $tle_file) {
-    $ENV{AUTOMATED_TESTING}
-	and bail_out ("Automated testing and $tle_file not downloaded");
-    prompt ("\nTest file $tle_file needed. ",
-	"Shall I download? [y/n d:n]: ") =~ m/^y/i
-	or bail_out ("Skipped at tester request; $tle_file not downloaded");
-    foreach (qw{File::Temp LWP::UserAgent Archive::Zip}) {
-	eval "require $_; 1" or bail_out ("Unable to load $_");
-    }
-    my $url = 'http://celestrak.com/publications/AIAA/2006-6753/AIAA-2006-6753.zip';
-
-    my $ua = LWP::UserAgent->new ();
-    warn "\n# Fetching $url\n";
-    my $rslt = $ua->get ($url);
-    $rslt->is_success
-	or bail_out ("Failed to fetch data: ", $rslt->status_line);
-
-    my $fh = File::Temp->new ();
-    binmode $fh;
-    print $fh $rslt->content;
-    seek $fh, 0, 0;
-
-##    my $member = 'sgp4-ver.tle';
-    my $member = 'SGP4-VER.TLE';
-
-    my $zip = Archive::Zip->new ();
-    warn "# Reading Zip file\n";
-    my $status = $zip->read ($fh->filename);
-    $status == &Archive::Zip::AZ_OK
-	or bail_out ("Zip data stream read error: $status");
-    warn "# Extracting $member to $tle_file\n";
-    $status = $zip->extractMember ($member, $tle_file);
-    $status == &Archive::Zip::AZ_OK
-	or bail_out ("Unable to extract Zip member $member: $status");
-}
 
 Astro::Coord::ECI::TLE->set (gravconst_r => 72);
 

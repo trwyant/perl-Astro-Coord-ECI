@@ -481,7 +481,7 @@ L<Astro::SpaceTrack|Astro::SpaceTrack> will retrieve data from this
 site, but of course you have to give it a username and password before
 it will do so.
 
-=head2 Celestrak
+=head2 CelesTrak
 
 Dr. T. S. Kelso's L<http://celestrak.com/> is a good source for the more
 popular satellites. It redistributes data from L<Space Track>,

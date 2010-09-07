@@ -57,7 +57,7 @@ Brodowski
 bstardrag
 CA
 ca
-Celestrak
+CelesTrak
 Chalpront
 cmd
 Coord

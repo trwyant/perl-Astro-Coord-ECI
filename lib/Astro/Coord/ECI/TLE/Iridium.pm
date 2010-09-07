@@ -27,7 +27,7 @@ will need to substitute your own location where indicated.
     deg2rad ($your_east_longitude_in_degrees),
     $your_height_above_sea_level_in_meters/1000);
  
- # Get all the Iridium data from Celestrak; it is direct-
+ # Get all the Iridium data from CelesTrak; it is direct-
  # fetched, so no password is needed.
  
  my $st = Astro::SpaceTrack->new (direct => 1);
@@ -102,7 +102,7 @@ as follows:
  1 => spare (may or may not flare)
  2 => failed - no predictable flares.
 
-Celestrak-style statuses ('+', 'S', and '-' respectively) are accepted
+CelesTrak-style statuses ('+', 'S', and '-' respectively) are accepted
 on input. See L<Astro::SpaceTrack|Astro::SpaceTrack> method
 iridium_status for a way to get current Iridium constellation status.
 
@@ -419,7 +419,7 @@ says are spares. I have skipped the spares by default because I do not
 know that their attitudes are maintained to the requisite precision,
 though perhaps they would be, to demonstrate that the spares are
 functional. This software currently uses the Iridium status from
-Celestrak (L<http://celestrak.com/SpaceTrack/query/iridium.txt>), since
+CelesTrak (L<http://celestrak.com/SpaceTrack/query/iridium.txt>), since
 it represents one-stop shopping, and Dr. Kelso has expressed the intent
 to check with Iridium Satellite LLC monthly for status. Mike McCants'
 "Status of Iridium Payloads" at

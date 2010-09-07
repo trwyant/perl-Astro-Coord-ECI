@@ -3651,7 +3651,7 @@ macros can be defined to issue frequently-used commands.
  satpass> # Don't use SpaceTrack when a redistributor has the data.
  satpass> # If you don't set direct, you must have a SpaceTrack login.
  satpass> st set direct 1
- satpass> # Get the top 100 (or so) visible satellites from Celestrak.
+ satpass> # Get the top 100 (or so) visible satellites from CelesTrak.
  satpass> st celestrak visual
  satpass> # Keep only the HST and the ISS by NORAD ID number
  satpass> choose 20580 25544
@@ -3953,7 +3953,7 @@ the items if any.
 
 For example:
 
- satpass> # Get the Celestrak "top 100" list.
+ satpass> # Get the CelesTrak "top 100" list.
  satpass> st celestrak visual
  satpass> # Keep only the HST and the ISS
  satpass> choose hst iss
@@ -4715,7 +4715,7 @@ if the file cannot be opened.
 
 This command uses the B<Astro::SpaceTrack> package to acquire orbital
 data directly from the Space Track web site (assuming it is available).
-It can also retrieve them from the Celestrak web site for as long as
+It can also retrieve them from the CelesTrak web site for as long as
 Dr. Kelso retains his authorization to redistribute the orbital
 elements, or any other location supported by Astro::SpaceTrack.
 
@@ -4764,7 +4764,7 @@ Hubble Space Telescope from Space Track:
  satpass> # Get the data by NORAD ID number
  satpass> st retrieve 20580 25544
 
-Example of retrieving the data from Celestrak without using a Space
+Example of retrieving the data from CelesTrak without using a Space
 Track login:
 
  satpass> # Specify direct retrieval.

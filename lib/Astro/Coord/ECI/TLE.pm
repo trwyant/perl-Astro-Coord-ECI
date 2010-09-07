@@ -7677,6 +7677,10 @@ was his discussion of the coordinate system used
 (L<http://celestrak.com/columns/v02n01/>) and (indirectly) his Pascal
 implementation of these models.
 
+The file F<t/sgp4-ver.tle>, used in testing the C<sgp4r> model, is from
+"Revisiting Spacetrack Report #3" (made available at the CelesTrak web
+site as cited above), and is used with the kind permission of Dr. Kelso.
+
 =head1 SEE ALSO
 
 I am aware of no other modules that perform calculations with NORAD

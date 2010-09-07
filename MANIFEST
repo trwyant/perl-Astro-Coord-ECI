@@ -39,6 +39,7 @@ t/iridium.t
 t/moon.t
 t/parse_time.t
 t/set.t
+t/sgp4-ver.tle
 t/sgp4r.out
 t/star.t
 t/sun.t
