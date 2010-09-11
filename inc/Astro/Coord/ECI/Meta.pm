@@ -29,7 +29,7 @@ sub requires {
     return +{
 	'Carp'		=> 0,
 	'Data::Dumper'	=> 0,
-	'Exporter'	=> 0,
+	'Exporter'	=> 5.64,
 	'IO::File'	=> 0,
 	'POSIX'		=> 0,
 	'Scalar::Util'	=> 0,
