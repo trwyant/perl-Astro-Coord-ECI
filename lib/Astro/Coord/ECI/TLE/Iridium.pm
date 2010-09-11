@@ -678,6 +678,7 @@ eod
 
 #	Now iterate over each MMA to calculate its flare, if any.
 
+MMA_LOOP:
 	foreach my $mma (0 .. 2) {
 
 
@@ -761,6 +762,7 @@ eod
 
 		my $angle = _flare_calculate_angle_list ($tle_vector,
 		    $mma, $illum_vector, $station_vector);
+		defined $angle or next MMA_LOOP;
 
 
 #	Store the data in our approximation list, in order by angle.
