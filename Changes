@@ -1,3 +1,9 @@
+0.033_01	02-Dec-2010	T. R. Wyant
+  Try to avoid panic in Astro::Coord::ECI zero-argument geocentric()
+    under at least one version by using less-cute code to compute the
+    value.
+  This release has known failures in xt/author/iridium_status.t.
+
 0.033		17-Sep-2010	T. R. Wyant
   Fix glitch in Astro::Coord::ECI::TLE::Iridium flare() where the
     maximum magnitude logic was being called when a flare was not
