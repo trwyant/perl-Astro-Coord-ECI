@@ -1257,7 +1257,9 @@ sub geocentric {
     $self = $self->_check_coord (geocentric => \@args);
 
     unless (@args) {
-	return @{$self->{_ECI_cache}{fixed}{geocentric} ||= do {
+
+	if ( ! $self->{_ECI_cache}{fixed}{geocentric} ) {
+
 	    my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->ecef;
 	    my $rsq = $x * $x + $y * $y;
 	    my $rho = sqrt ($z * $z + $rsq);
@@ -1274,8 +1276,11 @@ Debug geocentric () - ecef -> geocentric
         lambda = $lambda
         rho = $rho
 eod
-	    [$psiprime, $lambda, $rho];
-	}};
+	    $self->{_ECI_cache}{fixed}{geocentric} =
+		[ $psiprime, $lambda, $rho ];
+	}
+
+	return @{ $self->{_ECI_cache}{fixed}{geocentric} };
     }
 
     if (@args == 3) {
