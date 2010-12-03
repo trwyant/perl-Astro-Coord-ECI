@@ -1719,6 +1719,9 @@ status (drop => $id) removes the given NORAD ID from the status table.
 status ('show') returns a list of list references, representing the
 'add' commands which would be used to regenerate the status table.
 
+Initially, the status table is populated with the status as of December
+3, 2010.
+
 =cut
 
 use constant STATUS_IN_SERVICE => 0;
@@ -6626,745 +6629,745 @@ eod
 
 #	Initialization
 
-%status = (	# As of 13-Feb-2009, from Kelso's document dated 29-Sep-2008,
-    		# hand-updated to show the demise of Iridium 33.
-          '25432' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 76',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25432
-                     },
-          '25106' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 47',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25106
-                     },
-          '24925' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Dummy mass 1',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24925
-                     },
-          '24948' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 28',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24948
-                     },
-          '24870' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 17',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24870
-                     },
-          '27451' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 98',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 27451
-                     },
-          '25530' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 84',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25530
-                     },
-          '25273' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 57',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25273
-                     },
-          '24792' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 8',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24792
-                     },
-          '24793' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 7',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24793
-                     },
-          '25105' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 24',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25105
-                     },
-          '24966' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 35',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24966
-                     },
-          '25527' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 2',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25527
-                     },
-          '24965' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 19',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24965
-                     },
-          '25344' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 73',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25344
-                     },
-          '25276' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 60',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25276
-                     },
-          '24841' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 16',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24841
-                     },
-          '24950' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 31',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24950
-                     },
-          '25288' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 65',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25288
-                     },
-          '25531' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 83',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25531
-                     },
-          '25169' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 52',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25169
-                     },
-          '24869' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 15',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24869
-                     },
-          '25319' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 69',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25319
-                     },
-          '24872' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 18',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24872
-                     },
-          '25320' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 71',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25320
-                     },
-          '25263' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 61',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25263
-                     },
-          '25467' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 82',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25467
-                     },
-          '25262' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 51',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25262
-                     },
-          '25342' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 70',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25342
-                     },
-          '25170' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 56',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25170
-                     },
-          '25172' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 50',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25172
-                     },
-          '24871' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 920',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24871
-                     },
-          '25778' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 21',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25778
-                     },
-          '25291' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 68',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25291
-                     },
-          '25468' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 81',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25468
-                     },
-          '27376' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 96',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 27376
-                     },
-          '24969' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 34',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24969
-                     },
-          '25272' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 55',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25272
-                     },
-          '25431' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 3',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25431
-                     },
-          '25287' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 64',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25287
-                     },
-          '25578' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 11',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25578
-                     },
-          '24949' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 30',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24949
-                     },
-          '27450' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 97',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 27450
-                     },
-          '25077' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 42',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25077
-                     },
-          '25343' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 72',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25343
-                     },
-          '24926' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Dummy mass 2',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24926
-                     },
-          '25042' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 39',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25042
-                     },
-          '27374' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 94',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 27374
-                     },
-          '25471' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 77',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25471
-                     },
-          '25078' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 44',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25078
-                     },
-          '25041' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 40',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25041
-                     },
-          '24842' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 911',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24842
-                     },
-          '24904' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 25',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24904
-                     },
-          '24907' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 22',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24907
-                     },
-          '25289' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 66',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25289
-                     },
-          '25108' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 49',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25108
-                     },
-          '24906' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 23',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24906
-                     },
-          '24836' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 914',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24836
-                     },
-          '25286' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 63',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25286
-                     },
-          '25528' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 86',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25528
-                     },
-          '24795' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 5',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24795
-                     },
-          '24839' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 10',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24839
-                     },
-          '27375' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 95',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 27375
-                     },
-          '24837' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 12',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24837
-                     },
-          '24796' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 4',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24796
-                     },
-          '24905' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 46',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24905
-                     },
-          '27373' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 90',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 27373
-                     },
-          '25275' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 59',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25275
-                     },
-          '24873' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 921',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24873
-                     },
-          '24903' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 26',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24903
-                     },
-          '24794' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 6',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24794
-                     },
-          '25290' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 67',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25290
-                     },
-          '25577' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 20',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25577
-                     },
-          '27372' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 91',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 27372
-                     },
-          '24945' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 32',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24945
-                     },
-          '25274' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 58',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25274
-                     },
-          '25040' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 41',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25040
-                     },
-          '25777' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 14',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25777
-                     },
-          '24946' => {
-                       'comment' => 'Collided with Cosmos 2251',
-                       'status' => 2,
-                       'name' => 'Iridium 33',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24946
-                     },
-          '25469' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 80',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25469
-                     },
-          '25173' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 53',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25173
-                     },
-          '24967' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 36',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24967
-                     },
-          '25171' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 54',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25171
-                     },
-          '24968' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 37',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24968
-                     },
-          '25039' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 43',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25039
-                     },
-          '25043' => {
-                       'comment' => '',
-                       'status' => 2,
-                       'name' => 'Iridium 38',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25043
-                     },
-          '24840' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 13',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24840
-                     },
-          '24944' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 29',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 24944
-                     },
-          '25345' => {
-                       'comment' => '',
-                       'status' => 1,
-                       'name' => 'Iridium 74',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25345
-                     },
-          '25285' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 62',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25285
-                     },
-          '25104' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 45',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25104
-                     },
-          '25346' => {
-                       'comment' => '',
-                       'status' => 0,
-                       'name' => 'Iridium 75',
-                       'class' => 'Astro::Coord::ECI::TLE::Iridium',
-                       'type' => 'iridium',
-                       'id' => 25346
-                     }
-	);
+%status = (	# As of 03-Dec-2010, from McCants' document dated
+		# 13-Feb-2010.
+  '25432' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 76',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25432
+             },
+  '25106' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 47',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25106
+             },
+  '24925' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Dummy mass 1',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24925
+             },
+  '24948' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 28',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24948
+             },
+  '24870' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 17',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24870
+             },
+  '27451' => {
+               'comment' => '',
+               'status' => 1,
+               'name' => 'Iridium 98',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 27451
+             },
+  '25530' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 84',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25530
+             },
+  '25273' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 57',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25273
+             },
+  '24792' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 8',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24792
+             },
+  '24793' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 7',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24793
+             },
+  '25105' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 24',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25105
+             },
+  '24966' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 35',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24966
+             },
+  '25527' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 2',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25527
+             },
+  '24965' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 19',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24965
+             },
+  '25344' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 73',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25344
+             },
+  '25276' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 60',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25276
+             },
+  '24841' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 16',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24841
+             },
+  '24950' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 31',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24950
+             },
+  '25288' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 65',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25288
+             },
+  '25531' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 83',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25531
+             },
+  '25169' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 52',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25169
+             },
+  '24869' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 15',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24869
+             },
+  '25319' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 69',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25319
+             },
+  '24872' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 18',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24872
+             },
+  '25320' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 71',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25320
+             },
+  '25263' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 61',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25263
+             },
+  '25467' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 82',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25467
+             },
+  '25262' => {
+               'comment' => '',
+               'status' => 1,
+               'name' => 'Iridium 51',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25262
+             },
+  '25342' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 70',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25342
+             },
+  '25170' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 56',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25170
+             },
+  '25172' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 50',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25172
+             },
+  '24871' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 920',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24871
+             },
+  '25778' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 21',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25778
+             },
+  '25291' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 68',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25291
+             },
+  '25468' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 81',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25468
+             },
+  '27376' => {
+               'comment' => '',
+               'status' => 1,
+               'name' => 'Iridium 96',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 27376
+             },
+  '24969' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 34',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24969
+             },
+  '25272' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 55',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25272
+             },
+  '25431' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 3',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25431
+             },
+  '25287' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 64',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25287
+             },
+  '25578' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 11',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25578
+             },
+  '24949' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 30',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24949
+             },
+  '27450' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 97',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 27450
+             },
+  '25077' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 42',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25077
+             },
+  '25343' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 72',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25343
+             },
+  '24926' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Dummy mass 2',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24926
+             },
+  '25042' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 39',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25042
+             },
+  '27374' => {
+               'comment' => '',
+               'status' => 1,
+               'name' => 'Iridium 94',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 27374
+             },
+  '25471' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 77',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25471
+             },
+  '25078' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 44',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25078
+             },
+  '25041' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 40',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25041
+             },
+  '24842' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 911',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24842
+             },
+  '24904' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 25',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24904
+             },
+  '24907' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 22',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24907
+             },
+  '25289' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 66',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25289
+             },
+  '25108' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 49',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25108
+             },
+  '24906' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 23',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24906
+             },
+  '24836' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 914',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24836
+             },
+  '25286' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 63',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25286
+             },
+  '25528' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 86',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25528
+             },
+  '24795' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 5',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24795
+             },
+  '24839' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 10',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24839
+             },
+  '27375' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 95',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 27375
+             },
+  '24837' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 12',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24837
+             },
+  '24796' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 4',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24796
+             },
+  '24905' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 46',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24905
+             },
+  '27373' => {
+               'comment' => '',
+               'status' => 1,
+               'name' => 'Iridium 90',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 27373
+             },
+  '25275' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 59',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25275
+             },
+  '24873' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 921',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24873
+             },
+  '24903' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 26',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24903
+             },
+  '24794' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 6',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24794
+             },
+  '25290' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 67',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25290
+             },
+  '25577' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 20',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25577
+             },
+  '27372' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 91',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 27372
+             },
+  '24945' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 32',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24945
+             },
+  '25274' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 58',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25274
+             },
+  '25040' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 41',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25040
+             },
+  '25777' => {
+               'comment' => '',
+               'status' => 1,
+               'name' => 'Iridium 14',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25777
+             },
+  '24946' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 33',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24946
+             },
+  '25469' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 80',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25469
+             },
+  '25173' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 53',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25173
+             },
+  '24967' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 36',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24967
+             },
+  '25171' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 54',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25171
+             },
+  '24968' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 37',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24968
+             },
+  '25039' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 43',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25039
+             },
+  '25043' => {
+               'comment' => '',
+               'status' => 2,
+               'name' => 'Iridium 38',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25043
+             },
+  '24840' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 13',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24840
+             },
+  '24944' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 29',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 24944
+             },
+  '25345' => {
+               'comment' => '',
+               'status' => 1,
+               'name' => 'Iridium 74',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25345
+             },
+  '25285' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 62',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25285
+             },
+  '25104' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 45',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25104
+             },
+  '25346' => {
+               'comment' => '',
+               'status' => 0,
+               'name' => 'Iridium 75',
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'type' => 'iridium',
+               'id' => 25346
+             }
+);
 
 1;
 

@@ -16,9 +16,6 @@ eval {
     exit;
 };
 
-print "1..0 # skip Disabled for release 0.033_01.\n";
-exit;
-
 plan tests => 6;
 
 use constant TFMT => '%d %b %Y %H:%M:%S GMT';
@@ -34,7 +31,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 0, 0, 23, 4, 109);
+my $asof = timegm (0, 0, 0, 3, 11, 110);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -51,7 +48,7 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of May 22, 2009
+Iridium status as of Nov. 13, 2010
 ==================================
 
 Iridiums not listed in the following table are thought to be stable
@@ -90,7 +87,8 @@ Jul. 26, 2008: Iridium 95 moved to replace Iridium 28
 Dec. 22, 2008: It is clear that Iridium 28 was no longer being controlled
                as of about Sep. 20, 2008 - probably since July 2008
 Feb. 10, 2009: Collision between Iridium 33 and Cosmos 2251
-Mar. 2, 2009:  Iridium 91 was been placed into service to replace Iridium 33
+Mar. 2, 2009:  Iridium 91 was placed into service to replace Iridium 33
+Nov. 3, 2010:  Iridium 11 was placed into service to replace Iridium 23
 
  NCat    Name           Status   Comment
  24836   Iridium 914    tum      Failed; was called Iridium 14
@@ -99,6 +97,7 @@ Mar. 2, 2009:  Iridium 91 was been placed into service to replace Iridium 33
  24870   Iridium 17     tum?     Failed in August 2005?
  24871   Iridium 920    tum      Failed; was called Iridium 20
  24873   Iridium 921    tum      Failed; was called Iridium 21
+ 24906   Iridium 23     unc      Failed in November 2010
  24946   Iridium 33     tum      Destroyed by a collision on Feb. 10, 2009
  24948   Iridium 28     unc      Assumed failed about July 19, 2008
  24967   Iridium 36     tum      Failed in January 2007
@@ -112,7 +111,7 @@ Mar. 2, 2009:  Iridium 91 was been placed into service to replace Iridium 33
  25345   Iridium 74     ?        Removed from operation about January 8, 2006
  25527   Iridium 2      tum      Failed
  25577   Iridium 20              was called Iridium 11
- 25578   Iridium 11     ?        Spare   was called Iridium 20
+ 25578   Iridium 11              was called Iridium 20
  25777   Iridium 14     ?        Spare   was called Iridium 14A
  25778   Iridium 21              Replaced Iridium 74   was called Iridium 21A
  27372   Iridium 91              Replaced Iridium 33 about Mar. 2, 2009   was called Iridium 90
@@ -260,7 +259,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated March 09, 2009**</strong></p>
+<p align="center"><strong>** Updated November 13, 2010**</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -270,21 +269,17 @@ Failures</a>.</p>
 <p><strong>Latest changes </strong>(see below for earlier
 changes): </p>
 
-<p>*** In early March 2009, Iridium 91 (27372, 2002-005A) [note
-that some sources still label this satellite as Iridium 90] was
-raised to the operational orbit to fill the gap left by the loss
-of Iridium 33 ***</p>
-
-<p>*** On February 10, 2009 at 16:56 UT, Iridium 33 (24946,
-1997-051C) was in collision with Cosmos 2251 (22675, 1993-036A) .
-See <a href="iridium33collision.htm">Iridium 33 collision</a>.
-Iridium 33 is no longer functional ***</p>
+<p>*** In early November 2010, Iridium 11 (originally 25577,
+1998-074A, but currently labelled by Space-Track as 25578,
+1998-074B), previously spare, was raised to the operational
+orbit, just a few seconds behind Iridium 23 (24906, 1997-043D).
+This suggests that Iridium 23 must have failed on station.***</p>
 
 <pre>Orbital  &lt;-------- Operational satellites --------&gt;   Spares (in current sequence)
 Plane
 Plane 1:  <a href="iridium74and21.htm">21</a>  72  75  70  62  63  64  65  66  67  68   14; <a
 href="iridium74and21.htm">74</a> (partial failure?)
-Plane 2:  22  23  76  25  45  46  47  20  49  26   3   11
+Plane 2:  22  <a href="iridium11and23.htm">11</a>  76  25  45  46  47  20  49  26   3   
 Plane 3:  55  <a href="iridium28and95.htm">95</a>  29  <a
 href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32  <a
 href="iridium33collision.htm">91</a>  57  58  59  60   94  96  
@@ -301,7 +296,7 @@ href="iridium98.htm">98 (launched to plane 4, but has been migrated to plane 6)<
 Orbital  (but still in orbit)       (decayed)      <em> </em>
 Plane                                          <em>     </em>
 Plane 1:  73t
-Plane 2:  69t  24t  71t               48d
+Plane 2:  69t  24t  71t  <a href="iridium11and23.htm">23</a>           48d
 Plane 3:  <a href="iridium28and95.htm">28</a>   <a
 href="iridium33collision.htm"><font color="#FF0000">33</font></a>                     27d           <em>Iridium 33 was fragmented by the collison of February 10, 2009</em>
 Plane 4:  <a href="iridium36and97.htm">36</a>t
@@ -361,16 +356,22 @@ Iridium 46 is operational, and correctly labelled by Spacecom as
 Iridium 46, and correctly tracked, but under 24905 (1997-043C)
 which are the catalog number and launch identifier which
 originally belonged to Iridium 24. <br>
-Iridium 11 is spare, and is now correctly labelled by Spacecom as
-Iridium 11, and correctly tracked, but under 25578 (1998-074B)
-which are the catalog number and launch identifier which
-originally belonged to (the second) Iridium 20. <br>
+Iridium 11 is operational, and is now correctly labelled by
+Spacecom as Iridium 11, and correctly tracked, but under 25578
+(1998-074B) which are the catalog number and launch identifier
+which originally belonged to (the second) Iridium 20. <br>
 Iridium 20 is operational, and is now correctly labelled by
 Spacecom as Iridium 20, and correctly tracked, but under 25577
 (1998-074A) which are the catalog number and launch identifier
 which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
+
+<p>In early November 2010, Iridium 11 (originally 25577,
+1998-074A, but currently labelled by Space-Track as 25578,
+1998-074B), previously spare, was raised to the operational
+orbit, just a few seconds behind Iridium 23 (24906, 1997-043D).
+This suggests that Iridium 23 must have failed on station.</p>
 
 <p>In early March 2009, Iridium 91 (27372, 2002-005A) [note that
 some sources still label this satellite as Iridium 90] was raised

@@ -4795,12 +4795,11 @@ given without a subcommand, it lists the known statuses. B<Note that,
 beginning with version 0.007, this list is formatted as 'status add'
 commands, and the syntax 'status iridium' is deprecated.>
 
-Initially, the status list is populated with the status as of December
-6, 2006. At that time, the date of T. S. Kelso's document was October
-17, 2006. If you have installed Astro::SpaceTrack, you can update the
-status using the 'st iridium_status' command, or you can update it using
-the 'add', 'clear', and 'drop' subcommands, which are discussed in more
-detail below.
+See the L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> documentation
+for information on how this list is populated initially.  If you have
+installed Astro::SpaceTrack, you can update the status using the 'st
+iridium_status' command, or you can update it using the 'add', 'clear',
+and 'drop' subcommands, which are discussed in more detail below.
 
 The 'status' command also takes the following subcommands:
 
