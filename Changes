@@ -1,7 +1,17 @@
+0.034		06-Dec-2010	T. R. Wyant
+  Make code for Astro::Coord::ECI zero-argument ecliptic() less cute
+    also, to try to forestall problems.
+  Update canned Iridium statuses in Astro::Coord::ECI::TLE, to cover the
+    replacement of Iridium 23 (24906) with Iridium 11 (25578) about
+    November 3 2010.
+  Update and re-enable xt/author/iridium_status.t.
+
 0.033_01	02-Dec-2010	T. R. Wyant
   Try to avoid panic in Astro::Coord::ECI zero-argument geocentric()
     under at least one version by using less-cute code to compute the
-    value.
+    value. The problem could be reproduced using OID 25591 epoch
+    30-Nov-2009 05:49:13 (which was over a year old at the time of
+    testing).
   This release has known failures in xt/author/iridium_status.t.
 
 0.033		17-Sep-2010	T. R. Wyant
