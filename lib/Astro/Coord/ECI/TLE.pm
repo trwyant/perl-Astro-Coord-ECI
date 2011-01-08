@@ -91,19 +91,9 @@ indicated.
 
 =head1 NOTICE
 
-The C<rightascension> attribute is deprecated (and about time!). You
-should use the C<ascendingnode> attribute instead.
-
-Currently, C<rightascension> and C<ascendingnode> are equivalent.
-
-As scheduled, with this release a warning is generated every time
-the C<rightascension> attribute is used. This warning can be suppressed
-by asserting C<< no warnings qw{ deprecated }; >> at the point the
-warning is issued. But you really should convert the warning code to use
-the C<ascendingnode> attribute.
-
-At the first release in 2011 the C<rightascension> attribute will
-disappear.
+As noted in previous releases, in this release (the first release in
+2011) the C<rightascension> attribute has been eliminated. Use the
+C<ascendingnode> attribute instead.
 
 =head1 DESCRIPTION
 
@@ -358,16 +348,6 @@ eod
 	return 0;
     },
     model_error => 0,
-    rightascension => sub {
-	warnings::warnif(
-	    deprecated =>
-	    'The Astro::Coord::ECI::TLE rightascension attribute is deprecated. Use ascendingnode instead',
-	);
-	$_[0]{ascendingnode} = $_[2];
-	return 1;
-    },
-    ## TODO get rid of the above once rightascension is deprecated out
-    # of existence. Ditto the accessor, below.
     ascendingnode => 1,
     eccentricity => 1,
     argumentofperigee => 1,
@@ -667,13 +647,6 @@ L</Attributes> section for a description of the attributes.
 
 {
     my %accessor = (
-	rightascension => sub {
-	    warnings::warnif(
-		deprecated =>
-		'The Astro::Coord::ECI::TLE rightascension attribute is deprecated. Use ascendingnode instead',
-	    );
-	    return $_[0]{ascendingnode};
-	},
 	tle => sub {$_[0]{$_[1]} ||= $_[0]->_make_tle()},
     );
     sub get {
@@ -7629,12 +7602,6 @@ The default is true (i.e. 1).
 
 This attribute contains number of revolutions the body has made since
 launch, at the epoch.
-
-=item rightascension (numeric, parse)
-
-This attribute contains the right ascension of the ascending node of the
-orbit at the epoch, in radians. B<This attribute is deprecated in favor
-of the ascendingnode attribute.>
 
 =item secondderivative (numeric, parse)
 
