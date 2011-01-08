@@ -31,7 +31,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 0, 0, 15, 11, 110);
+my $asof = timegm (0, 0, 0, 7, 0, 111);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.io.com/~mmccants/tles/iridium.html',
@@ -259,7 +259,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated November 13, 2010**</strong></p>
+<p align="center"><strong>** Updated December 29, 2010**</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -273,7 +273,10 @@ changes): </p>
 1998-074A, but currently labelled by Space-Track as 25578,
 1998-074B), previously spare, was raised to the operational
 orbit, just a few seconds behind Iridium 23 (24906, 1997-043D).
-This suggests that Iridium 23 must have failed on station.***</p>
+This suggested that Iridium 23 must have failed on station.
+However, Iridium 23 appears still to be under control and remains
+on station, so there may have been only a partial or temporary
+failure. The two satellites remain a few seconds apart. ***</p>
 
 <pre>Orbital  &lt;-------- Operational satellites --------&gt;   Spares (in current sequence)
 Plane
