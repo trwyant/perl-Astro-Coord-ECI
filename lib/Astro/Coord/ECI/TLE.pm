@@ -97,13 +97,17 @@ C<ascendingnode> attribute instead.
 
 =head1 DESCRIPTION
 
-This module implements the NORAD orbital propagation models described
-in their "SPACETRACK REPORT NO. 3, Models for Propagation of NORAD
-Element Sets." In other words, it turns the two- or three-line
-element sets available from such places as L<http://www.space-track.org/>
-or L<http://celestrak.com/> into predictions of where the relevant
-orbiting bodies will be. Additionally, the pass() method implements an
-actual visibility prediction system.
+This module implements the orbital propagation models described in
+"SPACETRACK REPORT NO. 3, Models for Propagation of NORAD Element Sets"
+and "Revisiting Spacetrack Report #3." See the
+L<ACKNOWLEDGMENTS|/ACKNOWLEDGMENTS> section for details on these
+reports.
+
+In other words, this module turns the two- or three-line element sets
+available from such places as L<http://www.space-track.org/> or
+L<http://celestrak.com/> into predictions of where the relevant orbiting
+bodies will be. Additionally, the pass() method implements an actual
+visibility prediction system.
 
 The models implemented are:
 
