@@ -1,3 +1,10 @@
+0.035		03-Mar-2011	T. R. Wyant
+  Removed the rightascension attribute in favor of the ascendingnode
+    attribute. This is the last step in its deprecation.
+  Update the canned Iridium statuses in Astro::Coord::ECI::TLE for the
+    taking-out-of-service of Iridium 23. Following Kelso, I have marked
+    it spare, rather than failed.
+
 0.034		06-Dec-2010	T. R. Wyant
   Make code for Astro::Coord::ECI zero-argument ecliptic() less cute
     also, to try to forestall problems.
