@@ -30,7 +30,8 @@ foreach ([timegm (0, 0, 0, 13, 9, 92), 199.90895, .99766, 199.90988],
 	) {
     my ($time, $explong, $exprho, $expgeo) = @$_;
     my $sun = Astro::Coord::ECI::Sun->dynamical ($time);
-    my ($lat, $long, $rho) = $sun->ecliptic ();
+##  my ($lat, $long, $rho) = $sun->ecliptic ();
+    my (undef, $long, $rho) = $sun->ecliptic ();
     my $tolerance = 1e-5;
     foreach ([longitude => $long, deg2rad ($explong)],
 	    [distance => $rho, $exprho * ASTRONOMICAL_UNIT],

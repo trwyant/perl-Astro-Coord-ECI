@@ -950,7 +950,6 @@ eod
 	    $temp /= SGP_XMNPDA;
 	    $ele{$_} *= $temp;
 	}
-	my $id  = $ele{id};
 	my $body = __PACKAGE__->new (%ele);	# Note that setting the
 						# ID does the reblessing.
 	$body->{tle} = $tle;
@@ -1115,14 +1114,6 @@ eod
     my $sun = Astro::Coord::ECI::Sun->new ();
     my $illum = $tle->get ('illum');
 
-#	Foreach body to be modelled
-
-    my $id = $tle->get ('id');
-    my $name = $tle->get ('name');
-    $name = $name ? " - $name" : '';
-
-    my $bm_start = time ();
-
 
 #	For each time to be covered
 
@@ -1130,7 +1121,6 @@ eod
     my $bigstep = 5 * $step;
     my $littlestep = $step;
     my $end = $pass_end;
-    my $day = '';
     my ($suntim, $rise) =
 	$sta->universal ($pass_start)->next_elevation ($sun, $twilight);
     my @info;	# Information on an individual pass.
@@ -2543,7 +2533,7 @@ eod
 	    xnodp => $xnodp,
 	};
     };
-    my $dpsp = $self->{&TLE_INIT}{TLE_deep};
+#>>>trw    my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
 
 #* UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
@@ -3204,7 +3194,7 @@ EOD
 	    xnodp => $xnodp,
 	};
     };
-    my $dpsp = $self->{&TLE_INIT}{TLE_deep};
+#>>>trw    my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
 
 #*	UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
@@ -3451,7 +3441,7 @@ sub _dpinit {
 #>>>	are those values computed inside the loop that are used outside
 #>>>	the loop. Accumulators are set to zero. -- TRW
 
-    my $savtsn = 1.0E20;
+#>>>trw    my $savtsn = 1.0E20;
     my $xnoi = 1 / $xnq;
     my ($sse, $ssi, $ssl, $ssh, $ssg) = (0, 0, 0, 0, 0);
     my ($se2, $ee2, $si2, $xi2, $sl2, $xl2, $sgh2, $xgh2, $sh2, $xh2, $se3,
@@ -3473,8 +3463,10 @@ sub _dpinit {
 #>>>	was added to help convert the assigned GOTOs and associated
 #>>>	code into a loop. -- TRW
 
+#>>>trw	my ($zcosg, $zsing, $zcosi, $zsini, $zcosh, $zsinh, $cc, $zn, $ze,
+#>>>trw	    $zmo, $lunar) = @$inputs;
 	my ($zcosg, $zsing, $zcosi, $zsini, $zcosh, $zsinh, $cc, $zn, $ze,
-	    $zmo, $lunar) = @$inputs;
+	    undef, $lunar) = @$inputs;
 
 
 #>>>	From here until the next comment of mine is essentialy
@@ -5530,7 +5522,8 @@ sub _r_sgp4init {
     $parm->{argumentofperigee} = $self->{argumentofperigee};
     $parm->{meananomaly} = $self->{meananomaly};
 
-    my ($t, @r, @v);
+#>>>>trw    my ($t, @r, @v);
+    my ($t);
 #>>>>trw	INCLUDE 'SGP4.CMN'
 
 

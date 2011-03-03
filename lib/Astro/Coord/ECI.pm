@@ -579,8 +579,8 @@ The algorithm is simple enough to be the author's.
 
 sub dip {
     my $self = shift;
-    my ($psi, $lambda, $h) = $self->geodetic ();
-    my ($psiprime, undef, $rho) = $self->geocentric ();
+    my (undef, undef, $h) = $self->geodetic ();
+    my (undef, undef, $rho) = $self->geocentric ();
     return $h >= 0 ?
 	- acos (($rho - $h) / $rho) :
 	acos ($rho / ($rho - $h));
@@ -1263,7 +1263,8 @@ sub geocentric {
 
 	if ( ! $self->{_ECI_cache}{fixed}{geocentric} ) {
 
-	    my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->ecef;
+##	    my ($x, $y, $z, $xdot, $ydot, $zdot) = $self->ecef;
+	    my ($x, $y, $z) = $self->ecef;
 	    my $rsq = $x * $x + $y * $y;
 	    my $rho = sqrt ($z * $z + $rsq);
 	    my $lambda = atan2 ($y, $x);
@@ -1838,7 +1839,7 @@ eod
 
     my $denom = $body->mean_angular_velocity -
 	$self->mean_angular_velocity;
-    my $retro = $denom >= 0 ? 0 : 1;
+##  my $retro = $denom >= 0 ? 0 : 1;
     ($denom = abs ($denom)) < 1e-11 and croak <<eod;
 Error - The next_azimuth() method will not work for geosynchronous
         bodies.
@@ -1929,7 +1930,7 @@ eod
 
     while ($end - $begin > 1) {
 	my $mid = floor (($begin + $end) / 2);
-	my ($azm, $elev, $rng) = $self->universal ($mid)->
+	my (undef, $elev) = $self->universal ($mid)->
 	    azel ($body->universal ($mid), $upper);
 	($begin, $end) =
 	    ($elev < $angle || 0) == $rise ? ($mid, $end) : ($begin, $mid);

@@ -31,7 +31,6 @@ my @bodies;
 plan( tests => scalar @bodies );
 
 foreach my $tle ( @bodies ) {
-    my $got = $tle->_make_tle();
     is( $tle->_make_tle(), $tle->get( 'tle' ), title( $tle ) );
 }
 

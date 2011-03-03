@@ -124,7 +124,8 @@ foreach ([IAU76 => .58217396455, -2.060487233536, 1.706, .546861, .836339, '%.6f
 	[IAU76 => -.58217396455, 2.060487233536, 1.706, -.546861, .836339, '%.6f'],
 	) {
     my ($elps, $lat, $long, $elev, $expsin, $expcos, $tplt) = @$_;
-    my ($phiprime, $theta, $rho) =
+##  my ($phiprime, $theta, $rho) =
+    my ($phiprime, undef, $rho) =
 	Astro::Coord::ECI->new (ellipsoid => $elps)->
 	geodetic ($lat, $long, $elev)->geocentric;
     my $rhosinphiprime = $rho / EQUATORIALRADIUS * sin ($phiprime);

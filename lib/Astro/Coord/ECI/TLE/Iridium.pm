@@ -502,11 +502,9 @@ eod
 
     my @flares;
     my $illum = $self->get ('illum');
-    my $illum_radius = $illum->get ('diameter') / 2;
     my $horizon = $self->get ('horizon');
     my $twilight = $self->get ('twilight');
     $sun ||= Astro::Coord::ECI::Sun->new ();
-    my $height = ($station->geodetic)[2];
 
     my %want = (
 	am => $self->get ('am'),
@@ -574,7 +572,7 @@ eod
 
 #	Calculate whether satellite is above horizon.
 
-	my ($azm, $elev, $rng) = $station->azel ($self, 0);
+	my (undef, $elev, $rng) = $station->azel ($self, 0);
 	$elev > $horizon or next;
 
 
@@ -598,7 +596,8 @@ eod
 
 #	Calculate whether the satellite is illuminated.
 
-	my $lit = ($self->azel ($illum->universal ($time)))[1] >=
+##	my $lit = ($self->azel ($illum->universal ($time)))[1] >=
+	($self->azel ($illum->universal ($time)))[1] >=
 	    $self->dip () - $illum_tolerance or next;
 
 
@@ -837,7 +836,8 @@ MMA_LOOP:
 sub _flare_entrance {
     my ($self, $illum, $station, $mma, $start, $end) = @_;
     my $output;
-    my $time = find_first_true (
+#   my $time = find_first_true (
+    find_first_true (
 	$start, $end,
 	sub {
 	    $self->universal ($_[0]);
@@ -1406,7 +1406,7 @@ sub _reflection_fixed {
 
 #	Calculate whether satellite is above horizon.
 
-    my ($azm, $elev, $rng) = $station->universal ($time)->
+    my (undef, $elev) = $station->universal ($time)->
 	    azel ($self->universal ($time), 0);
     return scalar _make_status (
 	sprintf ('Satellite %.2f degrees below horizon', rad2deg (-$elev)))

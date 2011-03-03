@@ -57,7 +57,8 @@ while (<DATA>) {
     $_ or next;
     substr($_, 0, 1) eq '#' and next;
     if (m{ \A new \b }smx) {
-	my ($method, $period, $eccentricity, $name) = split qr{\s+}, $_, 4;
+##	my ($method, $period, $eccentricity, $name) = split qr{\s+}, $_, 4;
+	my (undef, $period, $eccentricity, $name) = split qr{\s+}, $_, 4;
 	$tle = Astro::Coord::ECI::TLE::Period->new(
 	    period => $period, eccentricity => $eccentricity, name => $name);
     } else {

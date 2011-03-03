@@ -28,8 +28,6 @@ eod
 my $time = 61196688000	# 01-Apr-3909 00:00:00 GMT, epoch 1-Jan-1970.
     + timegm( 0, 0, 0, 1, 0, 70 );	# Adjust for system epoch.
 
-my $test = 0;
-
 plan(tests => 14);
 
 my $want;

@@ -31,7 +31,6 @@ my (
 	$io_string_unavailable,
     );
 $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
-my $xml_parser;
 
 
 ########################################################################
@@ -567,7 +566,6 @@ $cmdlgl{almanac} = [qw{dump flatten horizon|rise|set
 
 sub almanac {
 
-my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $almanac_start = _parse_time (shift || 'today midnight');
 my $almanac_end = _parse_time (shift || '+1');
 
@@ -587,7 +585,6 @@ my $id = $parm{twilight} =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ 
     "$parm{twilight} twilight (@{[rad2deg $parm{_twilight}]} degrees)";
 
 my @almanac;
-my %done;
 
 
 #	Display our location.
@@ -801,13 +798,11 @@ $cmdlgl{flare} = [qw{algorithm=s am choose=s@ day dump flatten pm
 }
 
 sub flare {
-my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $pass_start = _parse_time (shift || 'today noon');
 my $pass_end = _parse_time (shift || '+7');
 $pass_start >= $pass_end and die <<eod;
 Error - End time must be after start time.
 eod
-my $pass_step = shift || 60;
 my $sta = _get_station ();
 
 my $horizon = deg2rad ($parm{horizon});
@@ -854,8 +849,6 @@ my $timlen = max (
     length (strftime ($parm{time_format}, 59, 59, 23, 31, 11, 2000)),
     length (strftime ($parm{time_format}, 59, 59, 11, 31, 11, 2000)),
     );
-
-my $sun = Astro::Coord::ECI::Sun->new ();
 
 if ($cmdopt{debug}) {
     foreach my $tle (@active) {
@@ -905,7 +898,6 @@ foreach my $fd (sort {$a->{time} <=> $b->{time}} @flares) {
     $last_day = $day;
     $time = strftime ($parm{time_format}, _mytime($displaytime));
     my $name = ucfirst lc ($tle->get ('name') || $tle->get ('id'));
-    my ($ctr_azm, $ctr_ele, $ctr_rng) = $sta->azel ($fd->{center}{body}, 0);
     if ($cmdopt{dump}) {
 	if ($cmdopt{flatten}) {
 	    local $Data::Dumper::Terse = 1;
@@ -1588,7 +1580,7 @@ eod
 		    if ($event->{appulse} && $parm{background}) {
 			my $body = $event->{appulse}{body}
 			    ->universal ($time);
-			my ($lat, $long, $alt) = $body->geodetic;
+			my ($lat, $long) = $body->geodetic;
 			printf BGFMT, strftime (
 				$parm{time_format}, _mytime (
 				    $displaytime)),
@@ -2505,7 +2497,7 @@ sub _format_local_az_rng {
 Programming error - _format_azel () must be called with either zero
     or two arguments. If two, both must be Astro::Coord::ECI objects.
 eod
-my ($az, $el, $rng) = $_[0]->azel ($_[1]);
+my ($az, undef, $rng) = $_[0]->azel ($_[1]);
 sprintf "%5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
     rad2deg ($az),
     $bearing[floor ($az/TWOPI * @bearing + .5) % @bearing],
@@ -2528,7 +2520,7 @@ Programming error - _format_local_azel () must be called with either
     zero or two arguments. If two, both must represent Astro::Coord::ECI
     objects.
 eod
-my ($az, $el, $rng) = $_[0]->azel ($_[1]);
+my ($az, $el) = $_[0]->azel ($_[1]);
 sprintf "%5.1f %5.1f %-2s",
     rad2deg ($el), rad2deg ($az),
     $bearing[floor ($az/TWOPI * @bearing + .5) % @bearing];
@@ -2570,7 +2562,7 @@ Programming error - _format_local_equatorial () must be called with
     either zero or two arguments. If two, both must be
     Astro::Coord::ECI objects.
 eod
-my ($ra, $dec, $rng) = _get_equatorial_coordinates (@_);
+my ($ra, $dec) = _get_equatorial_coordinates (@_);
 sprintf "%s %5.1f",
     _rad2hms ($ra), rad2deg ($dec);
 }
@@ -2933,7 +2925,6 @@ BEGIN {	# Begin local symbol block.
 
     sub _parse_time {
     my $time = $_[0] or return $_[1] || time ();
-    my $rslt;
     if ($time =~ m/^([\+\-])\s*(\d+)(?:\s+(\d+)(?::(\d+)(?::(\d+))?)?)?/) {
 	my $delta = ((($2 || 0) * 24 + ($3 || 0)) * 60 +
 	    ($4 || 0)) * 60 + ($5 || 0);
