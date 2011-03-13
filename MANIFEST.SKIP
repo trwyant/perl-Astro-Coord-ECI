@@ -19,6 +19,7 @@ CVS/
 ^mccants\.expect$
 ^mccants\.got$
 ^meta/
+^MYMETA.json$
 ^MYMETA.yml$
 ^perldump.out$
 ^pm_to_blib$
