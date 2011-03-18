@@ -60,3 +60,4 @@ xt/author/pod_coverage.t
 xt/author/pod_spelling.t
 xt/author/satpass.t
 xt/author/satpass_geocode.t
+META.json
