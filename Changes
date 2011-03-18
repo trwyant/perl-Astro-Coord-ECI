@@ -1,3 +1,8 @@
+0.035_01	18-Mar-2011	T. R. Wyant
+  Correct the attribute() method on Astro::Coord::ECI,
+    Astro::Coord::ECI::TLE, and Astro::Coord::ECI::TLE::Iridium.
+    Formerly it was returning false for some extant attributes.
+
 0.035		03-Mar-2011	T. R. Wyant
   Removed the rightascension attribute in favor of the ascendingnode
     attribute. This is the last step in its deprecation.
