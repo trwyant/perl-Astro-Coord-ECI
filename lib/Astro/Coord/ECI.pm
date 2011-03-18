@@ -196,7 +196,7 @@ attribute, or undef if the attribute name is not valid.
 
 =cut
 
-sub attribute {return $mutator{$_[1]} ? __PACKAGE__ : undef}
+sub attribute {return exists $mutator{$_[1]} ? __PACKAGE__ : undef}
 
 
 =item ($azimuth, $elevation, $range) = $coord->azel ($coord2, $upper);

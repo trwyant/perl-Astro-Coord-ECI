@@ -507,7 +507,9 @@ This method is simply a synonym for apoapsis().
 #	See Astro::Coord::ECI for docs.
 
 sub attribute {
-    return $attrib{$_[1]} ? __PACKAGE__ : $_[0]->SUPER::attribute ($_[1])
+    return exists $attrib{$_[1]} ?
+	__PACKAGE__ :
+	$_[0]->SUPER::attribute ($_[1])
 }
 
 

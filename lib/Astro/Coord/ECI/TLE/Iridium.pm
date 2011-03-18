@@ -269,7 +269,9 @@ eod
 
 sub attribute {
     my ($self, $name) = @_;
-    return $mutator{$name} ? __PACKAGE__ : $self->SUPER::attribute ($name);
+    return exists $accessor{$name} ?
+	__PACKAGE__ :
+	$self->SUPER::attribute ($name);
 }
 
 
