@@ -1030,7 +1030,7 @@ which are numeric in numeric context and strings in string context. If
 Scalar::Util cannot be loaded the numeric values are returned.
 
 These manifest constants can be imported using the individual names, or
-the tags ':constant' or ':all'. They can also be accessed as methods
+the tags ':constants' or ':all'. They can also be accessed as methods
 using (e.g.) $tle->PASS_EVENT_LIT, or as static methods using (e.g.)
 Astro::Coord::ECI::TLE->PASS_EVENT_LIT.
 
