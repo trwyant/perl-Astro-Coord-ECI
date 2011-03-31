@@ -2193,11 +2193,19 @@ $cmdlgl{status} = [qw{name reload}];
 @status_code_map = qw{+ S -};
 }
 
+my $status_iridium_deprecated;
+
 sub status {
 @_ or @_ = qw{show};
 
 my $verb = lc (shift (@_) || 'show');
-$verb = 'show' if $verb eq 'iridium';	# Cover deprecated option.
+
+if ( $verb eq 'iridium' ) {
+#   warnings::enabled( 'deprecated' ) and
+    not $status_iridium_deprecated++
+	and warn "The 'iridium' subcommand is deprecated\n";
+    $verb = 'show';
+}
 
 if ($verb eq 'add' || $verb eq 'drop') {
     Astro::Coord::ECI::TLE->status ($verb, @_);
@@ -4782,9 +4790,15 @@ impending (or in progress) you will get an error.
 
 This command displays or maintains the satellite status list. This list
 is used by the L<flare|/flare> command to predict Iridium flares. If
-given without a subcommand, it lists the known statuses. B<Note that,
-beginning with version 0.007, this list is formatted as 'status add'
-commands, and the syntax 'status iridium' is deprecated.>
+given without a subcommand, it lists the known statuses.
+
+Beginning with version 0.007, this list is formatted as C<status add>
+commands, and the syntax C<status iridium> is deprecated.
+
+B<Beginning with version 0.035_02, C<status iridium> will generate a
+warning on the first use.> Beginning six months after the release of
+0.036, it will generate a warning on every use, and six months after
+that it will become fatal.
 
 See the L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> documentation
 for information on how this list is populated initially.  If you have
