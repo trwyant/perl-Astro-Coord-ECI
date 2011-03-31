@@ -1517,6 +1517,26 @@ value Perl considers false (e.g. undef).
 
 The default is 1 (i.e. true).
 
+=item max_mirror_angle (angle in radians)
+
+This attribute is used in the flare calculation to screen passes for
+flare potential. The position of the satellite is calculated at
+intervals during a pass, and for each position the mirror angle (defined
+as the angle subtended at the satellite between the observer and the
+reflection of the Sun) is calculated. If no calculated mirror angle is
+less than the value of this attribute, no flare is predicted. If one of
+the mirror angles B<is> less than this, a flare is predicted and its
+maximum magnitude calculated.
+
+The default value is equivalent to 10 degrees. This is fine for fairly
+bright flares, but if you are looking for really dim ones (relative to
+the maximum brightness given the source of illumination) you want to
+increase this. The cost of increasing it is, of course, increased
+computation. The maximum useful value is the equivalent of 180 degrees,
+but this is not enforced. If you have a particular angle in mind, you
+will want to set this to about 10 degrees more, because of the way it is
+used in the flare algorithm.
+
 =item pm (boolean)
 
 If true, the flare() method returns flares that occur between evening
