@@ -1,157 +1,71 @@
 package main;
 
+use 5.006002;
+
 use strict;
 use warnings;
 
-use Astro::Coord::ECI;
+BEGIN {
+    eval {
+	require Test::More;
+	Test::More->VERSION( 0.40 );
+	Test::More->import();
+	1;
+    } or do {
+	print "1..0 # skip Test::More 0.40 required\\n";
+	exit;
+    }
+}
+
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Iridium;
-use Astro::Coord::ECI::Utils qw{ :time deg2rad };
-use Cwd;
-use File::Spec;
-use FileHandle;
-use Test;
+use Astro::Coord::ECI::Utils qw{ deg2rad };
+use Time::Local;
 
-BEGIN {plan tests => 9};
+plan( tests => 11 );
 
-my $test = 0;
+my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
+1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    8
+2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  105
+EOD
 
-#	Test 1: Instantiate
+is( ref $tle, 'Astro::Coord::ECI::TLE', 'Created a TLE object' );
 
-{	# Local symbol block
-    my $tle = Astro::Coord::ECI::TLE->new ();
-    $tle->rebless ('iridium');
-    $test++;
-    print <<eod;
-# Test $test: Rebless TLE to Iridium
-#     Expecting: 'Astro::Coord::ECI::TLE::Iridium'
-#           Got: '@{[ref $tle]}'
-eod
-    ok (ref $tle eq 'Astro::Coord::ECI::TLE::Iridium');
-    $tle->rebless ('tle');
-    $test++;
-    print <<eod;
-# Test $test: Rebless Iridium back to TLE
-#     Expecting: 'Astro::Coord::ECI::TLE'
-#           Got: '@{[ref $tle]}'
-eod
-    ok (ref $tle eq 'Astro::Coord::ECI::TLE');
-    }	# End local symbol block
+$tle->rebless( 'iridium' );
 
-my $datafile = File::Spec->catfile (getcwd, qw{t iridium.dat});
-my $skip = -e $datafile ? '' : 'Must provide iridium.dat';
-$skip and warn <<eod;
+is( ref $tle, 'Astro::Coord::ECI::TLE::Iridium', 'Reblessed to Iridium' );
 
+my $sta = Astro::Coord::ECI->new()->geodetic(
+    deg2rad( 51.4772 ),
+    deg2rad( 0 ),
+    0 / 1000,
+)->set( name => 'Royal Observatory, Greenwich England' );
 
-Flare prediction tests require file t/iridium.dat. This needs to
-contain NORAD IDs 24905, 24965, 25104, 25285, 25288, and 25577 for June
-5, 2006. If you have the Astro::SpaceTrack package installed, you can
-obtain these yourself using the SpaceTrack command-line utility, or with
-this package. Assuming you have not installed this package yet, set your
-default to your, working directory, and proceed as follows:
+my $start    = timegm( 0, 0, 0, 13, 9, 80 );
+my $finish   = timegm( 0, 0, 0, 14, 9, 80 );
+my $twilight = deg2rad( -6 );	# Civil twilight
+my $horizon  = deg2rad( 20 );	# Effective horizon
 
-\$ perl -Mblib bin/satpass
-    (front matter printed here)
-satpass> st retrieve -start 2006/06/04 -end 2006/06/06 \\
-_satpass> 24905 24965 25104 25285 25288 25577
-satpass> choose -time 'June 6 2006 midnight'
-satpass> tle >t/iridium.dat
-satpass> exit
+$tle->set( twilight => $twilight, horizon => $horizon );
 
-Obviously I have this file, but I do not have permission to
-redistribute the elements.
+my @flares = $tle->flare( $sta, $start, $finish );
 
-eod
+is( scalar @flares, 2, 'Got 2 flares' );
 
-my ($end, @flares, @irid, $start, $station);
-unless ($skip) {
-    $station = Astro::Coord::ECI->new (
-	name => '1600 Pennsylvania Ave NW Washington DC 20502',
-	)->geodetic (
-	deg2rad (38.898748),
-	deg2rad (-77.037684),
-	0.017,
-	);
-    $start = timegm (0, 0, 4, 6, 5, 106);
-    $end = timegm (0, 0, 4, 8, 5, 106);
-    my $twilight = deg2rad (-6);	# Civil twilight
-    my $horizon = deg2rad (20);		# Effective horizon
-    my $fh = FileHandle->new ("<$datafile") or die <<eod;
-Error - Failed to open $datafile
-        $!
-eod
-    @irid = Astro::Coord::ECI::TLE->parse (<$fh>);
-    foreach my $tle (@irid) {
-	$tle->set (twilight => $twilight, horizon => $horizon);
-	$tle->rebless ('iridium');
-	push @flares, $tle->flare ($station, $start, $end);
-	}
-    @flares = map {$_->[1]}
-	sort {$a->[0] <=> $b->[0]}
-	map {[$_->{time}, $_]} @flares;
-    }
+is( sprintf( '%d', $flares[0]{time} ), timegm( 26, 43, 5, 13, 9, 80 ),
+    'Time of first flare is 13-Oct-1980 5:43:26 GMT' );
+is( $flares[0]{type}, 'am', q{Type of first flare is 'am'} );
+is( sprintf( '%.1f', $flares[0]{magnitude} ), '-0.4',
+    'Magnitude of first flare is -0.4' );
+is( $flares[0]{mma}, 1, 'Flaring MMA of first flare is 1' );
 
-$test++;
-print <<eod;
-# Test $test: Number of flares found.
-#    Expected: 7
-#         Got: @{[scalar @flares]}
-eod
-skip ($skip, @flares == 7);
-
-foreach ([am => 2], [day => 4], [pm => 1]) {
-    my ($type, $expect) = @$_;
-    $test++;
-    my $got = grep {$_->{type} eq $type} @flares;
-    print <<eod;
-# Test $test: Number of $type flares found.
-#    Expected: $expect
-#         Got: $got
-eod
-    skip ($skip, $got == $expect);
-    }
-
-foreach ([1, time => timegm (13, 24, 9, 6, 5, 106), 1, sub {scalar gmtime $_[0]}],
-	[1, magnitude => -8, .1],
-	[1, mma => 2, 0],
-	) {
-    $test++;
-    my ($inx, $what, $expect, $tolerance, $fmtr) = @$_;
-    $fmtr ||= sub {$_[0]};
-    my $got = $flares[$inx]->{$what} || 0;
-    print <<eod;
-# Test $test: Flare $inx (from 0) $what
-#    Expected: @{[$fmtr->($expect)]}
-#         Got: @{[$fmtr->($got)]}
-#   Tolerance: $tolerance
-eod
-    skip ($skip, abs ($expect - $got) <= $tolerance);
-    }
+is( sprintf( '%d', $flares[1]{time} ), timegm( 33, 58, 14, 13, 9, 80 ),
+    'Time of second flare is 13-Oct-1980 14:58:33 GMT' );
+is( $flares[1]{type}, 'day', q{Type of second flare is 'day'} );
+is( sprintf( '%.1f', $flares[1]{magnitude} ), '-3.0',
+    'Magnitude of second flare is -3.0' );
+is( $flares[1]{mma}, 1, 'Flaring MMA of second flare is 1' );
 
 1;
-#	If you wish to run the flare prediction tests
 
-__END__
-
-foreach (
-	[[qw{day pm}], 4], [[qw{am pm}], 5], [[qw{am day}], 7],
-	[[qw{am}], 4], [[qw{day}], 3], [[qw{pm}], 1],
-	) {
-    my ($types, $expect) = @$_;
-    @flares = ();
-    foreach my $tle (@irid) {
-	$tle->set (am => 0, day => 0, pm => 0);
-	$tle->set (map {$_ => 1} @$types);
-	push @flares, $tle->flare ($station, $start, $end);
-	}
-    my $what = join ' and ', @$types;
-    my $got = @flares;
-    print <<eod;
-# Test $test: Flares generated by type: $what
-#    Expected: $expect
-#         Got: $got
-eod
-    skip ($skip, $expect == $got);
-    }
-
-1;
+# ex: set textwidth=72 :
