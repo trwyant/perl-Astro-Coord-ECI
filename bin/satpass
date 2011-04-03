@@ -38,7 +38,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.035_01';
+our $VERSION = '0.036';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3680,7 +3680,13 @@ the computation fails. You may wish to issue this command before doing
 pass computations on data from the NASA Human Space Flight web site. It
 is probably not necessary to issue it otherwise.
 
-I plan, hopefully before mid-2010 (though the date has a tendency to
+The C<status iridium> command now issues a deprecation warning the first
+time it is issued. In the first release after October 1 2011 this will
+become a warning every time it is issued, and six months (plus) after
+that it will become a fatal error. This command has been deprecated in
+the documentation for quite a while.
+
+I plan, hopefully before mid-2011 (though the date has a tendency to
 recede as fast as time advances), to restructure this package. The plan
 calls for moving all the .pm files to distribution Astro-Coord-ECI,
 publishing an App-Satpass2 package with a reworked version of the
@@ -3689,17 +3695,17 @@ package. My intent is that in the last release of the Astro-satpass
 package, the banner displayed by the F<satpass> script will direct the
 user to App-Satpass2.
 
-Most of the functionality of the App-Satpass2 distribution will be in
-the App::Satpass2 class. A minimal F<satpass2> script will be provided
-to manufacture an App::Satpass2 object and invoke its run method. I will
-try to keep the core functionality the same, and to document in
-App::Satpass2 any incompatibilities introduced.
+Most of the functionality of the Astro-App-Satpass2 distribution will be
+in the Astro::App::Satpass2 class. A minimal F<satpass2> script will be
+provided to manufacture an Astro::App::Satpass2 object and invoke its
+run method. I will try to keep the core functionality the same, and to
+document in Astro::App::Satpass2 any incompatibilities introduced.
 
 Since Perl's dependency mechanism is based on module names, not package
 names, I assume that there will be no problems with packages that depend
 on the Astro::Coord::ECI modules. But I will try to give the authors of
-such packages a week's notice before releasing the first Astro-Coord-ECI
-package.
+such packages a month's notice before releasing the first
+Astro-Coord-ECI package.
 
 One incentive for doing this is to restructure the F<satpass>
 functionality to be more easily testable. Placing the F<satpass>

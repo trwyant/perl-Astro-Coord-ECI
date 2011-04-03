@@ -1,3 +1,12 @@
+0.036		02-Apr-2011	T. R. Wyant
+  t/iridium.t no longer requires any extra data for its execution.
+  The satpass 'status iridium' command, which has been deprecated for
+    quite a while, now issues a warning the first time it is issued. See
+    the satpass documentation for the the schedule for its removal.
+  Document Astro::Coord::ECI::TLE::Iridium max_mirror_angle attribute.
+  Correct export tag documentation in Astro::Coord::ECI::TLE (from
+    ':constant' to ':constants').
+
 0.035_01	18-Mar-2011	T. R. Wyant
   Correct the attribute() method on Astro::Coord::ECI,
     Astro::Coord::ECI::TLE, and Astro::Coord::ECI::TLE::Iridium.
