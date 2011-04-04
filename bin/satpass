@@ -825,9 +825,7 @@ local $Astro::Coord::ECI::TLE::Set::Singleton = $parm{singleton};
 #	consideration.
 
 my @active;
-my @optionals;
-$parm{gmt} and push @optionals, zone => 0
-    or $parm{tz} and push @optionals, zone => $parm{tz};
+my $zone = $parm{gmt} ? 0 : $parm{tz} ? $parm{tz} : undef;
 foreach my $tle (_select_observing_list ($pass_start)) {
     $tle->can_flare ($cmdopt{questionable}) or next;
     $tle->set (
@@ -841,7 +839,7 @@ foreach my $tle (_select_observing_list ($pass_start)) {
 	day => !$cmdopt{day},
 	pm => !$cmdopt{pm},
 	extinction => $parm{extinction},
-	@optionals,
+	zone	=> $zone,
     );
     push @active, $tle;
     }
