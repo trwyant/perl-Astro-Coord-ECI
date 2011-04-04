@@ -1,3 +1,9 @@
+0.037		04-Apr-2011	T. R. Wyant
+  Added a zone attribute to Astro::Coord::ECI::TLE::Iridium, so that it
+    could properly distinguish between -am and -pm flares somewhere
+    other than in the local zone. Thanks to CPAN Testers for finding
+    this consequence of publishing a t/iridium.t that everyone can run.
+
 0.036		02-Apr-2011	T. R. Wyant
   t/iridium.t no longer requires any extra data for its execution.
   The satpass 'status iridium' command, which has been deprecated for
