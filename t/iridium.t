@@ -35,6 +35,8 @@ $tle->rebless( 'iridium' );
 
 is( ref $tle, 'Astro::Coord::ECI::TLE::Iridium', 'Reblessed to Iridium' );
 
+$tle->set( zone => 0 );	# Zone 0 for -am/-pm determination
+
 my $sta = Astro::Coord::ECI->new()->geodetic(
     deg2rad( 51.4772 ),
     deg2rad( 0 ),

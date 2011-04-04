@@ -147,26 +147,29 @@ my %mutator = (
 	$_[0]->{&ATTRIBUTE_KEY}{_algorithm_method} = $method;
 	},
     );
-foreach my $key (qw{am day extinction max_mirror_angle pm status}) {
+foreach my $key (qw{am day extinction max_mirror_angle pm status zone}) {
     $mutator{$key} = sub {$_[0]->{&ATTRIBUTE_KEY}{$_[1]} = $_[2]};
-    }
+}
+
 my %accessor = ();
 foreach my $key (keys %mutator) {
     $accessor{$key} ||= sub {$_[0]->{&ATTRIBUTE_KEY}{$_[1]}}
-    }
+}
 
 my %static = (		# static values
-	algorithm => 'fixed',
-	am => 1,
-	day => 1,
-	extinction => 1,
-	max_mirror_angle => DEFAULT_MAX_MIRROR_ANGLE,
-	pm => 1,
-	status => '',
-    );
+    algorithm => 'fixed',
+    am => 1,
+    day => 1,
+    extinction => 1,
+    max_mirror_angle => DEFAULT_MAX_MIRROR_ANGLE,
+    pm => 1,
+    status => '',
+    zone	=> undef,	# Offset from GMT, in seconds
+);
+
 my %statatr = (		# for convenience of get() and put().
     &ATTRIBUTE_KEY => \%static,
-    );
+);
 
 __PACKAGE__->alias (iridium => __PACKAGE__);
 
@@ -585,7 +588,7 @@ eod
 	    my $sun_elev = ($station->azel ($sun->universal ($time)))[1];
 	    ($want{day} && $sun_elev > $day_limit) and return 1;
 	    (($want{am} || $want{pm}) && $sun_elev < $night_limit) or return 0;
-	    my @local_time = localtime ($time);
+	    my @local_time = $self->_time_in_zone( $time );
 	    my $time_of_day = ($local_time[2] * 60 + $local_time[1]) * 60
 		    + $local_time[0];
 	    ($want{am} && ($time_of_day > AM_START_LIMIT ||
@@ -1122,7 +1125,7 @@ my $flare_mag = $limb_darkening > 0 ? do {
 
 my $sun_elev = ($station->azel ($sun->universal ($time)))[1];
 my $flare_type = $sun_elev >= $twilight ? 'day' :
-	(localtime $time)[2] > 12 ? 'pm' : 'am';
+	( $self->_time_in_zone( $time ) )[2] > 12 ? 'pm' : 'am';
 
 
 #	Compute the angle from the Sun to the flare.
@@ -1482,6 +1485,22 @@ sub set {
     return $self;
 }
 
+# For use of -am and -pm
+sub _time_in_zone {
+    my ( $self, $time ) = @_;
+
+    defined( my $zone = $self->get( 'zone' ) )
+	or return localtime $time;
+
+    looks_like_number( $zone )
+	and return gmtime( $zone * 3600 + $time );
+
+    # TODO use DateTime if available
+
+    local $ENV{TZ} = $zone;
+    return localtime $time;
+}
+
 1;
 
 __END__
@@ -1567,6 +1586,29 @@ strings are accepted. That is:
 Technically, the default is 0. But if the object is manufactured by
 Astro::Coord::ECI::TLE->parse(), the status will be set based on the
 internal status table in Astro::Coord::ECI::TLE.
+
+=item zone (number)
+
+This attribute is used to determine whether a flare took place in the
+C<am> or C<pm>. It can be set to a number of possible values:
+
+* C<undef> causes the computation to be done in the local zone, whatever
+that is.
+
+* A numeric value is interpreted as an offset in hours east of
+Greenwich; hours west are negative.
+
+* Anything else is interpreted as a zone name; $ENV{TZ} is set to this,
+and then C<localtime()> is called. Whether this has the desired effect
+depends on your operating system.
+
+Yes, this is a bit of a crock, but I realized (B<after> putting out
+0.036, with the Iridium flare tests that anyone can run) that I needed
+to do B<something> to get a user's-zone-independent test. Eventually I
+may make use of DateTime if that is available, but I do not want to make
+that a prerequisite.
+
+The default is C<undef>.
 
 =back
 
