@@ -1,3 +1,13 @@
+0.038		14-Apr-2011	T. R. Wyant
+  Updated code that uses the optional Astro::SpaceTrack module to
+    require version 0.052 wherever the Space Track web site is (or may
+    be) accessed.
+  Removed calls to _INSTANCE in little-used code in bin/satpass. It must
+    be little-used, since it hasn't been imported from Params::Util
+    since versoin 0.033 dated 17-Sep-2010.
+  Fix to zone attribute code in bin/satpass, so that it can be cleared
+    once set.
+
 0.037		04-Apr-2011	T. R. Wyant
   Added a zone attribute to Astro::Coord::ECI::TLE::Iridium, so that it
     could properly distinguish between -am and -pm flares somewhere
