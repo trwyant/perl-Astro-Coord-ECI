@@ -7,9 +7,13 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI::Satpass;
 
-eval { require Astro::SpaceTrack; 1 }
+eval {
+    require Astro::SpaceTrack;
+    Astro::SpaceTrack->VERSION( 0.052 );
+    1;
+}
     or do {
-    print "1..0 # skip Astro::SpaceTrack not available\n";
+    print "1..0 # skip Astro::SpaceTrack version 0.052 or above not available\n";
     exit;
 };
 

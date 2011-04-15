@@ -9,7 +9,7 @@ use Astro::Coord::ECI;
 use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::Utils qw{ deg2rad rad2deg };
-use Astro::SpaceTrack;
+use Astro::SpaceTrack 0.052;
 use Getopt::Long 2.32;
 use Pod::Usage;
 use POSIX qw{ strftime };

@@ -45,11 +45,11 @@ sub _recommend_astro_spacetrack {
     local $@ = undef;
     eval {
 	require Astro::SpaceTrack;
-	Astro::SpaceTrack->VERSION( 0.016 );
+	Astro::SpaceTrack->VERSION( 0.052 );
 	1;
     } and return;
     return <<'EOD';
-    * Astro::SpaceTrack version 0.016 or higher is not installed.
+    * Astro::SpaceTrack version 0.052 or higher is not installed.
       This module is required for the 'satpass' script's 'st' command,
       but is otherwise unused by this package. If you do not intend to
       use this functionality, Astro::SpaceTrack is not needed.

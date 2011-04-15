@@ -117,6 +117,7 @@ harvard
 Haversine
 haversine
 haversines
+http
 Hujsak
 IDs
 illum
@@ -257,6 +258,7 @@ unreduced
 URI
 username
 USGS
+USSTRATCOM
 UT
 UTC
 VA
