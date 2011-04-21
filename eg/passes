@@ -34,6 +34,7 @@ my %delta_number_up = (
 # Option values, with defaults.
 my %opt = (
     'body-template'	=> '%N%t',
+    'dump-headers'	=> 0,
     'event-template'	=> '%V %L %T',
     finish		=> '+7',
     geometric		=> 0,
@@ -50,10 +51,10 @@ my %opt = (
 my @lgl_opt = (
     'help|?' => sub { pod2usage( { verbose => 2 } ) },
     qw{
-	body-template=s event-template=s finish=s geometric! gmt!
-	height=f horizon=f join=s latitude=f longitude=f password=s
-	split start=s time-format=s twilight=f username=s want-events=s
-	visible!
+	body-template=s dump-headers event-template=s finish=s
+	geometric! gmt!  height=f horizon=f join=s latitude=f
+	longitude=f password=s split start=s time-format=s twilight=f
+	username=s want-events=s visible!
     }
 );
 
@@ -113,6 +114,7 @@ my $twilight = deg2rad( - $opt{twilight} );
 my $st = Astro::SpaceTrack->new(
     username => $opt{username},
     password => $opt{password},
+    dump_headers => ( $opt{'dump-headers'} ? 15 : 0 ),
     with_name => 1,
 );
 
