@@ -1,3 +1,6 @@
+0.038_01	21-Apr-2011	T. R. Wyant
+  Added -dump-headers command line option to eg/passes.
+
 0.038		14-Apr-2011	T. R. Wyant
   Updated code that uses the optional Astro::SpaceTrack module to
     require version 0.052 wherever the Space Track web site is (or may
