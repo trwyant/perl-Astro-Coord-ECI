@@ -1,3 +1,7 @@
+0.039		29-Apr-2011	T. R. Wyant
+  Silence warngings about out-of-range longitude which are sometimes
+    generated when computing the position of the Moon.
+
 0.038_01	21-Apr-2011	T. R. Wyant
   Added -dump-headers command line option to eg/passes.
 

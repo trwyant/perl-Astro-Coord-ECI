@@ -83,7 +83,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.038_01';
+our $VERSION = '0.039';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
