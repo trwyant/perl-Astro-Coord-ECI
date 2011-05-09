@@ -1111,6 +1111,11 @@ eod
     my $appulse_dist = $tle->get ('appulse');
     my $debug = $tle->get ('debug');
 
+    # We need the number of radians the satellite travels in a minute so
+    # we can be slightly conservative determining whether the satellite
+    # might be lit while screening for a pass.
+    my $min_sun_elev_from_sat = - TWOPI / $tle->period() * 60;
+
 #	We need the sun at some point.
 
     my $sun = Astro::Coord::ECI::Sun->new ();
@@ -1318,6 +1323,23 @@ eod
 		    push @info, @illum;
 		}
 
+#		Do not record this pass if we want visible passes and we
+#		never found the satellite actually lit.
+
+		if ( $want_visible ) {
+		    my $lit;
+		    foreach my $event ( @info ) {
+			$event->{illumination} == PASS_EVENT_LIT
+			    or next;
+			$lit = 1;
+			last;
+		    }
+		    $lit or do {
+			@info = ();
+			next;
+		    };
+		}
+
 
 #		Sort the data, and eliminate duplicates.
 
@@ -1380,13 +1402,16 @@ eod
 	}
 
 
-#	Calculate whether the body is illuminated.
+#	Calculate whether the body is visible.
 
 	my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
-	$litup = 0 if $litup == 1 &&
-	    ($tle->azel ($illum->universal ($time),
-		    $want_lit))[1] < $tle->dip ();
-	$visible ||= ($litup == 1 || !$want_visible) && $elev > $horizon;
+	my $sun_elev_from_sat = ( $tle->azel( $illum->universal( $time )
+		) )[1] - $tle->dip();
+	$visible ||= $elev > $horizon && ( ! $want_visible ||
+	    $litup == 1 && $sun_elev_from_sat >= $min_sun_elev_from_sat );
+	$litup == 1
+	    and $sun_elev_from_sat < 0
+	    and $litup = 0;
 
 
 #	Accumulate results.
