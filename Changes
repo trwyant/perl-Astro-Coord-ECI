@@ -1,3 +1,8 @@
+0.039_01	09-May-2011	T. R. Wyant
+  Make the Astro::Coord::ECI::TLE pass() method more lenient when
+    screening for passes in which the satellite is illuminated. Thanks
+    to Jaap Meijers for bringing this to my attention.
+
 0.039		29-Apr-2011	T. R. Wyant
   Silence warngings about out-of-range longitude which are sometimes
     generated when computing the position of the Moon.
