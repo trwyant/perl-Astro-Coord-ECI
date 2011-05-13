@@ -1116,6 +1116,14 @@ eod
     # might be lit while screening for a pass.
     my $min_sun_elev_from_sat = - TWOPI / $tle->period() * 60;
 
+    # We also want to be slightly conservative when deciding whether the
+    # satellite passes above the horizon. Since the above is clearly too
+    # much (since at its maximum elevation the apparent path of the
+    # satellite is horizontal) we reduce it using a piece of pure
+    # ad-hocery. Note that $min_sun_elev_from_sat is negative.
+    my $screening_horizon = $horizon + $min_sun_elev_from_sat * sin(
+	$horizon / 2 + PI / 4 );
+
 #	We need the sun at some point.
 
     my $sun = Astro::Coord::ECI::Sun->new ();
@@ -1323,23 +1331,23 @@ eod
 		    push @info, @illum;
 		}
 
-#		Do not record this pass if we want visible passes and we
-#		never found the satellite actually lit.
+#		Do not record this pass if it turns out not to contain
+#		any points that meet the recording criteria.
 
-		if ( $want_visible ) {
-		    my $lit;
+		eval {	# So I can return().
 		    foreach my $event ( @info ) {
-			$event->{illumination} == PASS_EVENT_LIT
+			$event->{elevation} < $horizon
+			    and next;
+			not $want_visible
+			    or $event->{illumination} == PASS_EVENT_LIT
 			    or next;
-			$lit = 1;
-			last;
+			return 1;
 		    }
-		    $lit or do {
-			@info = ();
-			next;
-		    };
-		}
-
+		    return 0;
+		} or do {
+		    @info = ();
+		    next;
+		};
 
 #		Sort the data, and eliminate duplicates.
 
@@ -1407,7 +1415,7 @@ eod
 	my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
 	my $sun_elev_from_sat = ( $tle->azel( $illum->universal( $time )
 		) )[1] - $tle->dip();
-	$visible ||= $elev > $horizon && ( ! $want_visible ||
+	$visible ||= $elev > $screening_horizon && ( ! $want_visible ||
 	    $litup == 1 && $sun_elev_from_sat >= $min_sun_elev_from_sat );
 	$litup == 1
 	    and $sun_elev_from_sat < 0
