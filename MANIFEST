@@ -48,6 +48,7 @@ t/tle_apsides.t
 t/tle_effective.t
 t/tle_exception.t
 t/tle_misc.t
+t/tle_pass.t
 t/tle_sgp4r.t
 t/tle_support.t
 xt/author/critic.t
