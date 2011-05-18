@@ -29,7 +29,7 @@ BEGIN {
 }
 
 use Astro::Coord::ECI;
-use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::Utils qw{ deg2rad rad2deg };
 
 my $sta = Astro::Coord::ECI->new(
@@ -58,6 +58,9 @@ my $sta = Astro::Coord::ECI->new(
 # 31 December 1988
 #
 # obtained from http://celestrak.com/
+
+# There is no need to call Astro::Coord::ECI::TLE::Set->aggregate()
+# because we know we have exactly one data set.
 
 my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    8
@@ -124,6 +127,31 @@ is format_pass( $pass[5] ), <<'EOD', 'Pass 6';
 1980/10/18 05:14:16   0.0  19.0  1814.7 lit   set
 EOD
 
+{
+
+    my @decoder;
+
+    # We jump through this hoop in case the constants turn out not to be
+    # dualvars.
+    BEGIN {
+	$decoder[ PASS_EVENT_NONE  + 0 ]	= '';
+	$decoder[ PASS_EVENT_SHADOWED  + 0 ]	= 'shdw';
+	$decoder[ PASS_EVENT_LIT  + 0 ]		= 'lit';
+	$decoder[ PASS_EVENT_DAY  + 0 ]		= 'day';
+	$decoder[ PASS_EVENT_RISE  + 0 ]	= 'rise';
+	$decoder[ PASS_EVENT_MAX  + 0 ]		= 'max';
+	$decoder[ PASS_EVENT_SET  + 0 ]		= 'set';
+	$decoder[ PASS_EVENT_APPULSE  + 0 ]	= 'apls';
+    }
+
+    sub format_event {
+	my ( $event ) = @_;
+	defined $event or return '';
+	return $decoder[ $event + 0 ];
+    }
+
+}
+
 sub format_pass {
     my ( $pass ) = @_;
     my $rslt = '';
@@ -134,8 +162,8 @@ sub format_pass {
 	    rad2deg( $event->{elevation} ),
 	    rad2deg( $event->{azimuth} ),
 	    $event->{range},
-	    $event->{illumination},
-	    $event->{event},
+	    format_event( $event->{illumination} ),
+	    format_event( $event->{event} ),
 	    ;
 	$rslt =~ s/ \s+ \z //smx;
 	$rslt .= "\n";
