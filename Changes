@@ -1,3 +1,14 @@
+0.039_02	18-May-2011	T. R. Wyant
+  Fix various problems in Astro::Coord::ECI::TLE->pass():
+    * Incorrect time of maximum elevation when only one of the original
+      one-minute samples is above the horizon.
+    * Sporadic detection of passes which spend less than a minute above
+      the horizon.
+    * Potentially, sporadic detection of passes which spend less than a
+      minute illuminated before daylight occurs. I have no examples of
+      this, though.
+  Add tests for Astro::Coord::ECI::TLE->pass(). More are needed.
+
 0.039_01	09-May-2011	T. R. Wyant
   Make the Astro::Coord::ECI::TLE pass() method more lenient when
     screening for passes in which the satellite is illuminated. Thanks
