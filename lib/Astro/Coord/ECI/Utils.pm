@@ -499,6 +499,10 @@ be time.
 sub find_first_true {
     my ($begin, $end, $test, $limit) = @_;
     $limit ||= 1;
+    defined $begin
+	or confess 'Programming error - $begin undefined';
+    defined $end
+	or confess 'Programming error - $end undefined';
     if ($limit >= 1) {
 	if ($begin <= $end) {
 	    $begin = floor ($begin);
