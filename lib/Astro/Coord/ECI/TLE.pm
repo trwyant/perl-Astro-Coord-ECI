@@ -1073,6 +1073,8 @@ use constant PASS_EVENT_MAX => dualvar (5, 'max');
 use constant PASS_EVENT_SET => dualvar (6, 'set');
 use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
 
+use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
+
 # *****	Promise Astro::Coord::ECI::TLE::Set that pass() only uses the
 # *****	public interface. That way pass() will get the Set object,
 # *****	and will work if we have more than one set of elements for the
@@ -1120,9 +1122,10 @@ eod
     # satellite passes above the horizon. Since the above is clearly too
     # much (since at its maximum elevation the apparent path of the
     # satellite is horizontal) we reduce it using a piece of pure
-    # ad-hocery. Note that $min_sun_elev_from_sat is negative.
-    my $screening_horizon = $horizon + $min_sun_elev_from_sat * sin(
-	$horizon / 2 + PI / 4 );
+    # ad-hocery.
+    my $screening_horizon = $horizon + SCREENING_HORIZON_OFFSET;
+    $effective_horizon < $screening_horizon
+	and $screening_horizon = $effective_horizon;
 
 #	We need the sun at some point.
 
@@ -1136,8 +1139,9 @@ eod
     my $bigstep = 5 * $step;
     my $littlestep = $step;
     my $end = $pass_end;
-    my ($suntim, $rise) =
-	$sta->universal ($pass_start)->next_elevation ($sun, $twilight);
+    my ( $suntim, $rise, $sun_screen, $sun_limit ) =
+        _next_elevation_screen( $sta->universal( $pass_start ),
+	    $pass_step, $sun, $twilight );
     my @info;	# Information on an individual pass.
     my @passes;	# Accumulated informtion on all passes.
     my $visible;
@@ -1148,15 +1152,17 @@ eod
 #	If the current sun event has occurred, handle it and calculate
 #	the next one.
 
-	if ($time >= $suntim) {
-	    ($suntim, $rise) =
-		$sta->universal ($suntim)->next_elevation ($sun, $twilight);
+	if ( $time >= $sun_limit ) {
+	    ( $suntim, $rise, $sun_screen, $sun_limit ) =
+		_next_elevation_screen( $sta->universal( $suntim ),
+		    $pass_step, $sun, $twilight );
 	}
 
 
 #	Skip if the sun is up.
 
-	next if $want_visible && !@info && !$rise && $time < $suntim;
+	next if $want_visible && !@info && !$rise &&
+	    $time < $sun_screen;
 
 
 #	Calculate azimuth and elevation.
@@ -1173,7 +1179,7 @@ eod
 #	If the body is below the horizon, we check for accumulated data,
 #	handle it if any, clear it, and on to the next iteration.
 
-	if ($elev < $effective_horizon) {
+	if ($elev < $screening_horizon) {
 	    @info = () unless $visible;
 	    next unless @info;
 
@@ -1203,23 +1209,74 @@ eod
 
 	    if ($want_exact) {
 
+		my @time;
 
-#		Compute exact rise, max, and set.
+		# Compute exact max
 
-		my @time = (
-		    [find_first_true ($info[0]{time} - $step, $info[0]{time},
+=begin comment
+
+		{
+		    my @try;
+		    if ( @info > 1 ) {
+			@try = (
+			    [ $info[0]{time}, $sta->azel( $tle->universal(
+					$info[0]{time} ) ) ],
+			    [ $info[-1]{time}, $sta->azel( $tle->universal(
+					$info[-1]{time} ) ) ],
+			);
+		    } else {
+			my $trial_time = $info[0]{time} - 30;
+			push @try, [ $trial_time, $sta->azel(
+				$tle->universal( $trial_time ) ) ];
+			$trial_time += 60;
+			push @try, [ $trial_time, $sta->azel(
+				$tle->universal( $trial_time ) ) ];
+		    }
+
+		    while ( $try[1][0] - $try[0][0] > 0.01 ) {
+			my $middle = ( $try[0][0] + $try[1][0] ) / 2;
+			my $inx = $try[0][2] > $try[1][2] ? 1 : 0;
+			splice @try, $inx, 1, [ $middle, $sta->azel(
+				$tle->universal( $middle ) ) ];
+		    }
+
+		    push @time, [ floor( $try[1][0] + .5 ), PASS_EVENT_MAX ];
+
+		}
+
+=end comment
+
+=cut
+
+		my ( $trial_start, $trial_finish ) = @info > 1 ?
+		    ( $info[0]{time}, $info[-1]{time} ) :
+		    ( $info[0]{time} - $pass_step,
+			$info[0]{time} + $pass_step );
+		$culmination = find_first_true( $trial_start,
+		    $trial_finish,
+			sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] >
+			    ( $sta->azel( $tle->universal( $_[0] + 1 ) ) )[1]
+			});
+		push @time, [ $culmination, PASS_EVENT_MAX ];
+
+
+#		Compute exact rise and set.
+
+		push @time, (
+		    [find_first_true ($info[0]{time} - $step,
+			    $culmination,
 			sub {($sta->azel ($tle->universal ($_[0])))[1] >=
 			$effective_horizon}), PASS_EVENT_RISE],
-		    [find_first_true ($info[-1]{time}, $info[-1]{time}
+		    [find_first_true ($culmination, $info[-1]{time}
 			    + $step,
 			sub {($sta->azel ($tle->universal ($_[0])))[1] <
 			$effective_horizon}), PASS_EVENT_SET],
-		    [find_first_true ($info[0]{time}, $info[-1]{time},
-			sub {($sta->azel ($tle->universal ($_[0])))[1] >
-				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
-				PASS_EVENT_MAX],
+##		    [find_first_true ($info[0]{time}, $info[-1]{time},
+##			sub {($sta->azel ($tle->universal ($_[0])))[1] >
+##				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
+##				PASS_EVENT_MAX],
 		);
-		$culmination = $time[2][0];
+
 		warn <<eod if $debug;	## no critic (RequireCarping)
 
 Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
@@ -1237,7 +1294,7 @@ eod
 #		than 1 second resolution to detect a transit.
 
 		foreach my $body (@sky) {
-		    my $when = find_first_true ($time[0][0], $time[1][0],
+		    my $when = find_first_true ($time[1][0], $time[2][0],
 			sub {$sta->angle ($body->universal ($_[0]),
 					$tle->universal ($_[0])) <
 				$sta->angle ($body->universal ($_[0] + .1),
@@ -1351,6 +1408,8 @@ eod
 
 #		Sort the data, and eliminate duplicates.
 
+=begin comment
+
 		my @foo = sort {$a->{time} <=> $b->{time}} @info;
 		my $prior = undef;
 		@info = ();
@@ -1360,6 +1419,12 @@ eod
 			$evt->{event} != PASS_EVENT_APPULSE;
 		    $prior = $evt;
 		}
+
+=end comment
+
+=cut
+
+		@info = sort { $a->{time} <=> $b->{time} } @info;
 	    }
 
 
@@ -1412,11 +1477,12 @@ eod
 
 #	Calculate whether the body is visible.
 
-	my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
+	my $litup = $time < $sun_screen ? 2 - $rise : 1 + $rise;
 	my $sun_elev_from_sat = ( $tle->azel( $illum->universal( $time )
 		) )[1] - $tle->dip();
 	$visible ||= $elev > $screening_horizon && ( ! $want_visible ||
 	    $litup == 1 && $sun_elev_from_sat >= $min_sun_elev_from_sat );
+	$litup = $time < $suntim ? 2 - $rise : 1 + $rise;
 	$litup == 1
 	    and $sun_elev_from_sat < 0
 	    and $litup = 0;
@@ -6628,6 +6694,16 @@ eod
     ref $body or $body = $body->new ();
     $self->{$name} = $body;
     return 0;
+}
+
+sub _next_elevation_screen {
+    my ( $sta, $pass_step, @args ) = @_;
+    my ( $suntim, $rise ) = $sta->next_elevation( @args );
+    $rise or $pass_step = - $pass_step;
+    my $sun_screen = $suntim + $pass_step / 2;
+    return ( $suntim, $rise, $sun_screen,
+	$rise ? $sun_screen : $suntim,
+    );
 }
 
 #######################################################################
