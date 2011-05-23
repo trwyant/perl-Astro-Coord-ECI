@@ -87,6 +87,8 @@ use warnings;
 
 use $hider qw{ @hide };
 
+our \$SKIP_TEST = 'Skip requested for author testing';
+
 do '$ip';
 
 1;
