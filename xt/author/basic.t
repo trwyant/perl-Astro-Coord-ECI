@@ -24,7 +24,7 @@ BEGIN {
     }
 }
 
-plan tests => 4;
+plan tests => 5;
 
 diag 'Things needed for authortest';
 
@@ -32,6 +32,7 @@ my $file = 'ref/spacetrack.tle';
 ok -f $file, "$file found"
     or diag 'See t/tle_pass.t for where to get the data';
 require_ok 'Date::Manip';
+require_ok 'Test::MockTime';
 require_ok 'Test::Perl::Critic';
 require_ok 'Test::Without::Module';
 
