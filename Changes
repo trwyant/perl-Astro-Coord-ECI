@@ -1,5 +1,6 @@
 0.039_02	18-May-2011	T. R. Wyant
-  Fix various problems in Astro::Coord::ECI::TLE->pass():
+  Fix various problems in Astro::Coord::ECI::TLE->pass(), also brought
+    to my attention by Jaap Meijers:
     * Incorrect time of maximum elevation when only one of the original
       one-minute samples is above the horizon.
     * Sporadic detection of passes which spend less than a minute above
