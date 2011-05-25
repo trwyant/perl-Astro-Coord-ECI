@@ -28,7 +28,7 @@ plan tests => 5;
 
 diag 'Things needed for authortest';
 
-my $file = 'ref/spacetrack.tle';
+my $file = 'data/iss.tle';
 ok -f $file, "$file found"
     or diag 'See t/tle_pass.t for where to get the data';
 require_ok 'Date::Manip';

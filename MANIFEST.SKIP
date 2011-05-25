@@ -8,6 +8,7 @@
 ^Changes_Development$
 ^cover_db/
 CVS/
+^data/
 ^foo
 ^html/
 ^iridium\.dat$

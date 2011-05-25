@@ -35,7 +35,6 @@ README
 README.MacOS
 t/basic.t
 t/eci.t
-t/iridium.t
 t/moon.t
 t/parse_time.t
 t/set.t

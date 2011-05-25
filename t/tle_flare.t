@@ -81,13 +81,13 @@ if (
     eval {
 	@flare = $tle->flare(
 	    $sta,
-	    timegm( 0, 0,  0, 13, 9, 80 ),
-	    timegm( 0, 0, 12, 13, 9, 80 ),
+	    timegm( 0, 0, 0, 13, 9, 80 ),
+	    timegm( 0, 0, 0, 14, 9, 80 ),
 	);
 	1;
     }
 ) {
-    ok @flare == 1, 'Found 1 flare as seen from Greenwich'
+    ok @flare == 2, 'Found 2 flares as seen from Greenwich'
 	or diag "Found @{[ scalar @flare ]} flares from Greenwich";
 } else {
     fail "Error in flare() method: $@";
@@ -95,6 +95,10 @@ if (
 
 is format_flare( $flare[0] ), <<'EOD', 'Flare 1';
 1980/10/13 05:43:26  29.9  48.1   412.9 -0.4 1 am
+EOD
+
+is format_flare( $flare[1] ), <<'EOD', 'Flare 2';
+1980/10/13 14:58:33  42.8 204.9   393.0 -3.0 1 day
 EOD
 
 ########################################################################

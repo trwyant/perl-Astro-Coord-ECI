@@ -165,7 +165,7 @@ SKIP: {
     # These can be either NORAD format (i.e. true two-line format) or
     # NASA format (i.e. three-line format), and order is unimportant.
 
-    my $file = 'ref/spacetrack.tle';
+    my $file = 'ref/iss.tle';
     my $tests = 38;
 
     our $SKIP_TEST
