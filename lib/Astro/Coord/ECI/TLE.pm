@@ -1,7 +1,6 @@
 =head1 NAME
 
-Astro::Coord::ECI::TLE - Compute satellite locations using NORAD orbit
-propagation models
+Astro::Coord::ECI::TLE - Compute satellite locations using NORAD orbit propagation models
 
 =head1 SYNOPSIS
 
