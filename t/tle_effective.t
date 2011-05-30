@@ -9,7 +9,9 @@ use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
 use Time::Local;
 
-plan( tests => 18 );
+our $SKIP_TEST;
+
+plan( tests => 25 );
 
 my $epoch = timelocal(0, 0, 0, 1, 3, 109);	# April 1 2009;
 my $backdate = Astro::Coord::ECI::TLE->new(
@@ -57,21 +59,100 @@ is($set->max_effective_date($epoch), $epoch,
 is($set->select(), $backdate,
     '$set->max_effective_date($epoch) selects $backdate');
 
-SKIP: {
-
-    my ( $tle ) = eval { Astro::Coord::ECI::TLE->parse( <<'EOD' ) };
+my ( $tle, $err );
+eval {
+    local $SIG{__WARN__} = sub { $err = $_[0] };
+    ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 Satellite X --effective 1980/275/12:00:00.0 --rcs 25.0
 1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    8
 2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  105
 EOD
-    ok( $tle, 'Parse TLE with --effective and --rcs specs' )
-	or skip ( 'Failed to parse TLE', 2 );
+    1;
+} or do {
+    $err = $@;
+};
+
+ok $tle, 'Parse TLE with --effective and --rcs specs'
+    or diag $err;
+
+SKIP: {
+
+    my $tests = 3;
+
+    $tle or skip 'Failed to parse TLE', $tests;
+
+    $SKIP_TEST and skip $SKIP_TEST, $tests;
+
+    ok ! defined $err, 'Got no warnings'
+	or diag "Warning was '$err'";
 
     cmp_ok( $tle->get( 'effective' ), '==', timegm( 0, 0, 12, 1, 9, 80 ),
 	'Effective date is noon October 1 1980' );
 
     cmp_ok( $tle->get( 'rcs' ), '==', 25,
 	'Radar cross-section is 25' );
+
+}
+
+( $tle, $err ) = ( undef, undef );
+eval {
+    local $SIG{__WARN__} = sub { $err = $_[0] };
+    ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
+Satellite X --effective 1980/275/12:00:00
+1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    8
+2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  105
+EOD
+    1;
+} or do {
+    $err = $@;
+};
+
+ok $tle, 'Parse TLE with --effective date lacking fractional seconds'
+    or diag $err;
+
+SKIP: {
+
+    my $tests = 2;
+
+    $tle or skip 'Failed to parse TLE', $tests;
+
+    $SKIP_TEST and skip $SKIP_TEST, $tests;
+
+    ok ! defined $err, 'Got no warnings'
+	or diag "Warning was '$err'";
+
+    cmp_ok( $tle->get( 'effective' ), '==', timegm( 0, 0, 12, 1, 9, 80 ),
+	'Effective date is noon October 1 1980' );
+
+}
+
+( $tle, $err ) = ( undef, undef );
+eval {
+    local $SIG{__WARN__} = sub { $err = $_[0] };
+    ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
+Satellite X --effective 1980/275/12:00
+1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    8
+2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  105
+EOD
+    1;
+} or do {
+    $err = $@;
+};
+
+ok $tle, 'Parse TLE with --effective date lacking seconds'
+    or diag $err;
+
+SKIP: {
+
+    my $tests = 2;
+
+    $tle or skip 'Failed to parse TLE', $tests;
+
+    $SKIP_TEST and skip $SKIP_TEST, $tests;
+
+    ok defined $err, 'Got a warning';
+
+    ok ! defined $tle->get( 'effective' ), 'Effective date is undef';
 
 }
 

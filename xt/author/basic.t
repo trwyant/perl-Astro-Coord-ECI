@@ -24,11 +24,14 @@ BEGIN {
     }
 }
 
-plan tests => 5;
+plan tests => 6;
 
 diag 'Things needed for authortest';
 
 my $file = 'data/iss.tle';
+ok -f $file, "$file found"
+    or diag 'See t/tle_pass.t for where to get the data';
+$file = 'data/oao2.tle';
 ok -f $file, "$file found"
     or diag 'See t/tle_pass.t for where to get the data';
 require_ok 'Date::Manip';
