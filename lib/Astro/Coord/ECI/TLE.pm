@@ -1164,10 +1164,18 @@ eod
 	}
 
 
-#	Skip if the sun is up.
+#	Skip if the sun is up. We set the step size small, because we
+#	are not actually tracking the satellite so we do not know what
+#	the appropriate size is.
 
-	next if $want_visible && !@info && !$rise &&
-	    $time < $sun_screen;
+	$want_visible
+	    and	!@info
+	    and !$rise
+	    and $time < $sun_screen
+	    and do {
+	    $step = $littlestep;
+	    next;
+	};
 
 
 #	Calculate azimuth and elevation.
