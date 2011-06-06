@@ -87,7 +87,7 @@ my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 EOD
 $tle->set( geometric => 1 );
 
-plan tests => 47;
+plan tests => 49;
 
 my @pass;
 
@@ -508,8 +508,9 @@ EOD
 
 SKIP: {
 
-    # File data/oao2.tle contains the TLE needed to test various corner
-    # cases. But the data come from Space Track
+    # File data/oao2.tle contains the TLE needed to test whether the
+    # correct rise time is computed when the pass starts in daylight.
+    # The data come from Space Track
     # (http://www.space-track.org/, account needed) and I do not have
     # permission to redistribute them. What you need is:
     #
@@ -572,6 +573,76 @@ SKIP: {
 2011/05/31 11:19:47  26.8 295.3  1407.6 lit   lit
 2011/05/31 11:22:34  58.1   4.3   861.2 lit   max
 2011/05/31 11:26:10  20.0  78.8  1671.0 lit   set
+EOD
+
+}
+
+SKIP: {
+
+    # File data/21938.tle contains the TLE needed to test whether a pass
+    # that ends just before the end of the prediction period is
+    # predicted. The data come from Space Track
+    # (http://www.space-track.org/, account needed) and I do not have
+    # permission to redistribute them. What you need is:
+    #
+    # OID   Epoch (GMT)          Epoch (in TLE)
+    # ----- -------------------- --------------
+    # 21938 27-May-2011 22:36:19 11147.94188938
+    #
+    # These can be either NORAD format (i.e. true two-line format) or
+    # NASA format (i.e. three-line format), and order is unimportant.
+
+    my $file = 'ref/21938.tle';
+    my $tests = 2;
+
+    our $SKIP_TEST
+	and skip $SKIP_TEST, $tests;
+
+    -f $file
+	or skip "$file not found", $tests;
+
+    $sta = Astro::Coord::ECI->new(
+	name	=> 'Shanghai',
+    )->geodetic(
+	deg2rad( 31.2 ),
+	deg2rad( 121.5 ),
+	0,
+    );
+
+    my $moon = Astro::Coord::ECI::Moon->new();
+
+    our $/ = undef;
+
+    open my $fh, '<', $file
+	or skip "Unable to open $file: $!", $tests;
+    my $data = <$fh>;
+    close $fh;
+
+    ( $tle ) = Astro::Coord::ECI::TLE::Set->aggregate(
+	Astro::Coord::ECI::TLE->parse( $data ) );
+
+    @pass = ();
+    my $offset = 0;
+    if ( eval {
+	    @pass = $tle->pass(
+		$sta,
+		timegm( $offset, 0,  6, 3, 5, 111 ),
+		timegm( $offset, 0, 12, 3, 5, 111 ),
+		[ $moon ],
+	    );
+	    1;
+	} ) {
+	ok @pass == 1,
+	    "Found 1 pass of OID 21938 over Shanghai at $offset sec after minute"
+	    or diag "Found @{[ scalar @pass ]} passes over Shanghai";
+    } else {
+	fail "Error in pass() method: $@";
+    }
+
+    is format_pass( $pass[0] ), <<'EOD', 'Pass 1 of OID 21938 over Shanghai';
+2011/06/03 11:51:51  20.0 146.8  2124.6 lit   rise
+2011/06/03 11:55:44  40.1  89.3  1432.8 lit   max
+2011/06/03 11:59:38  20.0  32.1  2138.7 lit   set
 EOD
 
 }
