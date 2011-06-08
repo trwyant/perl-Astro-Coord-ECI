@@ -1,3 +1,16 @@
+0.039_03	08-Jun-2011	T. R. Wyant
+  Fix more problems in Astro::Coord::ECI::TLE->pass():
+  * Fix detection and calculation of events of visible passes which
+    begin during the day, or any pass in progress ath the beginning of
+    the computation interval.
+  * Detect passes that end shortly before the end of the computation
+    interval. This was a bug introduced in 0.039_01 or later.
+  Have Astro::Coord::ECI::TLE->parse() throw a warning if it can not
+    understand the --effective date, and record the effective date as
+    undef. Also allow --effective dates without a fractional part of the
+    second.
+  Add more tests to try to capture all these changes.
+
 0.039_02	18-May-2011	T. R. Wyant
   Fix various problems in Astro::Coord::ECI::TLE->pass(), also brought
     to my attention by Jaap Meijers:
@@ -16,7 +29,7 @@
     to Jaap Meijers for bringing this to my attention.
 
 0.039		29-Apr-2011	T. R. Wyant
-  Silence warngings about out-of-range longitude which are sometimes
+  Silence warnings about out-of-range longitude which are sometimes
     generated when computing the position of the Moon.
 
 0.038_01	21-Apr-2011	T. R. Wyant
