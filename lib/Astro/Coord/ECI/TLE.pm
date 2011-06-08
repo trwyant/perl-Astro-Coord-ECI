@@ -1169,8 +1169,8 @@ eod
 #	the appropriate size is.
 
 	$want_visible
-	    and	!@info
-	    and !$rise
+	    and	not @info
+	    and not $rise
 	    and $time < $sun_screen
 	    and do {
 	    $step = $littlestep;
