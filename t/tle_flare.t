@@ -71,6 +71,8 @@ my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  105
 EOD
 
+$tle->set( zone => 0 );
+
 plan 'no_plan';
 
 ok $tle->can_flare(), 'Body 88888 can flare (not really, but ...)';
