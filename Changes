@@ -1,3 +1,6 @@
+0.039_04	10-Jun-2011	T. R. Wyant
+  Re-fix the time-zone-dependant test failures in t/tle_flare.t.
+
 0.039_03	08-Jun-2011	T. R. Wyant
   Fix more problems in Astro::Coord::ECI::TLE->pass():
   * Fix detection and calculation of events of visible passes which
