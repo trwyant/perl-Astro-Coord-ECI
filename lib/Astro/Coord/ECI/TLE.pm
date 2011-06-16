@@ -1114,7 +1114,6 @@ eod
     my $twilight = $tle->get ('twilight');
     my $want_lit = $tle->get ('limb');
     my $want_visible = $tle->get ('visible');
-    my $want_exact = 1;			# Always want exact event timings.
     my $appulse_dist = $tle->get ('appulse');
     my $debug = $tle->get ('debug');
 
@@ -1228,79 +1227,73 @@ eod
 	    }
 
 
-#	    If we want the exact times of the events, compute them.
+	    # Compute the exact events.
 
-	    if ($want_exact) {
+	    my @time;
 
-		my @time;
-
-		# Compute exact max
+	    # Compute exact max
 
 =begin comment
 
-		{
-		    my @try;
-		    if ( @info > 1 ) {
-			@try = (
-			    [ $info[0]{time}, $sta->azel( $tle->universal(
-					$info[0]{time} ) ) ],
-			    [ $info[-1]{time}, $sta->azel( $tle->universal(
-					$info[-1]{time} ) ) ],
-			);
-		    } else {
-			my $trial_time = $info[0]{time} - 30;
-			push @try, [ $trial_time, $sta->azel(
-				$tle->universal( $trial_time ) ) ];
-			$trial_time += 60;
-			push @try, [ $trial_time, $sta->azel(
-				$tle->universal( $trial_time ) ) ];
-		    }
-
-		    while ( $try[1][0] - $try[0][0] > 0.01 ) {
-			my $middle = ( $try[0][0] + $try[1][0] ) / 2;
-			my $inx = $try[0][2] > $try[1][2] ? 1 : 0;
-			splice @try, $inx, 1, [ $middle, $sta->azel(
-				$tle->universal( $middle ) ) ];
-		    }
-
-		    push @time, [ floor( $try[1][0] + .5 ), PASS_EVENT_MAX ];
-
+	    {
+		my @try;
+		if ( @info > 1 ) {
+		    @try = (
+			[ $info[0]{time}, $sta->azel( $tle->universal(
+				    $info[0]{time} ) ) ],
+			[ $info[-1]{time}, $sta->azel( $tle->universal(
+				    $info[-1]{time} ) ) ],
+		    );
+		} else {
+		    my $trial_time = $info[0]{time} - 30;
+		    push @try, [ $trial_time, $sta->azel(
+			    $tle->universal( $trial_time ) ) ];
+		    $trial_time += 60;
+		    push @try, [ $trial_time, $sta->azel(
+			    $tle->universal( $trial_time ) ) ];
 		}
+
+		while ( $try[1][0] - $try[0][0] > 0.01 ) {
+		    my $middle = ( $try[0][0] + $try[1][0] ) / 2;
+		    my $inx = $try[0][2] > $try[1][2] ? 1 : 0;
+		    splice @try, $inx, 1, [ $middle, $sta->azel(
+			    $tle->universal( $middle ) ) ];
+		}
+
+		push @time, [ floor( $try[1][0] + .5 ), PASS_EVENT_MAX ];
+
+	    }
 
 =end comment
 
 =cut
 
-		my ( $trial_start, $trial_finish ) = @info > 1 ?
-		    ( $info[0]{time}, $info[-1]{time} ) :
-		    ( $info[0]{time} - $pass_step,
-			$info[0]{time} + $pass_step );
-		$culmination = find_first_true( $trial_start,
-		    $trial_finish,
-			sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] >
-			    ( $sta->azel( $tle->universal( $_[0] + 1 ) ) )[1]
-			});
-		push @time, [ $culmination, PASS_EVENT_MAX ];
+	    my ( $trial_start, $trial_finish ) = @info > 1 ?
+		( $info[0]{time}, $info[-1]{time} ) :
+		( $info[0]{time} - $pass_step,
+		    $info[0]{time} + $pass_step );
+	    $culmination = find_first_true( $trial_start,
+		$trial_finish,
+		    sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] >
+			( $sta->azel( $tle->universal( $_[0] + 1 ) ) )[1]
+		    });
+	    push @time, [ $culmination, PASS_EVENT_MAX ];
 
 
-#		Compute exact rise and set.
+	    # Compute exact rise and set.
 
-		push @time, (
-		    [find_first_true ($info[0]{time} - $step,
-			    $culmination,
-			sub {($sta->azel ($tle->universal ($_[0])))[1] >=
-			$effective_horizon}), PASS_EVENT_RISE],
-		    [find_first_true ($culmination, $info[-1]{time}
-			    + $step,
-			sub {($sta->azel ($tle->universal ($_[0])))[1] <
-			$effective_horizon}), PASS_EVENT_SET],
-##		    [find_first_true ($info[0]{time}, $info[-1]{time},
-##			sub {($sta->azel ($tle->universal ($_[0])))[1] >
-##				($sta->azel ($tle->universal ($_[0] + 1)))[1]}),
-##				PASS_EVENT_MAX],
-		);
+	    push @time, (
+		[find_first_true ($info[0]{time} - $step,
+			$culmination,
+		    sub {($sta->azel ($tle->universal ($_[0])))[1] >=
+		    $effective_horizon}), PASS_EVENT_RISE],
+		[find_first_true ($culmination, $info[-1]{time}
+			+ $step,
+		    sub {($sta->azel ($tle->universal ($_[0])))[1] <
+		    $effective_horizon}), PASS_EVENT_SET],
+	    );
 
-		warn <<eod if $debug;	## no critic (RequireCarping)
+	    warn <<eod if $debug;	## no critic (RequireCarping)
 
 Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
 		    ]} $time[0][1]
@@ -1310,178 +1303,148 @@ Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
 		    ]} $time[2][1]
 eod
 
-#		Compute nearest approach to background bodies
+	    # Compute nearest approach to background bodies
 
-#		Note (fortuitous discovery) the ISS travels 1.175
-#		degrees per second at the zenith, so I need better
-#		than 1 second resolution to detect a transit.
+	    # Note (fortuitous discovery) the ISS travels 1.175
+	    # degrees per second at the zenith, so I need better
+	    # than 1 second resolution to detect a transit.
 
-		foreach my $body (@sky) {
-		    my $when = find_first_true ($time[1][0], $time[2][0],
-			sub {$sta->angle ($body->universal ($_[0]),
-					$tle->universal ($_[0])) <
-				$sta->angle ($body->universal ($_[0] + .1),
-					$tle->universal ($_[0] + .1))},
-			.1);
-		    my $angle = 
-			$sta->angle ($body->universal ($when),
-				$tle->universal ($when));
-		    next if $angle > $appulse_dist;
-		    push @time, [$when, PASS_EVENT_APPULSE,
-			appulse => {angle => $angle, body => $body}];
-		    warn <<eod if $debug;	## no critic (RequireCarping)
-                $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]}
+	    foreach my $body (@sky) {
+		my $when = find_first_true ($time[1][0], $time[2][0],
+		    sub {$sta->angle ($body->universal ($_[0]),
+				    $tle->universal ($_[0])) <
+			    $sta->angle ($body->universal ($_[0] + .1),
+				    $tle->universal ($_[0] + .1))},
+		    .1);
+		my $angle = 
+		    $sta->angle ($body->universal ($when),
+			    $tle->universal ($when));
+		next if $angle > $appulse_dist;
+		push @time, [$when, PASS_EVENT_APPULSE,
+		    appulse => {angle => $angle, body => $body}];
+		warn <<eod if $debug;	## no critic (RequireCarping)
+	    $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]}
 eod
-		}
+	    }
 
 
-#		Clear the original data unless we're verbose.
+	    # Clear the original data unless we're verbose.
 
-		@info = () unless $verbose;
+	    @info = () unless $verbose;
 
 
-#		Generate the full data for the exact events.
+	    # Generate the full data for the exact events.
 
-		my ($suntim, $dawn);
-		warn "Contents of \@time: ", Dumper (\@time)	## no critic (RequireCarping)
-		    if $debug;
-		foreach (sort {$a->[0] <=> $b->[0]} @time) {
-		    my @event = @$_;
-		    my ( $time, $evnt_name, @extra ) = @event;
-		    ($suntim, $dawn) =
-			$sta->universal ($time)->next_elevation ($sun,
-			    $twilight)
-			if !$suntim || $time >= $suntim;
+	    my ($suntim, $dawn);
+	    warn "Contents of \@time: ", Dumper (\@time)	## no critic (RequireCarping)
+		if $debug;
+	    foreach (sort {$a->[0] <=> $b->[0]} @time) {
+		my ( $time, $evnt_name, @extra ) = @$_;
+		($suntim, $dawn) =
+		    $sta->universal ($time)->next_elevation ($sun,
+			$twilight)
+		    if !$suntim || $time >= $suntim;
+		my ($azm, $elev, $rng) = $sta->azel (
+		    $tle->universal ($time));
+		my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
+		$litup = 0 if $litup == 1 &&
+		    ($tle->azel ($illum->universal ($time),
+			    $want_lit))[1] < $tle->dip ();
+		push @info, {
+		    azimuth => $azm,
+		    body => $tle,
+		    elevation => $elev,
+		    event => $evnt_name,
+		    illumination => $lighting[$litup],
+		    range => $rng,
+		    station => $sta,
+		    time => $time,
+		    @extra,
+		};
+	    }
+
+	    # Compute illumination changes
+
+	    {
+		my @illum;
+		my $prior;
+		foreach my $evt ( @info ) {
+		    $prior or next;
+		    $prior->{illumination} == $evt->{illumination}
+			and next;
+		    my ($suntim, $dawn) =
+			$sta->universal ($prior->{time})->
+			next_elevation ($sun, $twilight);
+		    my $time = 
+			find_first_true ($prior->{time}, $evt->{time},
+			sub {
+			    my $litup = $_[0] < $suntim ?
+				2 - $dawn : 1 + $dawn;
+			    $litup = 0 if $litup == 1 &&
+				($tle->azel ($illum->universal ($_[0]),
+					$want_lit))[1] < $tle->dip ();
+			    $lighting[$litup] == $evt->{illumination}
+			    });
 		    my ($azm, $elev, $rng) = $sta->azel (
 			$tle->universal ($time));
-		    my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
-		    $litup = 0 if $litup == 1 &&
-			($tle->azel ($illum->universal ($time),
-				$want_lit))[1] < $tle->dip ();
-		    push @info, {
+		    push @illum, {
 			azimuth => $azm,
 			body => $tle,
 			elevation => $elev,
-			event => $evnt_name,
-			illumination => $lighting[$litup],
+			event => $evt->{illumination},
+			illumination => $evt->{illumination},
 			range => $rng,
 			station => $sta,
 			time => $time,
-			@extra,
 		    };
+		} continue {
+		    $prior = $evt;
 		}
+		push @info, @illum;
+	    }
 
-		# Compute illumination changes
+	    # Do not record this pass if it turns out not to contain
+	    # any points that meet the recording criteria.
 
-		{
-		    my @illum;
-		    my $prior;
-		    foreach my $evt ( @info ) {
-			$prior or next;
-			$prior->{illumination} == $evt->{illumination}
-			    and next;
-			my ($suntim, $dawn) =
-			    $sta->universal ($prior->{time})->
-			    next_elevation ($sun, $twilight);
-			my $time = 
-			    find_first_true ($prior->{time}, $evt->{time},
-			    sub {
-				my $litup = $_[0] < $suntim ?
-				    2 - $dawn : 1 + $dawn;
-				$litup = 0 if $litup == 1 &&
-				    ($tle->azel ($illum->universal ($_[0]),
-					    $want_lit))[1] < $tle->dip ();
-				$lighting[$litup] == $evt->{illumination}
-				});
-			my ($azm, $elev, $rng) = $sta->azel (
-			    $tle->universal ($time));
-			push @illum, {
-			    azimuth => $azm,
-			    body => $tle,
-			    elevation => $elev,
-			    event => $evt->{illumination},
-			    illumination => $evt->{illumination},
-			    range => $rng,
-			    station => $sta,
-			    time => $time,
-			};
-		    } continue {
-			$prior = $evt;
-		    }
-		    push @info, @illum;
+	    eval {	# So I can return().
+		foreach my $event ( @info ) {
+		    $event->{elevation} < $horizon
+			and next;
+		    not $want_visible
+			or $event->{illumination} == PASS_EVENT_LIT
+			or next;
+		    return 1;
 		}
+		return 0;
+	    } or do {
+		@info = ();
+		next;
+	    };
 
-#		Do not record this pass if it turns out not to contain
-#		any points that meet the recording criteria.
+	    # Compute the interval data if desired.
 
-		eval {	# So I can return().
-		    foreach my $event ( @info ) {
-			$event->{elevation} < $horizon
-			    and next;
-			not $want_visible
-			    or $event->{illumination} == PASS_EVENT_LIT
-			    or next;
-			return 1;
-		    }
-		    return 0;
-		} or do {
-		    @info = ();
-		    next;
-		};
-
-		# Compute the interval data if desired.
-
-		if ( $verbose ) {
-		}
+	    if ( $verbose ) {
+	    }
 
 #		Sort the data, and eliminate duplicates.
 
 =begin comment
 
-		my @foo = sort {$a->{time} <=> $b->{time}} @info;
-		my $prior = undef;
-		@info = ();
-		foreach my $evt (@foo) {
-		    push @info, $evt unless defined $prior &&
-			$evt->{time} == $prior->{time} &&
-			$evt->{event} != PASS_EVENT_APPULSE;
-		    $prior = $evt;
-		}
+	    my @foo = sort {$a->{time} <=> $b->{time}} @info;
+	    my $prior = undef;
+	    @info = ();
+	    foreach my $evt (@foo) {
+		push @info, $evt unless defined $prior &&
+		    $evt->{time} == $prior->{time} &&
+		    $evt->{event} != PASS_EVENT_APPULSE;
+		$prior = $evt;
+	    }
 
 =end comment
 
 =cut
 
-		@info = sort { $a->{time} <=> $b->{time} } @info;
-	    }
-
-
-#	    Figure out what the events are.
-
-	    unless ($want_exact) {
-		$info[0]{event} = PASS_EVENT_RISE;
-		$info[-1]{event} = PASS_EVENT_SET;
-		$info[-1]{elevation} = 0 if $info[-1]{elevation} < 0;
-					# Because -.6 degrees (which we
-					# get because no atmospheric
-					# refraction below the horizon)
-					# looks funny.
-		my ($last, $max);
-		foreach my $pt (@info) {
-		    $last or next;
-		    ($last->{elevation} > $pt->{elevation})
-			and ($max ||= $last);
-		    ($last->{illumination} != $pt->{illumination})
-			and ($pt->{event} ||= $pt->{illumination});
-		} continue {
-		    $last = $pt;
-		}
-		$max and do {
-		    $max->{event} = PASS_EVENT_MAX;
-		    $culmination = $max->{time};
-		};
-	    }
-
+	    @info = sort { $a->{time} <=> $b->{time} } @info;
 
 #	    Record the data for the pass.
 
