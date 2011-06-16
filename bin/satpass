@@ -1514,6 +1514,7 @@ eod
 
 #	Foreach body to be modelled
 
+    warn 'Debug - $parm{verbose} is ', $parm{verbose} ? 'true' : 'false';
     foreach my $tle (_select_observing_list ($pass_start)) {
 
 	$tle->set (
@@ -1522,7 +1523,7 @@ eod
 	    debug => $parm{debug},
 	    geometric => $parm{geometric},
 	    horizon => $horizon,
-	    interval => $opt{verbose} ? $pass_step : 0,
+	    interval => $parm{verbose} ? $pass_step : 0,
 	    limb => $parm{lit},
 	    model => $model,
 	    twilight => $parm{_twilight},
@@ -4481,7 +4482,8 @@ This command predicts visibility of the contents of the observing
 list, in accordance with the various L</PARAMETERS>, between the given
 start_time and end_time, using the given increment. See the
 L</SPECIFYING TIMES> topic below for how to specify times. The increment
-is in seconds.
+is in seconds, and does nothing useful unless the L<verbose|/verbose>
+setting is true.
 
 The position of the visible body is given in either elevation, azimuth,
 and range or right ascension, declination, and range as seen from the
