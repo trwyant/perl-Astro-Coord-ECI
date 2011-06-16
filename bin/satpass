@@ -1514,7 +1514,6 @@ eod
 
 #	Foreach body to be modelled
 
-    warn 'Debug - $parm{verbose} is ', $parm{verbose} ? 'true' : 'false';
     foreach my $tle (_select_observing_list ($pass_start)) {
 
 	$tle->set (
