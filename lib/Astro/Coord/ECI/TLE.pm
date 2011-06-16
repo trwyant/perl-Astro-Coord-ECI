@@ -1144,7 +1144,7 @@ eod
     my $bigstep = 5 * $step;
     my $littlestep = $step;
     my $end = $pass_end;
-    my ( $suntim, $rise, $sun_screen, $sun_limit ) =
+    my ( $suntim, $dawn, $sun_screen, $sun_limit ) =
         _next_elevation_screen( $sta->universal( $pass_start ),
 	    $pass_step, $sun, $twilight );
     my @info;	# Information on an individual pass.
@@ -1158,7 +1158,7 @@ eod
 #	the next one.
 
 	if ( $time >= $sun_limit ) {
-	    ( $suntim, $rise, $sun_screen, $sun_limit ) =
+	    ( $suntim, $dawn, $sun_screen, $sun_limit ) =
 		_next_elevation_screen( $sta->universal( $suntim ),
 		    $pass_step, $sun, $twilight );
 	}
@@ -1170,7 +1170,7 @@ eod
 
 	$want_visible
 	    and	not @info
-	    and not $rise
+	    and not $dawn
 	    and $time < $sun_screen
 	    and do {
 	    $step = $littlestep;
@@ -1213,7 +1213,7 @@ eod
 		my ( $try_azm, $try_elev, $try_rng ) = $sta->azel (
 		    $tle->universal( $time ) );
 		last if $try_elev < $effective_horizon;
-		my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
+		my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
 		$litup = 0 if $litup == 1 &&
 		    ( $tle->azel( $illum->universal( $time ), $want_lit)
 		    )[1] < $tle->dip ();
@@ -1342,19 +1342,19 @@ eod
 
 #		Generate the full data for the exact events.
 
-		my ($suntim, $rise);
+		my ($suntim, $dawn);
 		warn "Contents of \@time: ", Dumper (\@time)	## no critic (RequireCarping)
 		    if $debug;
 		foreach (sort {$a->[0] <=> $b->[0]} @time) {
 		    my @event = @$_;
 		    my ( $time, $evnt_name, @extra ) = @event;
-		    ($suntim, $rise) =
+		    ($suntim, $dawn) =
 			$sta->universal ($time)->next_elevation ($sun,
 			    $twilight)
 			if !$suntim || $time >= $suntim;
 		    my ($azm, $elev, $rng) = $sta->azel (
 			$tle->universal ($time));
-		    my $litup = $time < $suntim ? 2 - $rise : 1 + $rise;
+		    my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
 		    $litup = 0 if $litup == 1 &&
 			($tle->azel ($illum->universal ($time),
 				$want_lit))[1] < $tle->dip ();
@@ -1380,14 +1380,14 @@ eod
 			$prior or next;
 			$prior->{illumination} == $evt->{illumination}
 			    and next;
-			my ($suntim, $rise) =
+			my ($suntim, $dawn) =
 			    $sta->universal ($prior->{time})->
 			    next_elevation ($sun, $twilight);
 			my $time = 
 			    find_first_true ($prior->{time}, $evt->{time},
 			    sub {
 				my $litup = $_[0] < $suntim ?
-				    2 - $rise : 1 + $rise;
+				    2 - $dawn : 1 + $dawn;
 				$litup = 0 if $litup == 1 &&
 				    ($tle->azel ($illum->universal ($_[0]),
 					    $want_lit))[1] < $tle->dip ();
@@ -1428,6 +1428,11 @@ eod
 		    @info = ();
 		    next;
 		};
+
+		# Compute the interval data if desired.
+
+		if ( $verbose ) {
+		}
 
 #		Sort the data, and eliminate duplicates.
 
@@ -1500,12 +1505,12 @@ eod
 
 #	Calculate whether the body is visible.
 
-	my $litup = $time < $sun_screen ? 2 - $rise : 1 + $rise;
+	my $litup = $time < $sun_screen ? 2 - $dawn : 1 + $dawn;
 	my $sun_elev_from_sat = ( $tle->azel( $illum->universal( $time )
 		) )[1] - $tle->dip();
 	$visible ||= $elev > $screening_horizon && ( ! $want_visible ||
 	    $litup == 1 && $sun_elev_from_sat >= $min_sun_elev_from_sat );
-	$litup = $time < $suntim ? 2 - $rise : 1 + $rise;
+	$litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
 	$litup == 1
 	    and $sun_elev_from_sat < 0
 	    and $litup = 0;
@@ -6721,11 +6726,11 @@ eod
 
 sub _next_elevation_screen {
     my ( $sta, $pass_step, @args ) = @_;
-    my ( $suntim, $rise ) = $sta->next_elevation( @args );
-    $rise or $pass_step = - $pass_step;
+    my ( $suntim, $dawn ) = $sta->next_elevation( @args );
+    $dawn or $pass_step = - $pass_step;
     my $sun_screen = $suntim + $pass_step / 2;
-    return ( $suntim, $rise, $sun_screen,
-	$rise ? $sun_screen : $suntim,
+    return ( $suntim, $dawn, $sun_screen,
+	$dawn ? $sun_screen : $suntim,
     );
 }
 
