@@ -87,7 +87,7 @@ my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 EOD
 $tle->set( geometric => 1 );
 
-plan tests => 7;
+plan tests => 11;
 
 my @pass;
 
@@ -150,6 +150,88 @@ is format_pass( $pass[5] ), <<'EOD', 'Pass 6';
 1980/10/18 05:14:16   0.0  19.0  1814.7 lit   set
 EOD
 
+@pass = ();
+$tle->set( interval => 30 );
+
+if (
+    eval {
+	@pass = $tle->pass(
+	    $sta,
+	    timegm( 0, 0, 3, 14, 9, 80 ),
+	    timegm( 0, 0, 9, 14, 9, 80 ),
+	    [ $star ],
+	);
+	1;
+    }
+) {
+    ok @pass == 1, 'Found 1 pass over Greenwich, with interval'
+	or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+} else {
+    fail "Error in pass() method: $@";
+}
+
+is format_pass( $pass[0] ), <<'EOD', 'Pass 1, with interval';
+1980/10/14 05:32:49   0.0 204.8  1691.2 lit   rise
+1980/10/14 05:33:19   1.9 204.8  1468.1 lit
+1980/10/14 05:33:49   4.3 204.7  1245.5 lit
+1980/10/14 05:34:19   7.4 204.6  1023.7 lit
+1980/10/14 05:34:49  11.7 204.5   804.1 lit
+1980/10/14 05:35:19  18.6 204.1   589.1 lit
+1980/10/14 05:35:49  31.9 203.0   387.2 lit
+1980/10/14 05:36:19  64.9 196.4   235.3 lit
+1980/10/14 05:36:32  85.6 111.4   215.0 lit   max
+1980/10/14 05:36:49  58.2  33.2   251.8 lit
+1980/10/14 05:37:19  29.8  28.7   417.1 lit
+1980/10/14 05:37:49  18.0  27.8   621.9 lit
+1980/10/14 05:38:19  11.7  27.5   837.6 lit
+1980/10/14 05:38:49   7.6  27.3  1057.3 lit
+1980/10/14 05:39:19   4.6  27.3  1278.8 lit
+1980/10/14 05:39:49   2.3  27.3  1500.9 lit
+1980/10/14 05:40:19   0.4  27.3  1723.2 lit
+1980/10/14 05:40:27   0.0  27.3  1782.5 lit   set
+EOD
+
+@pass = ();
+$tle->set( lazy_pass_position => 1 );
+
+if (
+    eval {
+	@pass = $tle->pass(
+	    $sta,
+	    timegm( 0, 0, 3, 14, 9, 80 ),
+	    timegm( 0, 0, 9, 14, 9, 80 ),
+	    [ $star ],
+	);
+	1;
+    }
+) {
+    ok @pass == 1, 'Found 1 pass over Greenwich, with interval'
+	or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+} else {
+    fail "Error in pass() method: $@";
+}
+
+is format_pass( $pass[0] ), <<'EOD', 'Pass 1, with interval';
+1980/10/14 05:32:49   0.0 204.8  1691.2 lit   rise
+1980/10/14 05:33:19                     lit
+1980/10/14 05:33:49                     lit
+1980/10/14 05:34:19                     lit
+1980/10/14 05:34:49                     lit
+1980/10/14 05:35:19                     lit
+1980/10/14 05:35:49                     lit
+1980/10/14 05:36:19                     lit
+1980/10/14 05:36:32  85.6 111.4   215.0 lit   max
+1980/10/14 05:36:49                     lit
+1980/10/14 05:37:19                     lit
+1980/10/14 05:37:49                     lit
+1980/10/14 05:38:19                     lit
+1980/10/14 05:38:49                     lit
+1980/10/14 05:39:19                     lit
+1980/10/14 05:39:49                     lit
+1980/10/14 05:40:19                     lit
+1980/10/14 05:40:27   0.0  27.3  1782.5 lit   set
+EOD
+
 ########################################################################
 
 {
@@ -182,11 +264,14 @@ sub format_pass {
     my $rslt = '';
     $pass or return $rslt;
     foreach my $event ( @{ $pass->{events} } ) {
-	$rslt .= sprintf '%19s %5.1f %5.1f %7.1f %-5s %-5s',
+	$rslt .= sprintf '%19s %5s %5s %7s %-5s %-5s',
 	    format_time( $event->{time} ),
-	    rad2deg( $event->{elevation} ),
-	    rad2deg( $event->{azimuth} ),
-	    $event->{range},
+	    format_optional( '%5.1f', $event, 'elevation', \&rad2deg ),
+##	    rad2deg( $event->{elevation} ),
+##	    rad2deg( $event->{azimuth} ),
+	    format_optional( '%5.1f', $event, 'azimuth', \&rad2deg ),
+##	    $event->{range},
+	    format_optional( '%7.1f', $event, 'range' ),
 	    format_event( $event->{illumination} ),
 	    format_event( $event->{event} ),
 	    ;
@@ -207,6 +292,15 @@ sub format_pass {
     }
     $rslt =~ s/ (?<= \s ) - (?= 0 [.] 0+ \s ) / /smxg;
     return $rslt;
+}
+
+sub format_optional {
+    my ( $tplt, $hash, $key, $xfrm ) = @_;
+    defined( my $val = $hash->{$key} )
+	or return '';
+    'CODE' eq ref $xfrm
+	and $val = $xfrm->( $val );
+    return sprintf $tplt, $val;
 }
 
 sub format_time {

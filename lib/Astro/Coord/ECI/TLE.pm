@@ -369,6 +369,7 @@ eod
     visible => 0,	# Pass() reports only illuminated passes.
     appulse => 0,	# Maximum appulse to report.
     interval => 0,	# Interval for pass() positions, if positive.
+    lazy_pass_position => 0,	# Position optional if true.
     ds50 => undef,	# Read-only
     epoch_dynamical => undef,	# Read-only
     rcs => 0,		# Radar cross-section
@@ -388,6 +389,7 @@ my %static = (
     gravconst_r => 72,	# Specify geodetic data set for sgp4r.
     illum => 'sun',
     interval => 0,
+    lazy_pass_position => 0,
     limb => 1,
     model => 'model',
     reblessable => 1,
@@ -1002,22 +1004,18 @@ represented by an anonymous hash containing the following keys:
 The individual events are also anonymous hashes, with each hash
 containing the following keys:
 
-  {azimuth} => Azimuth of event in radians;
-  {body} => Reference to body making pass;
+  {azimuth} => Azimuth of event in radians (see note 1);
+  {body} => Reference to body making pass (see note 2);
   {appulse} => {  # This is present only for PASS_EVENT_APPULSE;
       {angle} => minimum separation in radians;
       {body} => other body involved in appulse;
       }
-  {elevation} => Elevation of event in radians;
+  {elevation} => Elevation of event in radians (see note 1);
   {event} => Event code (PASS_EVENT_xxxx);
   {illumination} => Illumination at time of event (PASS_EVENT_xxxx);
-  {range} => Distance to event in kilometers;
-  {station} => Reference to observing station;
+  {range} => Distance to event in kilometers (see note 1);
+  {station} => Reference to observing station (see note 2);
   {time} => Time of event;
-
-Note that the time set in the various {body} and {station} objects is
-B<not> guaranteed to be anything in particular. Specifically, it is
-almost certainly not the time of the event.
 
 The events are coded by the following manifest constants:
 
@@ -1062,10 +1060,29 @@ the object:
   * geometric	# Use geometric horizon for pass rise/set
   * horizon	# Effective horizon
   * interval	# Interval for pass() positions, if positive
+  * lazy_pass_position # {azimuth}, {elevation} and {range} are
+                # optional if true (see note 1).
   * illum	# Source of illumination.
   * limb	# Whether lit when upper limb above horizon
   * twilight	# Distance of illuminator below horizon
   * visible	# Pass() reports only illuminated passes
+
+Note 1:
+
+If the C<lazy_pass_position> attribute is true, the {azimuth},
+{elevation}, and {range} keys may not be present. This attribute gives
+the event-calculating algorithm permission to omit these if the time of
+the event can be determined without computing the position of the body.
+Currently this happens only for events generated in response to setting
+the C<interval> attribute, but the user should not make this assumption
+in his or her own code.
+
+Note 2:
+
+The time set in the various {body} and {station} objects is B<not>
+guaranteed to be anything in particular. Specifically, it is almost
+certainly not the time of the event. If you make use of the {body}
+object you will probably need to set its time to the time of the event.
 
 =cut
 
@@ -1108,6 +1125,7 @@ eod
 	PASS_EVENT_DAY,
     );
     my $verbose = $tle->get ('interval');
+    my $lazy_pass_position = $tle->get( 'lazy_pass_position' );
     my $pass_step = 60;
     my $horizon = $tle->get ('horizon');
     my $effective_horizon = $tle->get ('geometric') ? 0 : $horizon;
@@ -1457,18 +1475,22 @@ eod
 		    while ( $info[$inx]{time} < $it ) {
 			$illum = $info[$inx++]{illumination};
 		    }
-		    my ( $azm, $elev, $rng ) = $sta->azel(
-			$tle->universal( $it ) );
+####		    my ( $azm, $elev, $rng ) = $sta->azel(
+####			$tle->universal( $it ) );
 		    push @info, {
-			azimuth => $azm,
+####			azimuth => $azm,
 			body => $tle,
-			elevation => $elev,
+####			elevation => $elev,
 			event => PASS_EVENT_NONE,
 			illumination => $illum,
-			range => $rng,
+####			range => $rng,
 			station => $sta,
 			time => $it,
 		    };
+		    $lazy_pass_position
+			or @{ $info[-1] }{
+			    qw{azimuth elevation range } } =
+			    $sta->azel( $tle->universal( $it ) );
 		}
 	    }
 
@@ -7670,6 +7692,14 @@ needed) giving the last two digits of the launch year (in the range
 the order of the launch within the year, and one to three letters
 designating the "part" of the launch, with payload(s) getting the
 first letters, and spent boosters, debris, etc getting the rest.
+
+=item lazy_pass_position (boolean, static)
+
+This attribute tells the pass() method that the C<{azimuth}>,
+C<{elevation}>, and C<{range}> keys in the pass event hashes need not
+be generated.
+
+The default is 0 (i.e. false).
 
 =item limb (boolean, static)
 
