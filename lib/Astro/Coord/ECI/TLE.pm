@@ -1080,29 +1080,6 @@ use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
 
 use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
 
-=begin comment
-
-my @event_collate;
-{
-    my $collation = 0;
-    foreach my $event (
-	PASS_EVENT_RISE,
-	PASS_EVENT_SHADOWED,
-	PASS_EVENT_LIT,
-	PASS_EVENT_DAY,
-	PASS_EVENT_MAX,
-	PASS_EVENT_SET,
-	PASS_EVENT_APPULSE,
-	PASS_EVENT_NONE,
-    ) {
-	$event_collate[ $event ] = $collation++;
-    }
-}
-
-=end comment
-
-=cut
-
 # *****	Promise Astro::Coord::ECI::TLE::Set that pass() only uses the
 # *****	public interface. That way pass() will get the Set object,
 # *****	and will work if we have more than one set of elements for the
@@ -1292,10 +1269,6 @@ eod
 
 =cut
 
-###	    my ( $trial_start, $trial_finish ) = @info > 1 ?
-###		( $info[0]{time}, $info[-1]{time} ) :
-###		( $info[0]{time} - $pass_step,
-###		    $info[0]{time} + $pass_step );
 	    my ( $trial_start, $trial_finish ) =
 		( $info[0]{time} - $pass_step,
 		    $info[-1]{time} + $pass_step
@@ -1365,21 +1338,6 @@ eod
 	    # Clear the original data.
 
 	    @info = ();
-
-=begin comment
-
-	    # Calculate interval data if we're verbose.
-
-	    if ( $verbose ) {
-		for ( my $it = ceil( $sat_rise ); $it < $sat_set; $it +=
-		    $verbose ) {
-		    push @time, [ $it, PASS_EVENT_NONE ];
-		}
-	    }
-
-=end comment
-
-=cut
 
 
 	    # Generate the full data for the exact events.
@@ -1516,42 +1474,7 @@ eod
 
 #		Sort the data
 
-=begin comment
-
-	    my @foo = sort {$a->{time} <=> $b->{time}} @info;
-	    my $prior = undef;
-	    @info = ();
-	    foreach my $evt (@foo) {
-		push @info, $evt unless defined $prior &&
-		    $evt->{time} == $prior->{time} &&
-		    $evt->{event} != PASS_EVENT_APPULSE;
-		$prior = $evt;
-	    }
-
-=end comment
-
-=cut
-
 	    @info = sort { $a->{time} <=> $b->{time} } @info;
-
-=begin comment
-
-	    my @foo = sort { $a->{time} <=> $b->{time} ||
-	    $event_collate[$a->{event}] <=> $event_collate[$b->{event}]
-	    } @info;
-	    my $prior = undef;
-	    @info = ();
-	    foreach my $evt (@foo) {
-		defined $prior
-		    and $evt->{time} == $prior->{time}
-		    and $evt->{event} == PASS_EVENT_NONE
-		    or push @info, $evt;
-		$prior = $evt;
-	    }
-
-=end comment
-
-=cut
 
 #	    Record the data for the pass.
 
