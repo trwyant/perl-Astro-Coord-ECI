@@ -24,21 +24,38 @@ BEGIN {
     }
 }
 
-plan tests => 6;
+
+
+plan tests => 8;
 
 diag 'Things needed for authortest';
 
-my $file = 'data/iss.tle';
-ok -f $file, "$file found"
-    or diag 'See t/tle_pass.t for where to get the data';
-$file = 'data/oao2.tle';
-ok -f $file, "$file found"
-    or diag 'See t/tle_pass.t for where to get the data';
+require_ok 'File::Spec';
+
+{
+    my $dir = $ENV{ASTRO_COORD_ECI_TLE_DIR};
+    $dir
+	and -d $dir
+	or eval {
+	require File::HomeDir;
+	$dir = File::HomeDir->my_dist_config(
+	    'Astro-Coord-ECI-TLE-Dir' );
+    };
+
+    ok $dir, 'TLE directory found'
+	or diag 'See t/tle_pass_extra.t for where the TLE data should go';
+
+    my $file = File::Spec->catfile( $dir, 'pass_extra.tle' );
+    ok $dir && -f $file, "TLE file $file found"
+	or diag 'See t/tle_pass_extra.t for what goes in this file';
+
+}
+
 require_ok 'Date::Manip';
 require_ok 'Test::MockTime';
 require_ok 'Test::Perl::Critic';
 require_ok 'Test::Without::Module';
-
+require_ok 'Time::Local';
 
 1;
 

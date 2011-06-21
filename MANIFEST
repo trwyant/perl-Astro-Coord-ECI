@@ -49,6 +49,7 @@ t/tle_exception.t
 t/tle_flare.t
 t/tle_misc.t
 t/tle_pass.t
+t/tle_pass_extra.t
 t/tle_sgp4r.t
 t/tle_support.t
 xt/author/basic.t

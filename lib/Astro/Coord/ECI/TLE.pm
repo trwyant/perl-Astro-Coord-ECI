@@ -211,7 +211,7 @@ use Astro::Coord::ECI::Utils qw{ :params :time deg2rad dynamical_delta
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use IO::File;
-use POSIX qw{floor fmod strftime};
+use POSIX qw{ ceil floor fmod strftime };
 
 BEGIN {
     local $@;
@@ -1080,6 +1080,29 @@ use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
 
 use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
 
+=begin comment
+
+my @event_collate;
+{
+    my $collation = 0;
+    foreach my $event (
+	PASS_EVENT_RISE,
+	PASS_EVENT_SHADOWED,
+	PASS_EVENT_LIT,
+	PASS_EVENT_DAY,
+	PASS_EVENT_MAX,
+	PASS_EVENT_SET,
+	PASS_EVENT_APPULSE,
+	PASS_EVENT_NONE,
+    ) {
+	$event_collate[ $event ] = $collation++;
+    }
+}
+
+=end comment
+
+=cut
+
 # *****	Promise Astro::Coord::ECI::TLE::Set that pass() only uses the
 # *****	public interface. That way pass() will get the Set object,
 # *****	and will work if we have more than one set of elements for the
@@ -1108,7 +1131,7 @@ eod
 	PASS_EVENT_DAY,
     );
     my $verbose = $tle->get ('interval');
-    my $pass_step = $verbose || 60;
+    my $pass_step = 60;
     my $horizon = $tle->get ('horizon');
     my $effective_horizon = $tle->get ('geometric') ? 0 : $horizon;
     my $twilight = $tle->get ('twilight');
@@ -1149,7 +1172,6 @@ eod
     my @info;	# Information on an individual pass.
     my @passes;	# Accumulated informtion on all passes.
     my $visible;
-    my $culmination;	# Time of maximum elevation.
     for (my $time = $pass_start; $time <= $end; $time += $step) {
 
 
@@ -1205,9 +1227,10 @@ eod
 
 
 #	    We may have skipped part of the pass because it began in
-#	    daylight. Pick up that part now.
+#	    daylight or before the official beginning of the prediction
+#	    period. Pick up that part now.
 
-	    while ($want_visible) {
+	    {	# Single-iteration loop.
 		my $time = $info[0]{time} - $step;
 		my ( $try_azm, $try_elev, $try_rng ) = $sta->azel (
 		    $tle->universal( $time ) );
@@ -1224,6 +1247,7 @@ eod
 		    range => $try_rng,
 		    time => $time,
 		};
+		redo;
 	    }
 
 
@@ -1268,11 +1292,15 @@ eod
 
 =cut
 
-	    my ( $trial_start, $trial_finish ) = @info > 1 ?
-		( $info[0]{time}, $info[-1]{time} ) :
+###	    my ( $trial_start, $trial_finish ) = @info > 1 ?
+###		( $info[0]{time}, $info[-1]{time} ) :
+###		( $info[0]{time} - $pass_step,
+###		    $info[0]{time} + $pass_step );
+	    my ( $trial_start, $trial_finish ) =
 		( $info[0]{time} - $pass_step,
-		    $info[0]{time} + $pass_step );
-	    $culmination = find_first_true( $trial_start,
+		    $info[-1]{time} + $pass_step
+		);
+	    my $culmination = find_first_true( $trial_start,
 		$trial_finish,
 		    sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] >
 			( $sta->azel( $tle->universal( $_[0] + 1 ) ) )[1]
@@ -1282,16 +1310,22 @@ eod
 
 	    # Compute exact rise and set.
 
-	    push @time, (
-		[find_first_true ($info[0]{time} - $step,
-			$culmination,
-		    sub {($sta->azel ($tle->universal ($_[0])))[1] >=
-		    $effective_horizon}), PASS_EVENT_RISE],
-		[find_first_true ($culmination, $info[-1]{time}
-			+ $step,
-		    sub {($sta->azel ($tle->universal ($_[0])))[1] <
-		    $effective_horizon}), PASS_EVENT_SET],
+	    my $sat_rise = find_first_true( $info[0]{time} - $step,
+		$culmination,
+		sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] >=
+		    $effective_horizon
+		},
 	    );
+	    my $sat_set = find_first_true ( $culmination,
+		$info[-1]{time} + $step,
+		sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] <
+		    $effective_horizon
+		},
+	    );
+	    push @time,
+		[ $sat_rise, PASS_EVENT_RISE ],
+		[ $sat_set, PASS_EVENT_SET ],
+	    ;
 
 	    warn <<eod if $debug;	## no critic (RequireCarping)
 
@@ -1328,9 +1362,24 @@ eod
 	    }
 
 
-	    # Clear the original data unless we're verbose.
+	    # Clear the original data.
 
-	    @info = () unless $verbose;
+	    @info = ();
+
+=begin comment
+
+	    # Calculate interval data if we're verbose.
+
+	    if ( $verbose ) {
+		for ( my $it = ceil( $sat_rise ); $it < $sat_set; $it +=
+		    $verbose ) {
+		    push @time, [ $it, PASS_EVENT_NONE ];
+		}
+	    }
+
+=end comment
+
+=cut
 
 
 	    # Generate the full data for the exact events.
@@ -1421,12 +1470,51 @@ eod
 		next;
 	    };
 
-	    # Compute the interval data if desired.
+	    # If we're verbose, calculate the points.
 
 	    if ( $verbose ) {
+
+		# We need to re-sort the events because illumination
+		# changes got appended to the rise, max, set, and
+		# appulse.
+
+		@info = sort { $a->{time} <=> $b->{time} } @info;
+
+		my $inx = 0;
+		my $illum = $info[$inx++]{illumination};
+		my %events = map { $_->{time} => 1 } @info;
+		for ( my $it = ceil( $sat_rise ); $it < $sat_set;
+		    $it += $verbose ) {
+
+		    # If we already have an event for this time, skip.
+
+		    $events{$it} and next;
+
+		    # The next line of code relies on the fact that the
+		    # events from rise through max and set are already
+		    # in chronological order. Yes, in theory we step off
+		    # the end of that part of @info, but in practice we
+		    # exit the for loop before we get to that point.
+
+		    while ( $info[$inx]{time} < $it ) {
+			$illum = $info[$inx++]{illumination};
+		    }
+		    my ( $azm, $elev, $rng ) = $sta->azel(
+			$tle->universal( $it ) );
+		    push @info, {
+			azimuth => $azm,
+			body => $tle,
+			elevation => $elev,
+			event => PASS_EVENT_NONE,
+			illumination => $illum,
+			range => $rng,
+			station => $sta,
+			time => $it,
+		    };
+		}
 	    }
 
-#		Sort the data, and eliminate duplicates.
+#		Sort the data
 
 =begin comment
 
@@ -1445,6 +1533,25 @@ eod
 =cut
 
 	    @info = sort { $a->{time} <=> $b->{time} } @info;
+
+=begin comment
+
+	    my @foo = sort { $a->{time} <=> $b->{time} ||
+	    $event_collate[$a->{event}] <=> $event_collate[$b->{event}]
+	    } @info;
+	    my $prior = undef;
+	    @info = ();
+	    foreach my $evt (@foo) {
+		defined $prior
+		    and $evt->{time} == $prior->{time}
+		    and $evt->{event} == PASS_EVENT_NONE
+		    or push @info, $evt;
+		$prior = $evt;
+	    }
+
+=end comment
+
+=cut
 
 #	    Record the data for the pass.
 
@@ -6605,11 +6712,7 @@ sub _initial_inertial{ return 1 };
 		s/.*?\.//;
 		$ele{$key} = $_;
 	    }
-	    my $epoch = $self->get('epoch');
-	    my $epoch_dayfrac = sprintf '%.8f', ($epoch / SECSPERDAY);
-	    $epoch_dayfrac =~ s/.*?\././;
-	    my $epoch_daynum = strftime '%y%j', gmtime ($epoch);
-	    $ele{epoch} = $epoch_daynum . $epoch_dayfrac;
+	    $ele{epoch} = $self->__make_tle_epoch();
 	    $ele{firstderivative} = sprintf (
 		'%.8f', $ele{firstderivative});
 	    $ele{firstderivative} =~ s/([-+]?)[\s0]*\./$1./;
@@ -6637,6 +6740,15 @@ sub _initial_inertial{ return 1 };
 	);
 	return $output;
     }
+}
+
+sub __make_tle_epoch {
+    my ( $self ) = @_;
+    my $epoch = $self->get('epoch');
+    my $epoch_dayfrac = sprintf '%.8f', ($epoch / SECSPERDAY);
+    $epoch_dayfrac =~ s/.*?\././;
+    my $epoch_daynum = strftime '%y%j', gmtime ($epoch);
+    return $epoch_daynum . $epoch_dayfrac;
 }
 
 #	$output = _make_tle_checksum($fmt ...);
