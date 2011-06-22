@@ -49,6 +49,7 @@ BEGIN {
 }
 
 BEGIN {
+
     eval {
 	require Time::Local;
 	Time::Local->import();
@@ -65,6 +66,17 @@ BEGIN {
 	plan skip_all => 'Can not load File::Spec';
 	exit;
     };
+
+    eval {
+	use lib qw{ inc };
+	require Astro::Coord::ECI::Test;
+	Astro::Coord::ECI::Test->import( ':all' );
+	1;
+    } or do {
+	plan skip_all => 'Can not load Astro::Coord::ECI::Test from inc';
+	exit;
+    };
+
 }
 
 use Astro::Coord::ECI;
@@ -828,70 +840,6 @@ EOD
 
 
 ########################################################################
-
-{
-
-    my @decoder;
-
-    # We jump through this hoop in case the constants turn out not to be
-    # dualvars.
-    BEGIN {
-	$decoder[ PASS_EVENT_NONE  + 0 ]	= '';
-	$decoder[ PASS_EVENT_SHADOWED  + 0 ]	= 'shdw';
-	$decoder[ PASS_EVENT_LIT  + 0 ]		= 'lit';
-	$decoder[ PASS_EVENT_DAY  + 0 ]		= 'day';
-	$decoder[ PASS_EVENT_RISE  + 0 ]	= 'rise';
-	$decoder[ PASS_EVENT_MAX  + 0 ]		= 'max';
-	$decoder[ PASS_EVENT_SET  + 0 ]		= 'set';
-	$decoder[ PASS_EVENT_APPULSE  + 0 ]	= 'apls';
-    }
-
-    sub format_event {
-	my ( $event ) = @_;
-	defined $event or return '';
-	return $decoder[ $event + 0 ];
-    }
-
-}
-
-sub format_pass {
-    my ( $pass ) = @_;
-    my $rslt = '';
-    $pass or return $rslt;
-    foreach my $event ( @{ $pass->{events} } ) {
-	$rslt .= sprintf '%19s %5.1f %5.1f %7.1f %-5s %-5s',
-	    format_time( $event->{time} ),
-	    rad2deg( $event->{elevation} ),
-	    rad2deg( $event->{azimuth} ),
-	    $event->{range},
-	    format_event( $event->{illumination} ),
-	    format_event( $event->{event} ),
-	    ;
-	$rslt =~ s/ \s+ \z //smx;
-	$rslt .= "\n";
-	if ( $event->{appulse} ) {
-	    my ( $az, $el ) = $sta->azel(
-		$event->{appulse}{body}->universal( $event->{time} ) );
-	    $rslt .= sprintf '%19s %5.1f %5.1f %7.1f %s', '',
-		rad2deg( $el ),
-		rad2deg( $az ),
-		rad2deg( $event->{appulse}{angle} ),
-		$event->{appulse}{body}->get( 'name' ),
-		;
-	    $rslt =~ s/ \s+ \z //smx;
-	    $rslt .= "\n";
-	}
-    }
-    $rslt =~ s/ (?<= \s ) - (?= 0 [.] 0+ \s ) / /smxg;
-    return $rslt;
-}
-
-sub format_time {
-    my ( $time ) = @_;
-    my @parts = gmtime int( $time + 0.5 );
-    return sprintf '%04d/%02d/%02d %02d:%02d:%02d', $parts[5] + 1900,
-	$parts[4] + 1, @parts[ 3, 2, 1, 0 ];
-}
 
 sub get_oid {
     my ( $oid, @all_tle ) = @_;
