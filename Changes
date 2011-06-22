@@ -4,7 +4,7 @@
 0.039_03	08-Jun-2011	T. R. Wyant
   Fix more problems in Astro::Coord::ECI::TLE->pass():
   * Fix detection and calculation of events of visible passes which
-    begin during the day, or any pass in progress ath the beginning of
+    begin during the day, or any pass in progress at the beginning of
     the computation interval.
   * Detect passes that end shortly before the end of the computation
     interval. This was a bug introduced in 0.039_01 or later.
