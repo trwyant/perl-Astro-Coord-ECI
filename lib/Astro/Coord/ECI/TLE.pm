@@ -1328,6 +1328,16 @@ Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
 		    ]} $time[2][1]
 eod
 
+	    # Because we relaxed the detection criteria to be sure we
+	    # caught all passes, we may have a pass that ended before
+	    # the prediction interval started. Reject that here.
+
+	    $sat_set < $pass_start
+		and do {
+		@info = ();
+		next;
+	    };
+
 	    # Compute nearest approach to background bodies
 
 	    # Note (fortuitous discovery) the ISS travels 1.175
