@@ -1,3 +1,21 @@
+0.039_05	22-Jun-2011	T. R. Wyant
+  Fix yet more problems in Astro::Coord::ECI::TLE->pass():
+  * Do not report passes which ended before the prediction interval
+    started.
+  * Rework the implementation of the 'interval' attribute to be
+    (hopefully!) more efficient, and to fix incorrectly-reported
+    illuminations.
+  * Fix a regression in the code that calculates the maximum altitude of
+    the satellite. The regression was introduced in 0.039_03.
+  * Fix incorrect rise (and sometimes max) times when the pass is in
+    progress when the prediction interval starts and the 'visible'
+    attribute is false.  The previous fix only worked if the 'visible'
+    attribute was true.
+  Add Astro::Coord::ECI::TLE attribute 'lazy_pass_position', to give the
+    pass() method permission not to calculate and report event position
+    if the event's time can be calculated without calculating position.
+  The satpass script's 'verbose' setting now works as advertised.
+
 0.039_04	10-Jun-2011	T. R. Wyant
   Re-fix the time-zone-dependant test failures in t/tle_flare.t.
 
