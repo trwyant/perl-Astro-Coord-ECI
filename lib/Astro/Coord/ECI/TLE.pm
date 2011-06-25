@@ -1077,6 +1077,10 @@ Currently this happens only for events generated in response to setting
 the C<interval> attribute, but the user should not make this assumption
 in his or her own code.
 
+Typically you will only want to set this true if, after calling the
+C<pass()> method, you compute the event positions in some coordinates
+other than azimuth, elevation, and range.
+
 Note 2:
 
 The time set in the various {body} and {station} objects is B<not>
@@ -7708,6 +7712,14 @@ first letters, and spent boosters, debris, etc getting the rest.
 This attribute tells the pass() method that the C<{azimuth}>,
 C<{elevation}>, and C<{range}> keys in the pass event hashes need not
 be generated.
+
+This attribute was intended for the case where the user wants event
+positions in coordinate systems other than, or in addition to, azimuth,
+elevation, and range. In this case, it may be faster for the user to set
+this attribute, and then compute the event positions after the C<pass()>
+method has generated the events. Note that if you do this, you will have
+to call C<universal()> on the event's C<{body}>, passing it the event's
+C<{time}>, before retrieving the coordinates you want.
 
 The default is 0 (i.e. false).
 
