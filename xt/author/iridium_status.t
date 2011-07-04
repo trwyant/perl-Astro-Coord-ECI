@@ -33,7 +33,7 @@ my $ua = LWP::UserAgent->new ();
 my $asof = timegm (0, 0, 0, 7, 0, 111);
 
 foreach (["Mike McCants' Iridium status",
-	'http://www.io.com/~mmccants/tles/iridium.html',
+	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
 	mccants => <<eod],
 <html>
