@@ -528,6 +528,30 @@ also carry data from classified satellites (which Space Track does not).
 You can create an account for yourself, but this is not necessary to use
 the site. Astro::SpaceTrack does not retrieve data from this site.
 
+=head2 COMPARISON TO HEAVENS ABOVE
+
+Because Heavens Above (L<http://www.heavens-above.com/>) is a good
+source of local satellite visibility predictions, you may wish to try to
+duplicate its predictions as part of your process for qualifying this
+software. Part of the problem with doing this is that Heavens Above's
+prediction parameters are not documented. Some (like horizon) can be
+inferred from their predictions, others can not.
+
+For the closest approach to Heavens Above's predictions, you should use
+TLE data of the same epoch that Heavens Above uses. Beyond this, the
+following settings seem to duplicate Heavens Above fairly well:
+
+* Horizon - 10 degrees;
+
+* Twilight - -3 degrees (passes), or -1.8 degrees (Iridium flares).
+
+Since Heavens Above only predicts one pass at a time, it may actually
+choose a different twilight for each satellite, based on the satellite's
+brightness. The same may be true for Iridium flares. If you are trying
+to validate this software against Heavens Above, you will want to make
+its settings a little more permissive, to make sure you pick up
+everything Heavens Above picks up.
+
 =head1 AUTHOR
 
 Thomas R. Wyant, III F<wyant@cpan.org>
