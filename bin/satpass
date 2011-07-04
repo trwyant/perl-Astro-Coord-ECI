@@ -1523,6 +1523,7 @@ eod
 	    geometric => $parm{geometric},
 	    horizon => $horizon,
 	    interval => $parm{verbose} ? $pass_step : 0,
+	    lazy_pass_position => 1,
 	    limb => $parm{lit},
 	    model => $model,
 	    twilight => $parm{_twilight},
