@@ -1,3 +1,12 @@
+0.040		06-Jul-2011	T. R. Wyant
+  No code changes since 0.039_05.
+  Tried to make the documentation of the Astro::Coord::ECI::TLE
+    lazy_pass_position clearer.
+  Unconditionally set lazy_pass_position in the satpass script, since it
+    recomputes position anyway.
+  Added a few words to the OVERVIEW about how to get results more like
+    those of the Heavens Above web site.
+
 0.039_05	22-Jun-2011	T. R. Wyant
   Fix yet more problems in Astro::Coord::ECI::TLE->pass():
   * Do not report passes which ended before the prediction interval
