@@ -1366,30 +1366,6 @@ eod
 		next;
 	    };
 
-	    # Compute nearest approach to background bodies
-
-	    # Note (fortuitous discovery) the ISS travels 1.175
-	    # degrees per second at the zenith, so I need better
-	    # than 1 second resolution to detect a transit.
-
-	    foreach my $body (@sky) {
-		my $when = find_first_true ($time[1][0], $time[2][0],
-		    sub {$sta->angle ($body->universal ($_[0]),
-				    $tle->universal ($_[0])) <
-			    $sta->angle ($body->universal ($_[0] + .1),
-				    $tle->universal ($_[0] + .1))},
-		    .1);
-		my $angle = 
-		    $sta->angle ($body->universal ($when),
-			    $tle->universal ($when));
-		next if $angle > $appulse_dist;
-		push @time, [$when, PASS_EVENT_APPULSE,
-		    appulse => {angle => $angle, body => $body}];
-		warn <<eod if $debug;	## no critic (RequireCarping)
-	    $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[$#time][0]]}
-eod
-	    }
-
 
 	    # Clear the original data.
 
@@ -1484,11 +1460,16 @@ eod
 		next;
 	    };
 
+	    # Put the events created thus far into order.
+
+	    @info = sort { $a->{time} <=> $b->{time} } @info;
+
 	    # If we want visible events only
 
 	    if ( $pass_variant & PASS_VARIANT_VISIBLE_EVENTS ) {
 
 		# Filter out anything that does not pass muster
+
 		@info = grep { $_->{illumination} == PASS_EVENT_LIT ||
 		    $_->{event} == PASS_EVENT_SHADOWED ||
 		    $_->{event} == PASS_EVENT_DAY
@@ -1502,34 +1483,79 @@ eod
 
 		    # Given that the max got dropped, the fake max is
 		    # either the first or the last point.
-		    @info = sort { $a->{time} <=> $b->{time} } @info;
+
 		    my ( $dup_inx, $splice_inx ) =
 			$info[0]{elevation} > $info[-1]{elevation} ?
 			( 0, 1 ) : ( -1, -1 );
 
 		    # Shallow clone, and change the event code to max.
+
 		    my $max = { %{ $info[$dup_inx] } };
 		    $max->{event} = PASS_EVENT_MAX;
 
 		    # Insert the max either just after the first, or
 		    # just before the last event, as the case may be.
+
 		    splice @info, $splice_inx, 0, $max;
 
 		}
+	    }
+
+	    # Pick up the first and last event times, to use to bracket
+	    # future calculations.
+
+	    my $first_time = $info[0]{time};
+	    my $last_time = $info[-1]{time};
+	    my $number_of_events = @info;
+
+	    # Compute nearest approach to background bodies
+
+	    # Note (fortuitous discovery) the ISS travels 1.175
+	    # degrees per second at the zenith, so I need better
+	    # than 1 second resolution to detect a transit.
+
+	    foreach my $body (@sky) {
+		my $when = find_first_true ($first_time, $last_time,
+		    sub {$sta->angle ($body->universal ($_[0]),
+				    $tle->universal ($_[0])) <
+			    $sta->angle ($body->universal ($_[0] + .1),
+				    $tle->universal ($_[0] + .1))},
+		    .1);
+		my $angle = 
+		    $sta->angle ($body->universal ($when),
+			    $tle->universal ($when));
+		next if $angle > $appulse_dist;
+		my $illum = $info[0]{illumination};
+		foreach my $evt ( @info ) {
+		    $evt->{time} > $when
+			and last;
+		    $illum = $evt->{illumination};
+		}
+		my ( $azimuth, $elevation, $range ) = $sta->azel( $tle );
+		push @info, {
+		    body	=> $tle,
+		    event	=> PASS_EVENT_APPULSE,
+		    illumination	=> $illum,
+		    station	=> $sta,
+		    time	=> $when,
+		    azimuth	=> $azimuth,
+		    elevation	=> $elevation,
+		    range	=> $range,
+		    appulse	=> {
+			angle	=> $angle,
+			body	=> $body,
+		    },
+		};
+		warn <<"EOD" if $debug;	## no critic (RequireCarping)
+	    $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S',
+		localtime $time[$#time][0]]}
+EOD
 	    }
 
 	    # If we're verbose, calculate the points.
 
 	    if ( $verbose ) {
 
-		# We need to re-sort the events because illumination
-		# changes got appended to the rise, max, set, and
-		# appulse.
-
-		@info = sort { $a->{time} <=> $b->{time} } @info;
-
-		my ( $first_time, $last_time ) =
-		    map { $info[$_]->{time} } 0, -1;
 		my $inx = 0;
 		my $illum = $info[$inx++]{illumination};
 		my %events = map { $_->{time} => 1 } @info;
@@ -1549,15 +1575,10 @@ eod
 		    while ( $info[$inx]{time} < $it ) {
 			$illum = $info[$inx++]{illumination};
 		    }
-####		    my ( $azm, $elev, $rng ) = $sta->azel(
-####			$tle->universal( $it ) );
 		    push @info, {
-####			azimuth => $azm,
 			body => $tle,
-####			elevation => $elev,
 			event => PASS_EVENT_NONE,
 			illumination => $illum,
-####			range => $rng,
 			station => $sta,
 			time => $it,
 		    };
@@ -1568,9 +1589,10 @@ eod
 		}
 	    }
 
-#		Sort the data
+	    # Sort the data again if we have added events.
 
-	    @info = sort { $a->{time} <=> $b->{time} } @info;
+	    @info > $number_of_events
+		and @info = sort { $a->{time} <=> $b->{time} } @info;
 
 #	    Record the data for the pass.
 
