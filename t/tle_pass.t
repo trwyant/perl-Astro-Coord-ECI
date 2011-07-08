@@ -42,7 +42,7 @@ BEGIN {
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Star;
-use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::Utils qw{ deg2rad PARSEC SECSPERDAY };
 
@@ -98,7 +98,7 @@ my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 EOD
 $tle->set( geometric => 1 );
 
-plan tests => 11;
+plan tests => 25;
 
 my @pass;
 
@@ -162,7 +162,125 @@ is format_pass( $pass[5] ), <<'EOD', 'Pass 6';
 EOD
 
 @pass = ();
-$tle->set( interval => 30 );
+$tle->set( pass_variant => PASS_VARIANT_VISIBLE_EVENTS );
+
+if (
+    eval {
+	@pass = $tle->pass(
+	    $sta,
+	    timegm( 0, 0, 0, 12, 9, 80 ),
+	    timegm( 0, 0, 0, 19, 9, 80 ),
+	    [ $star ],
+	);
+	1;
+    }
+) {
+    ok @pass == 6, 'Found 6 passes over Greenwich'
+	or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+} else {
+    fail "Error in pass() method: $@";
+}
+
+is format_pass( $pass[0] ), <<'EOD', 'Pass 1';
+1980/10/13 05:39:02   0.0 199.0  1687.8 lit   rise
+1980/10/13 05:42:42  55.8 119.1   255.7 lit   apls
+                     49.6 118.3     6.2 Epsilon Leonis
+1980/10/13 05:42:43  55.9 115.6   255.5 lit   max
+1980/10/13 05:46:37   0.0  29.7  1778.5 lit   set
+EOD
+
+is format_pass( $pass[1] ), <<'EOD', 'Pass 2';
+1980/10/14 05:32:49   0.0 204.8  1691.2 lit   rise
+1980/10/14 05:36:32  85.6 111.4   215.0 lit   max
+1980/10/14 05:40:27   0.0  27.3  1782.5 lit   set
+EOD
+
+is format_pass( $pass[2] ), <<'EOD', 'Pass 3';
+1980/10/15 05:27:33   4.7 212.0  1220.0 lit   lit
+1980/10/15 05:30:12  63.7 297.6   239.9 lit   max
+1980/10/15 05:34:08   0.0  25.1  1789.5 lit   set
+EOD
+
+is format_pass( $pass[3] ), <<'EOD', 'Pass 4';
+1980/10/16 05:22:20  14.8 228.1   701.8 lit   lit
+1980/10/16 05:23:44  43.5 299.4   310.4 lit   max
+1980/10/16 05:27:40   0.0  23.0  1798.7 lit   set
+EOD
+
+is format_pass( $pass[4] ), <<'EOD', 'Pass 5';
+1980/10/17 05:16:45  28.6 273.8   433.1 lit   lit
+1980/10/17 05:17:08  31.7 301.4   400.0 lit   max
+1980/10/17 05:21:03   0.0  21.0  1809.7 lit   set
+EOD
+
+is format_pass( $pass[5] ), <<'EOD', 'Pass 6';
+1980/10/18 05:10:50  22.3 327.2   537.6 lit   lit
+1980/10/18 05:14:16   0.0  19.0  1814.7 lit   set
+EOD
+
+@pass = ();
+$tle->set( pass_variant => PASS_VARIANT_VISIBLE_EVENTS |
+    PASS_VARIANT_FAKE_MAX );
+if (
+    eval {
+	@pass = $tle->pass(
+	    $sta,
+	    timegm( 0, 0, 0, 12, 9, 80 ),
+	    timegm( 0, 0, 0, 19, 9, 80 ),
+	    [ $star ],
+	);
+	1;
+    }
+) {
+    ok @pass == 6, 'Found 6 passes over Greenwich'
+	or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+} else {
+    fail "Error in pass() method: $@";
+}
+
+is format_pass( $pass[0] ), <<'EOD', 'Pass 1';
+1980/10/13 05:39:02   0.0 199.0  1687.8 lit   rise
+1980/10/13 05:42:42  55.8 119.1   255.7 lit   apls
+                     49.6 118.3     6.2 Epsilon Leonis
+1980/10/13 05:42:43  55.9 115.6   255.5 lit   max
+1980/10/13 05:46:37   0.0  29.7  1778.5 lit   set
+EOD
+
+is format_pass( $pass[1] ), <<'EOD', 'Pass 2';
+1980/10/14 05:32:49   0.0 204.8  1691.2 lit   rise
+1980/10/14 05:36:32  85.6 111.4   215.0 lit   max
+1980/10/14 05:40:27   0.0  27.3  1782.5 lit   set
+EOD
+
+is format_pass( $pass[2] ), <<'EOD', 'Pass 3';
+1980/10/15 05:27:33   4.7 212.0  1220.0 lit   lit
+1980/10/15 05:30:12  63.7 297.6   239.9 lit   max
+1980/10/15 05:34:08   0.0  25.1  1789.5 lit   set
+EOD
+
+is format_pass( $pass[3] ), <<'EOD', 'Pass 4';
+1980/10/16 05:22:20  14.8 228.1   701.8 lit   lit
+1980/10/16 05:23:44  43.5 299.4   310.4 lit   max
+1980/10/16 05:27:40   0.0  23.0  1798.7 lit   set
+EOD
+
+is format_pass( $pass[4] ), <<'EOD', 'Pass 5';
+1980/10/17 05:16:45  28.6 273.8   433.1 lit   lit
+1980/10/17 05:17:08  31.7 301.4   400.0 lit   max
+1980/10/17 05:21:03   0.0  21.0  1809.7 lit   set
+EOD
+
+is format_pass( $pass[5] ), <<'EOD', 'Pass 6';
+1980/10/18 05:10:50  22.3 327.2   537.6 lit   lit
+1980/10/18 05:10:50  22.3 327.2   537.6 lit   max
+1980/10/18 05:14:16   0.0  19.0  1814.7 lit   set
+EOD
+
+@pass = ();
+$tle->set(
+    interval => 30,
+    pass_variant => PASS_VARIANT_NONE,
+);
 
 if (
     eval {

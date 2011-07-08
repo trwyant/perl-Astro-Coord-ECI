@@ -70,4 +70,10 @@ tle_period.t
     and it expects to find the orbital elements file sgp4-ver.tle in the
     t directory.
 
+t/xml
+    This demonstration script downloads International Space Station TLE
+    data from Celestrak, predicts passes over The Hague, Netherlands,
+    and displays the results as XML, using XML::Writer. The pass_variant
+    attribute is used to control what events of a pass are displayed.
+
 # ex: set textwidth=72 autoindent :

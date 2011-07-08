@@ -229,6 +229,9 @@ BEGIN {
 	PASS_EVENT_MAX
 	PASS_EVENT_SET
 	PASS_EVENT_APPULSE
+	PASS_VARIANT_VISIBLE_EVENTS
+	PASS_VARIANT_FAKE_MAX
+	PASS_VARIANT_NONE
 	BODY_TYPE_UNKNOWN
 	BODY_TYPE_DEBRIS
 	BODY_TYPE_ROCKET_BODY
@@ -370,6 +373,13 @@ eod
     appulse => 0,	# Maximum appulse to report.
     interval => 0,	# Interval for pass() positions, if positive.
     lazy_pass_position => 0,	# Position optional if true.
+    pass_variant => sub {
+	my ( $self, $name, $val ) = @_;
+	$val =~ m/ \A \d+ \z /smx
+	    or croak 'The pass_variant attribute must be an unsigned number';
+	$self->{$name} = $val;
+	return 0;
+    },
     ds50 => undef,	# Read-only
     epoch_dynamical => undef,	# Read-only
     rcs => 0,		# Radar cross-section
@@ -392,6 +402,7 @@ my %static = (
     lazy_pass_position => 0,
     limb => 1,
     model => 'model',
+    pass_variant => 0,
     reblessable => 1,
     visible => 1,
 );
@@ -1062,6 +1073,8 @@ the object:
   * interval	# Interval for pass() positions, if positive
   * lazy_pass_position # {azimuth}, {elevation} and {range} are
                 # optional if true (see note 1).
+  * pass_variant # Tweak what pass() returns; currently no
+		# effect unless 'visible' is true.
   * illum	# Source of illumination.
   * limb	# Whether lit when upper limb above horizon
   * twilight	# Distance of illuminator below horizon
@@ -1098,6 +1111,15 @@ use constant PASS_EVENT_RISE => dualvar (4, 'rise');
 use constant PASS_EVENT_MAX => dualvar (5, 'max');
 use constant PASS_EVENT_SET => dualvar (6, 'set');
 use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
+
+use constant PASS_VARIANT_VISIBLE_EVENTS => 0x01;
+use constant PASS_VARIANT_FAKE_MAX => 0x02;
+use constant PASS_VARIANT_NONE => 0x00;		# Must be 0.
+
+my @pass_variant_mask = (
+    PASS_VARIANT_NONE,
+    PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX,
+);
 
 use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
 
@@ -1138,6 +1160,8 @@ eod
     my $want_visible = $tle->get ('visible');
     my $appulse_dist = $tle->get ('appulse');
     my $debug = $tle->get ('debug');
+    my $pass_variant = $tle->get( 'pass_variant' ) &
+	$pass_variant_mask[ $want_visible ? 1 : 0 ];
 
     # We need the number of radians the satellite travels in a minute so
     # we can be slightly conservative determining whether the satellite
@@ -1213,8 +1237,8 @@ eod
 #	handle it if any, clear it, and on to the next iteration. We
 #	have to make the check on effective horizon as well as screening
 #	horizon, because maybe we are at the very end of the prediction
-#	period and the satellite makes it below the screening horizon
-#	but not the effective horizon before the end of the prediction
+#	period and the satellite makes it below the effective horizon
+#	but not the screening horizon before the end of the prediction
 #	period. Sigh.
 
 	if ( $elev < $screening_horizon ||
@@ -1460,6 +1484,40 @@ eod
 		next;
 	    };
 
+	    # If we want visible events only
+
+	    if ( $pass_variant & PASS_VARIANT_VISIBLE_EVENTS ) {
+
+		# Filter out anything that does not pass muster
+		@info = grep { $_->{illumination} == PASS_EVENT_LIT ||
+		    $_->{event} == PASS_EVENT_SHADOWED ||
+		    $_->{event} == PASS_EVENT_DAY
+		    } @info;
+
+		# If we want to fake a max event if that took place in
+		# darkness
+
+		if ( $pass_variant & PASS_VARIANT_FAKE_MAX &&
+		    ! grep { $_->{event} == PASS_EVENT_MAX } @info ) {
+
+		    # Given that the max got dropped, the fake max is
+		    # either the first or the last point.
+		    @info = sort { $a->{time} <=> $b->{time} } @info;
+		    my ( $dup_inx, $splice_inx ) =
+			$info[0]{elevation} > $info[-1]{elevation} ?
+			( 0, 1 ) : ( -1, -1 );
+
+		    # Shallow clone, and change the event code to max.
+		    my $max = { %{ $info[$dup_inx] } };
+		    $max->{event} = PASS_EVENT_MAX;
+
+		    # Insert the max either just after the first, or
+		    # just before the last event, as the case may be.
+		    splice @info, $splice_inx, 0, $max;
+
+		}
+	    }
+
 	    # If we're verbose, calculate the points.
 
 	    if ( $verbose ) {
@@ -1470,10 +1528,12 @@ eod
 
 		@info = sort { $a->{time} <=> $b->{time} } @info;
 
+		my ( $first_time, $last_time ) =
+		    map { $info[$_]->{time} } 0, -1;
 		my $inx = 0;
 		my $illum = $info[$inx++]{illumination};
 		my %events = map { $_->{time} => 1 } @info;
-		for ( my $it = ceil( $sat_rise ); $it < $sat_set;
+		for ( my $it = ceil( $first_time ); $it < $last_time;
 		    $it += $verbose ) {
 
 		    # If we already have an event for this time, skip.
@@ -7767,6 +7827,31 @@ The default is undef.
 =item name (string, parse (three-line sets only))
 
 This attribute contains the common name of the body.
+
+=item pass_variant (bits)
+
+This attribute tweaks the pass output as specified by its value, which
+should be the bitwise 'or' (i.e. C<|>) of the following values:
+
+* C<PASS_VARIANT_VISIBLE_EVENTS> - Specifies that events which are not
+visible (that is, which take place either during daylight or with the
+body in shadow) are not reported. Illumination changes, however, are
+always reported. This has no effect unless the C<visible> attribute is
+true.
+
+* C<PASS_VARIANT_FAKE_MAX> - Specifies that if
+C<PASS_VARIANT_VISIBLE_EVENTS> filters out the max, a new max event, at
+the same time as either the first or last reported event, will be
+inserted. This has no effect unless C<PASS_VARIANT_VISIBLE_EVENTS> is
+specified, and the C<visible> attribute is true.
+
+* C<PASS_VARIANT_NONE> - Specifies that no pass variant processing take
+place.
+
+The above constants are not exported by default, but are exported by the
+C<:constants> tag.
+
+The default is C<PASS_VARIANT_NONE>
 
 =item rcs (string, parse)
 
