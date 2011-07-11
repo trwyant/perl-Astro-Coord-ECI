@@ -1,3 +1,25 @@
+0.040_01	11-Jul-2011	T. R. Wyant
+  Add attribute 'pass_variant' to Astro::Coord::ECI::TLE. This tweaks
+    the output of the pass() method, and can be set to the bitwise 'or'
+    (a.k.a. '|') of the following exported values:
+    * PASS_VARIANT_NONE - No tweaks.
+    * PASS_VARIANT_VISIBLE_EVENTS - Remove from the output all pass
+      events which were not visible. Ignored if the 'visible' attribute
+      is false.
+    * PASS_VARIANT_FAKE_MAX - Create a 'max' event representing the
+      largest visible elevation if the absolute max was filtered out by
+      PASS_VARIANT_VISIBLE_EVENTS.
+    * PASS_VARIANT_START_END - Report the first and last pass events as
+      PASS_EVENT_START and PASS_EVENT_END. These are the same as
+      PASS_EVENT_RISE and PASS_EVENT_SET unless the 'visible' attribute
+      is true and PASS_VARIANT_VISIBLE_EVENTS is asserted.
+  Minor optimization to the pass() method: the changes of 0.039_01
+    through 0.039_05 left the appulse calculation before the point at
+    which provisional passes were accepted or rejected. This has been
+    moved below that point.
+  New example script, eg/xml that makes use of the 'pass_variant'
+    attribute, and generates XML from pass data using XML::Writer.
+
 0.040		06-Jul-2011	T. R. Wyant
   No code changes since 0.039_05.
   Tried to make the documentation of the Astro::Coord::ECI::TLE

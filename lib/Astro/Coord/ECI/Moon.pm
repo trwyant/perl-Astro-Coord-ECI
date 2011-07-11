@@ -43,7 +43,7 @@ package Astro::Coord::ECI::Moon;
 use strict;
 use warnings;
 
-our $VERSION = '0.040';
+our $VERSION = '0.040_01';
 
 use base qw{Astro::Coord::ECI};
 
