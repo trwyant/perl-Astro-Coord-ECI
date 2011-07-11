@@ -25,14 +25,16 @@ our %EXPORT_TAGS = ( all => \@EXPORT_OK );
     # We jump through this hoop in case the constants turn out not to be
     # dualvars.
     BEGIN {
-	$decoder[ PASS_EVENT_NONE  + 0 ]	= '';
-	$decoder[ PASS_EVENT_SHADOWED  + 0 ]	= 'shdw';
-	$decoder[ PASS_EVENT_LIT  + 0 ]		= 'lit';
-	$decoder[ PASS_EVENT_DAY  + 0 ]		= 'day';
-	$decoder[ PASS_EVENT_RISE  + 0 ]	= 'rise';
-	$decoder[ PASS_EVENT_MAX  + 0 ]		= 'max';
-	$decoder[ PASS_EVENT_SET  + 0 ]		= 'set';
-	$decoder[ PASS_EVENT_APPULSE  + 0 ]	= 'apls';
+	$decoder[ PASS_EVENT_NONE ]	= '';
+	$decoder[ PASS_EVENT_SHADOWED ]	= 'shdw';
+	$decoder[ PASS_EVENT_LIT ]	= 'lit';
+	$decoder[ PASS_EVENT_DAY ]	= 'day';
+	$decoder[ PASS_EVENT_RISE ]	= 'rise';
+	$decoder[ PASS_EVENT_MAX ]	= 'max';
+	$decoder[ PASS_EVENT_SET ]	= 'set';
+	$decoder[ PASS_EVENT_APPULSE ]	= 'apls';
+	$decoder[ PASS_EVENT_START ]	= 'start';
+	$decoder[ PASS_EVENT_END ]	= 'end';
     }
 
     sub _format_event {

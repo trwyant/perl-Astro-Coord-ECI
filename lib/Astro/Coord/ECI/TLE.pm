@@ -229,8 +229,11 @@ BEGIN {
 	PASS_EVENT_MAX
 	PASS_EVENT_SET
 	PASS_EVENT_APPULSE
+	PASS_EVENT_START
+	PASS_EVENT_END
 	PASS_VARIANT_VISIBLE_EVENTS
 	PASS_VARIANT_FAKE_MAX
+	PASS_VARIANT_START_END
 	PASS_VARIANT_NONE
 	BODY_TYPE_UNKNOWN
 	BODY_TYPE_DEBRIS
@@ -1038,6 +1041,14 @@ The events are coded by the following manifest constants:
   PASS_EVENT_MAX => dualvar (5, 'max');
   PASS_EVENT_SET => dualvar (6, 'set');
   PASS_EVENT_APPULSE => dualvar (7, 'apls');
+  PASS_EVENT_START => dualvar( 11, 'start' );
+  PASS_EVENT_END => dualvar( 12, 'end' );
+
+The C<PASS_EVENT_START> and C<PASS_EVENT_END> events are not normally
+generated. You can get them in lieu of whatever events start and end the
+pass by setting C<PASS_VARIANT_START_END> in the C<pass_variant>
+attribute. Unless you are filtering out non-visible events, though, they
+are just the rise and set events under different names.
 
 The dualvar function comes from Scalar::Util, and generates values
 which are numeric in numeric context and strings in string context. If
@@ -1111,14 +1122,18 @@ use constant PASS_EVENT_RISE => dualvar (4, 'rise');
 use constant PASS_EVENT_MAX => dualvar (5, 'max');
 use constant PASS_EVENT_SET => dualvar (6, 'set');
 use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
+use constant PASS_EVENT_START => dualvar( 11, 'start' );
+use constant PASS_EVENT_END => dualvar( 12, 'end' );
 
 use constant PASS_VARIANT_VISIBLE_EVENTS => 0x01;
-use constant PASS_VARIANT_FAKE_MAX => 0x02;
+use constant PASS_VARIANT_FAKE_MAX	=> 0x02;
+use constant PASS_VARIANT_START_END	=> 0x04;
 use constant PASS_VARIANT_NONE => 0x00;		# Must be 0.
 
 my @pass_variant_mask = (
-    PASS_VARIANT_NONE,
-    PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX,
+    PASS_VARIANT_START_END,
+    PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX |
+	PASS_VARIANT_START_END,
 );
 
 use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
@@ -1499,6 +1514,14 @@ eod
 		    splice @info, $splice_inx, 0, $max;
 
 		}
+	    }
+
+	    # If we want the first and last events to be 'start' and
+	    # 'end', willy-nilly, hammer these codes into them.
+
+	    if ( $pass_variant & PASS_VARIANT_START_END ) {
+		$info[0]{event} = PASS_EVENT_START;
+		$info[-1]{event} = PASS_EVENT_END;
 	    }
 
 	    # Pick up the first and last event times, to use to bracket
@@ -7866,6 +7889,15 @@ C<PASS_VARIANT_VISIBLE_EVENTS> filters out the max, a new max event, at
 the same time as either the first or last reported event, will be
 inserted. This has no effect unless C<PASS_VARIANT_VISIBLE_EVENTS> is
 specified, and the C<visible> attribute is true.
+
+* C<PASS_VARIANT_START_END> - Specifies that the first and last events
+of the pass are to be identified as C<PASS_EVENT_START> and
+C<PASS_EVENT_END> respectively. If the C<visible> attribute is true and
+C<PASS_VARIANT_VISIBLE_EVENTS> is in effect, C<PASS_EVENT_START> will
+replace either C<PASS_EVENT_RISE> or C<PASS_EVENT_LIT>, and
+C<PASS_EVENT_END> will replace either C<PASS_EVENT_SET>,
+C<PASS_EVENT_SHADOWED>, or C<PASS_EVENT_DAY>. Otherwise, they replace
+C<PASS_EVENT_RISE> and C<PASS_EVENT_SET> respectively.
 
 * C<PASS_VARIANT_NONE> - Specifies that no pass variant processing take
 place.

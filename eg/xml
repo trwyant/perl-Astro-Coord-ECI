@@ -67,7 +67,8 @@ $iss->set(
     horizon	=> deg2rad( $opt{horizon} ),
     pass_variant => ( $opt{more} ?
 	PASS_VARIANT_NONE :
-	PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX
+	PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX |
+	    PASS_VARIANT_START_END
     ),
     twilight	=> deg2rad( $opt{twilight} ),
     visible	=> $opt{more} < 2,
@@ -85,13 +86,6 @@ my $sta = Astro::Coord::ECI->new(
 # Compute the passes.
 
 my @passes = $iss->pass( $sta, $start_time, $start_time + $days * 86400 );
-
-# Define the tags to use for each event that we want to output.
-
-my @event_tag;
-@event_tag[ PASS_EVENT_RISE, PASS_EVENT_LIT, PASS_EVENT_MAX,
-    PASS_EVENT_SHADOWED, PASS_EVENT_SET, PASS_EVENT_DAY ] =
-    qw{ start start max end end end };
 
 # Put the output into UTF-8 mode, since that is what we intend to use.
 
@@ -141,15 +135,9 @@ foreach my $pass ( @passes ) {
 
     foreach my $event ( @{ $pass->{events} } ) {
 
-	my $tag = $event->{event};
-	$opt{more}
-	    or $tag = $event_tag[$tag];
-	defined $tag
-	    or next;
-
 	# Emit a tag representing the event itself
 
-	$xw->startTag( $tag );
+	$xw->startTag( $event->{event} );
 
 	# Emit the time of the event
 
@@ -182,7 +170,7 @@ foreach my $pass ( @passes ) {
 
 	# Emit an end tag for the event
 
-	$xw->endTag( $tag );
+	$xw->endTag( $event->{event} );
 
     }
 
