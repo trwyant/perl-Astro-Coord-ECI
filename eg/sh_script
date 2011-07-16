@@ -42,7 +42,7 @@ set horizon 20 twilight civil
 #	at noon today. This is in fact the default behaviour
 #	for 'pass'.
 
-pass 'today noon' +7
+pass 'today 12:00:00' +7
 
 
 #	That's all.
