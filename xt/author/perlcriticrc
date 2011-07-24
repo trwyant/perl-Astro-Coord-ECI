@@ -7,7 +7,7 @@ allow_includes	= 1
 
 [Perl::Critic::Policy::Documentation::PodSpelling]
 
-spell_command = spell
+spell_command = aspell list
 
 [Perl::Critic::Policy::ErrorHandling::RequireCheckingReturnValueOfEval]
 
