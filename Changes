@@ -1,3 +1,8 @@
+0.041		25-Jul-2011	T. R. Wyant
+  Re-fix longitude out-of-range warning in Astro::Coord::ECI::Moon.
+  Fix problem with time specification in eg/sh_script when Date::Manip
+    is not installed.
+
 0.040_01	11-Jul-2011	T. R. Wyant
   Add attribute 'pass_variant' to Astro::Coord::ECI::TLE. This tweaks
     the output of the pass() method, and can be set to the bitwise 'or'
