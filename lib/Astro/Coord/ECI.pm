@@ -1705,6 +1705,8 @@ This method sets the geodetic location in the Maidenhead Locator System.
 Height above the reference ellipsoid is not part of the system, but is
 accepted anyway, in kilometers, defaulting to 0.
 
+The actual location set is the center of the specified grid square.
+
 Locations longer than 8 characters are not defined by the standard. This
 method extends precision by assuming alternate letters (base 24) and
 digits (base 10), but this will change, possibly without notice, if the
