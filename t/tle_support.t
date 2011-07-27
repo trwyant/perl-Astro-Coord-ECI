@@ -5,119 +5,129 @@ use warnings;
 
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Iridium;
-use Test;
+use Test::More 0.40;
 
-plan tests => 31;
+note <<'EOD';
 
-my $test = 0;
+The following tests check manipulation of the canned statuses
+EOD
 
-my ($tle, $action);
-$action = 'initially';
-foreach (
-	[items => 92],
-	[status => 'clear'],
-	[items => 0],
-	[status => add => 22222, iridium => ''],
-	[items => 1],
-	[status => add => 33333, iridium => '?'],
-	[new => id => 11111],
-	[class => 'Astro::Coord::ECI::TLE'],
-	[can_flare => 0],
-	[rebless => 'iridium'],
-	[class => 'Astro::Coord::ECI::TLE::Iridium'],
-	[can_flare => 1],
-	['rebless'],
-	[class => 'Astro::Coord::ECI::TLE'],
-	[can_flare => 0],
-	[set => id => 22222],
-	[class => 'Astro::Coord::ECI::TLE::Iridium'],
-	[can_flare => 1],
-	[set => id => 33333],
-	[class => 'Astro::Coord::ECI::TLE::Iridium'],
-	[can_flare => 0],
-	[new => id => 22222],
-	[class => 'Astro::Coord::ECI::TLE::Iridium'],
-	[new => reblessable => 0, id => 22222],
-	[class => 'Astro::Coord::ECI::TLE'],
-	[set => reblessable => 1],
-	[class => 'Astro::Coord::ECI::TLE::Iridium'],
-	[rebless => 'tle'],
-	[class => 'Astro::Coord::ECI::TLE'],
-	['rebless'],
-	[class => 'Astro::Coord::ECI::TLE::Iridium'],
-	[set => id => 11111],
-	[class => 'Astro::Coord::ECI::TLE'],
-	[is_model_attribute => reblessable => 0],
-	[is_model_attribute => horizon => 0],
-	[is_model_attribute => status => 0],
-	[is_model_attribute => bstardrag => 1],
-	[is_model_attribute => meananomaly => 1],
-	[is_model_attribute => id => 0],
-	[is_model_attribute => name => 0],
-	[is_valid_model => model => 1],
-	[is_valid_model => null => 1],
-	[is_valid_model => sgp4 => 1],
-	[is_valid_model => sdp4 => 1],
-	[is_valid_model => pdq4 => 0],
-	) {
-    my ($method, @args) = @$_;
-    my ($what, $got);
-    if ($method eq 'can_flare') {
-	$what = 'value of';
-	$action = "\$tle->can_flare ()";
-	$got = $tle->can_flare () || 0;
-    } elsif ($method eq 'class') {
-	$what = 'class';
-	$got = ref $tle;
-    } elsif ($method eq 'is_model_attribute') {
-	$what = 'value of';
-	my $arg = shift @args;
-	$action = "TLE->is_model_attribute ('$arg')";
-	$got = Astro::Coord::ECI::TLE->is_model_attribute ($arg) || 0;
-    } elsif ($method eq 'is_valid_model') {
-	$what = 'value of';
-	my $arg = shift @args;
-	$action = "TLE->is_valid_model ('$arg')";
-	$got = Astro::Coord::ECI::TLE->is_valid_model ($arg) ? 1 : 0;
-    } elsif ($method eq 'items') {
-	$what = 'status items';
-	my @got = Astro::Coord::ECI::TLE->status ('show');
-	$got = @got;
-    } elsif ($method eq 'new') {
-	$tle = Astro::Coord::ECI::TLE->new (@args);
-    } elsif ($method eq 'rebless') {
-	$tle->rebless (@args);
-    } elsif ($method eq 'set') {
-	$tle->set (@args);
-    } elsif ($method eq 'status') {
-	Astro::Coord::ECI::TLE->status (@args);
-    }
-    if (defined $what) {
-#	Test
-	my $want = shift @args;
-	$test++;
-	print <<eod;
-#
-# Test $test - $what $action
-#    Expect: $want
-#       Got: $got
-eod
-	$want =~ m/\D/ ? ok ($want eq $got) : ok ($want == $got);
-    } else {
-	$action = 'after TLE->' . arglist ($method => @args);
-    }
-}
+cmp_ok elements( Astro::Coord::ECI::TLE->status( 'show' ) ), '==', 92,
+    'Astro::Coord::ECI::TLE->status() items initially';
 
-sub arglist {
-    my ($method, @args) = @_;
-    my @fmt;
-    for (my $inx = 0; $inx < @args; $inx += 2) {
-	my $incr = $inx + 1;
-	push @fmt, $incr >= @args ? "'$args[$inx]'" : "$args[$inx] => " .
-	    ($args[$incr] =~ m/\D/ || !$args[$incr] ?
-		"'$args[$incr]'" : $args[$incr]); 
-    }
-    return "$method (" . join (', ', @fmt) . ')';
+Astro::Coord::ECI::TLE->status( 'clear' );
+cmp_ok elements( Astro::Coord::ECI::TLE->status( 'show' ) ), '==', 0,
+    'Astro::Coord::ECI::TLE->status() items after clear';
+
+Astro::Coord::ECI::TLE->status( add => 22222, iridium => '' );
+cmp_ok elements( Astro::Coord::ECI::TLE->status( 'show' ) ), '==', 1,
+    'Astro::Coord::ECI::TLE->status() items after adding 22222';
+
+Astro::Coord::ECI::TLE->status( add => 33333, iridium => '?' );
+
+note <<'EOD';
+
+The following tests check the reblessing machinery
+EOD
+
+my $tle = Astro::Coord::ECI::TLE->new( id => 11111 );
+is ref $tle, 'Astro::Coord::ECI::TLE', 'OID 11111 is a TLE';
+
+ok ! $tle->can_flare(), 'OID 11111 can not flare.';
+
+$tle->rebless( 'iridium' );
+is ref $tle, 'Astro::Coord::ECI::TLE::Iridium',
+    'OID 11111 can be reblessed to Iridium';
+
+ok $tle->can_flare(), 'Now OID 11111 can flare.';
+
+$tle->rebless();
+is ref $tle, 'Astro::Coord::ECI::TLE',
+    'By default, OID 11111 reblesses to a TLE';
+
+ok ! $tle->can_flare(), 'Again, OID 11111 can not flare.';
+
+$tle->set( id => 22222 );
+is ref $tle, 'Astro::Coord::ECI::TLE::Iridium',
+    q{Changing object's OID to 22222 makes it an Iridium};
+
+ok $tle->can_flare(), 'OID 22222 can flare.';
+
+$tle->set( id => 33333 );
+is ref $tle, 'Astro::Coord::ECI::TLE::Iridium',
+    q{Changing object's OID to 33333 leaves it still an Iridium};
+
+ok ! $tle->can_flare(), 'But OID 33333 can not flare.';
+
+$tle = Astro::Coord::ECI::TLE->new( id => 22222 );
+is ref $tle, 'Astro::Coord::ECI::TLE::Iridium',
+    'If we instantiate OID 22222 directly, we get an Iridium';
+
+$tle = Astro::Coord::ECI::TLE->new( reblessable => 0, id => 22222 );
+is ref $tle, 'Astro::Coord::ECI::TLE',
+    'But if we turn off reblessing, OID 22222 is a plain TLE';
+
+$tle->set( reblessable => 1 );
+is ref $tle, 'Astro::Coord::ECI::TLE::Iridium',
+    'If we turn reblessing back on, OID 22222 becomes an Iridium';
+
+$tle->rebless( 'tle' );
+is ref $tle, 'Astro::Coord::ECI::TLE',
+    'But we can still rebless OID 22222 to a plain TLE';
+
+$tle->rebless();
+is ref $tle, 'Astro::Coord::ECI::TLE::Iridium',
+    'A default rebless makes OID 22222 an Iridium again';
+
+$tle->set( id => 11111 );
+is ref $tle, 'Astro::Coord::ECI::TLE',
+    'Changing the OID to 11111 makes it a plain TLE';
+
+note <<'EOD';
+
+The following tests check whether various attributes affect the model
+EOD
+
+ok ! $tle->is_model_attribute( 'reblessable' ),
+    q{'reblessable' is not a model attribute};
+
+ok ! $tle->is_model_attribute( 'horizon' ),
+    q{'horizon' is not a model attribute};
+
+ok ! $tle->is_model_attribute( 'status' ),
+    q{'status' is not a model attribute};
+
+ok $tle->is_model_attribute( 'bstardrag' ),
+    q{'bstardrag' is a model attribute};
+
+ok $tle->is_model_attribute( 'meananomaly' ),
+    q{'meananomaly' is a model attribute};
+
+ok ! $tle->is_model_attribute( 'id' ),
+    q{'id' is not a model attribute};
+
+ok ! $tle->is_model_attribute( 'name' ),
+    q{'name' is not a model attribute};
+
+note <<'EOD';
+
+The following tests check whether various model names are valid
+EOD
+
+ok $tle->is_valid_model( 'model' ), q{'model' is a valid model};
+
+ok $tle->is_valid_model( 'null' ), q{'null' is a valid model};
+
+ok $tle->is_valid_model( 'sgp4' ), q{'sgp4' is a valid model};
+
+ok $tle->is_valid_model( 'sdp4' ), q{'sdp4' is a valid model};
+
+ok ! $tle->is_valid_model( 'pdq4' ), q{'pdq4' is not a valid model};
+
+done_testing;
+
+sub elements {
+    return scalar @_;
 }
 
 1;
