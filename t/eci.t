@@ -681,10 +681,11 @@ EOD
     ok( $got eq $want );
 }
 
-# Tests 69-72: Maidenhead to geodetic. Same reference implementation
+# Tests 69-72: Maidenhead to geodetic.
+# Reference implementation: http://www.amsat.org/cgi-bin/gridconv
 
 foreach (
-    [ 'FM18LV', 3, 38.896, -77.042 ],	# Reference gives -77.041
+    [ 'FM18LV', 3, 38.896, -77.042 ],
     [ 'FM18',   1, 38.5,   -77.0   ],
 ) {
     my ( $loc, $prec, $want_lat, $want_lon ) = @{$_};
