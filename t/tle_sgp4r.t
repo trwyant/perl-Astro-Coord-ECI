@@ -121,41 +121,6 @@ eod
     return;
 }
 
-sub bail_out {
-    print '1..0 # skip ', @_, "\n";
-    warn <<eod;
-
-This test requires file sgp4-ver.tle, which is contained in
-http://celestrak.com/publications/AIAA/2006-6753/AIAA-2006-6753.zip I am
-not authorized to redistribute TLEs, so I have not included this file in
-the distribution. Dr. Kelso of celestrak.com _is_ authorized, but either
-the user has requested that it not be downloaded, or my attempt to do so
-was unsuccessful. The download requires that the web site be up and
-accessable, and that you have File::Temp, LWP::UserAgent, and
-Archive::Zip installed.
-
-If the download failed for whatever reason, you can download and extract
-the file yourself, placing it in the 't' subdirectory. The file has
-Internet/DOS line endings (cr/lf), but Perl's digestion is robust enough
-that this should not be a problem.
-
-eod
-    exit;
-}
-
-sub prompt {
-    my @args = @_;	# For Perl::Critic
-    print STDERR @args;
-    return
-	# We're a test module, and want to be fairly lightweight.
-	unless defined (my $input = <STDIN>)	## no critic (ProhibitExplicitStdin)
-	;	# semicolon must be after annotation, or Perl::Critic
-		# may think it's a block annotation, not a single-line
-		# annotation.
-    chomp $input;
-    return $input;
-}
-
 1;
 __DATA__
 ## 23599	1	1	1	.001	.001	.001
