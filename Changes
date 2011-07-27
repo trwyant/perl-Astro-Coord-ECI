@@ -98,7 +98,7 @@
     be) accessed.
   Removed calls to _INSTANCE in little-used code in bin/satpass. It must
     be little-used, since it hasn't been imported from Params::Util
-    since versoin 0.033 dated 17-Sep-2010.
+    since version 0.033 dated 17-Sep-2010.
   Fix to zone attribute code in bin/satpass, so that it can be cleared
     once set.
 
