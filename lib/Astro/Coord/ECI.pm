@@ -1692,12 +1692,30 @@ sub local_time {
 This method returns the location in the Maidenhead Locator System.
 Height above the reference ellipsoid is not part of the system, but is
 returned anyway, in kilometers. The $precision is optional, and is an
-integer in the range 1 to 4, the default being 4.
+integer greater than 0.
+
+The default precision is 4, but this can be modified by setting
+C<$Astro::Coord::ECI::DEFAULT_MAIDENHEAD_PRECISION> to the desired
+value. For example, if you want the default precision to be 3 (which it
+probably should have been in the first place), you can use
+
+ no warnings qw{ once };
+ local $Astro::Coord::ECI::DEFAULT_MAIDENHEAD_PRECISION = 3;
 
 Note that precisions greater than 4 are not defined by the standard.
 This method extends the system by alternating letters (base 24) with
-digits (base 10), but this will change, possibly without notice, if the
-standard is extended in a manner incompatible with this implementation.
+digits (base 10), but this is unsupported since the results will change,
+possibly without notice, if the standard is extended in a manner
+incompatible with this implementation.
+
+Conversion of latitudes and longitudes to Maidenhead Grid is subject to
+truncation error, perhaps more so since latitude and longitude are
+specified in radians. An attempt has been made to minimize this by using
+Perl's stringification of numbers to ensure that something that looks
+like C<42> is not handled as C<41.999999999385>. This probably amounts
+to shifting some grid squares very slightly to the north-west, but in
+practice it seems to give better results for points on the boundaries of
+the grid squares.
 
 =item $coord->maidenhead( $location, $height );
 
@@ -1717,12 +1735,13 @@ The object itself is returned, to allow call chaining.
 =cut
 {
 
+    our $DEFAULT_MAIDENHEAD_PRECISION = 4;
+
     my $alpha = 'abcdefghijklmnopqrstuvwxyz';
 
     sub maidenhead {
 	my ( $self, @args ) = @_;
-	$args[0] or $args[0] = 4;
-	if ( @args > 1 || $args[0] =~ m/ \D /smx ) {
+	if ( @args > 1 || defined $args[0] && $args[0] =~ m/ \D /smx ) {
 	    my ( $loc, $alt ) = @args;
 	    defined $alt or $alt = 0;
 
@@ -1767,25 +1786,44 @@ The object itself is returned, to allow call chaining.
 
 	} else {
 	    my ( $precision ) = @args;
+	    defined $precision
+		and $precision > 0
+		or $precision = $DEFAULT_MAIDENHEAD_PRECISION;
+
+	    my @bases = reverse _maidenhead_bases( $precision );
+
+	    # In order to minimize truncation errors we multiply
+	    # everything out, and then work right-to-left using the mod
+	    # operator. We stringify to take advantage of Perl's smarts
+	    # about when something is 42 versus 41.999999999583.
+	    
+	    my $multiplier = 1;
+	    foreach ( @bases ) {
+		$multiplier *= $_;
+	    }
 
 	    my ( $lat, $lon, $alt ) = $self->geodetic();
-	    $lat = ( rad2deg( $lat ) + 90 ) / 180;
-	    $lon = ( rad2deg( $lon ) + 180 ) / 360;
+	    $lat = ( $lat + PIOVER2 ) * $multiplier / PI;
+	    $lon = ( $lon + PI ) * $multiplier / TWOPI;
+	    $lat = floor( "$lat" );
+	    $lon = floor( "$lon" );
 
-	    my $rslt;
-	    foreach my $base ( _maidenhead_bases( $precision) ) {
-		foreach ( $lon, $lat ) {
-		    $_ *= $base;
-		    my $inx = floor( $_ );
-		    $_ -= $inx;
-		    $rslt .= $base > 10 ? substr( $alpha, $inx, 1 ) : $inx;
+	    my @rslt;
+	    foreach my $base ( @bases ) {
+		foreach ( $lat, $lon ) {
+		    my $inx = $_ % $base;
+		    push @rslt, $base > 10 ?
+			substr( $alpha, $inx, 1 ) : $inx;
+		    $_ = floor( $_ / $base );
 		}
 	    }
 
-	    defined $rslt and 2 <= length $rslt
-		and substr( $rslt, 0, 2 ) = uc substr $rslt, 0, 2;
+	    @rslt
+		and $rslt[-1] = uc $rslt[-1];
+	    @rslt > 1
+		and $rslt[-2] = uc $rslt[-2];
 
-	    return ( $rslt, $alt );
+	    return join '', reverse @rslt;
 	}
     }
 

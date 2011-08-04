@@ -8,7 +8,7 @@ use Astro::Coord::ECI::Utils qw{ :time deg2rad PERL2000 rad2deg };
 use POSIX qw{strftime floor};
 use Test;
 
-BEGIN {plan tests => 72}
+BEGIN {plan tests => 68}
 
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
@@ -681,31 +681,8 @@ EOD
     ok( $got eq $want );
 }
 
-# Tests 69-72: Maidenhead to geodetic.
-# Reference implementation: http://www.amsat.org/cgi-bin/gridconv
-
-foreach (
-    [ 'FM18LV', 3, 38.896, -77.042 ],
-    [ 'FM18',   1, 38.5,   -77.0   ],
-) {
-    my ( $loc, $prec, $want_lat, $want_lon ) = @{$_};
-    my ( $got_lat, $got_lon ) = Astro::Coord::ECI->new()->
-    maidenhead( $loc )->geodetic();
-    foreach (
-	[ latitude => $want_lat, $got_lat ],
-	[ longitude => $want_lon, $got_lon ],
-    ) {
-	my ( $dim, $want, $got ) = @{$_};
-	my $check = sprintf "%.${prec}f", rad2deg( $got );
-	$test++;
-	print <<"EOD";
-# Test $test: Maidenhead $loc $dim
-#           Got: $check
-#      Expected: $want
-EOD
-	ok( $want == $check );
-    }
-}
+# Former tests 69-72 were moved to be the first four tests in
+# t/eci_maidenhead.t.
 
 # need to test:
 #    dip
