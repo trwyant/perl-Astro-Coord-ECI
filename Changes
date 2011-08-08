@@ -1,3 +1,10 @@
+0.042		07-Aug-2011	T. R. Wyant
+  In the Astro::Coord::ECI maidenhead() method:
+  * Document the fact that, when used as a mutator, it sets the position
+    of the center of the square;
+  * Modify the accessor to try to minimize truncation error.
+  Added t/eci_maidenhead.t.
+
 0.041		25-Jul-2011	T. R. Wyant
   Re-fix longitude out-of-range warning in Astro::Coord::ECI::Moon.
   Fix problem with time specification in eg/sh_script when Date::Manip
