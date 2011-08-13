@@ -123,9 +123,9 @@ my %mutator = (
     height => \&_set_unmodified,
     horizon => \&_set_angle,
     latitude => \&_set_angle,
+    lit => \&_set_unmodified,
     local_coord => \&_set_local_coord,
     location => \&_set_unmodified,
-    lit => \&_set_unmodified,
     longitude => \&_set_angle,
     model => \&_set_unmodified,
     perltime => \&_set_perltime,
@@ -3174,7 +3174,6 @@ if ($time) {
     $data = [_aggregate ()];
     }
   elsif ($cmdopt{epoch}) {
-    warn "Debug - Doing _aggregate() with epoch $cmdopt{epoch}";
     my $time = _parse_time ($cmdopt{epoch});
     $data = [_aggregate({select => $time})];
     }
@@ -5217,6 +5216,9 @@ This parameter specifies how to determine if a body is lit by the sun.
 If true (i.e. 1) it is considered to be lit if the upper limb of the
 sun is above the horizon, as seen from the body. If false (i.e. 0), the
 body is considered lit if the center of the sun is above the horizon.
+
+This badly-named parameter corresponds to the equally-badly-named
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute.
 
 The default is 1 (i.e. true).
 
