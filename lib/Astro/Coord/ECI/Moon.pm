@@ -60,10 +60,10 @@ my %terms;
 my $where;
 while (<DATA>) {
     chomp;
-    s/^\s+//;
-    s/\s+$//;
+    s/ \A \s+ //smx;
+    s/ \s+ \z //smx;
     next unless $_;
-    next if m/^#/;
+    next if m/ \A \s* [#] /smx;
     s/^-// and do {
 	last if $_ eq 'end';
 	$where = $terms{$_} ||= [];
@@ -226,6 +226,19 @@ sub almanac_hash {
 	    description => $_->[3],
 	}
     }, almanac(@_);
+}
+
+=item $tle->correct_for_refraction( $elevation )
+
+This override of the superclass' method simply returns the elevation
+passed to it. Since the Moon has no atmosphere to speak of, there should
+be no diffraction to speak of either.
+
+=cut
+
+sub correct_for_refraction {
+    my ( $self, $elevation ) = @_;
+    return $elevation;
 }
 
 
@@ -670,3 +683,5 @@ __DATA__
 1  0 -1 -1	     -119
 4 -1  0 -1	      115
 2 -2  0  1	      107
+
+# ex: set textwidth=72 :

@@ -71,6 +71,7 @@ my %parm = (
     debug => 0,
     desired_equinox_dynamical => 0,
     echo => 0,
+    edge_of_earths_shadow => 1,
     ellipsoid => Astro::Coord::ECI->get ('ellipsoid'),
     error_out => 0,
     exact_event => 1,
@@ -81,7 +82,8 @@ my %parm = (
     geometric => 1,
     gmt => 0,
     horizon => 20,	# Degrees
-    lit => 1,
+    lit => undef,	# Deprecated. Unused but must be present until
+			# removed.
     local_coord => 'azel_rng',
     model => 'model',
     prompt => 'satpass>',
@@ -111,6 +113,7 @@ my %mutator = (
     desired_equinox_dynamical => \&_set_time,
     debug => \&_set_unmodified,
     echo => \&_set_unmodified,
+    edge_of_earths_shadow => \&_set_unmodified,
     ellipsoid => \&_set_ellipsoid,
     error_out => \&_set_unmodified,
     exact_event => \&_set_unmodified,
@@ -123,7 +126,11 @@ my %mutator = (
     height => \&_set_unmodified,
     horizon => \&_set_angle,
     latitude => \&_set_angle,
-    lit => \&_set_unmodified,
+    lit => sub {
+	_lit_deprecated();
+	set ( edge_of_earths_shadow => $_[1] ? 1 : 0 );
+	return;
+    },
     local_coord => \&_set_local_coord,
     location => \&_set_unmodified,
     longitude => \&_set_angle,
@@ -149,6 +156,10 @@ my %mutator = (
     );
 
 my %accessor = (
+    lit => sub {
+	_lit_deprecated();
+	return $parm{edge_of_earths_shadow} ? 1 : 0;
+    },
     desired_equinox_dynamical => \&_get_time,
 );
 foreach (keys %mutator) {$accessor{$_} ||= \&_show_unmodified};
@@ -1520,11 +1531,11 @@ eod
 	    appulse => $appulse,
 	    backdate => $parm{backdate},
 	    debug => $parm{debug},
+	    edge_of_earths_shadow => $parm{edge_of_earths_shadow},
 	    geometric => $parm{geometric},
 	    horizon => $horizon,
 	    interval => $parm{verbose} ? $pass_step : 0,
 	    lazy_pass_position => 1,
-	    limb => $parm{lit},
 	    model => $model,
 	    twilight => $parm{_twilight},
 	    visible => $parm{visible},
@@ -2799,6 +2810,17 @@ foreach my $tle (@bodies) {
 
 }
 
+{
+##  my $lit_deprecated;
+
+    sub _lit_deprecated {
+##	not $lit_deprecated++
+##	    and warn q{The 'lit' parameter is deprecated. Use },
+##		q{the 'edge_of_earths_shadow' parameter instead}, "\n";
+	return;
+    }
+}
+
 
 #	$handle = _memio ($access, \$memory)
 
@@ -3678,14 +3700,20 @@ become a warning every time it is issued, and six months (plus) after
 that it will become a fatal error. This command has been deprecated in
 the documentation for quite a while.
 
-I plan, hopefully before mid-2011 (though the date has a tendency to
-recede as fast as time advances), to restructure this package. The plan
-calls for moving all the .pm files to distribution Astro-Coord-ECI,
-publishing an App-Satpass2 package with a reworked version of the
-F<satpass> script, and abandoning development of the Astro-satpass
-package. My intent is that in the last release of the Astro-satpass
-package, the banner displayed by the F<satpass> script will direct the
-user to App-Satpass2.
+The C<lit> parameter (and the corresponding
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute) are
+deprecated. Starting in the first release on or after February 1 2012, a
+warning will be issued the first time this attribute is accessed. Six
+months (plus) after this happens, a warning will be issued at every use,
+and six months (plus) after that, it will be a fatal error.
+
+I plan, hopefully before the end of 2011, to issue the
+C<Astro-App-Satpass2> package, containing a successor to the F<satpass>
+script. Once I consider this production-quality (six months to a year
+after issue) the F<satpass> script will become deprecated, and
+eventually will be removed (or moved to the F<eg/> directory). At this
+point the C<Astro-satpass> distribution will be replaced by the
+C<Astro-Coord-ECI> distribution.
 
 Most of the functionality of the Astro-App-Satpass2 distribution will be
 in the Astro::App::Satpass2 class. A minimal F<satpass2> script will be
@@ -5074,6 +5102,21 @@ substitution has occurred.
 
 The default is 0.
 
+=for html <a name="edge_of_earths_shadow"></a>
+
+=item edge_of_earths_shadow (numeric)
+
+This parameter specifies the offset in elevation of the edge of the
+Earth's shadow from the center of the illuminating body (typically the
+Sun) as seen from a body in space. The offset is in units of the
+apparent radius of the illuminating body, so that setting it to C<1>
+specifies the edge of the umbra, <-1> specifies the edge of the
+penumbra, and C<0> specifies the middle of the penumbra. This parameter
+corresponds to the same-named L<Astro::Coord::ECI|Astro::Coord::ECI>
+parameter.
+
+The default is 1 (i.e. edge of umbra).
+
 =for html <a name="ellipsoid"></a>
 
 =item ellipsoid (string)
@@ -5219,6 +5262,9 @@ body is considered lit if the center of the sun is above the horizon.
 
 This badly-named parameter corresponds to the equally-badly-named
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute.
+
+This parameter is B<deprecated>. Please use the
+L<edge_of_earths_shadow|/edge_of_earths_shadow> parameter instead.
 
 The default is 1 (i.e. true).
 

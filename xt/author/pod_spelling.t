@@ -199,6 +199,7 @@ perigee
 perltime
 Persei
 pg
+photosphere
 pkm
 pm
 pp

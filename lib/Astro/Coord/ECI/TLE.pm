@@ -305,6 +305,18 @@ use constant SGP_RHO => .15696615;
 # XM0 => meananomaly
 # XNO => meanmotion
 
+# This subroutine manages the warnings on the deprecation of the 'limb'
+# attribute.
+{
+##  my $limb_deprecated;
+    sub __limb_deprecation {
+##	warnings::enabled( 'deprecated' )
+##	    and not $limb_deprecated++
+##	    and carp q{The 'limb' attribute is deprecated; use the },
+##		q{'edge_of_earths_shadow' attribute instead};
+	return;
+    }
+}
 
 #	List all the legitimate attributes for the purposes of the
 #	get and set methods. Possible values of the hash are:
@@ -371,7 +383,11 @@ eod
     revolutionsatepoch => 0,
     debug => 0,
     geometric => 0,	# Use geometric horizon for pass rise/set.
-    limb => 0,		# Whether lit when upper limb above horizon.
+    limb => sub {	# Whether lit when upper limb above horizon.
+	$_[0]->__limb_deprecation();
+	$_[0]->set( edge_of_earths_shadow => $_[2] ? 1 : 0 );
+	return 0;
+    },
     visible => 0,	# Pass() reports only illuminated passes.
     appulse => 0,	# Maximum appulse to report.
     interval => 0,	# Interval for pass() positions, if positive.
@@ -403,7 +419,6 @@ my %static = (
     illum => 'sun',
     interval => 0,
     lazy_pass_position => 0,
-    limb => 1,
     model => 'model',
     pass_variant => 0,
     reblessable => 1,
@@ -628,6 +643,20 @@ may return true.
 
 sub can_flare {return 0}
 
+=item $tle->correct_for_refraction( $elevation )
+
+This override of the superclass' method simply returns the elevation
+passed to it. Atmospheric refraction at orbital altitudes is going to be
+negligible except _extremely_ close to the horizon, and I have no
+algorithm for that.
+
+=cut
+
+sub correct_for_refraction {
+    my ( $self, $elevation ) = @_;
+    return $elevation;
+}
+
 
 =item $value = $tle->ds50($time)
 
@@ -674,6 +703,10 @@ L</Attributes> section for a description of the attributes.
 
 {
     my %accessor = (
+	limb => sub {
+	    $_[0]->__limb_deprecation();
+	    return $_[0]->get( 'edge_of_earths_shadow' ) ? 1 : 0;
+	},
 	tle => sub {$_[0]{$_[1]} ||= $_[0]->_make_tle()},
     );
     sub get {
@@ -1171,7 +1204,6 @@ eod
     my $horizon = $tle->get ('horizon');
     my $effective_horizon = $tle->get ('geometric') ? 0 : $horizon;
     my $twilight = $tle->get ('twilight');
-    my $want_lit = $tle->get ('limb');
     my $want_visible = $tle->get ('visible');
     my $appulse_dist = $tle->get ('appulse');
     my $debug = $tle->get ('debug');
@@ -1195,7 +1227,6 @@ eod
 #	We need the sun at some point.
 
     my $sun = Astro::Coord::ECI::Sun->new ();
-    my $illum = $tle->get ('illum');
 
 
 #	For each time to be covered
@@ -1274,9 +1305,9 @@ eod
 		    $tle->universal( $time ) );
 		last if $try_elev < $effective_horizon;
 		my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
-		$litup = 0 if $litup == 1 &&
-		    ( $tle->azel( $illum->universal( $time ), $want_lit)
-		    )[1] < $tle->dip ();
+		1 == $litup
+		    and $tle->__sun_elev_from_sat( $time ) < 0
+		    and $litup = 0;
 		unshift @info, {
 		    azimuth => $try_azm,
 		    elevation => $try_elev,
@@ -1401,9 +1432,9 @@ eod
 		my ($azm, $elev, $rng) = $sta->azel (
 		    $tle->universal ($time));
 		my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
-		$litup = 0 if $litup == 1 &&
-		    ($tle->azel ($illum->universal ($time),
-			    $want_lit))[1] < $tle->dip ();
+		1 == $litup
+		    and $tle->__sun_elev_from_sat( $time ) < 0
+		    and $litup = 0;
 		push @info, {
 		    azimuth => $azm,
 		    body => $tle,
@@ -1434,9 +1465,9 @@ eod
 			sub {
 			    my $litup = $_[0] < $suntim ?
 				2 - $dawn : 1 + $dawn;
-			    $litup = 0 if $litup == 1 &&
-				($tle->azel ($illum->universal ($_[0]),
-					$want_lit))[1] < $tle->dip ();
+			    1 == $litup
+				and $tle->__sun_elev_from_sat( $_[0] ) < 0
+				and $litup = 0;
 			    $lighting[$litup] == $evt->{illumination}
 			    });
 		    my ($azm, $elev, $rng) = $sta->azel (
@@ -1640,8 +1671,7 @@ eod
 #	Calculate whether the body is visible.
 
 	my $litup = $time < $sun_screen ? 2 - $dawn : 1 + $dawn;
-	my $sun_elev_from_sat = ( $tle->azel( $illum->universal( $time )
-		) )[1] - $tle->dip();
+	my $sun_elev_from_sat = $tle->__sun_elev_from_sat( $time );
 	$visible ||= $elev > $screening_horizon && ( ! $want_visible ||
 	    $litup == 1 && $sun_elev_from_sat >= $min_sun_elev_from_sat );
 	$litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
@@ -6564,6 +6594,16 @@ sub _r_dump {
     return;
 }
 
+# Elevation of the illuminating body as seen from the satellite at the
+# given time.
+sub __sun_elev_from_sat {
+    my ( $self, $time ) = @_;
+    return ( $self->azel_offset(
+	    $self->get( 'illum' )->universal( $time ),
+	    $self->get( 'edge_of_earths_shadow' ),
+	) )[1] - $self->dip();
+}
+
 =item $text = $tle->tle_verbose(...);
 
 This method returns a verbose version of the TLE data, with one data
@@ -7833,6 +7873,9 @@ The default is 0 (i.e. false).
 This attribute tells the pass() method how to compute illumination
 of the body. If true, it is computed based on the upper limb of the
 source of illumination; if false, it is based on the center.
+
+This attribute is B<deprecated>, in favor of the superclass'
+C<edge_of_earths_shadow> attribute.
 
 The default is 1 (i.e. true).
 

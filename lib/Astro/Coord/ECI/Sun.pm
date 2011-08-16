@@ -67,7 +67,7 @@ my %static = (
 my $weaken = eval {
     require Scalar::Util;
     Scalar::Util->can('weaken');
-    };
+};
 my $object;
 
 our $Singleton = $weaken;
@@ -216,6 +216,21 @@ sub almanac_hash {
 	    description => $_->[3],
 	}
     }, almanac(@_);
+}
+
+=item $tle->correct_for_refraction( $elevation )
+
+This override of the superclass' method simply returns the elevation
+passed to it. I have no algorithm for refraction at the surface of the
+photosphere or anywhere else in the environs of the Sun, and explaining
+why I make no correction at all seemed easier than explaining why I make
+an incorrect correction.
+
+=cut
+
+sub correct_for_refraction {
+    my ( $self, $elevation ) = @_;
+    return $elevation;
 }
 
 

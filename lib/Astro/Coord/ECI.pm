@@ -102,10 +102,11 @@ my %static = (	# The geoid, etc. Geoid get set later.
     angularvelocity => 7.292114992e-5,	# Of surface of Earth, 1998. Meeus, p.83
     debug => 0,
     diameter => 0,
+    edge_of_earths_shadow => 1,
     horizon => deg2rad (20),
     refraction => 1,
     twilight => deg2rad (-6),
-    );
+);
 my %savatr;	# Attribs saved across "normal" operations. Set at end.
 my @kilatr =	# Attributes to purge when setting coordinates.
     qw{_need_purge _ECI_cache inertial local_mean_time specified}; #?
@@ -211,6 +212,47 @@ If the optional 'upper' argument is true, the calculation will be of
 the upper limb of the object, using the 'diameter' attribute of the
 $coord2 object.
 
+The C<$upper> argument is B<deprecated>, and will be removed in a future
+release.
+
+As a side effect, the time of the $coord object may be set from the
+$coord2 object.
+
+This method is implemented in terms of azel_offset(). See that method's
+documentation for further details.
+
+=cut
+
+
+{
+##  my $upper_deprecated;
+
+    sub azel {
+##	@_ > 2
+##	    and warnings::enabled( 'deprecated' )
+##	    and not $upper_deprecated++
+##	    and carp q{The azel() 'upper' argument is deprecated; use },
+##		q{the azel_offset() 'offset' argument instead};
+	@_ = ( @_[0, 1], $_[2] ? 1 : 0 );
+	goto &azel_offset;
+    }
+}
+
+
+=item ($azimuth, $elevation, $range) = $coord->azel_offset($coord2, $offset);
+
+This method takes another coordinate object, and computes its azimuth,
+elevation, and range in reference to the object doing the computing.
+The return is azimuth in radians measured clockwise from North (always
+positive), elevation above the horizon in radians (negative if
+below), and range in kilometers.
+
+If the optional C<$offset> argument is provided, the elevation is offset
+upward by the given fraction of the radius of the C<$coord2> object.
+Thus, an C<$offset> of C<1> specifies the upper limb of the object, C<0>
+specifies the center of the object, and C<-1> specifies the lower limb.
+This offset is applied before atmospheric refraction.
+
 As a side effect, the time of the $coord object may be set from the
 $coord2 object.
 
@@ -270,12 +312,12 @@ recession apply to the Doppler shift as well.
 
 =cut
 
-sub azel {
-    my ($self, $trn2, $upper) = @_;
+sub azel_offset {
+    my ($self, $trn2, $offset) = @_;
     my $cache = ($self->{_ECI_cache} ||= {});
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
-	print "Debug azel - ", Dumper ($self, $trn2, $upper);
+	print "Debug azel_offset - ", Dumper ($self, $trn2, $offset);
     };
 
     my $time = $trn2->universal();
@@ -420,8 +462,11 @@ sub azel {
 
     # Adjust for upper limb and refraction if needed.
 
-    $upper and
-	$elevation += atan2 ($trn2->get ('diameter') / 2, $range);
+    $offset
+	and $elevation += atan2(
+	    $trn2->get( 'diameter' ) * $offset / 2,
+	    $range,
+	);
 
     $self->{refraction} and
 	$elevation = $self->correct_for_refraction ($elevation);
@@ -2371,6 +2416,7 @@ eod
     angularvelocity => \&_set_value,
     debug => \&_set_value,
     diameter => \&_set_value,
+    edge_of_earths_shadow => \&_set_value,
     ellipsoid => \&_set_reference_ellipsoid,
     equinox_dynamical => \&_set_value,	# CAVEAT: _convert_eci_to_ecef
 					# accesses this directly for
@@ -2770,6 +2816,17 @@ to the Earth, and is used to calculate the latitude and longitude of
 the body.
 
 The default is 0.
+
+=item edge_of_earths_shadow (numeric, dimensionless)
+
+This attribute represents the location of the edge of the Earth's shadow
+cast by the illuminating body, in terms of the apparent radius of that
+body. That is, the edge of the umbra is specified by 1, the middle of
+the penumbra by 0, and the edge of the penumbra by -1. It was added for
+the B<Astro::Coord::ECI::TLE> class, on the same dubious logic that the
+L<twilight|/twilight> attribute was added.
+
+The default is 1.
 
 =item ellipsoid (string)
 
