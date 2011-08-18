@@ -1,11 +1,17 @@
-0.042_01	16-Aug-2011	T> R. Wyant
+0.042_02	18-Aug-2011	T. R. Wyant
+  In the satpass script, use the new 'edge_of_earths_shadow' setting in
+    the 'flare' and 'position' commands, though the flare calculation
+    does not actually make use of it.
+
+0.042_01	16-Aug-2011	T. R. Wyant
   Replace the Astro::Coord::ECI::TLE 'limb' attribute and the satpass
     'lit' setting with the 'edge_of_earth_shadow' attribute and setting.
     The new attribute and setting are numeric, and specify an increase
     in elevation (or decrease if negative) in units of the apparent
     radius of the body. The replaced attribute and setting still exist,
     but are deprecated, and will begin warning in the first release
-    after March 1 2012.
+    after March 1 2012. This setting/attribute is used by the pass
+    calculation.
   Provide an Astro::Coord::ECI azel_offset() method, which takes, as its
     optional second argument, an offset applied to the elevation, in
     terms of the apparent radius of the body whose position is being
