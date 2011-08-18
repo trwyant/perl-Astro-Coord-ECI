@@ -2823,8 +2823,8 @@ This attribute represents the location of the edge of the Earth's shadow
 cast by the illuminating body, in terms of the apparent radius of that
 body. That is, the edge of the umbra is specified by 1, the middle of
 the penumbra by 0, and the edge of the penumbra by -1. It was added for
-the B<Astro::Coord::ECI::TLE> class, on the same dubious logic that the
-L<twilight|/twilight> attribute was added.
+the benefit of the B<Astro::Coord::ECI::TLE> class, on the same dubious
+logic that the L<twilight|/twilight> attribute was added.
 
 The default is 1.
 

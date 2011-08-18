@@ -643,12 +643,18 @@ may return true.
 
 sub can_flare {return 0}
 
-=item $tle->correct_for_refraction( $elevation )
+=item $elevation = $tle->correct_for_refraction( $elevation )
 
 This override of the superclass' method simply returns the elevation
 passed to it. Atmospheric refraction at orbital altitudes is going to be
-negligible except _extremely_ close to the horizon, and I have no
+negligible except B<extremely> close to the horizon, and I have no
 algorithm for that.
+
+If I B<do> come up with something to handle refraction close to the
+horizon, though, it will appear here. One would expect the refraction
+right at the limb to be twice that calculated by Thorfinn's algorithm
+(used in the superclass) because the light travels to the Earth's
+surface and back out again.
 
 =cut
 
@@ -1112,6 +1118,8 @@ in addition to its arguments and the orbital elements associated with
 the object:
 
   * appulse	# Maximum appulse to report
+  * edge_of_earths_shadow	# Used in the calculation of whether the
+		# satellite is illuminated or in shadow.
   * geometric	# Use geometric horizon for pass rise/set
   * horizon	# Effective horizon
   * interval	# Interval for pass() positions, if positive
@@ -1120,7 +1128,6 @@ the object:
   * pass_variant # Tweak what pass() returns; currently no
 		# effect unless 'visible' is true.
   * illum	# Source of illumination.
-  * limb	# Whether lit when upper limb above horizon
   * twilight	# Distance of illuminator below horizon
   * visible	# Pass() reports only illuminated passes
 

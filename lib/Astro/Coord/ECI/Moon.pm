@@ -228,7 +228,7 @@ sub almanac_hash {
     }, almanac(@_);
 }
 
-=item $tle->correct_for_refraction( $elevation )
+=item $elevation = $tle->correct_for_refraction( $elevation )
 
 This override of the superclass' method simply returns the elevation
 passed to it. Since the Moon has no atmosphere to speak of, there should

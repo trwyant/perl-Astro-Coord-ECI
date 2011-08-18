@@ -270,6 +270,7 @@ TDT
 Terre
 thetag
 Thorfinn
+Thorfinn's
 timegm's
 timekeeping
 TIMEZONES

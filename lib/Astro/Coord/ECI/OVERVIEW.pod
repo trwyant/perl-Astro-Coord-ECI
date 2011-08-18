@@ -545,6 +545,11 @@ following settings seem to duplicate Heavens Above fairly well:
 
 * Twilight - -3 degrees (passes), or -1.8 degrees (Iridium flares).
 
+The C<edge_of_earths_shadow> attribute is so new I have no firm idea
+what setting would best duplicate Heavens Above, but there is some
+evidence that, for satellite passes at least, C<-1> gives results more
+like those of Heavens Above than the default if C<1>.
+
 Since Heavens Above only predicts one pass at a time, it may actually
 choose a different twilight for each satellite, based on the satellite's
 brightness. The same may be true for Iridium flares. If you are trying
