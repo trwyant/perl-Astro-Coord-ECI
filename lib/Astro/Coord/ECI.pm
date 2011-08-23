@@ -25,6 +25,16 @@ Astro::Coord::ECI - Manipulate geocentric coordinates
 See the L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> documentation
 for an example involving satellite pass prediction.
 
+=head1 NOTICE
+
+The two-argument form of the C<azel()> method is deprecated in favor of
+the two-argument form of the C<azel_offset()> method.  On the first
+release on or after March 1 2012, you will get a warning the first time
+you call the two-argument form of C<azel()>. On the first release at
+least six months after that, you will get a warning on C<every> call. On
+the first release at least six months after that, you will get a fatal
+error when you make a two-argument call to C<azel()>.
+
 =head1 DESCRIPTION
 
 This module was written to provide a base class for a system to predict

@@ -90,9 +90,12 @@ indicated.
 
 =head1 NOTICE
 
-As noted in previous releases, in this release (the first release in
-2011) the C<rightascension> attribute has been eliminated. Use the
-C<ascendingnode> attribute instead.
+The C<limb> attribute is deprecated in favor of the
+L<Astro::Coord::ECI|Astro::Coord::ECI> C<edge_of_earths_shadow>
+attribute. On the first release on or after March 1 2012, you will get a
+warning on the first use. On the first release at least six months after
+that, you will get a warning on C<every> use. On the first release at
+least six months after that, you will get a fatal error on use.
 
 =head1 DESCRIPTION
 
@@ -7882,7 +7885,9 @@ of the body. If true, it is computed based on the upper limb of the
 source of illumination; if false, it is based on the center.
 
 This attribute is B<deprecated>, in favor of the superclass'
-C<edge_of_earths_shadow> attribute.
+C<edge_of_earths_shadow> attribute, which it is implemented in terms of.
+The accessor returns true for B<any> non-zero value of
+C<edge_of_earths_shadow>.
 
 The default is 1 (i.e. true).
 

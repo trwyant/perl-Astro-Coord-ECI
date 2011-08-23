@@ -3691,11 +3691,6 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-USSTRATCOM has gone to a secure server for its Space Track web site. If
-you have been using L<Astro::SpaceTrack|Astro::SpaceTrack> to get your
-data (e.g. via the C<st> command) you need to upgrade to version 0.052
-of L<Astro::SpaceTrack|Astro::SpaceTrack>.
-
 The C<status iridium> command now issues a deprecation warning the first
 time it is issued. In the first release after October 1 2011 this will
 become a warning every time it is issued, and six months (plus) after
@@ -3704,7 +3699,7 @@ the documentation for quite a while.
 
 The C<lit> parameter (and the corresponding
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute) are
-deprecated. Starting in the first release on or after February 1 2012, a
+deprecated. Starting in the first release on or after March 1 2012, a
 warning will be issued the first time this attribute is accessed. Six
 months (plus) after this happens, a warning will be issued at every use,
 and six months (plus) after that, it will be a fatal error.
