@@ -5261,7 +5261,10 @@ This badly-named parameter corresponds to the equally-badly-named
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute.
 
 This parameter is B<deprecated>. Please use the
-L<edge_of_earths_shadow|/edge_of_earths_shadow> parameter instead.
+L<edge_of_earths_shadow|/edge_of_earths_shadow> parameter instead. The
+mutator sets C<edge_of_earths_shadow> to C<1> for a true value or C<0>
+for a false value. The accessor returns C<0> if C<edge_of_earths_shadow>
+is zero, or C<1> otherwise.
 
 The default is 1 (i.e. true).
 

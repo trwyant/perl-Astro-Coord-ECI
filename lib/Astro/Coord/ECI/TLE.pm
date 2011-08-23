@@ -7886,8 +7886,9 @@ source of illumination; if false, it is based on the center.
 
 This attribute is B<deprecated>, in favor of the superclass'
 C<edge_of_earths_shadow> attribute, which it is implemented in terms of.
-The accessor returns true for B<any> non-zero value of
-C<edge_of_earths_shadow>.
+The mutator sets C<edge_of_earths_shadow> to C<1> for a true value or
+C<0> for a false value.  The accessor returns true for B<any> non-zero
+value of C<edge_of_earths_shadow>.
 
 The default is 1 (i.e. true).
 
