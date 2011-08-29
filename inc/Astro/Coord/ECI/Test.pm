@@ -7,7 +7,7 @@ use warnings;
 
 use Carp;
 
-our $VERSION = '0.042_02';
+our $VERSION = '0.043';
 
 use base qw{ Exporter };
 

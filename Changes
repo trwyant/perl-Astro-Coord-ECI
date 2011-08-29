@@ -1,3 +1,15 @@
+0.043		29-Aug-2011	T. R. Wyant
+  The earthquake (Mineral Virginia USA) fire (Great Dismal Swamp) and
+    flood (hurricane Irene) edition.
+  Updated the canned Iridium status in Astro::Coord::ECI::TLE for
+    McCants' and Sladen's reporting of Iridium 26 (OID 24903) as out of
+    service. They also updated Iridium 23 (OID 24906) to show it in
+    service rather than failed, but I have continued to follow Kelso in
+    calling it a spare.
+  Other than this, only documentation changes, mostly relating to the
+    deprecation of the 'limb' attribute and its relation to the new
+    'edge_of_earths_shadow' attribute.
+
 0.042_02	18-Aug-2011	T. R. Wyant
   In the satpass script, use the new 'edge_of_earths_shadow' setting in
     the 'flare' and 'position' commands, though the flare calculation
