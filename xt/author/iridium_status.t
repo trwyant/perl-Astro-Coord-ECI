@@ -30,7 +30,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 0, 0, 29, 7, 111);
+my $asof = timegm (0, 0, 0, 1, 8, 111);
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -166,7 +166,7 @@ EOD
 24871IRIDIUM 920 [-]
 24872IRIDIUM 18 [+]
 24873IRIDIUM 921 [-]
-24903IRIDIUM 26 [+]
+24903IRIDIUM 26 [-]
 24904IRIDIUM 25 [+]
 24905IRIDIUM 46 [+]
 24906IRIDIUM 23 [S]
