@@ -3,7 +3,7 @@ package main;
 use strict;
 use warnings;
 
-use Test::More 0.40;
+use Test::More 0.88;	# Because of done_testing()
 
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;

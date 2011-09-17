@@ -7,11 +7,11 @@ BEGIN {
 
     eval {
 	require Test::More;
-	Test::More->VERSION( 0.40 );
+	Test::More->VERSION( 0.88 );	# Because of done_testing()
 	Test::More->import();
 	1;
     } or do {
-	print "1..0 # Test::More 0.40 or higher required.\n";
+	print "1..0 # Test::More 0.88 or higher required.\n";
 	exit;
     };
 

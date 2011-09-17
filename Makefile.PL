@@ -113,7 +113,7 @@ $mmv >= 6.4501 and $attr{META_ADD} = {
 
 $mmv >= 6.4501 and $attr{META_MERGE} = {
     build_requires => {
-	'Test::More' => 0.40,
+	'Test::More' => 0.88,	# Because of done_testing()
     },
     dynamic_config => 1,
     resources => {

@@ -26,7 +26,7 @@ my %attr = (
 	perl => $meta->requires_perl(),
     ),
     build_requires => {
-	'Test::More' => 0.40,
+	'Test::More' => 0.88,	# Because of done_testing()
     },
     get_options => {y => {}, n => {}},
     dynamic_config => 1,

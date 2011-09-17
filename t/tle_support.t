@@ -5,7 +5,7 @@ use warnings;
 
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Iridium;
-use Test::More 0.40;
+use Test::More 0.88;	# Because of done_testing().
 
 note <<'EOD';
 

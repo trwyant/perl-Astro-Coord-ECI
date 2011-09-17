@@ -6,12 +6,12 @@ use warnings;
 BEGIN {
     eval {
 	require Test::More;
-	Test::More->VERSION( 0.40 );
+	Test::More->VERSION( 0.88 );	# Because of done_testing()
 	Test::More->import();
 	1;
     } or do {
 	print <<eod;
-1..0 # skip Test::More 0.40 or higher required.
+1..0 # skip Test::More 0.88 or higher required.
 eod
 	exit;
     };

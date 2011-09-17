@@ -10,14 +10,14 @@ BEGIN {
     eval {
 	$test_more = __LINE__ + 1;
 	require Test::More;
-	Test::More->VERSION( 0.52 );
+	Test::More->VERSION( 0.88 );
 	Test::More->import();
 	1;
     } or do {
 	( my $err = $@ ) =~ s/ (?<= \n ) (?= . ) /#   /smx;
 	print "1..1\n";
-	print "not ok 1 - require Test::More 0.52;\n",
-	"#   Failed test 'require Test::More 0.52;'\n",
+	print "not ok 1 - require Test::More 0.88;\n",
+	"#   Failed test 'require Test::More 0.88;'\n",
 	"#   at ", __FILE__, ' line ', $test_more, "\n",
 	"#   Error: $err";
 	exit;
