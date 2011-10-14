@@ -17,6 +17,12 @@ sub new {
     return $self;
 }
 
+sub build_requires {
+    return +{
+	'Test::More'	=> 0.88,	# Because of done_testing().
+    };
+}
+
 sub distribution {
     my ( $self ) = @_;
     return $self->{distribution};
@@ -77,6 +83,16 @@ This class supports the following public methods:
  my $meta = PPIx::Meta->new();
 
 This method instantiates the class.
+
+=head2 build_requires
+
+ use YAML;
+ print Dump( $meta->build_requires() );
+
+This method computes and returns a reference to a hash describing the
+modules required to build the C<Astro::Coord::ECI> package, suitable for
+use in a F<Build.PL> C<build_requires> key, or a F<Makefile.PL>
+C<< {META_MERGE}->{build_requires} >> key.
 
 =head2 distribution
 

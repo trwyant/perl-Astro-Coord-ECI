@@ -1,3 +1,8 @@
+next release, whenever
+  Require Test::More 0.88 for testing. The requirement was actually
+    introduced in version 0.042. Thanks to Christopher Kybe for
+    picking up this discrepancy.
+
 0.043		29-Aug-2011	T. R. Wyant
   The earthquake (Mineral Virginia USA) fire (Great Dismal Swamp) and
     flood (hurricane Irene) edition.
