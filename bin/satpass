@@ -2209,19 +2209,10 @@ $cmdlgl{status} = [qw{name reload}];
 @status_code_map = qw{+ S -};
 }
 
-my $status_iridium_deprecated;
-
 sub status {
 @_ or @_ = qw{show};
 
 my $verb = lc (shift (@_) || 'show');
-
-if ( $verb eq 'iridium' ) {
-#   warnings::enabled( 'deprecated' ) and
-    not $status_iridium_deprecated++
-	and warn "The 'iridium' subcommand is deprecated\n";
-    $verb = 'show';
-}
 
 if ($verb eq 'add' || $verb eq 'drop') {
     Astro::Coord::ECI::TLE->status ($verb, @_);
@@ -2235,7 +2226,7 @@ if ($verb eq 'add' || $verb eq 'drop') {
 	$tle->rebless ();
 	}
     }
-  elsif ($verb eq 'show') {
+  elsif ($verb eq 'show' || $verb eq 'iridium') {
     my @data = Astro::Coord::ECI::TLE->status ('show');
     @data = sort {$a->[3] cmp $b->[3]} @data if $cmdopt{name};
     @_ and @data = _select_matching_data (
@@ -2244,6 +2235,12 @@ if ($verb eq 'add' || $verb eq 'drop') {
 	print <<eod;
 status add $tle->[0] $tle->[1] $status_code_map[$tle->[2]] '$tle->[3]' '$tle->[4]'
 eod
+	}
+
+    if ( $verb eq 'iridium' ) {
+    #   warnings::enabled( 'deprecated' ) and
+	warn "The 'iridium' subcommand is deprecated; use 'show' instead\n";
+	$verb = 'show';
 	}
     }
   else {
