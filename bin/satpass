@@ -3688,11 +3688,10 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-The C<status iridium> command now issues a deprecation warning the first
-time it is issued. In the first release after October 1 2011 this will
-become a warning every time it is issued, and six months (plus) after
-that it will become a fatal error. This command has been deprecated in
-the documentation for quite a while.
+The C<status iridium> command now issues a deprecation warning every
+time it is issued. In the first release after May 1 2012 this will
+become a fatal error. This command has been deprecated in the
+documentation for quite a while.
 
 The C<lit> parameter (and the corresponding
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute) are
@@ -3709,9 +3708,9 @@ eventually will be removed (or moved to the F<eg/> directory). At this
 point the C<Astro-satpass> distribution will be replaced by the
 C<Astro-Coord-ECI> distribution.
 
-Most of the functionality of the Astro-App-Satpass2 distribution will be
-in the Astro::App::Satpass2 class. A minimal F<satpass2> script will be
-provided to manufacture an Astro::App::Satpass2 object and invoke its
+Most of the functionality of the F<Astro-App-Satpass2> distribution will
+be in the Astro::App::Satpass2 class. A minimal F<satpass2> script will
+be provided to manufacture an Astro::App::Satpass2 object and invoke its
 run method. I will try to keep the core functionality the same, and to
 document in Astro::App::Satpass2 any incompatibilities introduced.
 
@@ -4816,10 +4815,10 @@ given without a subcommand, it lists the known statuses.
 Beginning with version 0.007, this list is formatted as C<status add>
 commands, and the syntax C<status iridium> is deprecated.
 
-B<Beginning with version 0.035_02, C<status iridium> will generate a
-warning on the first use.> Beginning six months after the release of
-0.036, it will generate a warning on every use, and six months after
-that it will become fatal.
+Beginning with version 0.035_02, C<status iridium> generates a warning
+on the first use. Beginning with version 0.044 it will generate a
+warning on every use, and six months after that release it will become
+fatal.
 
 See the L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> documentation
 for information on how this list is populated initially.  If you have
