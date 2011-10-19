@@ -1,7 +1,9 @@
-next release, whenever
+0.044		19-Oct-2011	T. R. Wyant
   Require Test::More 0.88 for testing. The requirement was actually
     introduced in version 0.042. Thanks to Christopher Kybe for
     picking up this discrepancy.
+  The satpass script's 'status iridium' command now generates a
+    deprecation notice every time it is issued.
 
 0.043		29-Aug-2011	T. R. Wyant
   The earthquake (Mineral Virginia USA) fire (Great Dismal Swamp) and
