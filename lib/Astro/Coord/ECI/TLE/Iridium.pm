@@ -627,6 +627,8 @@ eod
 
 
 #	See if the satellite is illuminated at this time.
+#	TODO This code may need some slop; specifically we might want to
+#	assume the Sun is higher than it actually is by $max_angle.
 
 	    ($self->universal ($time)->azel ($illum->universal ($time)))[1] >=
 		$self->dip () or next;
@@ -796,6 +798,10 @@ MMA_LOOP:
 #	is not quite lit. This happened with Iridium 32 (OID 24945) on
 #	Feb 03 2007 at 07:45:19 PM. So we check for illumination one
 #	last time.
+#	TODO: this calculation should be performed not on the position
+#	of the Sun, but on the actual point on the Sun which is
+#	reflected to the observer. It looks now like it needs to be done
+#	in _flare_calculate_angle_list().
 
 	    ($self->universal ($time)->azel ($illum->universal ($time)))[1] >=
 		$self->dip () or next;
@@ -921,8 +927,9 @@ sub _flare_transform_coords_list {
 #	_flare_transform_coords_list ().
 
 #	A reflection can only occur if both the Sun and the observer
-#	are in front of the antenna (i.e. have positive Z coordinates).
-#	If there is no reflection, undef is returned.
+#	are in front of the antenna (i.e. have positive Z coordinates
+#	after transforming everything so that the plane of the MMA is
+#	the X-Y axis). If there is no reflection, undef is returned.
 
 sub _flare_calculate_angle_list {
     my ($tle, $mma, $illum, $station) = @_;
