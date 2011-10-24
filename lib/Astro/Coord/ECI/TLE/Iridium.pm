@@ -641,9 +641,9 @@ eod
 #	the X axis. The method returns Math::VectorReal objects
 #	corresponding to all inputs, including '$self'.
 
-	    my ($tle_vector, $illum_vector, $station_vector) =
+	    my ( $illum_vector, $station_vector ) =
 		$self->_flare_transform_coords_list (
-		$illum, $station->universal ($time));
+		$illum, $station->universal( $time ) );
 
 
 #	Now we do a second iteration over the Main Mission Antennae,
@@ -660,8 +660,8 @@ eod
 		my $illum_vector = [@$illum_vector];
 		my $station_vector = [@$station_vector];
 		next unless defined (
-		    my $angle = _flare_calculate_angle_list ($tle_vector,
-		    $mma, $illum_vector, $station_vector));
+		    my $angle = _flare_calculate_angle_list(
+		    $mma, $illum_vector, $station_vector ) );
 
 
 #	Save the angle, time, and cloned station for subsequent
@@ -756,18 +756,18 @@ MMA_LOOP:
 #	motion (and hence one of the Main Mission Antennae) is along
 #	the X axis.
 
-		my ($tle_vector, $illum_vector, $station_vector) =
-		    $self->universal ($time)->
-			_flare_transform_coords_list (
-			$illum->universal ($time),
-			$station->universal ($time));
+		my ( $illum_vector, $station_vector ) =
+		    $self->universal( $time )->
+			_flare_transform_coords_list(
+			$illum->universal( $time ),
+			$station->universal( $time ) );
 
 
 #	Calculate the angle between the satellite and the reflection
 #	of the Sun, as seen by the observer.
 
-		my $angle = _flare_calculate_angle_list ($tle_vector,
-		    $mma, $illum_vector, $station_vector);
+		my $angle = _flare_calculate_angle_list(
+		    $mma, $illum_vector, $station_vector );
 		defined $angle or next MMA_LOOP;
 
 
@@ -852,12 +852,12 @@ sub _flare_entrance {
 	$start, $end,
 	sub {
 	    $self->universal ($_[0]);
-	    my ($tle_vector, $illum_vector, $station_vector) =
-		$self->_flare_transform_coords_list (
-		$illum->universal ($_[0]),
-		$station->universal ($_[0]));
-	    if (defined (my $angle = _flare_calculate_angle_list ($tle_vector,
-		$mma, $illum_vector, $station_vector))) {
+	    my ( $illum_vector, $station_vector ) =
+		$self->_flare_transform_coords_list(
+		$illum->universal( $_[0] ),
+		$station->universal( $_[0] ) );
+	    if ( defined ( my $angle = _flare_calculate_angle_list(
+		$mma, $illum_vector, $station_vector ) ) ) {
 		$output = [$angle, $_[0], $illum_vector, $station_vector];
 		1;
 	    } else {
@@ -866,12 +866,12 @@ sub _flare_entrance {
 	});
     $output ||= do {	# Can happen if end is entrance.
 	    $self->universal ($end);
-	    my ($tle_vector, $illum_vector, $station_vector) =
-		$self->_flare_transform_coords_list (
-		$illum->universal ($end),
-		$station->universal ($end));
-	    my $angle = _flare_calculate_angle_list ($tle_vector,
-		$mma, $illum_vector, $station_vector);
+	    my ( $illum_vector, $station_vector ) =
+		$self->_flare_transform_coords_list(
+		$illum->universal( $end ),
+		$station->universal( $end) );
+	    my $angle = _flare_calculate_angle_list(
+		$mma, $illum_vector, $station_vector );
 	    defined $angle ?
 		[$angle, $end, $illum_vector, $station_vector] :
 		undef;
@@ -885,7 +885,7 @@ eod
     return $output;
 }
 
-#	@vectors = $tle->_flare_transform_coords_list ($eci ....)
+#	@vectors = $tle->_flare_transform_coords_list( $eci ....)
 #
 #	This private method transforms the coordinates of the $tle
 #	object and all $eci objects passed in, so that the $tle
@@ -896,35 +896,59 @@ eod
 #	nominally "up and down", with the center of the Earth in the
 #	- Z direction. The objects are not modified, instead
 #	list references (containing the position vectors)
-#	corresponding to all arguments (including $tle) are returned.
+#	corresponding to all arguments (except the invocant) are
+#	returned.
 
 sub _flare_transform_coords_list {
-    my @args = @_;
-    my @ref = $args[0]->eci ();
-    my $X = vector_unitize ([@ref[3 .. 5]]);
-    my $Y = vector_cross_product (vector_unitize ([@ref[0 .. 2]]), $X);
-    my $Z = vector_cross_product ($X, $Y);
+    my ( $self, @args ) = @_;
+    my @ref = $self->eci();
+    my $X = vector_unitize( [@ref[3 .. 5]] );
+    my $Y = vector_cross_product( vector_unitize( [ @ref[0 .. 2]] ), $X );
+    my $Z = vector_cross_product( $X, $Y );
     my @coord = ($X, $Y, $Z);
     my @rslt;
     foreach my $loc (@args) {
-	my @eci = $loc->eci ();
-	my $pos = [$eci[0] - $ref[0], $eci[1] - $ref[1], $eci[2] - $ref[2]];
-	foreach my $inx (0 .. 2) {
-	    $eci[$inx] = vector_dot_product ($pos, $coord[$inx])
-	}
-	push @rslt, [@eci[0 .. 2]];
+	my @eci = $loc->eci();
+	my @pos = map { $eci[$_] - $ref[$_] } 0 .. 2;
+	push @rslt, [
+	    map { vector_dot_product( \@pos, $coord[$_] ) } 0 .. 2
+	];
+    }
+    return @rslt;
+}
+
+#	@original = $tle->_flare_transform_coords_inverse_list( @vectors )
+#
+#	This private method is the inverse (almost) of
+#	_flare_transform_coords_list(). The weasel word is because it
+#	returns array references representing the ECI position vectors,
+#	rather than Astro::Coord::ECI objects.
+
+sub _flare_transform_coords_inverse_list {
+    my ( $self, @args ) = @_;
+    my @ref = $self->eci();
+    my $X = vector_unitize( [@ref[3 .. 5]] );
+    my $Y = vector_cross_product( vector_unitize( [ @ref[0 .. 2]] ), $X );
+    my $Z = vector_cross_product( $X, $Y );
+    my @coord = _invert_matrix_list($X, $Y, $Z);
+    my @rslt;
+    foreach my $loc (@args) {
+	push @rslt, [
+	    map { vector_dot_product( $loc, $coord[$_] ) + $ref[$_] } 0 .. 2
+	];
     }
     return @rslt;
 }
 
 
-#	$angle = _flare_calculate_angle_list ($tle, $mma, $illum, $station)
+#	$angle = _flare_calculate_angle_list($mma, $illum, $station)
 
 #	This private subroutine calculates the angle between the
 #	satellite and the reflection of the Sun in the given Main
-#	Mission Antenna as seen from the observing station. All objects
-#	are assumed to be list references generated by
-#	_flare_transform_coords_list ().
+#	Mission Antenna as seen from the observing station. $illum and
+#	$station are list reverences generated by
+#	_flare_transform_coords_list(). The satellite position is not
+#	needed because in this coordinate system it is [0, 0, 0]
 
 #	A reflection can only occur if both the Sun and the observer
 #	are in front of the antenna (i.e. have positive Z coordinates
@@ -932,7 +956,7 @@ sub _flare_transform_coords_list {
 #	the X-Y axis). If there is no reflection, undef is returned.
 
 sub _flare_calculate_angle_list {
-    my ($tle, $mma, $illum, $station) = @_;
+    my ( $mma, $illum, $station ) = @_;
 
 #	Rotate the objects so that the Main Mission Antenna of interest
 #	lies in the X-Y plane, facing in the +Z direction.
@@ -953,7 +977,7 @@ sub _flare_calculate_angle_list {
 #	Now calculate the angle between the illumination source and the
 #	observer as seen by the observer.
 
-    return _list_angle ($station, $illum, $tle);
+    return _list_angle( $station, $illum, [ 0, 0, 0 ] );
 }
 
 
@@ -1171,52 +1195,35 @@ my $sun_angle = $station->angle ($sun, $self);
 
 my ($virtual_image, $image_vector) = do {
 
-#	    Recover the position of the virtual image of the
-#	    illuminator. We calculated this before, but never saved it.
+    # Recover the position of the virtual image of the illuminator. We
+    # calculated this before, but never saved it.
 
-    my @eci;
-    foreach my $inx (0 .. 2) {
-	$eci[$inx] = vector_dot_product ($illum_vector, $transform_vector[$mma][$inx]);
-	}
-    $eci[2] = - $eci[2];
-    my $image_vector = [@eci];
-
-
-#	    Undo the rotations that placed the MMA of interest in the
-#	    X-Y plane.
-
-    foreach my $inx (0 .. 2) {
-	$eci[$inx] = vector_dot_product ($image_vector,
-		$inverse_transform_vector[$mma][$inx]);
-	}
-    $image_vector = [@eci];
+    my $image_vector = [
+	map { vector_dot_product( $illum_vector,
+	    $transform_vector[$mma][$_] ) } 0 .. 2
+    ];
+    $image_vector->[2] = - $image_vector->[2];
 
 
-#	    Recover the rotation that placed the satellite vertical,
-#	    facing in the X direction.
+    # Undo the rotations that placed the MMA of interest in the X-Y
+    # plane.
 
-    my @ref = $self->eci ();
-    my $X = vector_unitize ([@ref[3 .. 5]]);
-    my $Y = vector_cross_product (vector_unitize ([@ref[0 .. 2]]), $X);
-    my $Z = vector_cross_product ($X, $Y);
+    $image_vector = [
+	map { vector_dot_product( $image_vector,
+	    $inverse_transform_vector[$mma][$_] ) } 0 .. 2
+    ];
 
-#	    Invert this to get the reverse rotation.
 
-    my @coord = _invert_matrix_list ($X, $Y, $Z);
+    # Transform from satellite-local coordinates to ECI coordinates.
 
-#	    Recover the ECI coordinates of the virtual image of the
-#	    illuminator.
+    ( $image_vector ) = $self->_flare_transform_coords_inverse_list(
+	$image_vector );
 
-    foreach my $inx (0 .. 2) {
-	$eci[$inx] = vector_dot_product ($image_vector, $coord[$inx]) + $ref[$inx];
-	}
+    # Manufacture an object representing the virtual image, and a vector
+    # represnting same for use in calculating the flare sub-point.
 
-#	    Manufacture an object representing the virtual image, and
-#	    a vector represnting same for use in calculating the flare
-#	    sub-point.
-
-    (Astro::Coord::ECI->universal ($time)->eci (@eci),
-	\@eci);
+    ( Astro::Coord::ECI->universal( $time )->eci( @{ $image_vector } ),
+	$image_vector );
     };
 
 
@@ -1440,8 +1447,8 @@ sub _reflection_fixed {
 #	motion (and hence one of the Main Mission Antennae) is along
 #	the X axis.
 
-    my ($tle_vector, $illum_vector, $station_vector) =
-	$self->_flare_transform_coords_list ($illum, $station);
+    my ( $illum_vector, $station_vector ) =
+	$self->_flare_transform_coords_list( $illum, $station );
 
     my @rslt;
 
@@ -1452,8 +1459,8 @@ sub _reflection_fixed {
 #	as seen by the observer. We skip to the next antenna if no
 #	reflection is generated.
 
-	my $angle = _flare_calculate_angle_list (
-		$tle_vector, $mma, $illum_vector, $station_vector);
+	my $angle = _flare_calculate_angle_list(
+		$mma, $illum_vector, $station_vector );
 	warn <<eod if $debug;	## no critic (RequireCarping)
         MMA $mma Angle: @{[defined $angle ? rad2deg ($angle) . ' degrees' :
 		'undefined']}
