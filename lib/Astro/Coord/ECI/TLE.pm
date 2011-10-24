@@ -659,6 +659,10 @@ right at the limb to be twice that calculated by Thorfinn's algorithm
 (used in the superclass) because the light travels to the Earth's
 surface and back out again.
 
+See the L<Astro::Coord::ECI|Astro::Coord::ECI> C<azel()> and
+C<azel_offset()> documentation for whether this class'
+C<correct_for_refraction()> method is actually called by those methods.
+
 =cut
 
 sub correct_for_refraction {

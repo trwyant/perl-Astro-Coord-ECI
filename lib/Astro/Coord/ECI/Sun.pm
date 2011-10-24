@@ -226,6 +226,10 @@ photosphere or anywhere else in the environs of the Sun, and explaining
 why I make no correction at all seemed easier than explaining why I make
 an incorrect correction.
 
+See the L<Astro::Coord::ECI|Astro::Coord::ECI> C<azel()> and
+C<azel_offset()> documentation for whether this class'
+C<correct_for_refraction()> method is actually called by those methods.
+
 =cut
 
 sub correct_for_refraction {

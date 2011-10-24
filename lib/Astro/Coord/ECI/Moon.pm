@@ -228,11 +228,15 @@ sub almanac_hash {
     }, almanac(@_);
 }
 
-=item $elevation = $tle->correct_for_refraction( $elevation )
+=item $elevation = $moon->correct_for_refraction( $elevation )
 
 This override of the superclass' method simply returns the elevation
 passed to it. Since the Moon has no atmosphere to speak of, there should
 be no diffraction to speak of either.
+
+See the L<Astro::Coord::ECI|Astro::Coord::ECI> C<azel()> and
+C<azel_offset()> documentation for whether this class'
+C<correct_for_refraction()> method is actually called by those methods.
 
 =cut
 

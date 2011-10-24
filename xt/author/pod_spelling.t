@@ -134,6 +134,7 @@ illuminator
 IMACAT
 Imacat
 ini
+invocant's
 internet
 isa
 jan

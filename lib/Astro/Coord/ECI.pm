@@ -8,15 +8,23 @@ Astro::Coord::ECI - Manipulate geocentric coordinates
  use Astro::Coord::ECI::Sun;
  use Astro::Coord::ECI::TLE;
  use Astro::Coord::ECI::Utils qw{rad2deg};
+ 
  # 1600 Pennsylvania Avenue, in radians, radians, and KM
  my ($lat, $lon, $elev) = (0.678911227503559,
      -1.34456123391096, 0.01668);
+ 
  # Record the time
  my $time = time ();
+ 
  # Set up observer's location
  my $loc = Astro::Coord::ECI->geodetic ($lat, $lon, $elev);
+ 
+ # Uncomment to turn off atmospheric refraction if desired.
+ # $loc->set( refraction => 0 );
+ 
  # Instantiate the Sun.
  my $sun = Astro::Coord::ECI::Sun->universal ($time);
+ 
  # Figure out if the Sun is up at the observer's location.
  my ($azimuth, $elevation, $range) = $loc->azel ($sun);
  print "The Sun is ", rad2deg ($elevation),
@@ -228,6 +236,13 @@ release.
 As a side effect, the time of the $coord object may be set from the
 $coord2 object.
 
+Atmospheric refraction is taken into account using the
+C<correct_for_refraction()> method if the C<$coord> object's
+C<refraction> attribute is true. The invocant's
+C<correct_for_refraction()> method is the one used; that is, if
+C<$coord> and C<$coord2> have different C<correct_for_refraction()>
+methods, the C<$coord> object's method is used.
+
 This method is implemented in terms of azel_offset(). See that method's
 documentation for further details.
 
@@ -272,6 +287,11 @@ This better represents the observed position in the sky when the object
 is above the horizon, but produces a gap in the data when the object
 passes below the horizon, since I have no refraction equations for rock.
 See the C<correct_for_refraction()> documentation for details.
+
+The invocant's C<correct_for_refraction()> method is the one used; that
+is, if C<$coord> and C<$coord2> have different
+C<correct_for_refraction()> methods, the C<$coord> object's method is
+used.
 
 If you want to ignore atmospheric refraction (and not have a gap in your
 data), set the L<refraction|/refraction> attribute of the $coord object
