@@ -1126,8 +1126,11 @@ use warnings qw{once};
 #	routine.
 
 sub _geocode_height {
-$cmdopt{height} ? !$parm{autoheight} : $parm{autoheight} and
+    if ( $cmdopt{height} ? !$parm{autoheight} : $parm{autoheight} ) {
+	$cmdopt{geocoding} = 1;
 	height (_get_suffix ('geocode_', 2));
+    }
+    return;
 }
 
 
@@ -1231,14 +1234,21 @@ sub height_us {
 	source => $cmdopt{source_layer},
 	trace => $cmdopt{debug},
 	units => 'METERS',
+	croak => 0,	# Handle own errors
     );
     my $tries = ($cmdopt{retry_on_zero} || 0) + 1;
     my $rslt;
     while (--$tries >= 0) {
-	($rslt) = $eq->elevation($lat, $lon);
-	$eq->is_valid($rslt) or do {
+	eval {
+	    ($rslt) = $eq->elevation($lat, $lon);
+	    1;
+	} and $eq->is_valid($rslt)
+	    or do {
 	    $tries > 0 and next;
-	    die "No valid result found.\n";
+	    my $msg = $eq->error() || 'No valid result found.';
+	    $cmdopt{geocoding} or die "$msg\n";
+	    print "# Could not determine height. Setting to zero.\n";
+	    $rslt = { Elevation => 0 };
 	};
 	$rslt->{Elevation} != 0 and last;
     }
