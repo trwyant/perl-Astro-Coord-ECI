@@ -75,6 +75,17 @@ EOD
     return $recommendation;
 }
 
+sub _recommend_geo_coder_geocoder_us {
+    local $@ = undef;
+    eval { require Geo::Coder::Geocoder::US; 1 } and return;
+    return <<'EOD';
+    * Geo::Coder::Geocoder::US is not installed.
+      This module is required for the 'satpass' script's 'geocode'
+      command, but is otherwise unused by this package. If you do not
+      intend to use this functionality, this package is not needed.
+EOD
+}
+
 sub _recommend_geo_webservice_elevation_usgs {
     local $@ = undef;
     eval { require Geo::WebService::Elevation::USGS; 1 } and return;
@@ -101,17 +112,6 @@ sub _recommend_io_string {
 EOD
 }
 
-sub _recommend_soap_lite {
-    local $@ = undef;
-    eval { require SOAP::Lite; 1 } and return;
-    return <<'EOD';
-    * SOAP::Lite is not installed.
-      This module is required for the 'satpass' script's 'geocode'
-      command, but is otherwise unused by this package. If you do not
-      intend to use this functionality, SOAP::Lite is not needed.
-EOD
-}
-
 {
 
     my %misbehaving_os = map { $_ => 1 } qw{ MSWin32 cygwin };
@@ -122,6 +122,7 @@ EOD
     # exporting logic in Astro::Coord::ECI::Utils.
 
     sub _recommend_time_y2038 {
+	eval $] >= 5.012 and return;
 	eval { require Time::y2038; 1 } and return;
 	my $recommendation = <<'EOD';
     * Time::y2038 is not installed.
@@ -133,12 +134,6 @@ EOD
       Unfortunately, Time::y2038 has been known to misbehave when
       running under $^O, so you may be better off just accepting the
       restricted time range.
-EOD
-	5.012 <= $] and return $recommendation .= <<'EOD';
-      Since you appear to have Perl 5.012 or above, you may well not
-      need Time::y2038, since at Perl 5.012 extended time functionality
-      was bundled into the core. It will be used, though, if it is
-      available.
 EOD
 	( $Config{use64bitint} || $Config{use64bitall} )
 	    and $recommendation .= <<'EOD';

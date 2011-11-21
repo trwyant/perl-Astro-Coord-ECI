@@ -1053,55 +1053,49 @@ eod
 #	The options are those documented with geocode().
 
 sub geocode_us {
-_load_module ('SOAP::Lite', 'geocode_us');
+    my ( $loc ) = @_;
+    my $set_loc = defined $loc;
+    defined $loc or $loc = $parm{location};
 
-my $set_loc = @_;
-my $loc = shift @_ || $parm{location};
+    _load_module( 'Geo::Coder::Geocoder::US',  'geocode_us' );
 
-#	Manufacture a SOAP::Lite object appropriate to the version of
-#	SOAP::Lite we have installed.
+    my $gc = Geo::Coder::Geocoder::US->new();
 
-$cmdopt{debug} and SOAP::Trace->import ('all');
-my $soap = _soapdish ('http://rpc.geocoder.us/Geo/Coder/US',
-	'http://geocoder.us/service/soap', '#');
+    if ( my @rslt = $gc->geocode( location => $loc ) ) {
 
-#	Query rpc.geocoder.us, and strain out various errors we might
-#	get back.
+	if ( @rslt == 1 ) {
+	    $set_loc and $parm{location} = _geocode_us_format_address(
+		$rslt[0] );
+	    @parm{ qw{latitude longitude } } = @{ $rslt[0] }{ qw{ lat long } };
+	    show( ( $set_loc ? 'location' : () ), qw{ latitude longitude } );
+	    _geocode_height();
+	} else {
+	    foreach my $info ( @rslt ) {
+		print join( "\t", $info->{lat}, $info->{long},
+		    _geocode_us_format_address( $info ) );
+	    }
+	}
 
-my $rslt = $soap->geocode ($loc)->result;
-$cmdopt{debug} and SOAP::Trace->import ('all');
-$rslt or die <<eod;
-Error - Failed to access geocoder.us.
-eod
+    } else {
 
-local $Data::Dumper::Terse = 1;
-$cmdopt{debug} and print "Result: ", Dumper ($rslt), "\n";
-
-@$rslt or die <<eod;
-Error - Failed to parse address
-        "$loc".
-eod
-$rslt->[0]{lat} or die <<eod;
-Error - Failed to find address
-        "$loc".
-eod
-
-#	Display our results.
-
-foreach my $hash (@$rslt) {
-    print "\n", $hash->format_multiline, "\n";
+	my $resp = $gc->response()
+	    or die "No HTTP response found\n";
+	$resp->is_success()
+	    and die "No match found for location\n";
+	die $resp->status_line();
     }
+}
 
-#	If we got exactly one result back, set our latitude and
-#	longitude, and query for height if desired.
+sub _geocode_us_format_address {
+    my ( $info ) = @_;
+    return join ', ',
+	_geocode_us_join( $info, qw{ number prefix street type suffix } ),
+	_geocode_us_join( $info, qw{ city state zip } );
+}
 
-if (@$rslt == 1) {
-    $set_loc and $parm{location} = $rslt->[0]->format_line;
-    @parm{qw{latitude longitude}} = @{$rslt->[0]}{qw{lat long}};
-    print "\n";
-    show (($set_loc ? 'location' : ()), qw{latitude longitude});
-    _geocode_height ();
-    }
+sub _geocode_us_join {
+    my ( $info, @keys ) = @_;
+    return join ' ', grep { defined $_ && '' ne $_ } map { $info->{$_} } @keys;
 }
 
 #	We have the following synonyms, based on the fact that ISO 3166
@@ -3268,35 +3262,6 @@ $rslt[4] and $rslt[4] /= 1000;
 wantarray ? @rslt : join ' ', @rslt;
 }
 
-
-#	$soap_object = _soapdish ($uri, $proxy, $action)
-
-#	Manufacture a SOAP::Lite object for the given uri and proxy.
-#	We need this because SOAP::Lite has changed significantly since
-#	the 2002 version that is to this day (2006) bundled with
-#	ActivePerl.
-
-#	The action argument is the separater for building the
-#	SOAPAction header. It defaults to '' (suitable for .NET's
-#	delicate digestion). If you want to restore SOAP::Lite's
-#	original behavior, specify '#'. Any other values are
-#	_NOT_ supported, and may result in a visit from unsympathetic
-#	men in snap-brim hats, dark glasses, and bad suits.
-
-sub _soapdish {
-my $conn = $_[2] || '';
-SOAP::Lite->can ('default_ns') ?
-    SOAP::Lite
-	->default_ns ($_[0])
-	->on_action (sub {join $conn, @_})
-	->proxy ($_[1], timeout => 30) :
-    SOAP::Lite
-	->envprefix ('soap')
-	->on_action (sub {join $conn, @_})
-	->uri ($_[0])
-	->proxy ($_[1], timeout => 30);
-}
-
 #	@list = _sort_observing_list ()
 
 #	This subroutine sorts the observing list into ascending order
@@ -3710,6 +3675,11 @@ warning will be issued the first time this attribute is accessed. Six
 months (plus) after this happens, a warning will be issued at every use,
 and six months (plus) after that, it will be a fatal error.
 
+The C<geocode> command now requires
+L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>.
+L<SOAP::Lite|SOAP::Lite> is no longer required either directly or
+indirectly.
+
 I plan, hopefully before the end of 2011, to issue the
 C<Astro-App-Satpass2> package, containing a successor to the F<satpass>
 script. Once I consider this production-quality (six months to a year
@@ -3760,14 +3730,14 @@ L<http://geocoder.us/>, given a street address or intersection name,
 and provided the user has an Internet connection and the relevant site
 is functional and has the data required. This function may not be used
 for commercial purposes because of restrictions Geocoder.us places on
-the use of their data. You will need to install B<SOAP::Lite> to get
-this functionality.
+the use of their data. You will need to install
+B<Geo::Coder::Geocoder::US> to get this functionality.
 
 * The ability to acquire the observer's height above sea level from
 L<http://gisdata.usgs.gov/>, given the latitude and longitude
 of the observer, and provided the user has an internet connection
 and the relevant site is functional and has the data required. You will
-need to install B<SOAP::Lite>, and maybe B<XML::Parser>, to get this
+need to install B<Geo::WebService::Elevation::USGS> to get this
 functionality.
 
 * The ability to look up star positions in the SIMBAD catalog. You will
@@ -4246,8 +4216,8 @@ If the location contains whitespace, it must be quoted. Example:
 Because of restrictions on the use of the Geocoder.us site, you may not
 use this command for commercial purposes.
 
-If you wish to use this command, you must install the B<SOAP::Lite>
-module.
+If you wish to use this command, you must install the
+B<Geo::Coder::Geocoder::US> module.
 
 B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
 Bureau's TIGER/LineE<reg> database. They add their opinion that it tends to
@@ -4370,8 +4340,8 @@ the height parameter is set to the result.
 The latitude and longitude default to the current
 L<latitude|/latitude> and L<longitude|/longitude> parameters.
 
-If you wish to use this command, you must install the B<SOAP::Lite>
-module.
+If you wish to use this command, you must install the
+B<Geo::Webservice::Elevation::USGS> module.
 
 B<Caveat:> It is the author's experience that this resource is not
 always available. You should probably geocode your usual location
@@ -5770,18 +5740,6 @@ of the default. This can still be overridden by the
  satpass> echo $SATPASSINI
 
 which reports the name of the file actually used to initialize.
-
-=head1 CHANGES
-
-The following changes have been introduced into this script since
-version 0.017:
-
-Fixed the USGS elevation query for the fact that they now generate
-correct XML (which SOAP::Lite now parses for us), and the fact that they
-have changed the SOAP URI and proxy to
-http://gisdata.usgs.gov/XMLWebServices2/.
-
-For prior changes, see F<Changes>.
 
 =head1 ACKNOWLEDGMENTS
 
