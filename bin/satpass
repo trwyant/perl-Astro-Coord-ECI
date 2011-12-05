@@ -3808,18 +3808,20 @@ warning will be issued the first time this attribute is accessed. Six
 months (plus) after this happens, a warning will be issued at every use,
 and six months (plus) after that, it will be a fatal error.
 
-The C<geocode> command now requires
-L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>.
-L<SOAP::Lite|SOAP::Lite> is no longer required either directly or
-indirectly.
+The C<geocode> command now prefers to use
+L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>. The use of
+L<SOAP::Lite|SOAP::Lite> is deprecated, and will result in a warning in
+the first release after June 1 2012.
 
-I plan, hopefully before the end of 2011, to issue the
-C<Astro-App-Satpass2> package, containing a successor to the F<satpass>
-script. Once I consider this production-quality (six months to a year
-after issue) the F<satpass> script will become deprecated, and
-eventually will be removed (or moved to the F<eg/> directory). At this
-point the C<Astro-satpass> distribution will be replaced by the
-C<Astro-Coord-ECI> distribution.
+At long last, the C<Astro-App-Satpass2> package, which is the planned
+successor to this script, has been released. It is currently a developer
+release.
+
+Once I consider this production-quality (six months to a year after I go
+to a production version number) the F<satpass> script will become
+deprecated, and eventually will be removed (or moved to the F<eg/>
+directory). When this happens, the C<Astro-satpass> distribution will be
+replaced by the C<Astro-Coord-ECI> distribution.
 
 Most of the functionality of the F<Astro-App-Satpass2> distribution will
 be in the Astro::App::Satpass2 class. A minimal F<satpass2> script will
@@ -3839,10 +3841,10 @@ functionality in its own object achieves this; indeed the work flushed
 out a couple subtle bugs in the F<satpass> script, whose fixes have been
 back-ported into this script.
 
-A second incentive was that the natural dependencies for the application
+A second incentive is that the natural dependencies for the application
 are quite different than those of the Astro::Coord::ECI classes. It
-seemed desirable not to force those who only wanted the latter to
-download and install all the stuff required by the former.
+seems desirable not to force those who only want the latter to download
+and install all the stuff required by the former.
 
 =head1 DETAILS
 
