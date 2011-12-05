@@ -1,3 +1,14 @@
+0.045		05-Dec-2011	T. R. Wyant
+  Have the satpass script's geocode command favor
+    Geo::Coder::Geocoder::US. Deprecate the use of SOAP::Lite.
+  Have the satpass script set the height to 0 if the position was set by
+    the geocode command, but height() failed.
+  Update the copy of the GNU GPL in LICENSES/Copying to have the current
+    FSF address.
+  Document the release of Astro-App-Satpass2, and the eventual
+    deprecation of the satpass script.
+  Try to clarify how the atmospheric refraction calculation works.
+
 0.044		19-Oct-2011	T. R. Wyant
   Require Test::More 0.88 for testing. The requirement was actually
     introduced in version 0.042. Thanks to Christopher Kybe for
