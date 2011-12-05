@@ -78,12 +78,18 @@ EOD
 sub _recommend_geo_coder_geocoder_us {
     local $@ = undef;
     eval { require Geo::Coder::Geocoder::US; 1 } and return;
-    return <<'EOD';
+    my $recommendation = <<'EOD';
     * Geo::Coder::Geocoder::US is not installed.
       This module is required for the 'satpass' script's 'geocode'
       command, but is otherwise unused by this package. If you do not
       intend to use this functionality, this package is not needed.
 EOD
+    eval { require SOAP::Lite; 1 }
+	and $recommendation .= <<'EOD';
+      The SOAP::Lite interface to the geocoding service is deprecated,
+      and will eventually be removed.
+EOD
+    return $recommendation;
 }
 
 sub _recommend_geo_webservice_elevation_usgs {

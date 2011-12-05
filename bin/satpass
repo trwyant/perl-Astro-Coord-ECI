@@ -1052,12 +1052,31 @@ eod
 
 #	The options are those documented with geocode().
 
-sub geocode_us {
+{
+    my %interface;
+
+    BEGIN {
+	%interface = (
+	    'Geo::Coder::Geocoder::US' => \&_geocode_us__geo_coder,
+	    'SOAP::Lite'	=> \&_geocode_us__soap_lite,
+	);
+    }
+
+    sub geocode_us {
+
+	my $class = _load_module(
+	    [ 'Geo::Coder::Geocoder::US', 'SOAP::Lite' ],  'geocode_us' );
+	my $code = $interface{$class}
+	    or die "Programming error - Unexpected geocoding class $class";
+	goto &$code;
+
+    }
+}
+
+sub _geocode_us__geo_coder {
     my ( $loc ) = @_;
     my $set_loc = defined $loc;
     defined $loc or $loc = $parm{location};
-
-    _load_module( 'Geo::Coder::Geocoder::US',  'geocode_us' );
 
     my $gc = Geo::Coder::Geocoder::US->new();
 
@@ -1098,6 +1117,62 @@ sub _geocode_us_join {
     return join ' ', grep { defined $_ && '' ne $_ } map { $info->{$_} } @keys;
 }
 
+my $soap_lite_deprecated;
+
+sub _geocode_us__soap_lite {
+    my ( $loc ) = @_;
+    my $set_loc = defined $loc;
+    defined $loc or $loc = $parm{location};
+
+#    $soap_lite_deprecated++
+#	or warn 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
+
+    #	Manufacture a SOAP::Lite object appropriate to the version of
+    #	SOAP::Lite we have installed.
+
+    $cmdopt{debug} and SOAP::Trace->import ('all');
+    my $soap = _soapdish ('http://rpc.geocoder.us/Geo/Coder/US',
+	    'http://geocoder.us/service/soap', '#');
+
+    #	Query rpc.geocoder.us, and strain out various errors we might
+    #	get back.
+
+    my $rslt = $soap->geocode ($loc)->result;
+    $cmdopt{debug} and SOAP::Trace->import ('all');
+    $rslt or die <<'EOD';
+Error - Failed to access geocoder.us.
+EOD
+
+    local $Data::Dumper::Terse = 1;
+    $cmdopt{debug} and print "Result: ", Dumper ($rslt), "\n";
+
+    @$rslt or die <<"EOD";
+Error - Failed to parse address
+        "$loc".
+EOD
+    $rslt->[0]{lat} or die <<"EOD";
+Error - Failed to find address
+        "$loc".
+EOD
+
+    #	Display our results.
+
+    foreach my $hash (@{ $rslt }) {
+	print "\n", $hash->format_multiline, "\n";
+    }
+
+    #	If we got exactly one result back, set our latitude and
+    #	longitude, and query for height if desired.
+
+    if (@$rslt == 1) {
+	$set_loc and $parm{location} = $rslt->[0]->format_line;
+	@parm{qw{latitude longitude}} = @{$rslt->[0]}{qw{lat long}};
+	print "\n";
+	show (($set_loc ? 'location' : ()), qw{latitude longitude});
+	_geocode_height ();
+    }
+}
+
 #	We have the following synonyms, based on the fact that ISO 3166
 #	defines as separate countries territories of the U.S. that may
 #	be covered by the census database.
@@ -1122,7 +1197,7 @@ use warnings qw{once};
 sub _geocode_height {
     if ( $cmdopt{height} ? !$parm{autoheight} : $parm{autoheight} ) {
 	$cmdopt{geocoding} = 1;
-	height (_get_suffix ('geocode_', 2));
+	height( _get_suffix( 'geocode_', 2 ) );
     }
     return;
 }
@@ -2756,10 +2831,13 @@ eod
 #	of the caller.
 
 sub _get_suffix {
-my $rtn = (caller ($_[1] || 1))[3];
-$rtn =~ s/.*:://;
-$rtn = substr ($rtn, length ($_[0]));
-$rtn;
+    my ( $prefix, $backoff ) = @_;
+    my $rtn = ( caller( $backoff || 1 ) )[3];
+    $rtn =~ s/ .* :: //smx;
+    $rtn =~ s/ \A _+ //smx;
+    $rtn = substr $rtn, length $prefix;
+    $rtn =~ s/ __ .* //smx;
+    $rtn;
 }
 
 #	$string = _get_time ($name);
@@ -3262,6 +3340,37 @@ $rslt[4] and $rslt[4] /= 1000;
 wantarray ? @rslt : join ' ', @rslt;
 }
 
+
+#	$soap_object = _soapdish ($uri, $proxy, $action)
+
+#	Manufacture a SOAP::Lite object for the given uri and proxy.
+#	We need this because SOAP::Lite has changed significantly since
+#	the 2002 version that is to this day (2006) bundled with
+#	ActivePerl.
+
+#	The action argument is the separater for building the
+#	SOAPAction header. It defaults to '' (suitable for .NET's
+#	delicate digestion). If you want to restore SOAP::Lite's
+#	original behavior, specify '#'. Any other values are
+#	_NOT_ supported, and may result in a visit from unsympathetic
+#	men in snap-brim hats, dark glasses, and bad suits.
+
+sub _soapdish {
+    my ( $uri, $proxy, $action ) = @_;
+    defined $action
+	or $action = '';
+    return SOAP::Lite->can( 'default_ns' ) ?
+	SOAP::Lite
+	    ->default_ns( $uri )
+	    ->on_action(sub { return join $action, @_ } )
+	    ->proxy( $proxy, timeout => 30 ) :
+	SOAP::Lite
+	    ->envprefix( 'soap' )
+	    ->on_action( sub { return join $action, @_ } )
+	    ->uri( $uri )
+	    ->proxy( $proxy, timeout => 30 );
+}
+
 #	@list = _sort_observing_list ()
 
 #	This subroutine sorts the observing list into ascending order
@@ -3599,11 +3708,23 @@ $attr->{last_line};
 
 package GeocoderResult;
 
-sub _format_city {join ' ', map {$_[0]{$_} ? $_[0]{$_} : ()} qw {city state zip}}
-sub _format_list {(map {$_[0]->can ($_) ? $_[0]->$_ : ()}
-	qw {_format_loc _format_city})}
-sub format_line {join ' ', $_[0]->_format_list}
-sub format_multiline {join "\n", $_[0]->_format_list}
+sub _format_city {
+    return join ' ', map { $_[0]{$_} ? $_[0]{$_} : () }
+	qw{ city state zip }
+}
+
+sub _format_list {
+    return ( map { $_[0]->can ($_) ? $_[0]->$_ : () }
+	qw{ _format_loc _format_city } )
+}
+
+sub format_line {
+    return join ' ', $_[0]->_format_list
+}
+
+sub format_multiline {
+    return join "\n", $_[0]->_format_list
+}
 
 package GeocoderAddressResult;
 
@@ -3611,8 +3732,10 @@ BEGIN {	# We need the BEGIN block to get this executed "up front".
 our @ISA = qw{GeocoderResult};
 }
 
-sub _format_loc {join ' ', map {$_[0]{$_} || ()}
-	qw{number prefix street type suffix}}
+sub _format_loc {
+    return join ' ', map { $_[0]{$_} || () }
+	qw{ number prefix street type suffix }
+}
 
 package GeocoderIntersectionResult;
 
@@ -3620,11 +3743,12 @@ BEGIN {	# We need the BEGIN block to get this executed "up front".
 our @ISA = qw{GeocoderResult};
 }
 
-sub _format_loc {join ' ',
-    (map {$_[0]{$_} || ()} qw{prefix1 street1 type1 suffix1}),
-    'and',
-    (map {$_[0]{$_} || ()} qw{prefix2 street2 type2 suffix2})
-    }
+sub _format_loc {
+    return join ' ',
+	( map { $_[0]{$_} || () } qw{ prefix1 street1 type1 suffix1 } ),
+	'and',
+	( map { $_[0]{$_} || () } qw{ prefix2 street2 type2 suffix2 } )
+}
 
 __END__
 
@@ -3662,6 +3786,15 @@ macros can be defined to issue frequently-used commands.
  satpass> exit
 
 =head1 NOTICE
+
+The use of the L<SOAP::Lite|SOAP::Lite> interface to
+L<http://geocoder.us> is deprecated in favor of the
+L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> module. Beginning
+the first release on or after June 1 2011, a deprecation warning will be
+issued the first time you geocode, if you have L<SOAP::Lite|SOAP::Lite>
+installed but not L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>.
+After six months this will become a warning on every use, and after
+another six months this will become fatal.
 
 The C<status iridium> command now issues a deprecation warning every
 time it is issued. In the first release after May 1 2012 this will
