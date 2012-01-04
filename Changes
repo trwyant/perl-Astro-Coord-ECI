@@ -1,4 +1,4 @@
-0.045		05-Dec-2011	T. R. Wyant
+0.045		2011-12-05	T. R. Wyant
   Have the satpass script's geocode command favor
     Geo::Coder::Geocoder::US. Deprecate the use of SOAP::Lite.
   Have the satpass script set the height to 0 if the position was set by
@@ -9,14 +9,14 @@
     deprecation of the satpass script.
   Try to clarify how the atmospheric refraction calculation works.
 
-0.044		19-Oct-2011	T. R. Wyant
+0.044		2011-10-19	T. R. Wyant
   Require Test::More 0.88 for testing. The requirement was actually
     introduced in version 0.042. Thanks to Christopher Kybe for
     picking up this discrepancy.
   The satpass script's 'status iridium' command now generates a
     deprecation notice every time it is issued.
 
-0.043		29-Aug-2011	T. R. Wyant
+0.043		2011-08-29	T. R. Wyant
   The earthquake (Mineral Virginia USA) fire (Great Dismal Swamp) and
     flood (hurricane Irene) edition.
   Updated the canned Iridium status in Astro::Coord::ECI::TLE for
@@ -28,12 +28,12 @@
     deprecation of the 'limb' attribute and its relation to the new
     'edge_of_earths_shadow' attribute.
 
-0.042_02	18-Aug-2011	T. R. Wyant
+0.042_02	2011-08-18	T. R. Wyant
   In the satpass script, use the new 'edge_of_earths_shadow' setting in
     the 'flare' and 'position' commands, though the flare calculation
     does not actually make use of it.
 
-0.042_01	16-Aug-2011	T. R. Wyant
+0.042_01	2011-08-16	T. R. Wyant
   Replace the Astro::Coord::ECI::TLE 'limb' attribute and the satpass
     'lit' setting with the 'edge_of_earth_shadow' attribute and setting.
     The new attribute and setting are numeric, and specify an increase
@@ -53,19 +53,19 @@
     Astro::Coord::ECI::Sun. The override simply returns the input
     elevation unmodified.
 
-0.042		07-Aug-2011	T. R. Wyant
+0.042		2011-08-07	T. R. Wyant
   In the Astro::Coord::ECI maidenhead() method:
   * Document the fact that, when used as a mutator, it sets the position
     of the center of the square;
   * Modify the accessor to try to minimize truncation error.
   Added t/eci_maidenhead.t.
 
-0.041		25-Jul-2011	T. R. Wyant
+0.041		2011-07-25	T. R. Wyant
   Re-fix longitude out-of-range warning in Astro::Coord::ECI::Moon.
   Fix problem with time specification in eg/sh_script when Date::Manip
     is not installed.
 
-0.040_01	11-Jul-2011	T. R. Wyant
+0.040_01	2011-07-11	T. R. Wyant
   Add attribute 'pass_variant' to Astro::Coord::ECI::TLE. This tweaks
     the output of the pass() method, and can be set to the bitwise 'or'
     (a.k.a. '|') of the following exported values:
@@ -87,7 +87,7 @@
   New example script, eg/xml that makes use of the 'pass_variant'
     attribute, and generates XML from pass data using XML::Writer.
 
-0.040		06-Jul-2011	T. R. Wyant
+0.040		2011-07-06	T. R. Wyant
   No code changes since 0.039_05.
   Tried to make the documentation of the Astro::Coord::ECI::TLE
     lazy_pass_position clearer.
@@ -96,7 +96,7 @@
   Added a few words to the OVERVIEW about how to get results more like
     those of the Heavens Above web site.
 
-0.039_05	22-Jun-2011	T. R. Wyant
+0.039_05	2011-06-22	T. R. Wyant
   Fix yet more problems in Astro::Coord::ECI::TLE->pass():
   * Do not report passes which ended before the prediction interval
     started.
@@ -114,10 +114,10 @@
     if the event's time can be calculated without calculating position.
   The satpass script's 'verbose' setting now works as advertised.
 
-0.039_04	10-Jun-2011	T. R. Wyant
+0.039_04	2011-06-10	T. R. Wyant
   Re-fix the time-zone-dependant test failures in t/tle_flare.t.
 
-0.039_03	08-Jun-2011	T. R. Wyant
+0.039_03	2011-06-08	T. R. Wyant
   Fix more problems in Astro::Coord::ECI::TLE->pass():
   * Fix detection and calculation of events of visible passes which
     begin during the day, or any pass in progress at the beginning of
@@ -130,7 +130,7 @@
     second.
   Add more tests to try to capture all these changes.
 
-0.039_02	18-May-2011	T. R. Wyant
+0.039_02	2011-05-18	T. R. Wyant
   Fix various problems in Astro::Coord::ECI::TLE->pass(), also brought
     to my attention by Jaap Meijers:
     * Incorrect time of maximum elevation when only one of the original
@@ -142,19 +142,19 @@
       this, though.
   Add tests for Astro::Coord::ECI::TLE->pass(). More are needed.
 
-0.039_01	09-May-2011	T. R. Wyant
+0.039_01	2011-05-09	T. R. Wyant
   Make the Astro::Coord::ECI::TLE pass() method more lenient when
     screening for passes in which the satellite is illuminated. Thanks
     to Jaap Meijers for bringing this to my attention.
 
-0.039		29-Apr-2011	T. R. Wyant
+0.039		2011-04-29	T. R. Wyant
   Silence warnings about out-of-range longitude which are sometimes
     generated when computing the position of the Moon.
 
-0.038_01	21-Apr-2011	T. R. Wyant
+0.038_01	2011-04-21	T. R. Wyant
   Added -dump-headers command line option to eg/passes.
 
-0.038		14-Apr-2011	T. R. Wyant
+0.038		2011-04-14	T. R. Wyant
   Updated code that uses the optional Astro::SpaceTrack module to
     require version 0.052 wherever the Space Track web site is (or may
     be) accessed.
@@ -164,13 +164,13 @@
   Fix to zone attribute code in bin/satpass, so that it can be cleared
     once set.
 
-0.037		04-Apr-2011	T. R. Wyant
+0.037		2011-04-04	T. R. Wyant
   Added a zone attribute to Astro::Coord::ECI::TLE::Iridium, so that it
     could properly distinguish between -am and -pm flares somewhere
     other than in the local zone. Thanks to CPAN Testers for finding
     this consequence of publishing a t/iridium.t that everyone can run.
 
-0.036		02-Apr-2011	T. R. Wyant
+0.036		2011-04-02	T. R. Wyant
   t/iridium.t no longer requires any extra data for its execution.
   The satpass 'status iridium' command, which has been deprecated for
     quite a while, now issues a warning the first time it is issued. See
@@ -179,19 +179,19 @@
   Correct export tag documentation in Astro::Coord::ECI::TLE (from
     ':constant' to ':constants').
 
-0.035_01	18-Mar-2011	T. R. Wyant
+0.035_01	2011-03-18	T. R. Wyant
   Correct the attribute() method on Astro::Coord::ECI,
     Astro::Coord::ECI::TLE, and Astro::Coord::ECI::TLE::Iridium.
     Formerly it was returning false for some extant attributes.
 
-0.035		03-Mar-2011	T. R. Wyant
+0.035		2011-03-03	T. R. Wyant
   Removed the rightascension attribute in favor of the ascendingnode
     attribute. This is the last step in its deprecation.
   Update the canned Iridium statuses in Astro::Coord::ECI::TLE for the
     taking-out-of-service of Iridium 23. Following Kelso, I have marked
     it spare, rather than failed.
 
-0.034		06-Dec-2010	T. R. Wyant
+0.034		2010-12-06	T. R. Wyant
   Make code for Astro::Coord::ECI zero-argument ecliptic() less cute
     also, to try to forestall problems.
   Update canned Iridium statuses in Astro::Coord::ECI::TLE, to cover the
@@ -199,7 +199,7 @@
     November 3 2010.
   Update and re-enable xt/author/iridium_status.t.
 
-0.033_01	02-Dec-2010	T. R. Wyant
+0.033_01	2010-12-02	T. R. Wyant
   Try to avoid panic in Astro::Coord::ECI zero-argument geocentric()
     under at least one version by using less-cute code to compute the
     value. The problem could be reproduced using OID 25591 epoch
@@ -207,7 +207,7 @@
     testing).
   This release has known failures in xt/author/iridium_status.t.
 
-0.033		17-Sep-2010	T. R. Wyant
+0.033		2010-09-17	T. R. Wyant
   Fix glitch in Astro::Coord::ECI::TLE::Iridium flare() where the
     maximum magnitude logic was being called when a flare was not
     possible.
@@ -224,7 +224,7 @@
   Make minimum Perl version 5.6.2, since that is the lowest version I
     have a prayer of supporting.
 
-0.032		03-Jul-2010	T. R. Wyant
+0.032		2010-07-03	T. R. Wyant
   Have Astro::Coord::ECI::TLE complain every time the rightascension
     attribute is accessed. This is being deprecated in favor of the
     ascendingnode attribute. Elimination is scheduled for the first
@@ -252,7 +252,7 @@
   Weaken recommendation of Time::y2038 when run under Perl 5.12 and
     above, since I really don't think it's needed.
 
-0.031		06-May-2010	T. R. Wyant
+0.031		2010-05-06	T. R. Wyant
   Add the maidenhead() method to Astro::Coord::ECI, to get or set
     geodetic position in the Maidenhead Locator System.
   Update install instructions in README to include cpan, cpanp, or ppi
@@ -262,10 +262,10 @@
   Change the output in the Astro::Coord::ECI::Sun example to UT, and add
     a note why. Thanks to Richard Hardwick for raising this issue.
 
-0.030		26-Feb-2010	T. R. Wyant
+0.030		2010-02-26	T. R. Wyant
   Update copyright in README to 2010.
 
-0.029_03	12-Feb-2010	T. R. Wyant
+0.029_03	2010-02-12	T. R. Wyant
   Consolidate all optional module logic, to eliminate duplicate code
     between Makefile.PL and Build.PL, and so the messages all have the
     same 'look and feel.' Dropped XML::Parser from the list, since it
@@ -274,20 +274,20 @@
   Have the satpass script look in $ENV{USERPROFILE} for the
     initialization file, in addition to all the other possibilities.
 
-0.029_02	09-Feb-2010	T. R. Wyant
+0.029_02	2010-02-09	T. R. Wyant
   Use explicit tolerances for fractional results in the Julian date
     conversion tests in t/basic.t. This is for Strawberry Perl under
     ReactOS 0.3.11, which seems to have a case of the .999999s.
 
-0.029_01	07-Feb-2010	T. R. Wyant
+0.029_01	2010-02-07	T. R. Wyant
   Trap possible exception from gmtime when generating the sgp4r
     'mean eccentricity < 0 or >= 1' error in Astro::Coord::ECI::TLE.
 
-0.029		04-Feb-2010	T. R. Wyant
+0.029		2010-02-04	T. R. Wyant
   No changes since 0.028_01, but with CPAN testers being green bird, I
     thought a production release in order.
 
-0.028_01	02-Feb-2010	T. R. Wyant
+0.028_01	2010-02-02	T. R. Wyant
   Date::Manip and Time::y2038 are no longer 'recommended' but 'optional'.
     This means not telling the tool chain about them, but doing custom
     checks, and custom, gentler messages about why you might (or might
@@ -306,17 +306,17 @@
     reflect the current state of the time handling. Plus, retitle it so
     that hopefully it will actually appear in the distribution.
 
-0.028		11-Jan-2010	T. R. Wyant
+0.028		2010-01-11	T. R. Wyant
   Fix bug introduced in 0.027, in which the Astro::Coord::ECI::TLE
     pass() method failed to include the {appulse} data when an appulse
     was found.
 
-0.027		08-Jan-2010	T. R. Wyant
+0.027		2010-01-08	T. R. Wyant
   Correct (I hope!) the computation of illumination changes in the
     Astro::Coord::ECI::TLE pass() method. The original could miss them
     in the first or last minute of the pass.
 
-0.026_03	02-Jan-2010	T. R. Wyant
+0.026_03	2010-01-02	T. R. Wyant
   Add exportable constants SPEED_OF_LIGHT (in kilometers per second) and
     SECS_PER_SIDERIAL_DAY to Astro::Coord::ECI::Utils.
   Add attribute frequency (in Hertz) to Astro::Coord::ECI.
@@ -331,7 +331,7 @@
     used in a given script, issue a warning that it is deprecated.
   Update copyrights to 2010.
 
-0.026_02	14-Dec-2009	T. R. Wyant
+0.026_02	2009-12-14	T. R. Wyant
   The Astro::Coord::ECI azel() method now returns velocities if
     these are available. The transverse velocities (azimuthal and
     elevational) are NOT corrected for the Coriolis effect.
@@ -346,7 +346,7 @@
   Remove the last vestiges of the $ENV{DEVELOPER_TEST} machinery.
   Rewrote xt/manifest.t to use Test::More.
 
-0.026_01	28-Nov-2009	T. R. Wyant
+0.026_01	2009-11-28	T. R. Wyant
   All modules' versions set to 0.026_01. In the future all modules in
     a given release will have the same version number.
   Convert all modules to the CPAN-recommended license.
@@ -362,7 +362,7 @@
     Add the 'refraction' parameter, to allow the user to turn off
       atmospheric refraction (it is on by default).
   
-0.026 02-Oct-2009	T. R. Wyant
+0.026		2009-10-02	T. R. Wyant
   Astro::Coord::ECI 0.026
     Default the {inertial} attribute appropriately.
     Add the next_azimuth() method to compute when a body passes the
@@ -378,7 +378,7 @@
       {ascendingnode} attribute. See the POD for the
       deprecation plan.
 
-0.025 07-Sep-2009	T. R. Wyant
+0.025		2009-09-07	T. R. Wyant
   Astro::Coord::ECI 0.035
     Correct documentation of matrix math in azel() method.
   Astro::Coord::ECI::TLE 0.019
@@ -394,7 +394,7 @@
     Remove need for Module::Build for configuration, since I also
       supply Makefile.PL.
 
-0.024 18-Aug-2009	T. R. Wyant
+0.024		2009-08-18	T. R. Wyant
   General
     Require Test::More 0.40 for testing.
   Astro::Coord::ECI 0.024
@@ -414,7 +414,7 @@
     Add method max_effective_date() to do the right thing when there
       is more than one TLE to consider.
 
-0.023	09-Mar-2009	T. R. Wyant
+0.023		2009-03-09	T. R. Wyant
   General
     Test t/tle_exception.t is no longer a developer test, but it will be
       skipped unless the user has Time::y2038.
@@ -432,12 +432,12 @@
       release; otherwise I would have sat on it until I had velocity
       tests.
 
-0.022	15-Feb-2009	T. R. Wyant
+0.022		2009-02-15	T. R. Wyant
   General
     Make new test t/tle_exception.t a developer test until I can figure
       out why it only runs on my configuration.
 
-0.021	13-Feb-2009	T. R. Wyant
+0.021		2009-02-13	T. R. Wyant
   General
     Make Time::y2038 recommended rather than required, since
       ActivePerl has problems with that module. We use it if
@@ -475,7 +475,7 @@
   Makefile.PL
     Change check for Astro::SIMBAD::Query to Astro::SIMBAD::Client
 
-0.020	09-Jan-2009	T. R. Wyant
+0.020		2009-01-09	T. R. Wyant
   General
     Add Time::y2038 as prerequisite, and use in place of Time::Local and
       CORE gmtime and localtime functions.
@@ -543,7 +543,7 @@
     Revise 'NOTES' section to cover plans for App::Satpass2, and changes
       for this release.
 
-0.019
+0.019		2008-10-27	T. R. Wyant
   Astro::Coord::ECI 0.019
     Truncate SYNOPSIS code.
     Range-check angular position input, with warning if out of range:
@@ -567,7 +567,7 @@
   Astro::Coord::ECI::TLE::Set 0.004
     Clarify and complete SYNOPSIS code.
 
-0.018
+0.018		2008-10-03	T. R. Wyant
   Astro::Coord::ECI 0.018
     Update version number and copyright date. No other changes.
   Astro::Coord::ECI::TLE 0.013
@@ -583,7 +583,7 @@
     Correct the code that extracts the needed TLEs from the downloaded
       zip file.
 
-0.017
+0.017		2007-12-30	T. R. Wyant
   Astro::Coord::ECI 0.017
     Fall back to homegrown (and un-general, and insufficiently tested)
       code if Storable::dclone not available.
@@ -615,7 +615,7 @@
     Supress '"our" variable $clipboard_unavailable masks earlier
       declaration ...' under 5.10.0.
 
-0.016
+0.016		2007-12-28	T. R. Wyant
   Astro::Coord::ECI 0.016
     Increment version. No other changes.
   Astro::Coord::ECI::TLE 0.011
@@ -660,7 +660,7 @@
   t/pod_coverage.t
     Remove unused variable
 
-0.015
+0.015		2007-11-15	T. R. Wyant
   Astro::Coord::ECI 0.015
     Bump version number. No other changes.
   bin/satpass 0.015
@@ -672,7 +672,7 @@
       getting failures on 'use constant' declarations. I don't get
       these, so the change is kind of blind.
 
-0.014
+0.014		2007-11-13
   Astro::Coord::ECI 0.014
     Add equinox_dynamical attribute; precess() now uses this as start
       point and leaves the time alone. It is also used when going from
@@ -719,7 +719,7 @@
       coordinates (only equatorial, at the moment).
     Allow pseudo-redirection of command output into a pipe.
 
-0.013
+0.013		2007-03-02	T. R. Wyant
   Astro::Coord::ECI 0.013
     No code changes, but updated version to be visible to CPAN 'r'.
   Astro::Coord::ECI::TLE 0.009
@@ -740,7 +740,7 @@
     Fixed cosmetic undefined value error when Scalar::Util does not
       implement refaddr().
 
-0.012
+0.012		2007-01-09	T. R. Wyant
   ECI.pm 0.012
     Localized $Data::Dumper::Terse
     Fixed divide-by-zero in azel() when the points coincide.
@@ -776,7 +776,7 @@
   eg/iridium 0.001
     New example calculating Iridium flares.
 
-0.011
+0.011		2006-10-26	T. R. Wyant
   ECI.pm 0.011
     Add horizon attribute.
   ECI/TLE.pm
@@ -797,7 +797,7 @@
   eg/iss
     New example to demonstrate Astro::Coord::ECI::TLE->pass().
 
-0.010
+0.010		2006-09-23	T. R. Wyant
     ECI.pm 0.010
       Check for null arguments on most calls, so we die now rather
         than later.
@@ -820,7 +820,7 @@
       Add explicit PL_FILES => {}, to prevent old versions from
         trying to execute 'perl Build.PL Build'.
 
-0.009
+0.009		2006-07-23	T. R. Wyant
     ECI.pm 0.009
       Add represents() method.
     ECI/Sun.pm 0.003
@@ -842,7 +842,7 @@
     Build.PL 0.001
       Initial version.
 
-0.008
+0.008		2006-07-14	T. R. Wyant
     ECI.pm 0.008
       Support the use of Astro::Coord::ECI::TLE::Set objects in the
         angle() method.
@@ -864,7 +864,7 @@
         Thanks to IMACAT for help diagnosing and verifying.
       Add acknowledgments.
 
-0.007
+0.007		2006-07-06	T. R. Wyant
   ECI.pm
     Optimize, mostly by being smarter about when to clear cached
       coordinates.
@@ -918,7 +918,7 @@
     Have position() display epoch and illumination when displaying
       objects from the observing list.
 
-0.006
+0.006		2006-06-07	T. R. Wyant
   ECI.pm
     Cache some calculations for re-use.
   ECI/Star.pm
@@ -940,7 +940,7 @@
       -twilight to restrict the output.
     Make height_us() work with revised USGS SOAP calling sequence.
 
-0.005
+0.005		2006-04-21	T. R. Wyant
   ECI.pm
     Add 'inertial' read-only attribute.
     Add equatorial coordinates relative to observer.
@@ -953,7 +953,7 @@
   TLE.pm
     Tweak synopsis, to show that setting time runs model.
 
-0.004
+0.004		2006-03-14	T. R. Wyant
   bin/satpass -
     Rewrite command parsing so that we can retain quotes and
       be POSIXly correct in option processing for the system
@@ -967,7 +967,7 @@
     Clean up docs, wrap some really long lines.
     Replace _fmod2p with mod2pi from Utils module.
 
-0.003 T. R. Wyant
+0.003		2006-03-10	T. R. Wyant
   bin/satpass -
     Remove all uses of Clipboard, to try to get built under
       ActiveState's ActivePerl.
@@ -984,7 +984,7 @@
       (except under darwin, strangely enough).
     Increment version.
 
-0.002 T. R. Wyant
+0.002		2006-03-02	T. R. Wyant
   bin/satpass -
     Behave better when no Clipboard module.
     Do not use Clipboard module under darwin.
@@ -997,5 +997,5 @@
   Astro::Coord::ECI::Utils -
     Corrected documentation.
 
-0.001 T. R. Wyant
+0.001		2006-02-17	T. R. Wyant
   Initial release

@@ -56,6 +56,7 @@ t/tle_pass_extra.t
 t/tle_sgp4r.t
 t/tle_support.t
 xt/author/basic.t
+xt/author/changes.t
 xt/author/critic.t
 xt/author/executable.t
 xt/author/iridium_status.t
