@@ -1225,14 +1225,8 @@ sub _geocode_height {
 #	the data returned by -all). This will have no effect of -all is
 #	specified.
 
-#	The -yaml option is to feed the parsing logic data from a file
-#	rather than downloading it from the USGS. This is for debugging
-#	purposes only, and will remain undocumented and unsupported. The
-#	argument is the name of the YAML file. Either YAML or YAML::Syck
-#	can be used, with the latter being preferred.
-
 BEGIN {
-$cmdlgl{height} = [qw{all retry_on_zero=i source_layer=s yaml=s}];
+$cmdlgl{height} = [ qw{ all retry_on_zero=i source_layer=s }];
 $cmdlgl{height_af} = $cmdlgl{height};
 $cmdlgl{height_as} = $cmdlgl{height};
 $cmdlgl{height_ca} = $cmdlgl{height};

@@ -2064,12 +2064,9 @@ eod
 	    map {[$_->{id}, $_->{type}, $_->{status}, $_->{name},
 	    $_->{comment}]} values %status);
     } elsif ($cmd eq 'yaml') {	# <<<< Undocumented!!!
-	my $class = eval {require YAML::Syck; 'YAML::Syck'} ||
-	eval {require YAML; 'YAML'}
-	    or croak "Neither YAML nor YAML::Syck available";
-	my $dumper = $class->can('Dump')
-	    or croak "$class does not implement Dump()";
-	print $dumper->(\%status);
+	load_module( 'YAML::Any' )
+	    or croak 'YAML::Any not available';
+	print YAML::Any::Dump( \%status );
     } else {
 	croak <<eod;
 Error - '$cmd' is not a legal status() command.
