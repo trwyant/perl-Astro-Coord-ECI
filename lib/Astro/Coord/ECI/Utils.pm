@@ -293,8 +293,10 @@ If less than 6 arguments are provided, zeroes will be prepended to the
 argument list as needed.
 
 The functionality is the same as B<Time::Local::timegm>, but this
-function lacks timegm's limited date range. These days, though,
-Time::y2038::timegm may be preferred over this subroutine.
+function lacks timegm's limited date range under Perls before 5.12.0. If
+you have Perl 5.12.0 or better, the core L<Time::Local|Time::Local>
+C<timegm()> will probably do what you want.  If you have an earlier
+Perl, L<Time::y2038|Time::y2038> C<timegm()> may do what you want.
 
 =cut
 
@@ -309,7 +311,8 @@ sub date2epoch {
 
 =item $rad = deg2rad ($degr)
 
-This subroutine converts degrees to radians.
+This subroutine converts degrees to radians. If the argument is
+C<undef>, C<undef> will be returned.
 
 =cut
 
@@ -404,8 +407,11 @@ time) indicator which is always 0 to be consistent with gmtime.
 If called in scalar context, it returns the date formatted by
 POSIX::strftime, using the format string in $DATETIMEFORMAT.
 
-The functionality is similar to gmtime, but lacks gmtime's limited date
-range.
+The functionality is the same as the core C<gmtime()>, but this function
+lacks gmtime's limited date range under Perls before 5.12.0. If you have
+Perl 5.12.0 or better, the core C<gmtime()> will probably do what you
+want.  If you have an earlier Perl, L<Time::y2038|Time::y2038>
+C<gmtime()> may do what you want.
 
 The input must convert to a non-negative Julian date. The exact lower
 limit depends on the system, but is computed by -(JD_OF_EPOCH * 86400).
@@ -860,7 +866,7 @@ sub omega {
 =item $degrees = rad2deg ($radians)
 
 This subroutine converts the given angle in radians to its equivalent
-in degrees.
+in degrees. If the argument is C<undef>, C<undef> will be returned.
 
 =cut
 
