@@ -407,6 +407,14 @@ eod
     rcs => 0,		# Radar cross-section
     tle => undef,	# Read-only
     illum => \&_set_illum,
+    pass_threshold => sub {
+	my ($self, $name, $value) = @_;
+	not defined $value
+	    or looks_like_number( $value )
+	    or carp "Invalid $name '$value'";
+	$self->{$name} = $value;
+	return 0;
+    },
     reblessable => sub {
 	my $doit = !$_[0]{$_[1]} && $_[2] && $_[0]->get ('id');
 	$_[0]{$_[1]} = $_[2];
@@ -1217,6 +1225,7 @@ eod
     my $pass_step = 60;
     my $horizon = $tle->get ('horizon');
     my $effective_horizon = $tle->get ('geometric') ? 0 : $horizon;
+    my $pass_threshold = $tle->get( 'pass_threshold' );
     my $twilight = $tle->get ('twilight');
     my $want_visible = $tle->get ('visible');
     my $appulse_dist = $tle->get ('appulse');
@@ -1459,6 +1468,19 @@ eod
 		    station => $sta,
 		    time => $time,
 		    @extra,
+		};
+	    }
+
+	    # Now that we have the positions of the main events, we can
+	    # apply the pass_threshold if that was defined.
+
+	    if ( defined $pass_threshold ) {
+		my ( $event ) = grep { $_->{event} == PASS_EVENT_MAX }
+		@info;
+		$event->{elevation} < $pass_threshold
+		    and do {
+		    @info = ();
+		    next;
 		};
 	    }
 
@@ -7994,6 +8016,17 @@ launch, at the epoch.
 
 This attribute contains the second time derivative of the mean
 motion, in radians per minute cubed.
+
+=item pass_threshold (numeric or undef)
+
+If defined, this attribute defines the elevation in radians that the
+satellite must reach above the horizon for its passes to be reported.
+If undefined, any pass above the horizon will be reported. You might use
+this if you want to use a nominal horizon of .35 radians (20 degrees),
+but are only interested in passes that reach an elevation of .70 radians
+(40 degrees).
+
+The default is C<undef>.
 
 =item tle (string, readonly, parse)
 

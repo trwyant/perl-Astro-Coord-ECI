@@ -5,17 +5,7 @@ use 5.006002;
 use strict;
 use warnings;
 
-BEGIN {
-    eval {
-	require Test::More;
-	Test::More->VERSION( 0.88 );	# Because of done_testing()
-	Test::More->import();
-	1;
-    } or do {
-	print "1..0 # skip Test::More 0.88 required\n";
-	exit;
-    };
-}
+use Test::More 0.88;
 
 BEGIN {
 
@@ -98,8 +88,6 @@ my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 EOD
 $tle->set( geometric => 1 );
 
-plan tests => 29;
-
 my @pass;
 
 if (
@@ -160,6 +148,50 @@ is format_pass( $pass[5] ), <<'EOD', 'Pass 6';
 1980/10/18 05:10:50  22.3 327.2   537.6 lit   lit
 1980/10/18 05:14:16   0.0  19.0  1814.7 lit   set
 EOD
+
+@pass = ();
+$tle->set( pass_threshold => deg2rad( 45 ) );
+
+if (
+    eval {
+	@pass = $tle->pass(
+	    $sta,
+	    timegm( 0, 0, 0, 12, 9, 80 ),
+	    timegm( 0, 0, 0, 19, 9, 80 ),
+	    [ $star ],
+	);
+	1;
+    }
+) {
+    ok @pass == 3, 'Found 3 passes over Greenwich over 45 degrees elevation'
+	or diag "Found @{[ scalar @pass
+	    ]} passes over Greenwich over 45 degrees elevation";
+} else {
+    fail "Error in pass() method: $@";
+}
+
+is format_pass( $pass[0] ), <<'EOD', 'Pass 1';
+1980/10/13 05:39:02   0.0 199.0  1687.8 lit   rise
+1980/10/13 05:42:42  55.8 119.1   255.7 lit   apls
+                     49.6 118.3     6.2 Epsilon Leonis
+1980/10/13 05:42:43  55.9 115.6   255.5 lit   max
+1980/10/13 05:46:37   0.0  29.7  1778.5 lit   set
+EOD
+
+is format_pass( $pass[1] ), <<'EOD', 'Pass 2';
+1980/10/14 05:32:49   0.0 204.8  1691.2 lit   rise
+1980/10/14 05:36:32  85.6 111.4   215.0 lit   max
+1980/10/14 05:40:27   0.0  27.3  1782.5 lit   set
+EOD
+
+is format_pass( $pass[2] ), <<'EOD', 'Pass 3';
+1980/10/15 05:26:29   0.0 210.3  1693.5 shdw  rise
+1980/10/15 05:27:33   4.7 212.0  1220.0 lit   lit
+1980/10/15 05:30:12  63.7 297.6   239.9 lit   max
+1980/10/15 05:34:08   0.0  25.1  1789.5 lit   set
+EOD
+
+$tle->set( pass_threshold => undef );
 
 @pass = ();
 $tle->set( pass_variant => PASS_VARIANT_VISIBLE_EVENTS );
@@ -400,6 +432,8 @@ is format_pass( $pass[0] ), <<'EOD', 'Pass 1, with interval';
 1980/10/14 05:40:19                     lit
 1980/10/14 05:40:27   0.0  27.3  1782.5 lit   set
 EOD
+
+done_testing;
 
 1;
 

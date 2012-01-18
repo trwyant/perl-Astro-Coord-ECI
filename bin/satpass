@@ -93,6 +93,7 @@ my %parm = (
     simbad_url => 'simbad.u-strasbg.fr',
     simbad_version => 4,
     singleton => 0,
+    pass_threshold => undef,
     time_format => '%H:%M:%S',
 ##    timing => 0,
     verbose => 0,
@@ -141,6 +142,7 @@ my %mutator = (
     simbad_url => \&_set_unmodified,
     simbad_version => \&_set_simbad_version,
     singleton => \&_set_unmodified,
+    pass_threshold => \&_set_angle_or_undef,
     time_format => \&_set_unmodified,
 ##    timing => \&_set_unmodified,
     twilight => \&_set_twilight,  # 'civil', 'nautical', 'astronomical'
@@ -1582,6 +1584,9 @@ eod
 
     my $horizon = deg2rad ($parm{horizon});
     my $appulse = deg2rad ($parm{appulse});
+    my $pass_threshold;
+    defined $parm{pass_threshold}
+	and $pass_threshold = deg2rad( $parm{pass_threshold} );
 
 #	Print the header
 
@@ -1611,6 +1616,7 @@ eod
 	    interval => $parm{verbose} ? $pass_step : 0,
 	    lazy_pass_position => 1,
 	    model => $model,
+	    pass_threshold => $pass_threshold,
 	    twilight => $parm{_twilight},
 	    visible => $parm{visible},
 	);
@@ -1899,6 +1905,13 @@ eod
 
 sub _set_angle {
 $parm{$_[0]} = _parse_angle ($_[1]);
+}
+
+sub _set_angle_or_undef {
+    defined $_[1]
+	and $_[1] ne 'undef'
+	and goto &_set_angle;
+    $parm{$_[0]} = undef;
 }
 
 sub _set_ellipsoid {
@@ -3781,6 +3794,11 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
+This release supports the new C<pass_threshold> attribute of
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>, which provides a way
+to decouple how high a pass need to be to be reported from how high the
+horizon is.
+
 The use of the L<SOAP::Lite|SOAP::Lite> interface to
 L<http://geocoder.us> is deprecated in favor of the
 L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> module. Beginning
@@ -5572,6 +5590,15 @@ Use of the Astro::Coord::ECI::TLE::Set object causes calculations to
 take about 15% longer.
 
 The default is 0 (i.e. false).
+
+=for html <a name="pass_threshold"></a>
+
+=item pass_threshold (angle or undef)
+
+This parameter corresponds to the
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<pass_threshold>
+attribute.  It is set in degrees. It can also be set to the C<undef>
+value by specifying the string C<'undef'> (unquoted) as its value.
 
 =for html <a name="time_format"></a>
 
