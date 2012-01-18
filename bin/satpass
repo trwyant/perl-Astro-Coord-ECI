@@ -86,6 +86,7 @@ my %parm = (
 			# removed.
     local_coord => 'azel_rng',
     model => 'model',
+    pass_threshold => undef,
     prompt => 'satpass>',
 ##    simbad_url => 'simbad.harvard.edu',
 ##    simbad_version => 3,
@@ -93,7 +94,6 @@ my %parm = (
     simbad_url => 'simbad.u-strasbg.fr',
     simbad_version => 4,
     singleton => 0,
-    pass_threshold => undef,
     time_format => '%H:%M:%S',
 ##    timing => 0,
     verbose => 0,
@@ -1584,9 +1584,7 @@ eod
 
     my $horizon = deg2rad ($parm{horizon});
     my $appulse = deg2rad ($parm{appulse});
-    my $pass_threshold;
-    defined $parm{pass_threshold}
-	and $pass_threshold = deg2rad( $parm{pass_threshold} );
+    my $pass_threshold = deg2rad( $parm{pass_threshold} );
 
 #	Print the header
 

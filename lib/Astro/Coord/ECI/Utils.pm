@@ -313,7 +313,7 @@ This subroutine converts degrees to radians.
 
 =cut
 
-sub deg2rad {return $_[0] * PI / 180}
+sub deg2rad { return defined $_[0] ? $_[0] * PI / 180 : undef }
 
 
 =item $value = distsq (\@coord1, \@coord2)
@@ -864,7 +864,7 @@ in degrees.
 
 =cut
 
-sub rad2deg {return $_[0] / PI * 180}
+sub rad2deg { return defined $_[0] ? $_[0] / PI * 180 : undef }
 
 =item $value = tan ($angle)
 
