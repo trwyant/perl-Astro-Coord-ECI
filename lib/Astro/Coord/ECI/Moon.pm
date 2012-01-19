@@ -114,7 +114,7 @@ otherwise.
 sub new {
     my ($class, @args) = @_;
     ref $class and $class = ref $class;
-    if ( $Singleton && $weaken && _classisa( $class, __PACKAGE__ ) ) {
+    if ( $Singleton && $weaken && __classisa( $class, __PACKAGE__ ) ) {
 	if ($object) {
 	    $object->set (@args) if @args;
 	    return $object;

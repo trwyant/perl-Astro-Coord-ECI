@@ -2393,7 +2393,7 @@ There. This took many more words to explain than it did to implement.
 sub represents {
     return defined ($_[1]) ?
 ##	$_[0]->represents()->isa($_[1]) :
-	_classisa($_[0]->represents(), $_[1]) ? 1 : 0 :
+	__classisa($_[0]->represents(), $_[1]) ? 1 : 0 :
 	(ref $_[0] || $_[0]);
 }
 

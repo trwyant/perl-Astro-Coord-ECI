@@ -137,12 +137,12 @@ our @EXPORT_OK = ( qw{
 	min mod2pi nutation_in_longitude nutation_in_obliquity obliquity
 	omega rad2deg tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize
-       	_classisa _instance },
+       	__classisa __instance },
 	@time_routines );
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
-    params => [ qw{ _classisa _instance } ],
+    params => [ qw{ __classisa __instance } ],
     time => \@time_routines,
 );
 
@@ -993,26 +993,26 @@ sub vector_unitize {
     return [ map { $_ / $mag } @{ $b } ];
 }
 
-#	_classisa( 'Foo', 'Bar' );
+#	__classisa( 'Foo', 'Bar' );
 #
 #	Returns true if Foo->isa( 'Bar' ) is true, and false otherwise.
 #	In particular, returns false if the first argument is a
 #	reference.
 
-sub _classisa {
+sub __classisa {
     my ( $invocant, $class ) = @_;
     ref $invocant and return;
     defined $invocant or return;
     return $invocant->isa( $class );
 }
 
-#	_instance( $foo, 'Bar' );
+#	__instance( $foo, 'Bar' );
 #
 #	Returns true if $foo is an instance of 'Bar', and false
 #	otherwise. In particular, returns false if $foo is not a
 #	reference, or if it is not blessed.
 
-sub _instance {
+sub __instance {
     my ( $object, $class ) = @_;
     ref $object or return;
     blessed( $object ) or return;

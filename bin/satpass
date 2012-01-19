@@ -2072,7 +2072,7 @@ my $verb = lc (shift @_ || '');
 
 if (!$verb) {
     foreach my $body (@sky) {
-	if ( _instance( $body, 'Astro::Coord::ECI::Star' ) ) {
+	if ( __instance( $body, 'Astro::Coord::ECI::Star' ) ) {
 	    my ($ra, $dec, $rng, $pmra, $pmdec, $vr)  = $body->position ();
 	    $rng /= PARSEC;
 	    $pmra = rad2deg ($pmra / 24 * 360 * cos ($ra)) * SPY2DPS;
@@ -2103,7 +2103,7 @@ eod
     my $class = 'Astro::Coord::ECI::' .
 	($special ? ucfirst ($lcn) : 'Star');
     foreach my $body (@sky) {
-	return if _instance($body, $class) &&
+	return if __instance($body, $class) &&
 		($special || $lcn eq lc $body->get ('name'));
 	}
     my $body = $class->new (debug => $parm{debug});
@@ -2157,7 +2157,7 @@ eod
     my $name = $_[0];
     my $lcn = lc $_[0];
     foreach my $body (@sky) {
-	next unless _instance($body, 'Astro::Coord::ECI::Star') &&
+	next unless __instance($body, 'Astro::Coord::ECI::Star') &&
 		$lcn eq lc $body->get ('name');
 	die <<eod;
 Error - The sky already contains $_[0]. If you want to

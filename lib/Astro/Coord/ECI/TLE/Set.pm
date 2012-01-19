@@ -196,11 +196,11 @@ sub add {
 	defined $effective or $effective = $tle->get('epoch');
 	$ep{$effective} = $tle;
     }
-    foreach my $tle (map {_instance( $_, __PACKAGE__ ) ?
+    foreach my $tle (map {__instance( $_, __PACKAGE__ ) ?
 	    $_->members : $_} @args) {
 	my $aid = $tle->get ('id');
 	if (defined $id) {
-	    _instance( $tle, $class ) or croak <<eod;
+	    __instance( $tle, $class ) or croak <<eod;
 Error - Additional member of @{[__PACKAGE__]} must be a
         subclass of $class
 eod
@@ -209,7 +209,7 @@ Error - NORAD ID mismatch. Trying to add ID $aid to set defined
         as ID $id.
 eod
 	} else {
-	    _instance( $tle, 'Astro::Coord::ECI::TLE' ) or croak <<eod;
+	    __instance( $tle, 'Astro::Coord::ECI::TLE' ) or croak <<eod;
 Error - First member of @{[__PACKAGE__]} must be a subclass
         of Astro::Coord::ECI::TLE.
 eod

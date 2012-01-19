@@ -1865,7 +1865,7 @@ It does not under any circumstances manufacture another object.
 
 sub rebless {
     my ($tle, @args) = @_;
-    _instance( $tle, __PACKAGE__ ) or croak <<eod;
+    __instance( $tle, __PACKAGE__ ) or croak <<eod;
 Error - You can only rebless an object of class @{[__PACKAGE__]}
         or a subclass thereof. The object you are trying to rebless
 	is of class @{[ref $tle]}.
@@ -1880,7 +1880,7 @@ eod
 	or return $tle;
     $class = $type_map{$class} if $type_map{$class};
     load_module ($class);
-    _classisa( $class, __PACKAGE__ ) or croak <<eod;
+    __classisa( $class, __PACKAGE__ ) or croak <<eod;
 Error - You can only rebless an object into @{[__PACKAGE__]} or
         a subclass thereof. You are trying to rebless the object
 	into $class.
@@ -2043,7 +2043,7 @@ eod
 Error - The status (add => $id) call requires a type.
 eod
 	my $class = $type_map{$type} || $type;
-	_classisa( $class, __PACKAGE__ ) or croak <<eod;
+	__classisa( $class, __PACKAGE__ ) or croak <<eod;
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
 	my $status = shift || 0;
@@ -2066,7 +2066,7 @@ eod
 	    %status = ();
 	} else {
 	    my $class = $type_map{$type} || $type;
-	    _classisa( $class, __PACKAGE__ ) or croak <<eod;
+	    __classisa( $class, __PACKAGE__ ) or croak <<eod;
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
 	    foreach my $key (keys %status) {

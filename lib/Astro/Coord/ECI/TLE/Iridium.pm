@@ -492,7 +492,7 @@ sub _flare_fixed {
     my $station = shift;
     {
 	local $@;
-	_instance( $station, 'Astro::Coord::ECI' ) or croak <<eod;
+	__instance( $station, 'Astro::Coord::ECI' ) or croak <<eod;
 Error - The station must be a subclass of Astro::Coord::ECI.
 eod
     }
