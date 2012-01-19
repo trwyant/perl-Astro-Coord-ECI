@@ -13,6 +13,7 @@ use Time::Local;
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
 sub u_cmp_eql (@);
+sub u_ok (@);
 
 require_ok 'Astro::Coord::ECI::Utils'
     or BAIL_OUT 'Can not continue without Astro::Coord::ECI::Utils';
@@ -38,6 +39,10 @@ require_ok 'Astro::Coord::ECI::TLE::Iridium'
 require_ok 'Astro::Coord::ECI::TLE::Set'
     or BAIL_OUT 'Can not continue without Astro::Coord::ECI::Set';
 
+u_ok embodies => [ qw{ Astro::Coord::ECI::TLE::Iridium
+    Astro::Coord::ECI::TLE } ],
+    'An Iridium embodies a TLE';
+
 u_cmp_eql deg2rad => 45, .7853981634, '%.10f', 'deg2rad( 45 )';
 
 u_cmp_eql deg2rad => undef, undef, undef, 'deg2rad( undef )';
@@ -45,6 +50,14 @@ u_cmp_eql deg2rad => undef, undef, undef, 'deg2rad( undef )';
 u_cmp_eql rad2deg => 1, 57.295779513, '%.9f', 'rad2deg( 1 )';
 
 u_cmp_eql rad2deg => undef, undef, undef, 'rad2deg( undef )';
+
+u_cmp_eql acos => 1, 0, '%.6f', 'acos( 1 )';
+
+u_cmp_eql acos => 0, atan2( 1, 0 ), '%.6f', 'acos( 0 )';
+
+u_cmp_eql asin => 0, 0, '%.6f', 'asin( 0 )';
+
+u_cmp_eql asin => 1, atan2( 1, 0 ), '%.6f', 'asin( 1 )';
 
 u_cmp_eql jday2000 => timegm( 0, 0, 12, 1, 0, 100 ), 0,
     undef, 'jday2000: Noon Jan 1 2000 => 0 (Meeus pg 62)';
@@ -231,6 +244,37 @@ u_cmp_eql jd2datetime => 2447273.5, [ 5, 88 ], '%1f',
 u_cmp_eql jd2datetime => 2447273.5, [ 7, 112 ], '%1f',
     'jd2datetime: year day of 2447273.5: Meeus ex 7.g.';
 
+u_cmp_eql distsq => [ [ 3, 4 ], [ 0, 0 ] ], 25, undef,
+    'distsq( [ 3, 4 ] )';
+
+u_cmp_eql vector_magnitude => [ [ 3, 4 ] ], 5, undef,
+    'vector_magnitude( [ 3, 4 ] )';
+
+u_cmp_eql vector_unitize => [ [ 3, 4 ] ], [ 0, .6 ], undef,
+    'vector_unitize( [ 3, 4 ] ): X component';
+
+u_cmp_eql vector_unitize => [ [ 3, 4 ] ], [ 1, .8 ], undef,
+    'vector_unitize( [ 3, 4 ] ): Y component';
+
+u_cmp_eql vector_dot_product => [ [ 1, 2, 3 ], [ 6, 5, 4 ] ], 28, undef,
+    'vector_dot_product( [ 1, 2, 3 ], [ 6, 5, 4 ] )';
+
+u_cmp_eql vector_cross_product => [ [ 1, 2, 3 ], [ 6, 5, 4 ] ],
+    [ 0, -7 ], undef,
+    'vector_cross_product( [ 1, 2, 3 ], [ 6, 5, 4 ] ): X component';
+
+u_cmp_eql vector_cross_product => [ [ 1, 2, 3 ], [ 6, 5, 4 ] ],
+    [ 1, 14 ], undef,
+    'vector_cross_product( [ 1, 2, 3 ], [ 6, 5, 4 ] ): Y component';
+
+u_cmp_eql vector_cross_product => [ [ 1, 2, 3 ], [ 6, 5, 4 ] ],
+    [ 2, -7 ], undef,
+    'vector_cross_product( [ 1, 2, 3 ], [ 6, 5, 4 ] ): Z component';
+
+u_cmp_eql find_first_true => [
+    0, 1, sub{ sin( $_[0] ) >= sin( .5 ) }, .0001 ], .5, '%.4f',
+    'find_first_true looking for sin( $x ) >= sin( .5 )';
+
 done_testing;
 
 sub u_cmp_eql (@) {
@@ -241,7 +285,12 @@ sub u_cmp_eql (@) {
 	my $got;
 	if ( 'ARRAY' eq ref $want ) {
 	    ( my $inx, $want ) = @{ $want };
-	    $got = ( $code->( @{ $arg } ) )[$inx];
+	    my @rslt = $code->( @{ $arg } );
+	    if ( 1 == @rslt && 'ARRAY' eq ref $rslt[0] ) {
+		$got = $rslt[0][$inx];
+	    } else {
+		$got = $rslt[$inx];
+	    }
 	} else {
 	    $got = $code->( @{ $arg } );
 	}
@@ -254,6 +303,20 @@ sub u_cmp_eql (@) {
 	    @_ = ( $got, '==', $want, $title );
 	    goto &cmp_ok;
 	}
+    } else {
+	@_ = "Astro::Coord::ECI::Utils does not have subroutine $sub()";
+	goto &fail;
+    }
+}
+
+sub u_ok (@) {
+    my ( $sub, $arg, $title ) = @_;
+    if ( my $code = Astro::Coord::ECI::Utils->can( $sub ) ) {
+	'ARRAY' eq ref $arg
+	    or $arg = [ $arg ];
+	my $got = $code->( @{ $arg } );
+	@_ = ( $got, $title );
+	goto &ok;
     } else {
 	@_ = "Astro::Coord::ECI::Utils does not have subroutine $sub()";
 	goto &fail;
