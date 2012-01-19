@@ -1,3 +1,16 @@
+0.046		2012-01-18	T. R. Wyant
+  Add Astro::Coord::ECI::TLE attribute 'pass_threshold'. If set to
+    something (in radians) other than undef, the sattelite's highest
+    point during a pass must be at least this high for the pass to be
+    reported.
+  Support the 'pass_threshold' setting in the satpass script.
+  Optional code that used to feel around for a YAML implementation now
+    just uses YAML::Any.
+  The utility subroutines deg2rad() and rad2deg() now support an
+    argument of undef which, unsurprisingly, returns undef.
+  The Changes file now conforms to Test::CPAN::Changes, and the author
+    test xt/author/changes.t has been added to keep it so.
+
 0.045		2011-12-05	T. R. Wyant
   Have the satpass script's geocode command favor
     Geo::Coder::Geocoder::US. Deprecate the use of SOAP::Lite.
