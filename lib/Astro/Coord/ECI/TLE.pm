@@ -90,6 +90,13 @@ indicated.
 
 =head1 NOTICE
 
+The C<pass_threshold> attribute has undergone a slight change in
+functionality from version 0.046, in which it was introduced. In the new
+functionality, if the C<visible> attribute is true, the satellite must
+actually be visible above the threshold to be reported. This is actually
+how the attribute would have worked when introduced if I had thought it
+through clearly.
+
 The C<limb> attribute is deprecated in favor of the
 L<Astro::Coord::ECI|Astro::Coord::ECI> C<edge_of_earths_shadow>
 attribute. On the first release on or after March 1 2012, you will get a
@@ -1133,13 +1140,18 @@ in addition to its arguments and the orbital elements associated with
 the object:
 
   * appulse	# Maximum appulse to report
-  * edge_of_earths_shadow	# Used in the calculation of whether the
-		# satellite is illuminated or in shadow.
+  * edge_of_earths_shadow	# Used in the calculation of
+		# whether the satellite is illuminated or in
+		# shadow.
   * geometric	# Use geometric horizon for pass rise/set
   * horizon	# Effective horizon
   * interval	# Interval for pass() positions, if positive
-  * lazy_pass_position # {azimuth}, {elevation} and {range} are
-                # optional if true (see note 1).
+  * lazy_pass_position # {azimuth}, {elevation} and {range}
+		# are optional if true (see note 1).
+  * pass_threshold # Minimum elevation satellite must reach
+		# for the pass to be reportable. If visible
+		# is true, it must be visible above this
+		# elevation
   * pass_variant # Tweak what pass() returns; currently no
 		# effect unless 'visible' is true.
   * illum	# Source of illumination.
@@ -1157,15 +1169,17 @@ the C<interval> attribute, but the user should not make this assumption
 in his or her own code.
 
 Typically you will only want to set this true if, after calling the
-C<pass()> method, you compute the event positions in some coordinates
-other than azimuth, elevation, and range.
+C<pass()> method, you are not interested in the azimuth, elevation and
+range, but compute the event positions in some coordinates other than
+azimuth, elevation, and range.
 
 Note 2:
 
 The time set in the various {body} and {station} objects is B<not>
 guaranteed to be anything in particular. Specifically, it is almost
 certainly not the time of the event. If you make use of the {body}
-object you will probably need to set its time to the time of the event.
+object you will probably need to set its time to the time of the event
+before you do so.
 
 =cut
 
@@ -1232,6 +1246,9 @@ eod
     my $debug = $tle->get ('debug');
     my $pass_variant = $tle->get( 'pass_variant' ) &
 	$pass_variant_mask[ $want_visible ? 1 : 0 ];
+    defined $pass_threshold
+	and $pass_threshold > $horizon
+	or $pass_threshold = $horizon;
 
     # We need the number of radians the satellite travels in a minute so
     # we can be slightly conservative determining whether the satellite
@@ -1471,19 +1488,6 @@ eod
 		};
 	    }
 
-	    # Now that we have the positions of the main events, we can
-	    # apply the pass_threshold if that was defined.
-
-	    if ( defined $pass_threshold ) {
-		my ( $event ) = grep { $_->{event} == PASS_EVENT_MAX }
-		@info;
-		$event->{elevation} < $pass_threshold
-		    and do {
-		    @info = ();
-		    next;
-		};
-	    }
-
 	    # Compute illumination changes
 
 	    {
@@ -1529,7 +1533,7 @@ eod
 
 	    eval {	# So I can return().
 		foreach my $event ( @info ) {
-		    $event->{elevation} < $horizon
+		    $event->{elevation} < $pass_threshold
 			and next;
 		    not $want_visible
 			or $event->{illumination} == PASS_EVENT_LIT
@@ -8020,11 +8024,21 @@ motion, in radians per minute cubed.
 =item pass_threshold (numeric or undef)
 
 If defined, this attribute defines the elevation in radians that the
-satellite must reach above the horizon for its passes to be reported.
-If undefined, any pass above the horizon will be reported. You might use
-this if you want to use a nominal horizon of .35 radians (20 degrees),
-but are only interested in passes that reach an elevation of .70 radians
-(40 degrees).
+satellite must reach above the horizon for its passes to be reported. If
+the C<visible> attribute is true, the satellite must be visible above
+this elevation.
+
+If undefined, any pass above the horizon will be reported (i.e. you get
+the same behavior as before this attribute was introduced in version
+0.046.)
+
+B<Note> a slight change in the behavior of this attribute from version
+0.046. In that version, it did not matter whether the satellite was
+visible, even if the C<visible> attribute was true.
+
+You might use this attribute if you want to use a nominal horizon of .35
+radians (20 degrees), but are only interested in passes that reach an
+elevation of .70 radians (40 degrees).
 
 The default is C<undef>.
 
