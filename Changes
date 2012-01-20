@@ -1,3 +1,8 @@
+0.047		2012-01-20	T. R. Wyant
+  Have the functionality related to the Astro::Coord::ECI::TLE
+    'pass_threshold' attribute (introduced in 0.046) take visibility
+    into account if the 'visible' attribute is true.
+
 0.046		2012-01-18	T. R. Wyant
   Add Astro::Coord::ECI::TLE attribute 'pass_threshold'. If set to
     something (in radians) other than undef, the sattelite's highest
