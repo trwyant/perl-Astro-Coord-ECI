@@ -3,180 +3,120 @@ package main;
 use strict;
 use warnings;
 
+use lib qw{ inc };
+
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
-use Astro::Coord::ECI::Utils qw{ :time deg2rad PI };
-use POSIX qw{strftime floor};
-use Test;
+use Astro::Coord::ECI::Test qw{ format_time :tolerance };
+use Astro::Coord::ECI::Utils qw{ :time deg2rad PI TWOPI };
+use Test::More 0.88;
 
-BEGIN {plan tests => 36}
+# Moon position in ecliptic latitude/longitude and distance.
+# Tests: ::Moon->time_set() (and ecliptic())
 
-use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
+# This test is based on Meeus' example 47.a.
 
-my $test = 0;
+# Meeus states that his accuracy is 10 seconds of arc in longitude, and
+# 4 seconds in latitude. He does not give an accuracy on the distance.
 
+# Note that we're not too picky about the position of the sun, since
+# it's an extended object. One part in a thousand is less than half its
+# disk.
 
-#	Tests 1 - 3: moon position in ecliptic latitude/longitude
-#	and distance.
-#	Tests: ::Moon->time_set() (and ecliptic())
+{
+    my $time = timegm( 0, 0, 0, 12, 3, 92 );
 
-#	This test is based on Meeus' example 47.a.
+    my ( $lat, $long, $delta ) = Astro::Coord::ECI::Moon->
+	dynamical( $time )->ecliptic();
 
-#	Meeus states that his accuracy is 10 seconds of arc in
-#	longitude, and 4 seconds in latitude. He does not give
-#	an accuracy on the distance.
+    tolerance_frac $lat, deg2rad( -3.229126 ), 1e-6,
+	'Ecliptic latitude of Moon April 12 1992 00:00:00 dynamical';
 
-#	Note that we're not too picky about the position of the sun, since it's
-#	an extended object. One part in a thousand is less than half its disk.
+    tolerance_frac $long, deg2rad( 133.167265 ), 1e-6,
+	'Ecliptic longitude of Moon April 12 1992 00:00:00 dynamical';
 
-foreach ([timegm (0, 0, 0, 12, 3, 92), -3.229126, 133.167265, 368409.7],
-	) {
-    my ($time, $explat, $explong, $expdelta) = @$_;
-##    my $moon = Astro::Coord::ECI::Moon->dynamical ($time);
-    my ($lat, $long, $delta) = Astro::Coord::ECI::Moon->
-	dynamical ($time)->ecliptic ();
-    my $tolerance = 1e-6;
-    foreach ([latitude => $lat, deg2rad ($explat)],
-	    [longitude => $long, deg2rad ($explong)],
-	    [distance => $delta, $expdelta],
-	    ) {
-	$test++;
-	my ($what, $got, $expect) = @$_;
-	print <<eod;
-# Test $test: Ecliptic latitude/longitude and distance of the Moon
-#      Quantity: $what
-#      Expected: $expect
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-	ok (abs (($got - $expect) / $expect) < $tolerance);
-	}
-    }
+    tolerance_frac $delta, 368409.7, 1e-6,
+	'Ecliptic distance to Moon April 12 1992 00:00:00 dynamical';
+}
 
-#	Test 4: phase of the moon.
-#	Tests: phase ()
+# phase of the moon.
+# Tests: phase ()
 
-#	This test is based on Meeus' example 49.a, but worked backward.
+# This test is based on Meeus' example 49.a, but worked backward.
 
-foreach ([timegm (42, 37, 3, 18, 1, 77), 0],
-	) {
-    $test++;
-    my ($time, $expect) = @$_;
-    $expect = deg2rad ($expect);
-    my $got = Astro::Coord::ECI::Moon->dynamical ($time)->phase;
-    my $tolerance = 1.e-4;	# A second's worth of radians.
-    $expect += 2 * PI if $got - $expect >= PI;
-    print <<eod;
-# Test $test: Phase of the moon at a given time
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#      Expected: $expect
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-    ok (abs ($got - $expect) < $tolerance);
-    }
+{
+    my $time = timegm( 42, 37, 3, 18, 1, 77 );
 
-#	Tests 5-6: Phase angle and illuminated fraction.
+    my $got = Astro::Coord::ECI::Moon->dynamical( $time )->phase();
+    $got >= PI
+	and $got -= TWOPI;
 
-#	This test is based on Meeus' example 48.a.
+    tolerance $got, 0, 1e-4,
+	'Phase of Moon February 18 1977 3:37:42 dynamical';
+}
 
-foreach ([timegm (0, 0, 0, 12, 3, 92), 180 - 69.0756, .6786],
-	) {
-    my ($time, $expph, $expil) = @$_;
-    $expph = deg2rad ($expph);
-    my ($phase, $illum) =
-	Astro::Coord::ECI::Moon->dynamical ($time)->phase ();
-    foreach ([phase => $phase, $expph, 3.e-3],
-	    [illumination => $illum, $expil, .01],
-	    ) {
-	my ($what, $got, $expect, $tolerance) = @$_;
-	$test++;
-	print <<eod;
-# Test $test: Phase and illumination
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#      Quantity: $what
-#      Expected: $expect
-#           Got: $got
-#     Tolerance: $tolerance
-eod
-	ok (abs ($got - $expect) < $tolerance);
-	}
-    }
+# Phase angle and illuminated fraction.
+
+# This test is based on Meeus' example 48.a.
+
+{
+    my $time = timegm( 0, 0, 0, 12, 3, 92 );
+    my ( $phase, $illum ) =
+	Astro::Coord::ECI::Moon->dynamical( $time )->phase();
+
+    tolerance $phase, deg2rad( 180 - 69.0756 ), 3e-3,
+	'Phase of Moon April 12 1992 00:00:00 dynamical';
+
+    tolerance $illum, .6786, .01,
+	'Fraction of Moon illuminated April 12 1992 00:00:00 dynamical';
+}
 
 
-#	Tests 7-8: next_quarter and next_quarter_hash
+# next_quarter and next_quarter_hash
 
-#	This test is based on Meeus' example 49.1, right way around.
+# This test is based on Meeus' example 49.1, right way around.
 
-foreach ([timegm (0, 0, 0, 1, 1, 77), 0, timegm (42, 37, 3, 18, 1, 77)],
-	) {
-    $test++;
-    my ($time, $quarter, $expect) = @$_;
+{
+    my $time = timegm( 0, 0, 0, 1, 1, 77 );
+    my $want = timegm( 42, 37, 3, 18, 1, 77 );
     my $moon = Astro::Coord::ECI::Moon->new();
     my $tolerance = 2;
 
-    my $got = $moon->dynamical ($time)->next_quarter ($quarter);
-    print <<eod;
-# Test $test: Next quarter after given time.
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#       Quarter: $quarter
-#      Expected: @{[strftime TIMFMT, gmtime $expect]} (dynamical)
-#           Got: @{[strftime TIMFMT, gmtime $got]} (dynamical)
-#     Tolerance: $tolerance seconds
-eod
-    ok (abs ($got - $expect) < $tolerance);
+    my $got = $moon->dynamical( $time )->next_quarter( 0 );
 
-    $got = $moon->dynamical($time)->next_quarter_hash($quarter);
-    print <<eod;
-# Test $test: Next quarter after given time, as hash
-#          Time: @{[strftime TIMFMT, gmtime $time]} (dynamical)
-#       Quarter: $quarter
-#      Expected: @{[strftime TIMFMT, gmtime $expect]} (dynamical)
-#           Got: @{[strftime TIMFMT, gmtime $got->{time}]} (dynamical)
-#     Tolerance: $tolerance seconds
-eod
-    ok (abs ($got->{time} - $expect) < $tolerance);
-    }
+    tolerance $got, $want, 2,
+	'Next new Moon after February 1 1977 00:00:00 dynamical',
+	\&format_time;
+
+    $got = $moon->dynamical( $time )->next_quarter_hash( 0 );
+
+    tolerance $got->{time}, $want, 2,
+	'Hash of next new Moon after February 1 1977 00:00:00 dynamical',
+	\&format_time;
+}
 
 
-#	Tests 9 - 10: Singleton object
-
-{	# Local symbol block.
-    my $skip;
-    eval {	## no critic (RequireCheckingReturnValueOfEval)
-	local $@;
-	$skip = "Can not load Scalar::Util.";
-	require Scalar::Util;
-	$skip = "Scalar::Util does not implement refaddr ().";
-	Scalar::Util->can('refaddr')
-	    and $skip = undef;
-    };
-    my @text = qw{different same};
-
-    foreach ([1, 1], [0, 0]) {
-	my ($sgl, $expect) = @$_;
-	my $got;
-	$skip or $got = do {
-	    local $Astro::Coord::ECI::Moon::Singleton = $sgl;
-	    my @moon = map {Astro::Coord::ECI::Moon->new} (0 .. 1);
-	    Scalar::Util::refaddr ($moon[0]) ==
-		Scalar::Util::refaddr ($moon[1]) ? 1 : 0;
-	    };
-	$test++;
-	print <<eod;
-# Test $test: \$Astro::Coord::ECI::Moon::Singleton = $sgl
-#      Expected: $text[$expect]
-#           Got: @{[$skip ? 'skipped' : $text[$got]]}
-eod
-	skip ($skip, $skip || $got eq $expect);
-	}
-    }
-
-#	Tests 11-36: almanac() and almanac_hash, testing against data
-#	from the U. S. Naval Observatory
+# Singleton object
 
 {
+    local $Astro::Coord::ECI::Moon::Singleton = 1;
+
+    my @moon = map { Astro::Coord::ECI::Moon->new() } ( 0, 1 );
+
+    cmp_ok $moon[0], '==', $moon[1],
+    'Get same object from different calls to new() with $Singleton true';
+}
+
+{
+    local $Astro::Coord::ECI::Moon::Singleton = 0;
+
+    my @moon = map { Astro::Coord::ECI::Moon->new() } ( 0, 1 );
+
+    cmp_ok $moon[0], '!=', $moon[1],
+    'Get different objects from different calls to new() with $Singleton false';
+}
+
+SKIP: {
     my $sta = Astro::Coord::ECI->new(
 	name => 'Washington, DC'
     )->geodetic(
@@ -184,59 +124,122 @@ eod
 	deg2rad(-77.0),	# U. S. Naval Observatory's
 	0,		# http://aa.usno.navy.mil/data/docs/RS_OneDay.php
     );
-    my $time = timegm (0, 0, 5, 1, 0, 108);	# Jan 1, 2008 in TZ -5
-
     my $moon = Astro::Coord::ECI::Moon->new();
+    my $time = timegm( 0, 0, 5, 1, 0, 108 );	# Jan 1, 2008 in TZ -5
 
-    my @title = qw{time event detail description};
-    my @accessor = (
-	[sub {$_[0][0]}, sub {$_[0][1]}, sub {$_[0][2]}, sub {$_[0][3]}],
-	[sub {$_[0]{time}}, sub {$_[0]{almanac}{event}},
-	sub {$_[0]{almanac}{detail}}, sub {$_[0]{almanac}{description}}]
-    );
-    my @test = (
-	sub {skip ($_[0], abs ($_[2] - $_[1]) < 60)},
-	sub {skip ($_[0], $_[1] eq $_[2])},
-	sub {skip ($_[0], $_[1] == $_[2])},
-	sub {skip ($_[0], $_[1] eq $_[2])},
-    );
+    my @events = $moon->universal( $time )->almanac( $sta );
 
-    foreach my $hash (0 .. 1) {
-	my $method = $hash ? 'almanac_hash' : 'almanac';
-	my @list = $moon->universal($time)->$method($sta);
+    cmp_ok scalar @events, '==', 3,
+	'Almanac method returned three events';
 
-	$test++;
-	print <<eod;
-# Test $test: Items returned by $method()
-#      Expected: 3
-#           Got: @{[scalar @list]}
-eod
-	ok (scalar @list == 3);
+    @events
+	or skip 'No events found', 12;
 
-	my $inx = 0;
-	foreach my $info (
-	    [timegm(0, 15,  6, 1, 0, 108), horizon => 1, 'Moon rise'],
-	    [timegm(0, 46, 11, 1, 0, 108), transit => 1, 'Moon transits meridian'],
-	    [timegm(0,  8, 17, 1, 0, 108), horizon => 0, 'Moon set'],
-	) {
-	    my $skip = $inx >= @list ? "Index $inx not returned" : undef;
-	    foreach my $item (0 .. 3) {
-		my $got = $accessor[$hash][$item]->($list[$inx]);
-		$test++;
-		print <<eod;
-# Test $test: Item $inx $title[$item]
-#     Expected: $info->[$item]
-#          Got: $got
-eod
-		$inx or print <<eod;
-#    Tolerance: 60
-eod
-		$test[$item]->($skip, $info->[$item], $got);
-	    }
-	    $inx++;
-	}
-    }
+    is $events[0][1], 'horizon', 'First event is horizon crossing';
+
+    cmp_ok $events[0][2], '==', 1, 'First event is Moon rise';
+
+    is $events[0][3], 'Moon rise', q{First event description is 'Moon rise'};
+
+    tolerance $events[0][0], timegm( 0, 15,  6, 1, 0, 108 ), 60,
+	'Moon rise occurred at January 1 2008 6:15:00 GMT',
+	\&format_time;
+
+    @events > 1
+	or skip 'Only one event found', 8;
+
+    is $events[1][1], 'transit', 'Second event is meridian crossing';
+
+    cmp_ok $events[1][2], '==', 1, 'Second event is Moon culmination';
+
+    is $events[1][3], 'Moon transits meridian',
+	q{Second event description is 'Moon transits meridian'};
+
+    tolerance $events[1][0], timegm( 0, 46, 11, 1, 0, 108 ), 60,
+	'Moon culmination occurred at January 1 2008 11:46:00 GMT',
+	\&format_time;
+
+    @events > 2
+	or skip 'Only two events found', 4;
+
+    is $events[2][1], 'horizon', 'Third event is horizon crossing';
+
+    cmp_ok $events[2][2], '==', 0, 'Third event is Moon set';
+
+    is $events[2][3], 'Moon set', q{Third event description is 'Moon set'};
+
+    tolerance $events[2][0], timegm( 0, 8,  17, 1, 0, 108 ), 60,
+	'Moon set occurred at January 1 2008 17:08:00 GMT',
+	\&format_time;
 }
 
+SKIP: {
+    my $sta = Astro::Coord::ECI->new(
+	name => 'Washington, DC'
+    )->geodetic(
+	deg2rad(38.9),	# Position according to
+	deg2rad(-77.0),	# U. S. Naval Observatory's
+	0,		# http://aa.usno.navy.mil/data/docs/RS_OneDay.php
+    );
+    my $moon = Astro::Coord::ECI::Moon->new();
+    my $time = timegm( 0, 0, 5, 1, 0, 108 );	# Jan 1, 2008 in TZ -5
+
+    my @events = $moon->universal( $time )->almanac_hash( $sta );
+
+    cmp_ok scalar @events, '==', 3,
+	'Almanac_hash method returned three events';
+
+    @events
+	or skip 'No events found', 12;
+
+    is $events[0]{almanac}{event}, 'horizon',
+	'First event is horizon crossing';
+
+    cmp_ok $events[0]{almanac}{detail}, '==', 1,
+	'First event is Moon rise';
+
+    is $events[0]{almanac}{description}, 'Moon rise',
+	q{First event description is 'Moon rise'};
+
+    tolerance $events[0]{time}, timegm( 0, 15,  6, 1, 0, 108 ), 60,
+	'Moon rise occurred at January 1 2008 6:15:00 GMT',
+	\&format_time;
+
+    @events > 1
+	or skip 'Only one event found', 8;
+
+    is $events[1]{almanac}{event}, 'transit',
+	'Second event is meridian crossing';
+
+    cmp_ok $events[1]{almanac}{detail}, '==', 1,
+	'Second event is Moon culmination';
+
+    is $events[1]{almanac}{description}, 'Moon transits meridian',
+	q{Second event description is 'Moon transits meridian'};
+
+    tolerance $events[1]{time}, timegm( 0, 46, 11, 1, 0, 108 ), 60,
+	'Moon culmination occurred at January 1 2008 11:46:00 GMT',
+	\&format_time;
+
+    @events > 2
+	or skip 'Only two events found', 4;
+
+    is $events[2]{almanac}{event}, 'horizon',
+	'Third event is horizon crossing';
+
+    cmp_ok $events[2]{almanac}{detail}, '==', 0,
+	'Third event is Moon set';
+
+    is $events[2]{almanac}{description}, 'Moon set',
+	q{Third event description is 'Moon set'};
+
+    tolerance $events[2]{time}, timegm( 0, 8,  17, 1, 0, 108 ), 60,
+	'Moon set occurred at January 1 2008 17:08:00 GMT',
+	\&format_time;
+}
+
+done_testing;
+
 1;
-__END__
+
+# ex: set textwidth=72 :
