@@ -5,17 +5,23 @@ use 5.006002;
 use strict;
 use warnings;
 
-use Carp;
-
 our $VERSION = '0.047';
 
 use base qw{ Exporter };
 
 use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::Utils qw{ rad2deg };
+use Test::More 0.88;
 
-our @EXPORT_OK = qw{ format_pass format_time };
-our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+our @EXPORT_OK = qw{
+    format_pass format_time
+    tolerance tolerance_frac
+};
+our %EXPORT_TAGS = (
+    all => \@EXPORT_OK,
+    format => [ qw{ format_pass format_time } ],
+    tolerance => [ qw{ tolerance tolerance_frac } ],
+);
 
 
 {
@@ -94,6 +100,28 @@ sub format_time {
 	$parts[4] + 1, @parts[ 3, 2, 1, 0 ];
 }
 
+sub tolerance (@) {
+    my ( $got, $want, $tolerance, $title ) = @_;
+    $title =~ s{ (?<! [.] ) \z }{.}smx;
+    my $delta = $got - $want;
+    my $rslt = abs( $delta ) < $tolerance;
+    $rslt or $title .= <<"EOD";
+
+         Got: $got
+    Expected: $want
+  Difference: $delta
+   Tolerance: $tolerance
+EOD
+    chomp $title;
+    @_ = ( $rslt, $title );
+    goto &ok;
+}
+
+sub tolerance_frac (@) {
+    my ( $got, $want, $tolerance, $title ) = @_;
+    @_ = ( $got, $want, $tolerance * abs $want, $title );
+    goto &tolerance;
+}
 
 1;
 
@@ -143,6 +171,30 @@ are also provided, on a line after the event.
 
 This subroutine converts a given Perl time into an ISO-8601-ish GMT
 time. It is used by C<format_pass()>.
+
+=head2 tolerance
+
+ tolerance $got, $want, $tolerance, $title
+
+This subroutine runs a test, to see if the absolute value of
+C<$got - $want> is less than C<$tolerance>. If so, the test passes. If
+not, it fails. This subroutine computes the passage or failure, but does
+a C<< goto &Test::More::ok >> to generate the appropriate TAP output.
+However, if the test is going to fail, the title is modified to include
+the C<$got> and C<$want> values, their difference, and the tolerance.
+
+This subroutine is prototyped C<(@)>.
+
+=head2 tolerance_frac
+
+ tolerance_frac $got, $want, $tolerance, $title
+
+This subroutine is a variant on C<tolerance()> in which the tolerance is
+expressed as a fraction of the C<$want> value. It is actually just a
+stub that replaces the C<$tolerance> argument by
+C<< abs( $want * $tolerance ) >> and then does a C<goto &tolerance>.
+
+This subroutine is prototyped C<(@)>.
 
 =head1 SUPPORT
 
