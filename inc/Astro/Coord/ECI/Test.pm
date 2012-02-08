@@ -101,14 +101,15 @@ sub format_time {
 }
 
 sub tolerance (@) {
-    my ( $got, $want, $tolerance, $title ) = @_;
+    my ( $got, $want, $tolerance, $title, $fmtr ) = @_;
+    $fmtr ||= sub { return $_[0] };
     $title =~ s{ (?<! [.] ) \z }{.}smx;
     my $delta = $got - $want;
     my $rslt = abs( $delta ) < $tolerance;
     $rslt or $title .= <<"EOD";
 
-         Got: $got
-    Expected: $want
+         Got: @{[ $fmtr->( $got ) ]}
+    Expected: @{[ $fmtr->( $want ) ]}
   Difference: $delta
    Tolerance: $tolerance
 EOD
@@ -118,8 +119,8 @@ EOD
 }
 
 sub tolerance_frac (@) {
-    my ( $got, $want, $tolerance, $title ) = @_;
-    @_ = ( $got, $want, $tolerance * abs $want, $title );
+    my ( $got, $want, $tolerance, $title, $fmtr ) = @_;
+    @_ = ( $got, $want, $tolerance * abs $want, $title, $fmtr );
     goto &tolerance;
 }
 
@@ -174,7 +175,7 @@ time. It is used by C<format_pass()>.
 
 =head2 tolerance
 
- tolerance $got, $want, $tolerance, $title
+ tolerance $got, $want, $tolerance, $title, $formatter
 
 This subroutine runs a test, to see if the absolute value of
 C<$got - $want> is less than C<$tolerance>. If so, the test passes. If
@@ -182,6 +183,11 @@ not, it fails. This subroutine computes the passage or failure, but does
 a C<< goto &Test::More::ok >> to generate the appropriate TAP output.
 However, if the test is going to fail, the title is modified to include
 the C<$got> and C<$want> values, their difference, and the tolerance.
+
+The C<$formatter> argument is optional. If specified, it is a reference
+to code used to format the C<$got> and C<$want> values for display if
+the test fails. The formatter will be called with a single argument,
+which is the value to display.
 
 This subroutine is prototyped C<(@)>.
 
