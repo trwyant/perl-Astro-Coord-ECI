@@ -343,93 +343,26 @@ recession apply to the Doppler shift as well.
 =cut
 
 sub azel_offset {
-    my ($self, $trn2, $offset) = @_;
+    my ( $self, $trn2, $offset ) = @_;
     my $cache = ($self->{_ECI_cache} ||= {});
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
 	print "Debug azel_offset - ", Dumper ($self, $trn2, $offset);
     };
 
-    my $time = $trn2->universal();
-    $self->universal( $time );
+    my ( $intermediate, $lclx, $lcly, $lclz, $velx, $vely, $velz ) =
+	$self->_local_cartesian( $trn2 );
+    my ( $sinphi, $cosphi ) = @{ $intermediate };
 
-    my ( $phi, $lamda ) = $self->geodetic();
-    my $theta = mod2pi( $lamda + thetag( $time ) );
-    my ( $sinphi, $cosphi );
-    if ( $self->{inertial} ) {
-	$sinphi = sin $phi;
-	$cosphi = cos $phi;
-    } else {
-	$sinphi = $cache->{fixed}{sinphi} ||= sin $phi;
-	$cosphi = $cache->{fixed}{cosphi} ||= cos $phi;
-    }
-    my $sintheta = sin $theta;
-    my $costheta = cos $theta;
-    my @base = $self->eci();
-    my @tgt = $trn2->eci();
-
-    my @delta;
-    my $limit = min( scalar @tgt, scalar @base ) - 1;
-    foreach my $inx (0 .. $limit) {
-	$delta[$inx] = $tgt[$inx] - $base[$inx];
-    }
-
-    # We need to rotate the coordinate system in the X-Y plane by the
-    # hour angle theta, followed by a rotation in the Z-X plane by 90
-    # degrees minus the latitude phi. In linear algebra, this is the
-    # theta matrix premultiplied by the phi matrix, which is
-    #
-    # +-                           -+   +-                     -+
-    # |  cos(90-phi) 0 -sin(90-phi) |   |  sin(phi) 0 -cos(phi) |
-    # |       0      1       0      | = |      0    1     0     |
-    # |  sin(90-phi) 0  cos(90-phi) |   |  cos(phi) 0  sin(phi) |
-    # +-                           -+   +-                     -+
-    #
-    # The entire rotation is therefore
-    #
-    # +-                     -+   +-                         -+
-    # |  sin(phi) 0 -cos(phi) |   |  cos(theta)  sin(theta) 0 |
-    # |      0    1     0     | x | -sin(theta)  cos(theta) 0 | =
-    # |  cos(phi) 0  sin(phi) |   |      0         0        1 |
-    # +-                     -+   +-                         -+
-    #
-    # +-                                                 -+
-    # |  cos(theta)sin(phi)  sin(theta)sin(phi) -cos(phi) |
-    # | -sin(theta)          cos(theta)             0     |
-    # |  cos(theta)cos(phi)  sin(theta)cos(phi)  sin(phi) |
-    # +-                                                 -+
-
-    my $lclx = $costheta * $sinphi * $delta[0] +
-	$sintheta * $sinphi * $delta[1] - $cosphi * $delta[2];
-    my $lcly = - $sintheta * $delta[0] + $costheta * $delta[1];
-    my $lclz = $costheta * $cosphi * $delta[0] +
-	$sintheta * $cosphi * $delta[1] + $sinphi * $delta[2];
-
-    # We end with a Cartesian coordinate system with the observer at the
-    # origin, with X pointing to the South, Y to the East, and Z to the
-    # zenith. This gets converted to azimuth and elevation using the
-    # definition of those terms. Note that X gets negated in the
-    # computation of azimuth, since azimuth is from the North.
-
-    my $azimuth = ( $lclx || $lcly ) ?
-	mod2pi (atan2 ($lcly, -$lclx)) :
-	0;
     my $pos_vec = [ $lclx, $lcly, $lclz ];
     my $range = vector_magnitude( $pos_vec );
-    my $elevation = $range ? asin ($lclz / $range) : 0;
     my @velocity;
 
-    if (@delta > 3) {
+    if ( defined $velz && defined $vely && defined $velx ) {
 
 	# We have velocities. To convert them, we start by transforming
 	# them into the same local Cartesian coordinate system used for
 	# positions.
-
-	my $velx = $costheta * $sinphi * $delta[3] +
-	    $sintheta * $sinphi * $delta[4] - $cosphi * $delta[5];
-	my $vely = - $sintheta * $delta[3] + $costheta * $delta[4];
-	my $velz = $costheta * $cosphi * $delta[3] +
-	    $sintheta * $cosphi * $delta[4] + $sinphi * $delta[5];
 
 	my $vel_vec = [ $velx, $vely, $velz ];
 
@@ -489,6 +422,10 @@ sub azel_offset {
 
     }
 
+    my $azimuth = ( $lclx || $lcly ) ?
+	mod2pi (atan2 ($lcly, -$lclx)) :
+	0;
+    my $elevation = $range ? asin ($lclz / $range) : 0;
 
     # Adjust for upper limb and refraction if needed.
 
@@ -1673,6 +1610,140 @@ eod
 
 }	# End local symbol block
 
+=item @coords = $coord->enu( $coord2 );
+
+This method reports the coordinates of C<$coord2> in the East-North-Up
+coordinate system, as seen from C<$coord>.
+
+Velocities are returned if available, but are not to be relied upon.
+
+=cut
+
+sub enu {				# East, North, Up
+    my ( $self, $trn2 ) = @_;
+    my @vector = $self->neu( $trn2 );
+    @vector[ 0, 1 ] =  @vector[ 1, 0 ];	# Swap North and East
+    @vector > 3				# If we have velocity,
+	and @vector[ 3, 4 ] = @vector[ 4, 3 ];	# Ditto
+    return @vector;
+}
+
+=item @coords = $coord->neu( $coord2 );
+
+This method reports the coordinates of C<$coord2> in the North-East-Up
+coordinate system, as seen from C<$coord>. This is a B<left-handed>
+coordinate system.
+
+Velocities are returned if available, but are not to be relied upon.
+
+=cut
+
+sub neu {				# North, East, Up
+    my ( $self, $trn2 ) = @_;
+    my @vector = $self->_local_cartesian( $trn2 );
+    shift @vector;			# Discard intermediate results
+    $vector[0] = - $vector[0];		# Convert South to North.
+    @vector > 3				# If we have velocity
+	and $vector[3] = - $vector[3];	# Convert South vel to North
+    return @vector;
+}
+
+# ( $temp, $X, $Y, $Z, $Xprime, $Yprime, $Zprime ) =
+#     $self->_local_cartesian( $trn2 );
+# This method computes local Cartesian coordinates of $trn2 as seen from
+# $self. The first return is intermediate results useful for the azimuth
+# and elevation. The subsequent results are X, Y, and Z coordinates (and
+# velocities if available), in the South, East, Up coordinate system.
+
+sub _local_cartesian {
+    my ( $self, $trn2 ) = @_;
+    my $cache = ( $self->{_ECI_cache} ||= {} );
+    $self->{debug} and do {
+	local $Data::Dumper::Terse = 1;
+	print "Debug azel_offset - ", Dumper( $self, $trn2 );
+    };
+
+    my $time = $trn2->universal();
+    $self->universal( $time );
+
+    my ( $phi, $lamda ) = $self->geodetic();
+    my $theta = mod2pi( $lamda + thetag( $time ) );
+    my ( $sinphi, $cosphi );
+    if ( $self->{inertial} ) {
+	$sinphi = sin $phi;
+	$cosphi = cos $phi;
+    } else {
+	$sinphi = $cache->{fixed}{sinphi} ||= sin $phi;
+	$cosphi = $cache->{fixed}{cosphi} ||= cos $phi;
+    }
+    my $sintheta = sin $theta;
+    my $costheta = cos $theta;
+    my @base = $self->eci();
+    my @tgt = $trn2->eci();
+
+    my @delta;
+    my $limit = min( scalar @tgt, scalar @base ) - 1;
+    foreach my $inx (0 .. $limit) {
+	$delta[$inx] = $tgt[$inx] - $base[$inx];
+    }
+
+    # We need to rotate the coordinate system in the X-Y plane by the
+    # hour angle theta, followed by a rotation in the Z-X plane by 90
+    # degrees minus the latitude phi. In linear algebra, this is the
+    # theta matrix premultiplied by the phi matrix, which is
+    #
+    # +-                           -+   +-                     -+
+    # |  cos(90-phi) 0 -sin(90-phi) |   |  sin(phi) 0 -cos(phi) |
+    # |       0      1       0      | = |      0    1     0     |
+    # |  sin(90-phi) 0  cos(90-phi) |   |  cos(phi) 0  sin(phi) |
+    # +-                           -+   +-                     -+
+    #
+    # The entire rotation is therefore
+    #
+    # +-                     -+   +-                         -+
+    # |  sin(phi) 0 -cos(phi) |   |  cos(theta)  sin(theta) 0 |
+    # |      0    1     0     | x | -sin(theta)  cos(theta) 0 | =
+    # |  cos(phi) 0  sin(phi) |   |      0         0        1 |
+    # +-                     -+   +-                         -+
+    #
+    # +-                                                 -+
+    # |  cos(theta)sin(phi)  sin(theta)sin(phi) -cos(phi) |
+    # | -sin(theta)          cos(theta)             0     |
+    # |  cos(theta)cos(phi)  sin(theta)cos(phi)  sin(phi) |
+    # +-                                                 -+
+
+    my $lclx = $costheta * $sinphi * $delta[0] +
+	$sintheta * $sinphi * $delta[1] - $cosphi * $delta[2];
+    my $lcly = - $sintheta * $delta[0] + $costheta * $delta[1];
+    my $lclz = $costheta * $cosphi * $delta[0] +
+	$sintheta * $cosphi * $delta[1] + $sinphi * $delta[2];
+
+    # We end with a Cartesian coordinate system with the observer at the
+    # origin, with X pointing to the South, Y to the East, and Z to the
+    # zenith. This gets converted to azimuth and elevation using the
+    # definition of those terms. Note that X gets negated in the
+    # computation of azimuth, since azimuth is from the North.
+
+    my @velocity;
+
+    if (@delta > 3) {
+
+	# We have velocities. To convert them, we start by transforming
+	# them into the same local Cartesian coordinate system used for
+	# positions.
+
+	my $velx = $costheta * $sinphi * $delta[3] +
+	    $sintheta * $sinphi * $delta[4] - $cosphi * $delta[5];
+	my $vely = - $sintheta * $delta[3] + $costheta * $delta[4];
+	my $velz = $costheta * $cosphi * $delta[3] +
+	    $sintheta * $cosphi * $delta[4] + $sinphi * $delta[5];
+
+	@velocity = ( $velx, $vely, $velz );
+
+    }
+
+    return ( [ $sinphi, $cosphi ], $lclx, $lcly, $lclz, @velocity );
+}
 
 =item $coord = $coord->local_mean_time ($time);
 

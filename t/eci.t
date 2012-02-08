@@ -355,15 +355,13 @@ EOD
 
 {
     my $time = timegm (0, 0, 5, 27, 7, 105);
+    my $sta = Astro::Coord::ECI->new( ellipsoid => 'GRS80' )->
+	geodetic( deg2rad( 38 ), deg2rad( -80 ), 1 );
+    my $sat = Astro::Coord::ECI->new( ellipsoid => 'GRS80' )->
+	universal( $time )->
+	geodetic( deg2rad( 0 ), deg2rad( -75 ), 35800 );
 
-    my ( $azm, $elev, $rng ) =
-	Astro::Coord::ECI->new( ellipsoid => 'GRS80' )->
-	geodetic( deg2rad( 38 ), deg2rad( -80 ), 1 )->
-	azel (
-	    Astro::Coord::ECI->new( ellipsoid => 'GRS80' )->
-	    universal( $time )->
-	    geodetic( deg2rad( 0 ), deg2rad( -75 ), 35800 )
-	);
+    my ( $azm, $elev, $rng ) = $sta->azel( $sat );
 
     tolerance_band $azm, deg2rad( 171.906 ), 1e-3,
 	'Azimuth for observer';
@@ -373,6 +371,23 @@ EOD
 
     tolerance_band $rng, 37355.457, 1e-3,
 	'Range for observer';
+
+    # enu
+    # Tests: enu()
+
+    # From the azel() test above, converted as described at
+    # http://geostarslib.sourceforge.net/main.html#conv
+
+    my ( $East, $North, $Up ) = $sta->enu( $sat );
+
+    tolerance $East, 3675, 10,
+	'East for observer';
+
+    tolerance $North, -25840, 10,
+	'North for observer';
+
+    tolerance $Up, 26746, 10,
+	'Up for observer';
 }
 
 # atmospheric refraction.
