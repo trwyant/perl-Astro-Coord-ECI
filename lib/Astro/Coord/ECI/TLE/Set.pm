@@ -355,7 +355,7 @@ effective date.
 
 sub members {
     my $self = shift;
-    return map {$_->[1]} @{$self->{members}};
+    return ( map { $_->[1] } @{ $self->{members} } );
 }
 
 =item $set->represents($class)
