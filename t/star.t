@@ -3,15 +3,14 @@ package main;
 use strict;
 use warnings;
 
+use lib qw{ inc };
+
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Star;
+use Astro::Coord::ECI::Test qw{ tolerance };
 use Astro::Coord::ECI::Utils qw{ :time deg2rad PI };
 use POSIX qw{strftime floor};
-use Test;
-
-BEGIN {plan tests => 2}
-
-my $test = 0;
+use Test::More 0.88;
 
 use constant LIGHTYEAR2KILOMETER => 9.4607e12;
 use constant SECSPERYEAR => 365.25 * 86400;
@@ -30,31 +29,25 @@ my $star = Astro::Coord::ECI::Star->new (name => 'Theta Persei')->
 	0,					# recession vel - km/sec
 	);
 my $time = timegm (0, 0, 12, 13, 10, 128) + .19 * 86400;
-my ($alpha, $delta) = $star->dynamical ($time)->equatorial ();
+my ( $alpha, $delta ) = $star->dynamical( $time )->equatorial();
 
 my $tolerance = 2e-5;
-print <<eod;
-#
-# In the following the tolerance is in radians. This seems a little large,
-# amounting to 4 seconds of arc. It's difficult to check in detail, since
-# I went through ecliptic coordinates and Meeus' example is in equatorial
-# coordinates.
-#
-eod
-foreach (['right ascension' => $alpha, ((14.390 / 60 + 46) / 60 + 2) / 12 * PI],
-	[declination => $delta, deg2rad ((7.45 / 60 + 21) / 60 + 49)],
-	) {
-    my ($what, $got, $expected) = @$_;
-     $test++;
-     print <<eod;
-# Test $test: Position of a star at a given time.
-#      Quantity: $what
-#           Got: $got
-#      Expected: $expected
-#     Tolerance: $tolerance
-eod
-    ok (abs ($got - $expected) < $tolerance);
-    }
+note <<'EOD';
+
+In the following the tolerance is in radians. This seems a little large,
+amounting to 4 seconds of arc. It's difficult to check in detail, since
+I went through ecliptic coordinates and Meeus' example is in equatorial
+coordinates.
+
+EOD
+
+tolerance $alpha, ( ( 14.390 / 60 + 46 ) / 60 + 2 ) / 12 * PI, $tolerance,
+    'Right ascension of Theta Persei 2028 Nov 13.19';
+
+tolerance $delta,deg2rad ( ( 7.45 / 60 + 21 ) / 60 + 49 ), $tolerance,
+    'Declination of Theta Persei 2028 Nov 13.19';
+
+done_testing;
 
 1;
 __END__
