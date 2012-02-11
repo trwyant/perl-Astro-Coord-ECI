@@ -4,29 +4,33 @@ use strict;
 use warnings;
 
 use ExtUtils::Manifest qw{maniread};
-use Test;
+use Test::More 0.88;
 
-my $manifest = maniread ();
+my $manifest = maniread();
 
-my @check;
-foreach (sort keys %$manifest) {
-    (m/^bin\b/ || m/^eg\b/) and next;
-    push @check, $_;
+foreach ( sort keys %{ $manifest } ) {
+    m{ \A bin / }smx
+	and next;
+    m{ \A eg / }smx
+	and next;
+    m{ \A tools / }smx
+	and next;
+
+    ok ! is_executable(), "$_ should not be executable";
 }
 
-plan (tests => scalar @check);
+done_testing;
 
-my $test = 0;
-foreach my $file (@check) {
-    my $skip = $file =~ m/^bin\b/ ? 'Intended as an executable' :
-    	$file =~ m/^eg\b/ ? 'Examples are not installed' : '';
-    $test++;
-    print "# Test $test - $file\n";
-    open (my $fh, '<', $file) or die "Unable to open $file: $!\n";
+sub is_executable {
+    my @stat = stat $_;
+    $stat[2] & oct(111)
+	and return 1;
+    open my $fh, '<', $_ or die "Unable to open $_: $!\n";
     local $_ = <$fh>;
     close $fh;
-    my @stat = stat $file;
-    skip ($skip, !($stat[2] & oct(111) || m/^#!.*perl/));
+    return m{ \A [#]! .* perl }smx;
 }
 
 1;
+
+# ex: set textwidth=72 :
