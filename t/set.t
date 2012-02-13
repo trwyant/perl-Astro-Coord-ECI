@@ -7,356 +7,333 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
+use Astro::Coord::ECI::Test qw{ format_time :tolerance };
 use Astro::Coord::ECI::SetDelegate;
 use Astro::Coord::ECI::Utils qw{ :time };
-use Test;
+use Test::More 0.88;
 
-plan tests => 53, todo => [];
+sub choose_epoch (@);
+sub compare_times (@);
+sub insert (@);
 
-my $test = 0;
-my $success;
+{
+    my $set = Astro::Coord::ECI::TLE::Set->new();
 
-{	# Begin local symbol block.
-    my $set = eval {Astro::Coord::ECI::TLE::Set->new ()};
-    $test++;
-    print <<eod;
-#
-# Test $test - Instantiate a set.
-eod
-    print "    Error: $@\n" if $@;
-    ok ($set);
-    my $skip = $set ? '' : 'Failed to instantiate set.';
+    insert $set, timegm( 0, 0, 0, 2, 6, 106 ), 99999, 'Anonymous',
+	'Add first member';
 
-    foreach ([first => 2, 6, 2006], [second => 4, 6, 2006]) {
-	my $which = shift @$_;
-	$success = $skip ? undef : eval {
-	    $set->add(dummy( timegm( 0, 0, 0, @$_ ), 99999,
-		    'Anonymous' ) );
-	    1;
-	};
-	$test++;
-	print <<eod;
-#
-# Test $test - Add $which member.
-eod
-	print "    Error: $@\n" if $@;
-	skip( $skip, $success );
+    insert $set, timegm( 0, 0, 0, 4, 6, 106 ), 99999, 'Anonymous',
+	'Add second member';
+
+    choose_epoch $set, select => timegm( 0, 0, 0, 1, 6, 106 ),
+	timegm ( 0, 0, 0, 2, 6, 106 ),
+	'Select epoch before first member';
+
+    choose_epoch $set, select => timegm( 0, 0, 0, 2, 6, 106 ),
+	timegm ( 0, 0, 0, 2, 6, 106 ),
+	'Select epoch of first member';
+
+    choose_epoch $set, select => timegm( 0, 0, 0, 3, 6, 106 ),
+	timegm ( 0, 0, 0, 2, 6, 106 ),
+	'Select epoch between first and second member';
+
+    choose_epoch $set, select => timegm( 0, 0, 0, 4, 6, 106 ),
+	timegm ( 0, 0, 0, 4, 6, 106 ),
+	'Select epoch of second member';
+
+    choose_epoch $set, select => timegm( 0, 0, 0, 5, 6, 106 ),
+	timegm ( 0, 0, 0, 4, 6, 106 ),
+	'Select epoch after second member';
+
+    my $time = timegm( 0, 0, 0, 1, 6, 106 );
+    my $tle = $set->universal( $time );
+
+    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 2, 6, 106 ),
+	'Setting time before first member returns first member';
+
+    compare_times $tle->universal(), $time,
+	q{Member's time is original time set};
+
+    compare_times $set->universal(), $time,
+	q{Set's time is original time set};
+
+    $time = timegm( 0, 0, 0, 2, 6, 106 );
+    $tle = $set->universal( $time );
+
+    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 2, 6, 106 ),
+	'Setting time of first member returns first member';
+
+    compare_times $tle->universal(), $time,
+	q{Member's time is original time set};
+
+    compare_times $set->universal(), $time,
+	q{Set's time is original time set};
+
+    $time = timegm( 0, 0, 0, 3, 6, 106 );
+    $tle = $set->universal( $time );
+
+    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 2, 6, 106 ),
+	'Setting time between members returns first member';
+
+    compare_times $tle->universal(), $time,
+	q{Member's time is original time set};
+
+    compare_times $set->universal(), $time,
+	q{Set's time is original time set};
+
+    $time = timegm( 0, 0, 0, 4, 6, 106 );
+    $tle = $set->universal( $time );
+
+    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 4, 6, 106 ),
+	'Setting time of second member returns second member';
+
+    compare_times $tle->universal(), $time,
+	q{Member's time is original time set};
+
+    compare_times $set->universal(), $time,
+	q{Set's time is original time set};
+
+    $time = timegm( 0, 0, 0, 5, 6, 106 );
+    $tle = $set->universal( $time );
+
+    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 4, 6, 106 ),
+	'Setting time after second member returns second member';
+
+    compare_times $tle->universal(), $time,
+	q{Member's time is original time set};
+
+    compare_times $set->universal(), $time,
+	q{Set's time is original time set};
+
+    my @members = $set->members();
+
+    cmp_ok scalar @members, '==', 2,
+    'Retrieved two members from set';
+
+    eval {
+	$set->set( name => 'Nemo' );
+	pass q{Set name to 'Nemo'};
+    } or fail "Set name to 'Nemo': $@";
+
+    SKIP: {
+
+	@members
+	    or skip '$set->members() returned no members', 4;
+
+	is $members[0]->get( 'name' ), 'Nemo',
+	    q{First member's name should be 'Nemo'};
+
+	compare_times $members[0]->get( 'epoch' ),
+	    timegm( 0, 0, 0, 2, 6, 106 ),
+	    q{First member's epoch should be July 2 2006};
+
+	@members > 1
+	    or skip '$set->members() only returned 1 member', 2;
+
+	is $members[1]->get( 'name' ), 'Nemo',
+	    q{Second member's name should be 'Nemo'};
+
+	compare_times $members[1]->get( 'epoch' ),
+	    timegm( 0, 0, 0, 4, 6, 106 ),
+	    q{Second member's epoch should be July 4 2006};
     }
 
+    $set->clear();
 
-    foreach ([before => 1, 6, 2006, 2, 6, 2006],
-	    [first => 2, 6, 2006, 2, 6, 2006],
-	    [between => 3, 6, 2006, 2, 6, 2006],
-	    [last => 4, 6, 2006, 4, 6, 2006],
-	    [after => 5, 6, 2006, 4, 6, 2006],
-	    ) {
-	my $what = shift @$_;
-	my $time = timegm (0, 0, 0, splice @$_, 0, 3);
-	my $expect = timegm (0, 0, 0, @$_);
-	$test++;
-	my $got;
-	$skip or $got = eval {$set->select ($time)->get ('epoch')};
-	print <<eod;
-#
-# Test $test - Select $what set members.
-#      Time: @{[scalar gmtime $time]} GMT
-#    Expect: @{[scalar gmtime $expect]} GMT
-eod
-	print $skip ? <<eod : $@ ? <<eod : <<eod;
-#   Skipped
-eod
-#     Error: $@
-eod
-#       Got: @{[scalar gmtime $got]} GMT
-eod
-	$got ||= 0;
-	skip ($skip, $expect == $got);
-    }
+    cmp_ok scalar $set->members(), '==', 0,
+	'After clear, set has no members';
+}
 
-    foreach ([before => 1, 6, 2006, 2, 6, 2006],
-	    [first => 2, 6, 2006, 2, 6, 2006],
-	    [between => 3, 6, 2006, 2, 6, 2006],
-	    [last => 4, 6, 2006, 4, 6, 2006],
-	    [after => 5, 6, 2006, 4, 6, 2006],
-	    ) {
-	my $what = shift @$_;
-	my $time = timegm (0, 0, 0, splice @$_, 0, 3);
-	my $expect = timegm (0, 0, 0, @$_);
-	$test++;
-	my ($tle, $got);
-	$skip or $tle = eval {$set->universal ($time)};
-	$tle and $got = eval {$tle->get ('epoch')};
-	$success = $tle && $got;
-	print <<eod;
-#
-# Test $test - Set universal() $what set members - resultant epoch.
-#      Time: @{[scalar gmtime $time]} GMT
-#    Expect: @{[scalar gmtime $expect]} GMT
-eod
-	print $skip ? <<eod : $success ? <<eod : <<eod;
-#   Skipped
-eod
-#       Got: @{[scalar gmtime $got]} GMT
-eod
-#     Error: $@
-eod
-	$got ||= 0;
-	skip ($skip, $expect == $got);
+{
 
-	$test++;
-	$got = $tle ? (eval {$tle->universal()} || 0) : 0;
-	print <<eod;
-#
-# Test $test - Set universal() $what set members - resultant member's time.
-#    Expect: @{[scalar gmtime $time]} GMT
-eod
-	print $skip ? <<eod : $@ ? <<eod : <<eod;
-#   Skipped
-eod
-#  Error: $@
-eod
-#       Got: @{[scalar gmtime $got]} GMT
-eod
-	skip ($skip, $time == $got);
+    local $Astro::Coord::ECI::TLE::Set::Singleton = 0;
 
-	$test++;
-	$got = eval {$set->universal ()} unless $skip;
-	$got ||= 0;
-	print <<eod;
-#
-# Test $test - Set universal() $what set members - time returned by set object.
-#    Expect: @{[scalar gmtime $time]} GMT
-eod
-	print $skip ? <<eod : $@ ? <<eod : <<eod;
-#   Skipped
-eod
-#  Error: $@
-eod
-#       Got: @{[scalar gmtime $got]} GMT
-eod
-	skip ($skip, $time == $got);
-    }
+    my @set;
+    eval {
+	@set = Astro::Coord::ECI::TLE::Set->aggregate(
+	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 99999 ),
+	    dummy( timegm( 0, 0, 0, 2, 6, 106 ) ),
+	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 11111 ),
+	);
+	pass 'Aggregate TLEs without singletons';
+	1;
+    } or fail "Aggregate TLEs without singletons: $@";
 
-    my @members;
-    $skip or @members = $set->members();
-    $test++;
-    print <<eod;
-#
-# Test $test - \$set->members ();
-#    Expected: 2
-#         Got: @{[scalar @members]}
-eod
-    skip ($skip, @members == 2);
+    cmp_ok scalar @set, '==', 2,
+    'Number of objects produced by aggregate()';
 
-    $success = $skip ? undef : eval { $set->set_all (name => 'Nemo') };
-    $test++;
-    print <<eod;
-#
-# Test $test - \$set->set (name => 'Nemo')
-#    Expected: no exception
-#         Got: @{[ $success ? 'no exception' :
-              ( $@ || 'unrecorded exception' ) ]}
-eod
-    skip ( $skip, $success );
+    is ref $set[0], 'Astro::Coord::ECI::TLE',
+	'Object 0 is an Astro::Coord::ECI::TLE';
 
-    foreach ([0, 2, 6, 2006],
-	    [1, 4, 6, 2006],
-	) {
-	my $inx = shift @$_;
-	my $expect = timegm (0, 0, 0, splice @$_, 0, 3);
-	my $got = $skip ? 0 : $members[$inx]->get ('epoch');
-	$test++;
-	print <<eod;
-#
-# Test $test - Epoch of member $inx
-#    Expected: @{[scalar gmtime $expect]} GMT
-#         Got: @{[scalar gmtime $got]} GMT
-eod
-	skip ($skip, $expect == $got);
+    is ref $set[1], 'Astro::Coord::ECI::TLE::Set',
+	'Object 1 is an Astro::Coord::ECI::TLE::Set';
 
-	$test++;
-	$got = $skip ? '' : $members[$inx]->get ('name');
-	print <<eod;
-#
-# Test $test - Effect of \$set->set ('Nemo') on member $inx
-#    Expected: 'Nemo'
-#         Got: '$got'
-eod
-	skip ($skip, $got eq 'Nemo');
-    }
+}
 
-    $set->clear () unless $skip;
-    $test++;
-    my $got = $skip ? 0 : $set->members ();
-    print <<eod;
-#
-# Test $test - \$set->clear ()
-#    Expected: 0
-#         Got: $got
-eod
-    skip ($skip, $got == 0);
+{
 
+    local $Astro::Coord::ECI::TLE::Set::Singleton = 1;
 
-}	# End of local symbol block.
+    my @set;
+    eval {
+	@set = Astro::Coord::ECI::TLE::Set->aggregate(
+	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 99999 ),
+	    dummy( timegm( 0, 0, 0, 2, 6, 106 ) ),
+	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 11111 ),
+	);
+	pass 'Aggregate TLEs with singletons';
+	1;
+    } or fail "Aggregate TLEs with singletons: $@";
 
-foreach my $single (0, 1) {
+    cmp_ok scalar @set, '==', 2,
+    'Number of objects produced by aggregate()';
 
-    local $Astro::Coord::ECI::TLE::Set::Singleton = $single;
+    is ref $set[0], 'Astro::Coord::ECI::TLE::Set',
+	'Object 0 is an Astro::Coord::ECI::TLE::Set';
 
-    my @set = eval {Astro::Coord::ECI::TLE::Set->aggregate (
-		dummy (timegm (0, 0, 0, 1, 6, 106), 99999),
-		dummy (timegm (0, 0, 0, 2, 6, 106)),
-		dummy (timegm (0, 0, 0, 1, 6, 106), 11111),
-		)};
-    $test++;
-    print <<eod;
-#
-# Test $test - Aggregate TLEs with Singleton = $single.
-eod
-    print "#  Error: $@\n" if $@;
-    ok (!$@);
-    my $skip = $@ ? 'Failed to create aggregate.' : '';
-
-    $test++;
-    print <<eod;
-#
-# Test $test - Number of objects generated by aggregate().
-#  Expect: 2
-#     Got: @{[scalar @set]}
-eod
-    skip ($skip, @set == 2);
-    foreach ([0, $single ? 'Astro::Coord::ECI::TLE::Set' :
-		'Astro::Coord::ECI::TLE'],
-	    [1, 'Astro::Coord::ECI::TLE::Set'],
-	    ) {
-	my ($inx, $expect) = @$_;
-	$test++;
-	my $got = $skip ? '' : ref $set[$inx];
-	print <<eod;
-#
-# Test $test - Class of \$set[$inx]
-#  Expect: $expect
-#     Got: $got
-eod
-	skip ($skip, $expect eq $got);
-    }
+    is ref $set[1], 'Astro::Coord::ECI::TLE::Set',
+	'Object 1 is an Astro::Coord::ECI::TLE::Set';
 
 }
 
 {	# Begin local symbol block.
 
-    my $set1 = Astro::Coord::ECI::TLE::Set->new (
-	Astro::Coord::ECI::SetDelegate->new (
+    my $set1 = Astro::Coord::ECI::TLE::Set->new(
+	Astro::Coord::ECI::SetDelegate->new(
 	    id => 99999,
 	    name => 'Anonymous',
 	    epoch => timegm (0, 0, 0, 1, 6, 106)
-	));
-    my $set2 = Astro::Coord::ECI::TLE::Set->new ();
-    eval {	## no critic (RequireCheckingReturnValueOfEval)
-	$set2->add( $set1 )
-    };
-    $test++;
-    my $got = $set2->members();
-    print <<eod;
-#
-# Test $test - Add a set to another set.
-#    Expected: 1 member.
-#         Got: $got member@{[$got == 1 ? '' : 's']}
-eod
-    ok ($got == 1);
+	)
+    );
+    my $set2 = Astro::Coord::ECI::TLE::Set->new();
+
+    $set2->add( $set1 );
+
+    cmp_ok scalar $set2->members(), '==', 1,
+	'Add a set to another set';
 }	# End local symbol block.
 
 {	# Begin local symbol block.
-    my $set = Astro::Coord::ECI::TLE::Set->new (
-	Astro::Coord::ECI::SetDelegate->new (
+    my $set = Astro::Coord::ECI::TLE::Set->new(
+	Astro::Coord::ECI::SetDelegate->new(
 	    id => 22222,
 	    name => 'Anonymous',
-	    epoch => timegm (0, 0, 0, 2, 6, 106)
-	));
-    my $skip = $set ? '' : 'Failed to instantiate set';
-    foreach ([delegate => 'Astro::Coord::ECI::SetDelegate'],
-	    [nodelegate => 'Astro::Coord::ECI::TLE::Set'],
-	    ) {
-	my ($method, $expect) = @$_;
-	my $got = $set ? ref $set->$method () : '';
-	$test++;
-	print <<eod;
-#
-# Test $test - Delegation - $method()
-#    Expect: '$expect'
-#       Got: '$got'
-eod
-	skip ($skip, $expect eq $got);
-    }
+	    epoch => timegm( 0, 0, 0, 2, 6, 106 ),
+	)
+    );
+
+    is ref $set->delegate(), 'Astro::Coord::ECI::SetDelegate',
+	'Delegation of delegate() to the TLE object';
+
+    is ref $set->nodelegate(), 'Astro::Coord::ECI::TLE::Set',
+	'Method nodelegate() handled by the set object';
 
 }	# End of local symbol block.
 
 {	# Begin local symbol block.
     my $set = Astro::Coord::ECI::TLE::Set->new ();
     my $status = 'empty';
-    foreach ([members => 1], [delegate => 0],
-	    [add => Astro::Coord::ECI::SetDelegate->new (
-		id => 333333,
-		name => 'Nobody',
-		epoch => timegm (0, 0, 0, 2, 6, 106))],
-	    [members => 1], [delegate => 1],
-	    [clear => 0],
-	    [members => 1], [delegate => 0],
-	    ) {
-	my ($method, $expect) = @$_;
-	if ($method eq 'add') {
-	    $set->add ($expect);
-	    $status = 'non-empty';
-	} elsif ($method eq 'clear') {
-	    $set->clear ();
-	    $status = 'empty';
-	} else {
-	    $test++;
-	    my $got = $set->can ($method) ? 1 : 0;
-	    print <<eod;
-#
-# Test $test - \$set->can ('$method') with \$set $status.
-#    Expect: $expect
-#       Got: $got
-eod
-	ok ($expect == $got);
-	}
-    }
+
+    ok $set->can( 'members' ),
+	'Empty set has a members() method';
+
+    ok ! $set->can( 'delegate' ),
+	'Empty set has no delegate() method';
+
+    $set->add( Astro::Coord::ECI::SetDelegate->new(
+	    id => 333333,
+	    name => 'Nobody',
+	    epoch => timegm( 0, 0, 0, 2, 6, 106 ),
+	)
+    );
+
+    ok $set->can( 'members' ),
+	'Non-empty set has a members() method';
+
+    ok $set->can( 'delegate' ),
+	'Non-empty set has a delegate() method';
+
+    $set->clear();
+
+    ok $set->can( 'members' ),
+	'Cleared set still has a members() method';
+
+    ok ! $set->can( 'delegate' ),
+	'Cleared set has no delegate() method';
 
 }	# End of local symbol block.
 
-{	# Begin local symbol block.
-    my $set = Astro::Coord::ECI::TLE::Set->new ();
-    my $members = 0;
-    foreach ([represents => undef, 'Exception thrown'],
-	    [represents => 'Astro::Coord::ECI', 'Exception thrown'],
-	    [add => dummy (timegm (0, 0, 0, 6, 1, 106), 99999)],
-	    [represents => undef, 'Astro::Coord::ECI::TLE'],
-	    [represents => 'Astro::Coord::ECI', 1],
-	    [represents => 'Astro::Coord::ECI::TLE', 1],
-	    [represents => 'Astro::Coord::ECI::TLE::Set', 0],
-	    ) {
-	my ($method, @args) = @$_;
-	if ($method eq 'represents') {
-	    my ($arg, $want) = @args;
-	    my $got = eval {$set->represents ($arg)};
-	    $got = 'Exception thrown' if $@;
-	    $test++;
-	    print <<eod;
-#
-# Test $test - \$set->represents (@{[defined $arg ? "'$arg'" : 'undef']})
-#   Members: $members
-#    Expect: $want
-#       Got: $got
-eod
-	    $want =~ m/\D/ ? ok ($want eq $got) : ok ($want == $got);
-	} else {
-	    $set->$method (@args);
-	    $members = $set->members ();
-	}
-    }
+{
+    my $set = Astro::Coord::ECI::TLE::Set->new();
+
+    my $ok = eval {
+	$set->represents();
+	1;
+    };
+    ok ! $ok, q{$set->represents() on empty set throws exception};
+
+    $ok = eval {
+	$set->represents( 'Astro::Coord::ECI' );
+	1;
+    };
+    ok ! $ok,
+    q{$set->represents( 'Astro::Coord::ECI' ) on empty set throws exception};
+
+    $set->add( dummy( timegm( 0, 0, 0, 6, 1, 106 ), 99999, 'Nobody' ) );
+
+    is $set->represents(), 'Astro::Coord::ECI::TLE',
+    q{$set->represents() on non-empty set returns 'Astro::Coord::ECI::TLE'};
+
+    ok $set->represents( 'Astro::Coord::ECI' ),
+    q{$set->represents( 'Astro::Coord::ECI' ) is true};
+
+    ok $set->represents( 'Astro::Coord::ECI::TLE' ),
+    q{$set->represents( 'Astro::Coord::ECI::TLE' ) is true};
+
+    ok ! $set->represents( 'Astro::Coord::ECI::TLE::Set' ),
+    q{$set->represents( 'Astro::Coord::ECI::TLE::Set' ) is false};
+
 }
 
+done_testing;
+
+sub choose_epoch (@) {
+    my ( $set, $method, $epoch, $want, $title ) = @_;
+    my $got;
+    eval {
+	$got = $set->$method( $epoch )->get( 'epoch' );
+	1;
+    } or do {
+	@_ = ( "$title: $@" );
+	goto &fail;
+    };
+    @_ = ( $got, $want, 1, $title, &format_gmt );
+    goto &tolerance;
+}
+
+sub format_gmt {
+    my ( $time ) = @_;
+    return format_time( $time ) . ' GMT';
+}
+
+sub insert (@) {
+    my ( $set, $epoch, $oid, $name, $title ) = @_;
+    eval {
+	$set->add( dummy( $epoch, $oid, $name ) );
+	1;
+    } or do {
+	@_ = ( "$title: $@" );
+	goto &fail;
+    };
+    @_ = ( $title );
+    goto &pass;
+}
+
+sub compare_times (@) {
+    my ( $got, $want, $title ) = @_;
+    @_ = ( $got, $want, 1, $title, \&format_gmt );
+    goto &tolerance;
+}
 
 ########################################################################
 #
@@ -368,16 +345,25 @@ eod
 
 {	# Local symbol block.
 
-    my ($id, $name);
-    BEGIN {($id, $name) = (99999, 'Anonymous')};
+    my ( $id, $name );
+    BEGIN {
+	( $id, $name ) = ( 99999, 'Anonymous' )
+    }
+
     sub dummy {
-	(my $epoch = shift) or die <<eod;
+	my ( $epoch, $new_id, $new_name ) = @_;
+	defined $epoch or die <<'EOD';
 Error - You must specify the epoch.
-eod
-	$id = shift || $id;
-	$name = shift || $name;
-	return Astro::Coord::ECI::TLE->new (id => $id,
-	    name => $name || 'Anonymous', epoch => $epoch, model => 'null');
+EOD
+	defined $new_id and $id = $new_id;
+	defined $new_name and $name = $new_name;
+
+	return Astro::Coord::ECI::TLE->new(
+	    id => $id,
+	    name => $name, 
+	    epoch => $epoch,
+	    model => 'null'
+	);
     }
 }	# End of local symbol block.
 

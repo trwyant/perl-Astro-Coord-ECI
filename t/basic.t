@@ -12,6 +12,7 @@ use Time::Local;
 ##use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
+sub instantiate ($);
 sub u_cmp_eql (@);
 sub u_ok (@);
 
@@ -20,6 +21,9 @@ require_ok 'Astro::Coord::ECI::Utils'
 
 require_ok 'Astro::Coord::ECI'
     or BAIL_OUT 'Can not continue without Astro::Coord::ECI';
+
+instantiate 'Astro::Coord::ECI'
+    or BAIL_OUT 'Can not instantiate Astro::Coord::ECI';
 
 require_ok 'Astro::Coord::ECI::Moon'
     or BAIL_OUT 'Can not continue without Astro::Coord::ECI::Moon';
@@ -38,6 +42,9 @@ require_ok 'Astro::Coord::ECI::TLE::Iridium'
 
 require_ok 'Astro::Coord::ECI::TLE::Set'
     or BAIL_OUT 'Can not continue without Astro::Coord::ECI::Set';
+
+instantiate 'Astro::Coord::ECI::TLE::Set'
+    or BAIL_OUT 'Can not instantiate Astro::Coord::ECI::Set';
 
 u_ok embodies => [ qw{ Astro::Coord::ECI::TLE::Iridium
     Astro::Coord::ECI::TLE } ],
@@ -276,6 +283,15 @@ u_cmp_eql find_first_true => [
     'find_first_true looking for sin( $x ) >= sin( .5 )';
 
 done_testing;
+
+sub instantiate ($) {
+    my ( $class ) = @_;
+    my $pass = eval {
+	$class->new();
+    };
+    @_ = ( $pass, "Instantiate $class" );
+    goto &ok;
+}
 
 sub u_cmp_eql (@) {
     my ( $sub, $arg, $want, $tplt, $title ) = @_;

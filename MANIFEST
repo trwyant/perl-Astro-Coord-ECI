@@ -42,7 +42,6 @@ t/moon.t
 t/parse_time.t
 t/set.t
 t/sgp4-ver.tle
-t/sgp4r.out
 t/star.t
 t/sun.t
 t/tle.t
@@ -53,7 +52,6 @@ t/tle_flare.t
 t/tle_misc.t
 t/tle_pass.t
 t/tle_pass_extra.t
-t/tle_sgp4r.t
 t/tle_support.t
 xt/author/basic.t
 xt/author/changes.t

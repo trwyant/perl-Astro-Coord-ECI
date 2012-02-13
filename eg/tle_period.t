@@ -12,12 +12,11 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::TLE;
-use Test;
+use Test::More 0.88;
 
 my $tle_file = 't/sgp4-ver.tle';
-unless (-e $tle_file) {
-    print "1..0 # skip $tle_file not available\n";
-    warn <<eod;
+unless ( -f $tle_file ) {
+    diag <<'EOD';
 
 Because I do not have authority to distribute TLE data, I have not
 included sgp4-ver.tle in this kit. A copy is contained in
@@ -26,7 +25,8 @@ http://celestrak.com/publications/AIAA/2006-6753/AIAA-2006-6753.zip
 If you wish to run this test, obtain and unzip the file, and place
 sgp4-ver.tle in the t directory.
 
-eod
+EOD
+    plan skip_all => "$tle_file not available";
     exit;
 }
 
@@ -39,7 +39,6 @@ my @satrecs;
     @satrecs = Astro::Coord::ECI::TLE->parse ($data);
 }
 
-plan (tests => 2 * scalar @satrecs);
 my $tolerance = 1;
 
 print <<eod;
@@ -50,7 +49,6 @@ print <<eod;
 #
 eod
 
-my $test = 0;
 my $tle;
 my $oid;
 my @gravconst = (72, 84);
@@ -65,28 +63,26 @@ foreach my $tle (@satrecs) {
 	$tle->set (gravconst_r => $const);
 	my $got = $tle->period ();
 	my $delta = $want - $got;
-	$test++;
-	print <<eod;
-#
-# Test $test - OID $oid period, gravconst_r = $const
-#    Want: $want (old calculation)
-#     Got: $got (new calculation)
-#        Delta: $delta
-#    Tolerance: $tolerance
-eod
-	ok (abs ($delta) <= $tolerance);
+	my $title = <<"EOD";
+OID $oid period, gravconst_r = $const
+      Got: $got (new calculation)
+     Want: $want (old calculation)
+    Delta: $delta
+Tolerance: $tolerance
+EOD
+	cmp_ok abs( $delta ), '<', $tolerance, $title;
 	abs $delta > abs ($max_delta[$inx]) and $max_delta[$inx] = $delta;
     }
 }
-print <<eod;
-#
-# Maximum delta by gravconst_r:
-eod
-foreach my $inx (0 .. 1) {
-    print <<eod;
-#    $gravconst[$inx] => $max_delta[$inx]
-eod
-}
+
+note <<"EOD";
+
+Maximum delta by gravconst_r:
+    $gravconst[0] => $max_delta[0]
+    $gravconst[1] => $max_delta[1]
+EOD
+
+done_testing;
 
 1;
 
