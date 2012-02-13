@@ -3823,9 +3823,8 @@ L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>. The use of
 L<SOAP::Lite|SOAP::Lite> is deprecated, and will result in a warning in
 the first release after June 1 2012.
 
-At long last, the C<Astro-App-Satpass2> package, which is the planned
-successor to this script, has been released. It is currently a developer
-release.
+A production version of the C<Asto-App-Satpass2> package, which is the
+planned successor to this script, was released February 5 2012.
 
 Once I consider this production-quality (six months to a year after I go
 to a production version number) the F<satpass> script will become
