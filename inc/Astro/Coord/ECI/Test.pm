@@ -16,6 +16,7 @@ use Test::More 0.88;
 our @EXPORT_OK = qw{
     format_pass format_time
     tolerance tolerance_frac
+    velocity_sanity
 };
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -23,6 +24,12 @@ our %EXPORT_TAGS = (
     tolerance => [ qw{ tolerance tolerance_frac } ],
 );
 
+sub _dor {
+    foreach ( @_ ) {
+	defined $_ and return $_;
+    }
+    return;
+}
 
 {
 
@@ -122,6 +129,78 @@ sub tolerance_frac (@) {
     my ( $got, $want, $tolerance, $title, $fmtr ) = @_;
     @_ = ( $got, $want, $tolerance * abs $want, $title, $fmtr );
     goto &tolerance;
+}
+
+{
+    my @dim_name = qw{ X Y Z };
+    my %method_dim_name = (
+	azel	=> [ qw{ azimuth elevation range } ],
+	equatorial => [ 'right ascension', 'declination', 'range' ],
+    );
+    my %tweak = (
+	azel => sub {
+	    my ( $delta, $current, $previous ) = @_;
+	    $delta->[0] *= cos( ( $current->[1] + $previous->[1] ) / 2 );
+	    return;
+	},
+	equatorial => sub {
+	    my ( $delta, $current, $previous ) = @_;
+	    $delta->[1] *= cos( ( $current->[0] + $previous->[0] ) / 2 );
+	    return;
+	},
+    );
+
+    sub velocity_sanity ($$;$) {
+	my ( $method, $body, $sta ) = @_;
+	my $time = $body->universal();
+	my @rslt;
+	foreach my $delta_t ( 0, 1 ) {
+	    $delta_t
+		and $body->universal( $time + $delta_t );
+	    my @coord = $sta ? $sta->$method( $body ) :
+		$body->$method();
+	    # Accommodate internal methods that return a reference to an
+	    # array of intermediate results.
+	    ref @coord and shift @coord;
+	    push @rslt, \@coord;
+	}
+	my @delta_p = map { $rslt[1][$_] - $rslt[0][$_] } ( 0 .. 2 );
+	$tweak{$method}
+	    and $tweak{$method}->( \@delta_p, @rslt );
+	my @time_a = gmtime $time;
+	my $title = sprintf
+	    '%s converted to %s at %i/%i/%i %i:%02i:%02i GMT',
+	    $body->get( 'name' ) || $body->get( 'id' ), $method,
+	    $time_a[5] + 1900, $time_a[4] + 1, @time_a[ 3, 2, 1, 0 ];
+	my $grade = \&pass;
+	foreach my $inx ( 0 .. 2 ) {
+	    my $v_inx = $inx + 3;
+	    defined $rslt[0][$v_inx]
+		and defined $rslt[1][$v_inx]
+		and $rslt[0][$v_inx] <= $delta_p[$inx]
+		and $delta_p[$inx] <= $rslt[1][$v_inx]
+		and next;
+	    defined $rslt[0][$v_inx]
+		and defined $rslt[1][$v_inx]
+		and $rslt[0][$v_inx] >= $delta_p[$inx]
+		and $delta_p[$inx] >= $rslt[1][$v_inx]
+		and next;
+	    my $dim = $method_dim_name{$method}[$inx] || $dim_name[$inx];
+	    $grade = \&fail;
+	    $title .= <<"EOD";
+
+
+           $dim( t + 1 ): $rslt[1][$inx]
+               $dim( t ): $rslt[0][$inx]
+          $dim dot ( t ): @{[ _dor( $rslt[0][$v_inx], '<undef>' ) ]}
+  $dim( t + 1 ) - $dim( t ): $delta_p[$inx]
+      $dim dot ( t + 1 ): @{[ _dor( $rslt[1][$v_inx], '<undef>' ) ]}
+EOD
+	    chomp $title;
+	}
+	@_ = ( $title );
+	goto &$grade;
+    }
 }
 
 1;

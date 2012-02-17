@@ -6,7 +6,7 @@ use warnings;
 use lib qw{ inc };
 
 use Astro::Coord::ECI;
-use Astro::Coord::ECI::Test qw{ :tolerance };
+use Astro::Coord::ECI::Test qw{ :tolerance velocity_sanity };
 use Astro::Coord::ECI::Utils qw{ :time deg2rad PERL2000 rad2deg };
 use POSIX qw{strftime floor};
 use Test::More 0.88;
@@ -15,6 +15,8 @@ use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
 Astro::Coord::ECI->set (debug => 0);
+
+sub velocity_sanity ($$;$);
 
 # universal time
 # Tests: universal()
@@ -633,6 +635,34 @@ ok( ! Astro::Coord::ECI->represents( 'Astro::Coord::ECI::TLE' ),
     ( $got ) = $sta->maidenhead( 1 );
     is $got, 'FM', "Maidenhead precision 1 for $lat, $lon is 'FM'";
 
+}
+
+# Velocity sanity tests
+{
+    my $time = timegm( 0, 0, 12, 1, 3, 112 );
+
+    my $body = Astro::Coord::ECI->new(
+	name => 'eci coordinates',
+    )->eci(
+	1000, 1000, 1000, 0, 0, 0, $time );
+
+    my $sta = Astro::Coord::ECI->new(
+	name => 'White House',
+    )->geodetic(
+	deg2rad( 38.8987 ),
+	deg2rad( -77.0377 ),
+	17 / 1000,
+    );
+
+    velocity_sanity ecef => $body;
+
+    velocity_sanity neu => $body->universal( $time ), $sta;
+
+    velocity_sanity enu => $body->universal( $time ), $sta;
+
+    velocity_sanity azel => $body->universal( $time ), $sta;
+
+    velocity_sanity eci => $sta->universal( $time );
 }
 
 done_testing;
