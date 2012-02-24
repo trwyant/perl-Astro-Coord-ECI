@@ -1592,19 +1592,11 @@ eod
 
 }	# End local symbol block
 
-=item @coords = $coord->enu( $coord2 );
-
-This method reports the coordinates of C<$coord2> in the East-North-Up
-coordinate system, as seen from C<$coord>.
-
-Velocity conversions to C<enu()> appear to me to be mostly sane. See
-L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
-
 =item @coords = $coord->enu();
 
 This method reports the coordinates of C<$coord> in the East-North-Up
-coordinate system, as seen from the position stored in the C<$coord>
-object's C<station> attribute.
+coordinate system, as seen from the position stored in the C<station>
+attribute of C<$coord>.
 
 Velocity conversions to C<enu()> appear to me to be mostly sane. See
 L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
@@ -1612,27 +1604,18 @@ L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
 =cut
 
 sub enu {				# East, North, Up
-    my ( $self, $trn2 ) = _expand_args_default_station( @_ );
-    my @vector = $self->neu( $trn2 );
+    my ( $self ) = @_;
+    my @vector = $self->neu();
     @vector[ 0, 1 ] =  @vector[ 1, 0 ];	# Swap North and East
     @vector > 3				# If we have velocity,
 	and @vector[ 3, 4 ] = @vector[ 4, 3 ];	# Ditto
     return @vector;
 }
 
-=item @coords = $coord->neu( $coord2 );
+=item @coords = $coord->neu();
 
 This method reports the coordinates of C<$coord2> in the North-East-Up
-coordinate system, as seen from C<$coord>. This is a B<left-handed>
-coordinate system.
-
-Velocity conversions to C<neu()> appear to me to be mostly sane. See
-L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
-
-=item @coords = $coord->neu( $coord2 );
-
-This method reports the coordinates of C<$coord2> in the North-East-Up
-coordinate system, as seen from the position stored in the C<$station>
+coordinate system, as seen from the position stored in the C<station>
 attribute of C<$coord>. This is a B<left-handed> coordinate system.
 
 Velocity conversions to C<neu()> appear to me to be mostly sane. See
@@ -1641,8 +1624,10 @@ L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
 =cut
 
 sub neu {				# North, East, Up
-    my ( $self, $trn2 ) = _expand_args_default_station( @_ );
-    my @vector = $self->_local_cartesian( $trn2 );
+    my ( $self ) = @_;
+    my $station = $self->get( 'station' )
+	or croak 'Station attribute required';
+    my @vector = $station->_local_cartesian( $self );
     shift @vector;			# Discard intermediate results
     $vector[0] = - $vector[0];		# Convert South to North.
     @vector > 3				# If we have velocity

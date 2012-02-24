@@ -374,23 +374,6 @@ EOD
     tolerance_frac $rng, 37355.457, 1e-3,
 	'Range for observer';
 
-    # enu
-    # Tests: enu()
-
-    # From the azel() test above, converted as described at
-    # http://geostarslib.sourceforge.net/main.html#conv
-
-    my ( $East, $North, $Up ) = $sta->enu( $sat );
-
-    tolerance $East, 3675, 10,
-	'East for observer';
-
-    tolerance $North, -25840, 10,
-	'North for observer';
-
-    tolerance $Up, 26746, 10,
-	'Up for observer';
-
     # Same as above tests, but with the station in the 'station'
     # attribute.
 
@@ -407,7 +390,13 @@ EOD
     tolerance_frac $rng, 37355.457, 1e-3,
 	'Range for observer';
 
-    ( $East, $North, $Up ) = $sat->enu();
+    # enu
+    # Tests: enu()
+
+    # From the azel() test above, converted as described at
+    # http://geostarslib.sourceforge.net/main.html#conv
+
+    my ( $East, $North, $Up ) = $sat->enu();
 
     tolerance $East, 3675, 10,
 	'East for observer';
@@ -753,13 +742,17 @@ ok( ! Astro::Coord::ECI->represents( 'Astro::Coord::ECI::TLE' ),
 	17 / 1000,
     );
 
+    $body->set( station => $sta );
+
     velocity_sanity ecef => $body;
 
-    velocity_sanity neu => $body->universal( $time ), $sta;
+    velocity_sanity neu => $body->universal( $time );
 
-    velocity_sanity enu => $body->universal( $time ), $sta;
+    velocity_sanity enu => $body->universal( $time );
 
     velocity_sanity azel => $body->universal( $time ), $sta;
+
+    velocity_sanity azel => $body->universal( $time );
 
     velocity_sanity eci => $sta->universal( $time );
 }
