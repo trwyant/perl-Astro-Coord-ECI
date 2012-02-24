@@ -30,6 +30,11 @@ following export tags may be used:
 
 This imports everything exportable into your name space.
 
+=item :params
+
+This imports the parameter validation routines C<__classisa> and
+C<__instance>.
+
 =item :time
 
 This imports the time routines into your name space. If
@@ -38,6 +43,11 @@ this tag and C<:all> will import C<gmtime>, C<localtime>, C<timegm>, and
 C<timelocal> into your name space. Otherwise, C<Time::Local|Time::Local>
 will be loaded, and both this tag and C<:all> will import C<timegm> and
 C<timelocal> into your name space.
+
+=item :vector
+
+This imports the vector arithmetic routines. It includes anything whose
+name begins with C<'vector_'>.
 
 =back
 
@@ -137,13 +147,14 @@ our @EXPORT_OK = ( qw{
 	min mod2pi nutation_in_longitude nutation_in_obliquity obliquity
 	omega rad2deg tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize
-       	__classisa __instance },
+       	__classisa __default_station __instance },
 	@time_routines );
 
 our %EXPORT_TAGS = (
     all => \@EXPORT_OK,
     params => [ qw{ __classisa __instance } ],
     time => \@time_routines,
+    vector => [ grep { m/ \A vector_ /smx } @EXPORT_OK ],
 );
 
 use constant AU => 149597870;		# 1 astronomical unit, per
@@ -306,6 +317,24 @@ sub date2epoch {
     my ($sec, $min, $hr, $day, $mon, $yr) = @args;
     return (date2jd ($day, $mon, $yr) - JD_OF_EPOCH) * SECSPERDAY +
     (($hr || 0) * 60 + ($min || 0)) * 60 + ($sec || 0);
+}
+
+# my ( $self, $station, @args ) = __default_station( @_ )
+#
+# This exportable subroutine checks whether the second argument embodies
+# an Astro::Coord::ECI object. If so, the arguments are returned
+# verbatim. If not, the 'station' attribute of the invocant is inserted
+# after the first argument and the result returned. If the 'station'
+# attribute of the invocant has not been set, an exception is thrown.
+
+sub __default_station {
+    my ( $self, @args ) = @_;
+    if ( ! embodies( $args[0], 'Astro::Coord::ECI' ) ) {
+	my $sta = $self->get( 'station' )
+	    or croak 'Station attribute not set';
+	unshift @args, $sta;
+    }
+    return ( $self, @args );
 }
 
 

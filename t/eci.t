@@ -390,6 +390,33 @@ EOD
 
     tolerance $Up, 26746, 10,
 	'Up for observer';
+
+    # Same as above tests, but with the station in the 'station'
+    # attribute.
+
+    $sat->set( station => $sta );
+
+    ( $azm, $elev, $rng ) = $sat->azel();
+
+    tolerance_frac $azm, deg2rad( 171.906 ), 1e-3,
+	'Azimuth for observer';
+
+    tolerance_frac $elev, deg2rad( 45.682 ), 1e-3,
+	'Elevation for observer';
+
+    tolerance_frac $rng, 37355.457, 1e-3,
+	'Range for observer';
+
+    ( $East, $North, $Up ) = $sat->enu();
+
+    tolerance $East, 3675, 10,
+	'East for observer';
+
+    tolerance $North, -25840, 10,
+	'North for observer';
+
+    tolerance $Up, 26746, 10,
+	'Up for observer';
 }
 
 # atmospheric refraction.
@@ -422,13 +449,15 @@ EOD
 
 
 # Precession of equinoxes.
-# Tests: precession()
+# Tests: precess()
 
 # Based on Meeus' example 21.b.
 
 use constant LIGHTYEAR2KILOMETER => 9.4607e12;
 
 {
+    note q{Precession - no 'station' attribute};
+
     my $alpha0 = 41.054063;
     my $delta0 = 49.227750;
     my $rho = 36.64;
@@ -449,6 +478,39 @@ use constant LIGHTYEAR2KILOMETER => 9.4607e12;
 
     tolerance $delta, $deltae, $tolerance,
 	'Precession of equinoxes: declination';
+}
+
+{
+    note q{Precession - with 'station' attribute};
+
+    my $alpha0 = 41.054063;
+    my $delta0 = 49.227750;
+    my $rho = 36.64;
+    my $t0 = PERL2000;
+    my $alphae = deg2rad( 41.547214 );
+    my $deltae = deg2rad( 49.348483 );
+    my $time = timegm( 0, 0, 0, 13, 10, 128 ) + .19 * 86400;
+
+    my $sta = Astro::Coord::ECI->dynamical( $t0 )->eci( 0, 0, 0 )->set(
+	equinox_dynamical => $t0 );
+    my $eci = Astro::Coord::ECI->dynamical( $t0 )->equatorial(
+	deg2rad( $alpha0 ), deg2rad( $delta0 ),
+	$rho *  LIGHTYEAR2KILOMETER )->set(
+	equinox_dynamical => $t0,
+	station	=> $sta,
+    );
+    my $utim = Astro::Coord::ECI->dynamical( $time )->universal();
+    my ( $alpha, $delta ) = $eci->precess( $utim )->equatorial();
+    my $tolerance = 1e-6;
+
+    tolerance $alpha, $alphae, $tolerance,
+	'Precession of equinoxes: right ascension';
+
+    tolerance $delta, $deltae, $tolerance,
+	'Precession of equinoxes: declination';
+
+    cmp_ok $sta->get( 'equinox_dynamical' ), '==', $time,
+	'Station object was precessed';
 }
 
 
@@ -574,6 +636,9 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 
 
 {	# Begin local symbol block;
+
+    note 'Equatorial relative to location, specified explicitly';
+
     my $time = time ();
     my $station = Astro::Coord::ECI->geodetic(
 	deg2rad (  38.898741 ),
@@ -592,13 +657,47 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
     my @got = $station->equatorial ($body);
 
     tolerance $got[0], $want[0], 0.000001,
-	'Right ascension relative to observer';
+	'Right ascension relative to explicit location';
 
     tolerance $got[1], $want[1], 0.000001,
-	'Declination relative to observer';
+	'Declination relative to explicit location';
 
     tolerance $got[2], $want[2], 0.000001,
-	'Right ascension relative to observer';
+	'Right ascension relative to explicit location';
+
+}	# End local symbol block.
+
+{	# Begin local symbol block;
+
+    note 'Equatorial relative to location specified in station attribute';
+
+    my $time = time ();
+    my $station = Astro::Coord::ECI->geodetic(
+	deg2rad (  38.898741 ),
+	deg2rad ( -77.037684 ),
+	0.01668
+    );
+    $station->set( refraction => 0 );
+    my $body = Astro::Coord::ECI->eci(
+	2328.97048951, -5995.22076416, 1719.97067261,
+	2.91207230, -0.98341546, -7.09081703, $time);
+    my @staeci = $station->eci( $time );
+    my @bdyeci = $body->eci();
+    my @want = Astro::Coord::ECI->eci(
+	    ( map {$bdyeci[$_] - $staeci[$_]} 0 .. 5 ), $time )->
+	    equatorial();
+
+    $body->set( station => $station );
+    my @got = $body->equatorial();
+
+    tolerance $got[0], $want[0], 0.000001,
+	'Right ascension relative to station attribute';
+
+    tolerance $got[1], $want[1], 0.000001,
+	'Declination relative to station attribute';
+
+    tolerance $got[2], $want[2], 0.000001,
+	'Right ascension relative to station attribute';
 
 }	# End local symbol block.
 

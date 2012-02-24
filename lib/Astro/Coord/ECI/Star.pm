@@ -90,6 +90,11 @@ This method produces almanac data for the star for the given location,
 between the given start and end times. The location is assumed to be
 Earth-Fixed - that is, you can not do this for something in orbit.
 
+The C<$location> argument may be omitted if the C<station> attribute has
+been set. That is, this method can also be called as
+
+ @almanac = $star->almanac( $start, $end )
+
 The start time defaults to the current time setting of the $star
 object, and the end time defaults to a day after the start time.
 
@@ -112,16 +117,11 @@ potentially returned:
 =cut
 
 sub almanac {
-    my $self = shift;
-    my $location = shift;
-    embodies ($location, 'Astro::Coord::ECI') or
-	croak <<eod;
-Error - The first argument of the almanac() method must be a member of
-        the Astro::Coord::ECI class, or a subclass thereof.
-eod
-
-    my $start = shift || $self->universal;
-    my $end = shift || $start + 86400;
+    my ( $self, $location, $start, $end ) = __default_station( @_ );
+    defined $start
+	or $start = $self->universal();
+    defined $end
+	or $end = $start + SECSPERDAY;
 
     my @almanac;
 

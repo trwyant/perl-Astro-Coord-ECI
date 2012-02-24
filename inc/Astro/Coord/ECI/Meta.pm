@@ -39,6 +39,7 @@ sub requires {
 	'IO::File'	=> 0,
 	'POSIX'		=> 0,
 	'Scalar::Util'	=> 0,
+	'Storable'	=> 0,
 	'constant'	=> 0,
 	'strict'	=> 0,
 	'warnings'	=> 0,

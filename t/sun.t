@@ -175,6 +175,9 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 # testing against data from the U. S. Naval Observatory
 
 SKIP: {
+
+    note 'almanac_hash() with explicit station';
+
     my $sta = Astro::Coord::ECI->new(
 	name => 'Washington, DC'
     )->geodetic(
@@ -186,6 +189,117 @@ SKIP: {
     my $time = timegm( 0, 0, 5, 1, 0, 108 );	# Jan 1, 2008 in TZ -5
 
     my @almanac = $sun->universal( $time )->almanac_hash( $sta );
+
+    cmp_ok scalar @almanac, '==', 6,
+    'Got six Sun events for January 1 2008, Washington DC';
+
+    @almanac
+	or skip 'No events returned', 23;
+
+    is $almanac[0]{almanac}{event}, 'transit',
+	'First event is transit';
+
+    cmp_ok $almanac[0]{almanac}{detail}, '==', 0,
+	'First event is local midnight';
+
+    is $almanac[0]{almanac}{description}, 'local midnight',
+	q{First event description is 'local midnight'};
+
+    note <<'EOD';
+The Noval Observatory does not provide a time for local midnight.
+EOD
+
+    @almanac > 1
+	or skip 'Only 1 event returned', 20;
+
+    is $almanac[1]{almanac}{event}, 'twilight',
+	'Second event is twilight';
+
+    cmp_ok $almanac[1]{almanac}{detail}, '==', 1,
+	'Second event is beginning of twilight';
+
+    is $almanac[1]{almanac}{description}, 'begin twilight',
+	q{Second event description is 'begin twilight'};
+
+    tolerance $almanac[1]{time}, timegm( 0, 57, 11, 1, 0, 108 ), 60,
+	'Time twilight begins', \&format_gmt;
+
+    @almanac > 2
+	or skip 'Only 2 events returned', 16;
+
+    is $almanac[2]{almanac}{event}, 'horizon',
+	'Third event is horizon';
+
+    cmp_ok $almanac[2]{almanac}{detail}, '==', 1,
+	'Third event is Sunrise';
+
+    is $almanac[2]{almanac}{description}, 'Sunrise',
+	q{Third event description is 'Sunrise'};
+
+    tolerance $almanac[2]{time}, timegm( 0, 27, 12, 1, 0, 108 ), 60,
+	'Time of Sunrise', \&format_gmt;
+
+    @almanac > 3
+	or skip 'Only 3 events returned', 12;
+
+    is $almanac[3]{almanac}{event}, 'transit',
+	'Fourth event is transit';
+
+    cmp_ok $almanac[3]{almanac}{detail}, '==', 1,
+	'Fourth event is local noon';
+
+    is $almanac[3]{almanac}{description}, 'local noon',
+	q{Fourth event description is 'local noon'};
+
+    tolerance $almanac[3]{time}, timegm( 0, 12, 17, 1, 0, 108 ), 60,
+	'Time of local noon', \&format_gmt;
+
+    @almanac > 4
+	or skip 'Only 4 events returned', 8;
+
+    is $almanac[4]{almanac}{event}, 'horizon',
+	'Fifth event is horizon';
+
+    cmp_ok $almanac[4]{almanac}{detail}, '==', 0,
+	'Fifth event is Sunset';
+
+    is $almanac[4]{almanac}{description}, 'Sunset',
+	q{Fifth event description is 'Sunset'};
+
+    tolerance $almanac[4]{time}, timegm( 0, 56, 21, 1, 0, 108 ), 60,
+	'Time of Sunset', \&format_gmt;
+
+    @almanac > 5
+	or skip 'Only 5 events returned', 4;
+
+    is $almanac[5]{almanac}{event}, 'twilight',
+	'Sixth event is twilight';
+
+    cmp_ok $almanac[5]{almanac}{detail}, '==', 0,
+	'Sixth event is end of twilight';
+
+    is $almanac[5]{almanac}{description}, 'end twilight',
+	q{Sixth event description is 'end twilight'};
+
+    tolerance $almanac[5]{time}, timegm( 0, 26, 22, 1, 0, 108 ), 60,
+	'Time twilight ends', \&format_gmt;
+}
+
+SKIP: {
+
+    note 'almanac_hash() with location from station attribute';
+
+    my $sta = Astro::Coord::ECI->new(
+	name => 'Washington, DC'
+    )->geodetic(
+	deg2rad(38.9),	# Position according to
+	deg2rad(-77.0),	# U. S. Naval Observatory's
+	0,		# http://aa.usno.navy.mil/data/docs/RS_OneDay.php
+    );
+    my $sun = Astro::Coord::ECI::Sun->new( station => $sta );
+    my $time = timegm( 0, 0, 5, 1, 0, 108 );	# Jan 1, 2008 in TZ -5
+
+    my @almanac = $sun->universal( $time )->almanac_hash();
 
     cmp_ok scalar @almanac, '==', 6,
     'Got six Sun events for January 1 2008, Washington DC';

@@ -320,6 +320,12 @@ satellite at the given station between the given start time and the
 given end time. This list may be empty. If called in scalar context you
 get the number of flares.
 
+All arguments are optional, with the defaults being
+
+ $station = the 'station' attribute
+ $start = time()
+ $end = $start + 1 day
+
 Each flare is represented by a reference to an anonymous hash, with
 elements as follows:
 
@@ -394,9 +400,10 @@ flares are calculated by a fairly arbitrary equation whose coefficients
 were fitted to visual flare magnitude estimates collected by Ron Lee
 and made available on the Web by Randy John as part of his skysat
 web site at L<http://home.comcast.net/~skysat/>. Atmospheric extinction
-is also taken into account for the non-specular flares. Atmospheric
-extinction is calculated according to the article by Daniel W.
-Green in the July 1992 issue of "International Comet Quarterly", and
+is also taken into account for the non-specular flares.
+
+Atmospheric extinction is calculated according to the article by Daniel
+W.  Green in the July 1992 issue of "International Comet Quarterly", and
 available at L<http://www.cfa.harvard.edu/icq/ICQExtinct.html>. Because
 Heavens Above does not display flares dimmer than a certain magnitude
 (-6 for day flares, and apparently 0 for night flares), it may not
@@ -409,7 +416,7 @@ Second, I suspect that the positions and velocities calculated by
 Astro::Coord::ECI::TLE differ slightly from those used by Heavens Above.
 I do not know this, because I do not know what positions Heavens Above
 uses, but there are slight differences among the results of all the
-orbital propagation models I have looked at.  All I can say about the
+orbital propagation models I have looked at. All I can say about the
 accuracy of Astro::Coord::ECI::TLE is that it duplicates the test data
 given in "Spacetrack Report Number Three". But small differences are
 important -- 0.1 degree at the satellite can make the difference between
@@ -481,7 +488,7 @@ use constant PM_START_LIMIT => 43200 - 480;	# 8 minutes before noon.
 use constant PM_END_LIMIT => 480;		# 8 minutes after midnight.
 
 sub flare {
-    my ($self, @args) = @_;
+    my ( $self, @args ) = __default_station( @_ );
     my $method = $self->{&ATTRIBUTE_KEY}{_algorithm_method};
     return $self->$method (@args);
 }
@@ -497,7 +504,7 @@ Error - The station must be a subclass of Astro::Coord::ECI.
 eod
     }
     my $start = shift || time ();
-    my $end = shift || $start + 86400;
+    my $end = shift || $start + SECSPERDAY;
     $end >= $start or croak <<eod;
 Error - End time must be after start time.
 eod

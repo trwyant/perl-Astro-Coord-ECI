@@ -35,6 +35,7 @@ severity	= gentle
 
 [Perl::Critic::Policy::Subroutines::RequireArgUnpacking]
 
+allow_delegation_to	= _expand_args_default_station __default_station
 short_subroutine_statements	= 3
 
 [Perl::Critic::Policy::Subroutines::RequireFinalReturn]

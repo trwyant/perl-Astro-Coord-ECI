@@ -616,9 +616,10 @@ eod
 	next;
 	};
     $body->set (
+	station	=> $sta,
 	twilight => $parm{_twilight},
     );
-    push @almanac, $body->almanac ($sta, $almanac_start, $almanac_end);
+    push @almanac, $body->almanac( $almanac_start, $almanac_end );
     }
 
 #	Sort the almanac data by date, and display the results.
@@ -852,6 +853,7 @@ foreach my $tle (_select_observing_list ($pass_start)) {
 	am => !$cmdopt{am},
 	day => !$cmdopt{day},
 	pm => !$cmdopt{pm},
+	station	=> $sta,
 	extinction => $parm{extinction},
 	zone	=> $zone,
     );
@@ -874,11 +876,13 @@ if ($cmdopt{debug}) {
 
 my @flares;
 foreach my $tle (@active) {
-    push @flares, eval {$tle->flare ($sta, $pass_start, $pass_end)};
-    if ($@) {
+    eval {
+	push @flares, $tle->flare( $sta, $pass_start, $pass_end );
+	1;
+    } or do {
 	$@ =~ m/$interrupted/o and die $@;
 	!$cmdopt{quiet} and warn $@;
-    }
+    };
 }
 
 my $last_day = '';
@@ -923,11 +927,11 @@ foreach my $fd (sort {$a->{time} <=> $b->{time}} @flares) {
 	}
     } else {
 	printf $fmt, $time, $name,
-	    $lcfmt->($sta, $tle),
+	    $lcfmt->( $tle ),
 	    $fd->{magnitude},
 	    $fd->{type} eq 'day' ?
 		sprintf '%5.0f', rad2deg ($fd->{appulse}{angle}) : 'night',
-	    _format_local_az_rng ($sta, $fd->{center}{body}),
+	    _format_local_az_rng( $fd->{center}{body} ),
 	    ;
 	}
     }
@@ -1615,17 +1619,20 @@ eod
 	    lazy_pass_position => 1,
 	    model => $model,
 	    pass_threshold => $pass_threshold,
+	    station	=> $sta,
 	    twilight => $parm{_twilight},
 	    visible => $parm{visible},
 	);
 
-	my @passes = eval {$tle->pass (
-		$sta, $pass_start, $pass_end, \@sky)};
-	if ($@) {
+	my @passes;
+	eval {
+	    @passes = $tle->pass ( $pass_start, $pass_end, \@sky);
+	    1;
+	} or do {
 	    $@ =~ m/$interrupted/o and die $@;
 	    $cmdopt{quiet} or warn $@;
 	    next;
-	}
+	};
        	@passes or next;
 
 	my $id = $tle->get ('id');
@@ -1664,7 +1671,7 @@ eod
 		} else {
 		    printf LINFMT, strftime ($parm{time_format}, _mytime (
 			    $displaytime)),
-			$lcfmt->($sta, $tle),
+			$lcfmt->( $tle ),
 			rad2deg ($lat), rad2deg ($long), $alt,
 			$event_name[$event->{illumination}]->($event),
 			$event_name[$event->{event}]->($event),
@@ -1676,7 +1683,7 @@ eod
 			printf BGFMT, strftime (
 				$parm{time_format}, _mytime (
 				    $displaytime)),
-			    $lcfmt->($sta, $body),
+			    $lcfmt->( $body ),
 			    rad2deg ($lat), rad2deg ($long),
 			    $body->get ('name') || $body->get ('id') || '';
 			}
@@ -1762,7 +1769,10 @@ my $indent;
 while ($time <= $endtm) {
     print strftime ($dtfmt, _mytime($time)), "\n";
     foreach my $body (_select_observing_list ($time), @sky) {
-	$body->set(debug => $cmdopt{debug});
+	$body->set(
+	    debug	=> $cmdopt{debug},
+	    station	=> $sta,
+	);
 	eval {$body->universal ($time); 1;}
 	    or do {
 	    $@ =~ m/$interrupted/o and die $@;
@@ -1776,13 +1786,13 @@ while ($time <= $endtm) {
 		($sta->azel ($sun->universal ($time)))[1] > $twilight ? 2 :
 ##		($body->azel ($sun))[1] > $body->dip() ? 1 : 0;
 		$body->__sun_elev_from_sat( $time ) >= 0 ? 1 : 0;
-	    printf "%16s %s %s %s\n", $name, $lcfmt->($sta, $body),
+	    printf "%16s %s %s %s\n", $name, $lcfmt->( $body ),
 		strftime ($dtfmt, _mytime($body->get ('epoch'))),
 		$lighting[$illum] || '';
 
 	    if ($body->can_flare ($cmdopt{questionable})) {
 ##		$indent ||= length (sprintf '%16s %s', $name,
-##		    $lcfmt=>($sta, $body));
+##		    $lcfmt=>( $body ) );
 		$indent ||= 32;
 		$body->set (horizon => 0);
 		foreach my $info ($body->reflection ($sta, $time)) {
@@ -1805,7 +1815,7 @@ while ($time <= $endtm) {
 
 	    }
 	  else {
-	    printf "%16s %s\n", $name, $lcfmt->($sta, $body);
+	    printf "%16s %s\n", $name, $lcfmt->( $body );
 	    }
 	}
     $when += $interval;
@@ -2596,17 +2606,13 @@ sub _flatten {
 #	returns a suitable heading for this information.
 
 sub _format_local_az_rng {
-@_ or return ' azim     range    ';
-@_ == 2 && embodies ($_[0], 'Astro::Coord::ECI') &&
-    embodies ($_[1], 'Astro::Coord::ECI') or die <<eod;
-Programming error - _format_azel () must be called with either zero
-    or two arguments. If two, both must be Astro::Coord::ECI objects.
-eod
-my ($az, undef, $rng) = $_[0]->azel ($_[1]);
-sprintf "%5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
-    rad2deg ($az),
-    $bearing[floor ($az/TWOPI * @bearing + .5) % @bearing],
-    $rng;
+    my ( $body ) = @_
+	or return ' azim     range    ';
+    my ( $az, undef, $rng ) = $body->azel();
+    return sprintf "%5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
+	rad2deg ($az),
+	$bearing[floor ($az/TWOPI * @bearing + .5) % @bearing],
+	$rng;
 }
 
 
@@ -2616,19 +2622,13 @@ sprintf "%5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
 #	as seen from the station. If called with no arguments, it
 #	returns a suitable heading for this information.
 
-## use Carp;
 sub _format_local_azel {
-@_ or return ' elev  azim   ';
-@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
-    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
-Programming error - _format_local_azel () must be called with either
-    zero or two arguments. If two, both must represent Astro::Coord::ECI
-    objects.
-eod
-my ($az, $el) = $_[0]->azel ($_[1]);
-sprintf "%5.1f %5.1f %-2s",
-    rad2deg ($el), rad2deg ($az),
-    $bearing[floor ($az/TWOPI * @bearing + .5) % @bearing];
+    my ( $body ) = @_
+	or return ' elev  azim   ';
+    my ( $az, $el ) = $body->azel();
+    return sprintf "%5.1f %5.1f %-2s",
+	rad2deg ($el), rad2deg ($az),
+	$bearing[floor ($az/TWOPI * @bearing + .5) % @bearing];
 }
 
 
@@ -2639,18 +2639,13 @@ sprintf "%5.1f %5.1f %-2s",
 #	it returns a suitable heading for this information.
 
 sub _format_local_azel_rng {
-@_ or return ' elev  azim     range    ';
-@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
-    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
-Programming error - _format_local_azel_rng () must be called with
-    either zero or two arguments. If two, both must be
-    Astro::Coord::ECI objects.
-eod
-my ($az, $el, $rng) = $_[0]->azel ($_[1]);
-sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
-    rad2deg ($el), rad2deg ($az),
-    $bearing[floor ($az/TWOPI * @bearing + .5) % @bearing],
-    $rng;
+    my ( $body ) = @_
+	or return ' elev  azim     range    ';
+    my ( $az, $el, $rng ) = $body->azel();
+    return sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
+	rad2deg ($el), rad2deg ($az),
+	$bearing[floor ($az/TWOPI * @bearing + .5) % @bearing],
+	$rng;
 }
 
 #	$string = _format_local_equatorial ($station, $body)
@@ -2660,16 +2655,11 @@ sprintf "%5.1f %5.1f %-2s @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
 #	it returns a suitable heading for this information.
 
 sub _format_local_equatorial {
-@_ or return 'right asc decl';
-@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
-    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
-Programming error - _format_local_equatorial () must be called with
-    either zero or two arguments. If two, both must be
-    Astro::Coord::ECI objects.
-eod
-my ($ra, $dec) = _get_equatorial_coordinates (@_);
-sprintf "%s %5.1f",
-    _rad2hms ($ra), rad2deg ($dec);
+    my ( $body ) = @_
+	or return 'right asc decl';
+    my ( $ra, $dec ) = _get_equatorial_coordinates( $body );
+    return sprintf "%s %5.1f",
+	_rad2hms ($ra), rad2deg ($dec);
 }
 
 #	$string = _format_local_equatorial_rng ($station, $body)
@@ -2679,16 +2669,11 @@ sprintf "%s %5.1f",
 #	arguments, it returns a suitable heading for this information.
 
 sub _format_local_equatorial_rng {
-@_ or return 'right asc decl  range    ';
-@_ == 2 && $_[0]->represents ('Astro::Coord::ECI') &&
-    $_[1]->represents ('Astro::Coord::ECI') or confess <<eod;
-Programming error - _format_local_equatorial_rng () must be called with
-    either zero or two arguments. If two, both must be
-    Astro::Coord::ECI objects.
-eod
-my ($ra, $dec, $rng) = _get_equatorial_coordinates (@_);
-sprintf "%s %5.1f @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
-    _rad2hms ($ra), rad2deg ($dec), $rng;
+    my ( $body ) = @_
+	or return 'right asc decl  range    ';
+    my ( $ra, $dec, $rng ) = _get_equatorial_coordinates( $body );
+    return sprintf "%s %5.1f @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
+	_rad2hms ($ra), rad2deg ($dec), $rng;
 }
 
 
@@ -2738,19 +2723,19 @@ _display_timing ();
 }
 
 #	my ($ra, $dec, $rng) = _get_equatorial_coordinates ($body);
-#    or my ($ra, $dec, $rng) = _get_equatorial_coordinates ($station,
-#								$body);
 
 #	Get the required equatorial coordinates, precessed to
 #	desired_equinox_dynamical if that is set.
 
 sub _get_equatorial_coordinates {
-    if (my $equinox = $parm{desired_equinox_dynamical}) {
-	@_ > 1 and $_[0]->universal( $_[1]->universal );
-	@_ = map {$_->clone ()->precess_dynamical ($equinox)} @_;
+    my ( $body ) = @_;
+    if ( my $equinox = $parm{desired_equinox_dynamical} ) {
+	my $sta;
+	$sta = $body->get( 'station' )
+	    and $sta->universal( $body->universal() );
+	$body = $body->clone()->precess_dynamical( $equinox );
     }
-    my $station = shift;
-    $station->equatorial (@_);
+    return $body->equatorial();
 }
 
 

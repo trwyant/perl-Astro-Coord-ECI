@@ -117,6 +117,9 @@ use Test::More 0.88;
 }
 
 SKIP: {
+
+    note 'Almanac computed for an explicit location';
+
     my $sta = Astro::Coord::ECI->new(
 	name => 'Washington, DC'
     )->geodetic(
@@ -128,6 +131,66 @@ SKIP: {
     my $time = timegm( 0, 0, 5, 1, 0, 108 );	# Jan 1, 2008 in TZ -5
 
     my @events = $moon->universal( $time )->almanac( $sta );
+
+    cmp_ok scalar @events, '==', 3,
+	'Almanac method returned three events';
+
+    @events
+	or skip 'No events found', 12;
+
+    is $events[0][1], 'horizon', 'First event is horizon crossing';
+
+    cmp_ok $events[0][2], '==', 1, 'First event is Moon rise';
+
+    is $events[0][3], 'Moon rise', q{First event description is 'Moon rise'};
+
+    tolerance $events[0][0], timegm( 0, 15,  6, 1, 0, 108 ), 60,
+	'Moon rise occurred at January 1 2008 6:15:00 GMT',
+	\&format_time;
+
+    @events > 1
+	or skip 'Only one event found', 8;
+
+    is $events[1][1], 'transit', 'Second event is meridian crossing';
+
+    cmp_ok $events[1][2], '==', 1, 'Second event is Moon culmination';
+
+    is $events[1][3], 'Moon transits meridian',
+	q{Second event description is 'Moon transits meridian'};
+
+    tolerance $events[1][0], timegm( 0, 46, 11, 1, 0, 108 ), 60,
+	'Moon culmination occurred at January 1 2008 11:46:00 GMT',
+	\&format_time;
+
+    @events > 2
+	or skip 'Only two events found', 4;
+
+    is $events[2][1], 'horizon', 'Third event is horizon crossing';
+
+    cmp_ok $events[2][2], '==', 0, 'Third event is Moon set';
+
+    is $events[2][3], 'Moon set', q{Third event description is 'Moon set'};
+
+    tolerance $events[2][0], timegm( 0, 8,  17, 1, 0, 108 ), 60,
+	'Moon set occurred at January 1 2008 17:08:00 GMT',
+	\&format_time;
+}
+
+SKIP: {
+
+    note 'Almanac computed for the location in the station attribute';
+
+    my $sta = Astro::Coord::ECI->new(
+	name => 'Washington, DC'
+    )->geodetic(
+	deg2rad(38.9),	# Position according to
+	deg2rad(-77.0),	# U. S. Naval Observatory's
+	0,		# http://aa.usno.navy.mil/data/docs/RS_OneDay.php
+    );
+    my $moon = Astro::Coord::ECI::Moon->new( station => $sta );
+    my $time = timegm( 0, 0, 5, 1, 0, 108 );	# Jan 1, 2008 in TZ -5
+
+    my @events = $moon->universal( $time )->almanac();
 
     cmp_ok scalar @events, '==', 3,
 	'Almanac method returned three events';

@@ -107,7 +107,10 @@ use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
+use Storable ();
 
+use constant NO_CASCADING_STATIONS =>
+    q{Cascading 'station' attributes are not supported};
 use constant TWO_DEGREES => deg2rad( 2 );
 
 my %mutator;	# Attribute mutators. We define these just after the
@@ -245,6 +248,15 @@ methods, the C<$coord> object's method is used.
 This method is implemented in terms of azel_offset(). See that method's
 documentation for further details.
 
+=item ( $azimuth, $elevation, $range ) = $coord->azel( $upper );
+
+This method computes the azimuth, elevation, and range if the C<$coord>
+object as seen from the position stored in the C<$coord> object's
+C<station> attribute. An exception will be thrown if the C<station>
+attribute is not set.
+
+The C<$upper> argument is as above, including the deprecation.
+
 =cut
 
 
@@ -257,7 +269,8 @@ documentation for further details.
 ##	    and not $upper_deprecated++
 ##	    and carp q{The azel() 'upper' argument is deprecated; use },
 ##		q{the azel_offset() 'offset' argument instead};
-	@_ = ( @_[0, 1], $_[2] ? 1 : 0 );
+	@_ = _expand_args_default_station( @_ );
+	$_[2] = $_[2] ? 1 : 0;
 	goto &azel_offset;
     }
 }
@@ -329,10 +342,16 @@ for the C<frequency> attribute, you will get the Doppler shift as the
 seventh element of the returned array. The I<caveats> about velocity in
 recession apply to the Doppler shift as well.
 
+=item ( $azimuth, $elevation, $range ) = $coord->azel_offset( $offset );
+
+This method computes the azimuth, elevation, and range if the C<$coord>
+object as seen from the location stored in the C<$coord> object's
+C<station> attribute.
+
 =cut
 
 sub azel_offset {
-    my ( $self, $trn2, $offset ) = @_;
+    my ( $self, $trn2, $offset ) = _expand_args_default_station( @_ );
     my $cache = ($self->{_ECI_cache} ||= {});
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
@@ -434,56 +453,13 @@ sub azel_offset {
 This method does a deep clone of an object, producing a different
 but identical object.
 
-It's really just a wrapper for Storable::dclone.
+At the moment, it's really just a wrapper for Storable::dclone.
 
 =cut
 
-if (eval {require Storable; 1}) {
-    *clone = sub {Storable::dclone (shift)};
-} else {
-    my $reftype = sub {	# Not general, but maybe good enough.
-	my $thing = shift;
-	ref $thing or return;
-	(my $string = "$thing") =~ s/.*=//;
-	$string =~ s/\(.*//;
-	$string;
-    };
-    my %clone_ref;
-    %clone_ref = (
-	HASH => sub {
-	    my $from = shift;
-	    my $to = shift || {};
-	    foreach my $key (keys %$from) {
-		unless (my $ref = ref $from->{$key}) {
-		    $to->{$key} = $from->{$key};
-		} else {
-		    my $code = $clone_ref{$ref}
-			or confess "Programming error - Can't clone a $ref";
-		    $to->{$key} = $code->($from->{$key});
-		}
-	    }
-	    $to;
-	},
-	ARRAY => sub {
-	    my $from = shift;
-	    my $to = shift || [];
-	    foreach my $val (@$from) {
-		unless (my $ref = ref $val) {
-		    push @$to, $val;
-		} else {
-		    my $code = $clone_ref{$ref}
-			or confess "Programming error - Can't clone a $ref";
-		    push @$to, $code->($val);
-		}
-	    }
-	    $to;
-	},
-    );
-    *clone = sub {
-	my $self = shift;
-	my $to = $clone_ref{$reftype->($self)}->($self); 
-	bless $to, ref $self;
-    };
+sub clone {
+    my ( $self ) = @_;
+    return Storable::dclone( $self );
 }
 
 =item $elevation = $coord->correct_for_refraction ($elevation);
@@ -914,9 +890,13 @@ eod
 =item $coord->equatorial ($rightasc, $declin, $range, $time);
 
 This method sets the L</Equatorial> coordinates represented by the
-object in terms of L</Right Ascension> and L</Declination> in radians,
-and the range to the object in kilometers, time being universal
-time. The object itself is returned.
+object (relative to the center of the Earth) in terms of
+L</Right Ascension> and L</Declination> in radians, and the range to the
+object in kilometers, time being universal time. The object itself is
+returned.
+
+If C<equatorial()> is called in this way, the C<station> attribute will
+be ignored, for historical reasons.
 
 The right ascension should be a number between 0 and 2*PI radians
 inclusive. The declination should be a number between -PI/2 and PI/2
@@ -935,12 +915,13 @@ per second), declination (ditto), and range (in kilometers per second in
 recession) are passed after the position arguments, and before the $time
 argument if any.
 
-=item ($rightasc, $declin, $range) = $coord->equatorial ($time);
+=item ( $rightasc, $declin, $range ) = $coord->equatorial( $time );
 
 This method returns the L</Equatorial> coordinates of the object at the
-given time. The time argument is optional if the time represented by
-the object has already been set (e.g. by the universal() or
-dynamical() methods).
+given time, relative to the location specified by the C<station>
+attribute, or to the center of the Earth if this attribute is C<undef>.
+The time argument is optional if the time represented by the object has
+already been set (e.g. by the universal() or dynamical() methods).
 
 If velocities are available from the object (i.e. if it is an instance
 of Astro::Coord::ECI::TLE) the return will contain velocity in right
@@ -949,7 +930,7 @@ second and the third in kilometers per second in recession.
 
 B<Caveat:> these velocities are believed by me B<not> to be correct.
 
-=item ($rightasc, $declin, $range) = $coord->equatorial ($coord2);
+=item ($rightasc, $declin, $range) = $coord->equatorial( $coord2 );
 
 This method returns the apparent equatorial coordinates of the object
 represented by $coord2, as seen from the location represented by
@@ -982,17 +963,23 @@ B<Caveat:> these velocities are believed by me B<not> to be correct.
 =cut
 
 sub equatorial {
-    my ($self, @args) = @_;
+    my ( $self, @args ) = @_;
 
     my $body;
-    (@args && embodies($args[0], __PACKAGE__))
+    @args
+	and embodies( $args[0], __PACKAGE__ )
 	and $body = shift @args;
 
-    $self = $self->_check_coord (equatorial => \@args);
+    $self = $self->_check_coord( equatorial => \@args );
     my $time;
     $body or $time = $self->universal;
 
     unless (@args) {
+
+	if ( not defined $body and my $sta = $self->get( 'station' ) ) {
+	    $body = $self;
+	    $self = $sta;
+	}
 
 	unless ($body) {
 	    $self->{_ECI_cache}{inertial}{equatorial}
@@ -1085,6 +1072,8 @@ fact that the $rasc and $decl are not the right ascension and
 declination themselves, but the arguments to atan2() needed to compute
 them, and $v_rasc and $v_decl are in km/sec, rather than being divided
 by the range to get radians per second.
+
+This method ignores the C<'station'> attribute.
 
 The returned data are:
 
@@ -1611,10 +1600,19 @@ coordinate system, as seen from C<$coord>.
 Velocity conversions to C<enu()> appear to me to be mostly sane. See
 L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
 
+=item @coords = $coord->enu();
+
+This method reports the coordinates of C<$coord> in the East-North-Up
+coordinate system, as seen from the position stored in the C<$coord>
+object's C<station> attribute.
+
+Velocity conversions to C<enu()> appear to me to be mostly sane. See
+L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
+
 =cut
 
 sub enu {				# East, North, Up
-    my ( $self, $trn2 ) = @_;
+    my ( $self, $trn2 ) = _expand_args_default_station( @_ );
     my @vector = $self->neu( $trn2 );
     @vector[ 0, 1 ] =  @vector[ 1, 0 ];	# Swap North and East
     @vector > 3				# If we have velocity,
@@ -1631,10 +1629,19 @@ coordinate system.
 Velocity conversions to C<neu()> appear to me to be mostly sane. See
 L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
 
+=item @coords = $coord->neu( $coord2 );
+
+This method reports the coordinates of C<$coord2> in the North-East-Up
+coordinate system, as seen from the position stored in the C<$station>
+attribute of C<$coord>. This is a B<left-handed> coordinate system.
+
+Velocity conversions to C<neu()> appear to me to be mostly sane. See
+L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
+
 =cut
 
 sub neu {				# North, East, Up
-    my ( $self, $trn2 ) = @_;
+    my ( $self, $trn2 ) = _expand_args_default_station( @_ );
     my @vector = $self->_local_cartesian( $trn2 );
     shift @vector;			# Discard intermediate results
     $vector[0] = - $vector[0];		# Convert South to North.
@@ -2212,6 +2219,9 @@ unaffected by this operation.>
 As a side effect, the value of the 'equinox_dynamical' attribute will be
 set to the dynamical time corresponding to the argument.
 
+If the object's 'station' attribute is set, the station is also
+precessed.
+
 The object itself is returned.
 
 The algorithm comes from Jean Meeus, "Astronomical Algorithms", 2nd
@@ -2220,9 +2230,9 @@ Edition, Chapter 21, pages 134ff (a.k.a. "the rigorous method").
 =cut
 
 sub precess_dynamical {
-    my $self = shift;
+    my ( $self, $end ) = @_;
 
-    my $end = shift
+    $end
 	or croak "No equinox time specified";
 
     (defined (my $start = $self->get ('equinox_dynamical'))
@@ -2230,6 +2240,15 @@ sub precess_dynamical {
 	or carp "Warning - Precess called with equinox_dynamical ",
 	    "attribute undefined";
     $start ||= $self->dynamical ();
+
+    if ( my $sta = $self->get( 'station' ) ) {
+	$sta->get( 'station' )
+	    and croak NO_CASCADING_STATIONS;
+	$sta->precess_dynamical( $end );
+    }
+
+    $start == $end
+	and return $self;
 
     my ($alpha0, $delta0, $rho0) = $self->equatorial ();
 
@@ -2261,6 +2280,11 @@ sub precess_dynamical {
 
     $self->equatorial ($alpha, $delta, $rho0);
     $self->set (equinox_dynamical => $end);
+
+    if ( my $sta = $self->get( 'station' ) ) {
+	$sta->precess_dynamical( $end );
+    }
+
     return $self;
 }
 
@@ -2449,7 +2473,7 @@ sub set {
     my ($self, @args) = @_;
     my $original = $self;
     ref $self or $self = \%static;
-    @args %2 and croak <<eod;
+    @args % 2 and croak <<eod;
 Error - The set() method requires an even number of arguments.
 eod
     my $action = 0;
@@ -2491,7 +2515,9 @@ eod
     inertial => undef,
     name => \&_set_value,
     refraction => \&_set_value,
+    specified => undef,
     semimajor => \&_set_custom_ellipsoid,
+    station => \&_set_station,
     twilight => \&_set_value,
 );
 
@@ -2501,6 +2527,19 @@ eod
 sub _set_custom_ellipsoid {
     $_[0]->{ellipsoid} = undef;
     $_[0]->{$_[1]} = $_[2];
+    return SET_ACTION_RESET;
+}
+
+sub _set_station {
+    my ( $hash, $attr, $value ) = @_;
+    if ( defined $value ) {
+	embodies( $value, 'Astro::Coord::ECI' )
+	    or croak "Attribute $attr must be undef or an ",
+		'Astro::Coord::ECI object';
+	$value->get( 'station' )
+	    and croak NO_CASCADING_STATIONS;
+    }
+    $hash->{$attr} = $value;
     return SET_ACTION_RESET;
 }
 
@@ -2805,6 +2844,24 @@ sub _convert_eci_to_ecef {
     return @ecef;
 }
 
+#	my @args = _expand_args_default_station( @_ )
+#
+#	This subroutine handles the placing of the contents of the
+#	'station' attribute into the argument list of methods that,
+#	prior to the introduction of the 'station' attribute, formerly
+#	took two Astro::Coord::ECI objects and computed the position of
+#	the second as seen from the first.
+
+sub _expand_args_default_station {
+    my @args = @_;
+    if ( ! embodies( $args[1], 'Astro::Coord::ECI' ) ) {
+	unshift @args, $args[0]->get( 'station' );
+	embodies( $args[0], 'Astro::Coord::ECI' )
+	    or croak 'Station not set';
+    }
+    return @args;
+}
+
 #	$value = $self->_initial_inertial
 #
 #	Return the initial setting of the inertial attribute. At this
@@ -2993,6 +3050,11 @@ refraction is ignored.
 
 The default is true (well, 1 actually).
 
+=item specified (string, read-only)
+
+This attribute records the coordinate system in which the coordinates
+of the object were set.
+
 =item semimajor (numeric, kilometers)
 
 This attribute represents the semimajor axis of the reference
@@ -3004,6 +3066,28 @@ For subclasses representing bodies other than the Earth, this attribute
 will be set appropriately.
 
 The default is appropriate to the default ellipsoid.
+
+=item station ( Astro::Coord::ECI object )
+
+This attribute represents the default observing location for relative
+coordinate systems. It must be set to an C<Astro::Coord::ECI> object, or
+C<undef>.
+
+The intent is that all methods which compute positions or events as seen
+from a user-specified location should make use of this. In other words,
+if you find one that does not, you have found a bug.
+
+Cascading station objects are B<not> supported. That is, if you have
+C<Astro::Coord::ECI> objects C<$a>, C<$b>, C<$c> and so on, if you
+
+ $a->set( station => $b ),
+
+then C<< $b->set( station => $c ) >> is not supported, nor is C<<
+$c->set( station => $a ) >>. Because of the work involved in preventing
+this in general, I have decided to rely on just politely recommending
+that It Is Better Not. But specific pernicious cases B<will> throw
+exceptions, and I reserve the right to do the work and throw exceptions
+in all cases if it becomes a problem.
 
 =item twilight (numeric, radians)
 
