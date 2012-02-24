@@ -134,6 +134,7 @@ illuminator
 IMACAT
 Imacat
 ini
+invocant
 invocant's
 internet
 isa

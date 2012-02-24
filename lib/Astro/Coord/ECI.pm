@@ -43,6 +43,22 @@ least six months after that, you will get a warning on C<every> call. On
 the first release at least six months after that, you will get a fatal
 error when you make a two-argument call to C<azel()>.
 
+Release 0.047_01 adds a C<station> attribute to C<Astro::Coord::ECI>.
+The C<azel()> and C<azel_offset()> methods will use this if it is
+specified and the first argument (after the invocant) is not an
+C<Astro::Coord::ECI> object.
+
+Use of the C<station> attribute to specify the observer for
+observer-relative coordinate systems is preferred over specifying two
+arguments -- or at least it will be once the new logic has had some
+shake-down time. I have not yet decided to deprecate the two-object
+form (i.e.  C<< $station->azel( $body ) >> ), but I may.
+
+With release 0.047_01, the Cartesian portion of the azel() method has
+been factored out, allowing the new methods C<neu()> and C<enu()>. There
+is no C<ned()>, but that would be simple enough, if there is demand for
+it.
+
 =head1 DESCRIPTION
 
 This module was written to provide a base class for a system to predict
