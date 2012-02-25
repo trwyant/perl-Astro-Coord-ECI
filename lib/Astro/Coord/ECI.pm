@@ -96,7 +96,7 @@ specified in inertial coordinates are considered to have undefined
 velocities unless a velocity was specified explicitly or produced by the
 object's model. This involved a change in the behavior of the eci()
 method when velocity was not specified but location was. See the next
-paragraph but one for my excuse.
+paragraph for my excuse.
 
 B<Caveat user:> This class and its subclasses should probably be
 considered alpha code, meaning that the public interface may not be
@@ -944,7 +944,10 @@ of Astro::Coord::ECI::TLE) the return will contain velocity in right
 ascension, declination, and range, the first two being in radians per
 second and the third in kilometers per second in recession.
 
-B<Caveat:> these velocities are believed by me B<not> to be correct.
+B<Caveat:> these velocities are believed by me to be sane B<if> they are
+derived from ECI coordinates. This method does not support setting
+velocities. See L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below,
+for details.
 
 =item ($rightasc, $declin, $range) = $coord->equatorial( $coord2 );
 
@@ -3138,7 +3141,8 @@ appears to be at least mostly sane in the above sense of the word:
              ecliptic()
  
             equatorial()
- 
+                 ^
+                 |
                eci()
                  ^
                  |
@@ -3156,10 +3160,10 @@ other units are obtained by following the arrows. The C<[ seu() ]> (for
 South-East-Up) is bracketed because there is in fact no C<seu()> method,
 but this representation is used internally. The arrows below ecef() are
 one-way because it is not currently possible to set a position in these
-units.  There are no arrows to C<geocentric()>, C<geodetic()> and
-C<ecliptic()> because these conversions do not support velocities.
-There are no arrows between C<eci()> and C<equatorial()> because those
-velocity conversions do not appear to be sane.
+units. Similarly, the arrow from C<eci()> to C<equatorial()> is one-way
+because there is currently no way to set an equatorial velocity. There
+are no arrows to C<geocentric()>, C<geodetic()> and C<ecliptic()>
+because these conversions do not support velocities.
 
 =head1 TERMINOLOGY AND CONVENTIONS
 
