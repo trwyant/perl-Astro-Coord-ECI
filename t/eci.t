@@ -677,7 +677,7 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 	    equatorial();
 
     $body->set( station => $station );
-    my @got = $body->equatorial();
+    my @got = $body->equatorial_apparent();
 
     tolerance $got[0], $want[0], 0.000001,
 	'Right ascension relative to station attribute';

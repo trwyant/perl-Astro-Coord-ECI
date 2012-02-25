@@ -43,21 +43,36 @@ least six months after that, you will get a warning on C<every> call. On
 the first release at least six months after that, you will get a fatal
 error when you make a two-argument call to C<azel()>.
 
-Release 0.047_01 adds a C<station> attribute to C<Astro::Coord::ECI>.
-The C<azel()> and C<azel_offset()> methods will use this if it is
-specified and the first argument (after the invocant) is not an
+Release 0.047_01 contains a number of changes to the handling of
+relative positions:
+
+=over
+
+=item
+
+It adds a C<station> attribute to C<Astro::Coord::ECI>. The
+C<azel()> and C<azel_offset()> methods will use this if it is specified
+and the first argument (after the invocant) is not an
 C<Astro::Coord::ECI> object.
+
+=item
+
+It adds method equatorial_apparent() has been introduced, to give
+the position of a body relative to its C<station> attribute.
+
+=item
+
+The Cartesian portion of the azel() method has been factored out,
+allowing the new methods C<neu()> and C<enu()>. There is no C<ned()>,
+but that would be simple enough, if there is demand for it.
+
+=back
 
 Use of the C<station> attribute to specify the observer for
 observer-relative coordinate systems is preferred over specifying two
-arguments -- or at least it will be once the new logic has had some
+objects -- or at least it will be once the new logic has had some
 shake-down time. I have not yet decided to deprecate the two-object
-form (i.e.  C<< $station->azel( $body ) >> ), but I may.
-
-With release 0.047_01, the Cartesian portion of the azel() method has
-been factored out, allowing the new methods C<neu()> and C<enu()>. There
-is no C<ned()>, but that would be simple enough, if there is demand for
-it.
+forms of the methods (i.e.  C<< $station->azel( $body ) >> ), but I may.
 
 =head1 DESCRIPTION
 
@@ -934,10 +949,10 @@ argument if any.
 =item ( $rightasc, $declin, $range ) = $coord->equatorial( $time );
 
 This method returns the L</Equatorial> coordinates of the object at the
-given time, relative to the location specified by the C<station>
-attribute, or to the center of the Earth if this attribute is C<undef>.
-The time argument is optional if the time represented by the object has
-already been set (e.g. by the universal() or dynamical() methods).
+relative to the center of the Earth. The C<station> attribute is
+ignored.  The time argument is optional if the time represented by the
+object has already been set (e.g. by the universal() or dynamical()
+methods).
 
 If velocities are available from the object (i.e. if it is an instance
 of Astro::Coord::ECI::TLE) the return will contain velocity in right
@@ -950,6 +965,9 @@ velocities. See L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below,
 for details.
 
 =item ($rightasc, $declin, $range) = $coord->equatorial( $coord2 );
+
+This method is retained (for the moment) for historical reasons, but
+C<equatorial_apparent()> is preferred.
 
 This method returns the apparent equatorial coordinates of the object
 represented by $coord2, as seen from the location represented by
@@ -995,22 +1013,11 @@ sub equatorial {
 
     unless (@args) {
 
-	if ( not defined $body and my $sta = $self->get( 'station' ) ) {
-	    $body = $self;
-	    $self = $sta;
-	}
-
 	unless ($body) {
 	    $self->{_ECI_cache}{inertial}{equatorial}
 		and return @{$self->{_ECI_cache}{inertial}{equatorial}};
 	}
-	my @rslt = $self->equatorial_unreduced($body);
-	$rslt[0] = mod2pi(atan2($rslt[0][0], $rslt[0][1]));
-	$rslt[1] = atan2($rslt[1][0], $rslt[1][1]);
-	if (@rslt >= 6) {
-	    $rslt[3] /= $rslt[2];
-	    $rslt[4] /= $rslt[2];
-	}
+	my @rslt = $self->_equatorial_reduced( $body );
 	$body or $self->{_ECI_cache}{inertial}{equatorial} = \@rslt;
 	return @rslt;
     }
@@ -1072,6 +1079,24 @@ Error - The equatorial() method must be called with either zero or one
 eod
     }
     return $self;
+}
+
+=item ($rightasc, $declin, $range) = $coord->equatorial_apparent();
+
+This method returns the apparent equatorial coordinates of the C<$coord>
+object as seen from the object in the C<station> attribute of the
+C<$coord> object.
+
+This method will return velocities if available, but I have no idea
+whether they are correct.
+
+=cut
+
+sub equatorial_apparent {
+    my ( $self ) = @_;
+    my $station = $self->get( 'station' )
+	or croak 'Station attribute is required';
+    return $station->_equatorial_reduced( $self );
 }
 
 
@@ -1209,6 +1234,18 @@ sub equatorial_unreduced {
 	or $self->{_ECI_cache}{inertial}{equatorial_unreduced} = \@rslt;
     return @rslt;
 
+}
+
+sub _equatorial_reduced {
+    my ( $self, $body ) = @_;
+    my @rslt = $self->equatorial_unreduced( $body );
+    $rslt[0] = mod2pi( atan2( $rslt[0][0], $rslt[0][1] ) );
+    $rslt[1] = atan2( $rslt[1][0], $rslt[1][1] );
+    if (@rslt >= 6) {
+	$rslt[3] /= $rslt[2];
+	$rslt[4] /= $rslt[2];
+    }
+    return @rslt;
 }
 
 =item $coord = $coord->equinox_dynamical ($value);
