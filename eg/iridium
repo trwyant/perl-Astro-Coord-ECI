@@ -48,10 +48,10 @@ Error - Failed to retrieve Iridium data.
 eod
 
 #	Parse the Iridium data to get Astro::Coord::ECI::TLE
-#	objects (or, more likely, Astro::Coord::ECI::TLE::Set, since we
-#	explicitly requested all available data).
+#	objects.
 
-my @bodies = Astro::Coord::ECI::TLE->parse ($tle->content);
+my @bodies = Astro::Coord::ECI::TLE->parse(
+    { station => $sta }, $tle->content);
 
 #	For each of the bodies retrieved
 
@@ -60,7 +60,7 @@ my $end = $start + 2 * SECSPERDAY;
 my @flares;
 foreach my $tle (@bodies) {
     next unless $tle->can_flare ();
-    push @flares, $tle->flare ($sta, $start, $end);
+    push @flares, $tle->flare ( $start, $end )
 }
 
 my %mag_limit = (

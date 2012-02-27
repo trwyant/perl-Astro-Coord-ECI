@@ -48,22 +48,22 @@ eod
 #	objects (or, more likely, Astro::Coord::ECI::TLE::Set, since we
 #	explicitly requested all available data).
 
-my @bodies = Astro::Coord::ECI::TLE::Set->aggregate (
-    Astro::Coord::ECI::TLE->parse ($tle->content));
+my @bodies = Astro::Coord::ECI::TLE::Set->aggregate(
+    Astro::Coord::ECI::TLE->parse( { station => $sta }, $tle->content ) );
 
 #	For each of the bodies retrieved
 
 my $start = time ();
 my $end = $start + 7 * SECSPERDAY;
 foreach my $tle (@bodies) {
-    my @passes = $tle->pass ($sta, $start, $end);
+    my @passes = $tle->pass( $start, $end );
     next unless @passes;
-    print <<eod;
+    print <<"EOD";
 
 @{[$tle->get ('id')]}  @{[$tle->get ('name')]}
 
 Date/Time        Elevation    Azimuth      Range Illum Event
-eod
+EOD
 
     foreach my $pass (@passes) {
 	print "\n";

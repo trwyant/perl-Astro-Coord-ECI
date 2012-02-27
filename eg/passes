@@ -140,7 +140,14 @@ my $station = Astro::Coord::ECI->new()->geodetic(
 
 # Parse the data into TLE objects.
 my @of_interest = Astro::Coord::ECI::TLE::Set->aggregate(
-    Astro::Coord::ECI::TLE->parse( $rslt->content() ) );
+    Astro::Coord::ECI::TLE->parse( {
+	    geometric => $opt{geometric},	# Rise/set vs. geometric horizon
+	    horizon => $horizon,	# Horizon.
+	    station => $station,	# Observer
+	    twilight => $twilight,	# Twilight.
+	    visible => $opt{visible},	# Visible passes only if true.
+	},
+	$rslt->content() ) );
 
 my @events_found;	# Rise and set data.
 
@@ -152,18 +159,11 @@ foreach my $tle ( @of_interest ) {
 	$tle->set( name => $name );
     }
 
-    $tle->set(
-	geometric => $opt{geometric},	# Rise/set vs. geometric horizon
-	horizon => $horizon,		# Horizon.
-	twilight => $twilight,		# Twilight.
-	visible => $opt{visible},	# Visible passes only if true.
-    );
-
     $tle->validate( $start, $finish )	# Sanity-check the data, and
 	or next;			# punt if we can not use it.
 
     # Iterate through each pass over the station.
-    foreach my $pass ( $tle->pass( $station, $start, $finish ) ) {
+    foreach my $pass ( $tle->pass( $start, $finish ) ) {
 	
 	# Record the appropriate data.
 	if ( $opt{split} ) {

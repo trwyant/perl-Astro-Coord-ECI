@@ -32,7 +32,7 @@ my $dtafmt = "%s  %6.2f  %6.2f  %5.0f\n";
 
 local $/ = undef;
 my @tle = Astro::Coord::ECI::TLE::Set->aggregate(
-    Astro::Coord::ECI::TLE->parse(<>));
+    Astro::Coord::ECI::TLE->parse( { station => $station }, <>));
 
 print "date/time            azimuth elevation range\n";
 foreach my $body (@tle) {
@@ -42,7 +42,7 @@ foreach my $body (@tle) {
 	    warn $@;
 	    last;
 	};
-	my ($azim, $elev, $range) = $station->azel($body);
+	my ($azim, $elev, $range) = $body->azel();
 	$elev >= 0 or next;
 	printf $dtafmt, strftime($timfmt, gmtime $time), rad2deg($azim),
 	    rad2deg($elev), $range;

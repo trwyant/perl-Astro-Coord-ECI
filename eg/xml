@@ -60,6 +60,15 @@ $resp->is_success()
 my ( $iss ) = grep { 25544 == $_->get( 'id' ) }
     Astro::Coord::ECI::TLE->parse( $resp->content() );
 
+# Set up our location
+
+my $sta = Astro::Coord::ECI->new(
+)->geodetic(
+    deg2rad( $opt{latitude} ),
+    deg2rad( $opt{longitude} ),
+    $opt{height} / 1000,
+);
+
 # Configure the TLE object as desired for the pass prediction, based on
 # the option values.
 
@@ -70,22 +79,14 @@ $iss->set(
 	PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX |
 	    PASS_VARIANT_START_END
     ),
+    station	=> $sta,
     twilight	=> deg2rad( $opt{twilight} ),
     visible	=> $opt{more} < 2,
 );
 
-# Set up our location
-
-my $sta = Astro::Coord::ECI->new(
-)->geodetic(
-    deg2rad( $opt{latitude} ),
-    deg2rad( $opt{longitude} ),
-    $opt{height} / 1000,
-);
-
 # Compute the passes.
 
-my @passes = $iss->pass( $sta, $start_time, $start_time + $days * 86400 );
+my @passes = $iss->pass( $start_time, $start_time + $days * 86400 );
 
 # Put the output into UTF-8 mode, since that is what we intend to use.
 

@@ -26,10 +26,9 @@ my $sta = Astro::Coord::ECI->new(
 
 my $azimuth = defined $ARGV[0] ? $ARGV[0] : 180;
 
-my $sun = Astro::Coord::ECI::Sun->new();
+my $sun = Astro::Coord::ECI::Sun->new( station => $sta );
 
-my $when = $sta->next_azimuth(
-    $sun,			# The body
+my $when = $sun->next_azimuth(
     deg2rad( $azimuth ),	# The desired azimuth.
 );
 
