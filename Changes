@@ -1,3 +1,15 @@
+0.047_02	2012-02-27	T. R. Wyant
+  In Astro::Coord::ECI:
+  * Have next_azimuth(), next_elevation(), and next_meridian() make use
+    of the 'station' attribute if the invocant is the only
+    Astro::Coord::ECI argument.
+  Have Astro::Coord::ECI::TLE->parse() take, as an optional first
+    argument, a reference to a hash that is used to initialize
+    attributes not initialized by parsing the TLE data.
+  Convert all eg/ scripts to use the 'station' attribute where possible,
+    and the optional Astro::Coord::ECI::TLE->parse() hash argument where
+    practical.
+
 0.047_01	2012-02-26	T. R. Wyant
   In Astro::Coord::ECI:
   * Add 'station' attribute, as origin of observer-centered coordinate
