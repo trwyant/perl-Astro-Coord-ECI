@@ -54,6 +54,8 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 # understand their leap-second code well enough yet.
 
 {
+    note 'Test with Sun passed as argument to next_elevation()';
+
     my $sta = Astro::Coord::ECI->new( refraction => 1 )->
 	geodetic( deg2rad( 53/60 + 38 ), deg2rad( -(2/60 + 77) ), 0 );
     my $sun = Astro::Coord::ECI::Sun->new ();
@@ -116,6 +118,75 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
 	'Local noon Washington DC December 21 2005', \&format_time;
 
     tolerance $sta->next_elevation( $sun, 0, 1 ) + $zone,
+	timegm( 0, 50, 16, 21, 11, 105 ), 30,
+	'Sunset Washington DC December 21 2005', \&format_time;
+}
+
+{
+    note 'Test with location in station attribute of Sun';
+
+    my $sta = Astro::Coord::ECI->new( refraction => 1 )->
+	geodetic( deg2rad( 53/60 + 38 ), deg2rad( -(2/60 + 77) ), 0 );
+    my $sun = Astro::Coord::ECI::Sun->new( station => $sta );
+    my $zone = -5 * 3600;
+
+    my $time = timegm( 0, 0, 0, 20, 2, 105 ) - $zone;
+    $sun->universal( $time );
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
+	timegm( 0, 11, 6, 20, 2, 105 ), 30,
+	'Sunrise Washington DC March 11 2005', \&format_time;
+
+    tolerance $sun->next_meridian() + $zone,
+	timegm( 0, 16, 12, 20, 2, 105 ), 30,
+	'Local noon Washington DC March 11 2005', \&format_time;
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
+	timegm( 0, 20, 18, 20, 2, 105 ), 30,
+	'Sunset Washington DC March 11 2005', \&format_time;
+
+    $time = timegm( 0, 0, 0, 21, 5, 105 ) - $zone;
+    $sun->universal( $time );
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
+	timegm( 0, 43, 4, 21, 5, 105 ), 30,
+	'Sunrise Washington DC June 21 2005', \&format_time;
+
+    tolerance $sun->next_meridian() + $zone,
+	timegm( 0, 10, 12, 21, 5, 105 ), 30,
+	'Local noon Washington DC June 21 2005', \&format_time;
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
+	timegm( 0, 37, 19, 21, 5, 105 ), 30,
+	'Sunset Washington DC June 21 2005', \&format_time;
+
+    $time = timegm( 0, 0, 0, 22, 8, 105 ) - $zone;
+    $sun->universal( $time );
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
+	timegm( 0, 56, 5, 22, 8, 105 ), 30,
+	'Sunrise Washington DC September 22 2005', \&format_time;
+
+    tolerance $sun->next_meridian() + $zone,
+	timegm( 0, 1, 12, 22, 8, 105 ), 30,
+	'Local noon Washington DC September 22 2005', \&format_time;
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
+	timegm( 0, 5, 18, 22, 8, 105 ), 30,
+	'Sunset Washington DC September 22 2005', \&format_time;
+
+    $time = timegm( 0, 0, 0, 21, 11, 105 ) - $zone;
+    $sun->universal( $time );
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
+	timegm( 0, 23, 7, 21, 11, 105 ), 30,
+	'Sunrise Washington DC December 21 2005', \&format_time;
+
+    tolerance $sun->next_meridian() + $zone,
+	timegm( 0, 6, 12, 21, 11, 105 ), 30,
+	'Local noon Washington DC December 21 2005', \&format_time;
+
+    tolerance $sun->next_elevation( 0, 1 ) + $zone,
 	timegm( 0, 50, 16, 21, 11, 105 ), 30,
 	'Sunset Washington DC December 21 2005', \&format_time;
 }

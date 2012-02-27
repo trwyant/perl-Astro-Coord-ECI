@@ -203,6 +203,8 @@ errors on extremely small angles. The haversine law was selected based
 on Jean Meeus, "Astronomical Algorithms", 2nd edition, chapter 17
 "Angular Separation".
 
+This method ignores the C<station> attribute.
+
 =cut
 
 sub angle {
@@ -2017,18 +2019,25 @@ C<$azimuth> as seen from the given C<$coord>, calculated to the nearest
 second. The start time is the current time setting of the C<$body>
 object.
 
+=item $time = $coord->next_azimuth( $azimuth );
+
+This method returns the next time the C<$coord> object passes the given
+C<$azimuth> as seen from the location in the C<$coord> object's
+C<station> attribute, calculated to the nearest second. The start time
+is the current time setting of the C<$coord> object.
+
 =cut
 
 sub next_azimuth {
-    my ( $self, $body, $azimuth ) = @_;
-    ref $self or croak <<eod;
+    my ( $self, $body, $azimuth ) = _expand_args_default_station( @_ );
+    ref $self or croak <<'EOD';
 Error - The next_azimuth() method may not be called as a class method.
-eod
+EOD
 
-    $body->represents(__PACKAGE__) or croak <<eod;
-Error - The argument to next_meridian() must be a subclass of
+    $body->represents(__PACKAGE__) or croak <<"EOD";
+Error - The argument to next_azimuth() must be a subclass of
         @{[__PACKAGE__]}.
-eod
+EOD
 
     my $want = shift;
     defined $want and $want = $want ? 1 : 0;
@@ -2075,13 +2084,31 @@ eod
 =item ($time, $rise) = $coord->next_elevation ($body, $elev, $upper)
 
 This method calculates the next time the given body passes above or
-below the given elevation (in radians). The $elev argument may be
-omitted (or passed as undef), and will default to 0. If the $upper
-argument is true, the calculation will be based on the upper limb
-of the body (as determined from its angulardiameter attribute); if
-false, the calculation will be based on the center of the body. The
-$upper argument defaults to true if the $elev argument is zero or
-positive, and false if the $elev argument is negative.
+below the given elevation (in radians) as seen from C<$coord>. The
+C<$elev> argument may be omitted (or passed as undef), and will default
+to 0. If the C<$upper> argument is true, the calculation will be based
+on the upper limb of the body (as determined from its C<angulardiameter>
+attribute); if false, the calculation will be based on the center of the
+body. The C<$upper> argument defaults to true if the C<$elev> argument
+is zero or positive, and false if the C<$elev> argument is negative.
+
+The algorithm is successive approximation, and assumes that the
+body will be at its highest at meridian passage. It also assumes
+that if the body hasn't passed the given elevation in 183 days it
+never will. In this case it returns undef in scalar context, or
+an empty list in list context.
+
+=item ($time, $rise) = $coord->next_elevation( $elev, $upper );
+
+This method calculates the next time the C<$coord> object passes above
+or below the given elevation (in radians) as seen from the position
+found in the C<$coord> object's C<station> attribute. The C<$elev>
+argument may be omitted (or passed as undef), and will default to 0. If
+the C<$upper> argument is true, the calculation will be based on the
+upper limb of the body (as determined from its C<angulardiameter>
+attribute); if false, the calculation will be based on the center of the
+body. The C<$upper> argument defaults to true if the C<$elev> argument
+is zero or positive, and false if the C<$elev> argument is negative.
 
 The algorithm is successive approximation, and assumes that the
 body will be at its highest at meridian passage. It also assumes
@@ -2094,20 +2121,17 @@ an empty list in list context.
 use constant NEVER_PASS_ELEV => 183 * SECSPERDAY;
 
 sub next_elevation {
-    my $self = shift;
-    ref $self or croak <<eod;
+    my ( $self, $body, $angle, $upper ) = _expand_args_default_station( @_ );
+    ref $self or croak <<'EOD';
 Error - The next_elevation() method may not be called as a class method.
-eod
+EOD
 
-    my $body = shift;
-    #### isa ($body, __PACKAGE__) or croak <<eod;
-    $body->represents(__PACKAGE__) or croak <<eod;
+    $body->represents(__PACKAGE__) or croak <<"EOD";
 Error - The first argument to next_elevation() must be a subclass of
         @{[__PACKAGE__]}.
-eod
+EOD
 
-    my $angle = shift || 0;
-    my $upper = shift;
+    $angle ||= 0;
     defined $upper or $upper = $angle >= 0;
 
     my $begin = $self->universal;
@@ -2137,60 +2161,86 @@ eod
     return wantarray ? ($end, $rise) : $end;
 }
 
-=item ($time, $above) = $coord->next_meridian ($body, $want)
+=item ( $time, $above ) = $coord->next_meridian( $body, $want )
 
-This method calculates the next meridian passage of the given body
-over (or under) the location specified by the $coord object. The
-$body object must be a subclass of Astro::Coord::ECI.
+This method calculates the next meridian passage of the given C<$body>
+over (or under) the location specified by the C<$coord> object. The
+C<$body> object must be a subclass of Astro::Coord::ECI.
 
-The optional $want argument should be specified as true (i.e. 1) if you
-want the next passage above the observer, or as false (i.e. 0) if you
-want the next passage below the observer. If this argument is omitted
-or undefined, you get whichever passage is next.
+The optional C<$want> argument should be specified as true (e.g. 1) if
+you want the next passage above the observer, or as false (e.g. 0) if
+you want the next passage below the observer. If this argument is
+omitted or undefined, you get whichever passage is next.
 
 The start time of the search is the current time setting of the
-$coord object.
+C<$coord> object.
 
-The returns are the time of the meridian passage, and an indicator
-which is true if the passage is above the observer (i.e. local noon
-if the $body represents the sun), or false if below (i.e. local
-midnight if the $body represents the sun). If called in scalar
-context, you get the time only.
+The returns are the time of the meridian passage, and an indicator which
+is true if the passage is above the observer (i.e. local noon if the
+C<$body> represents the Sun), or false if below (i.e. local midnight if
+the C<$body> represents the Sun). If called in scalar context, you get
+the time only.
 
-The current time of both $coord and $body object are left at the
+The current time of both C<$coord> and C<$body> objects are left at the
 returned time.
 
 The algorithm is by successive approximation. It will croak if the
-period of the $body is close to synchronous, and will probably not
-work well for bodies in highly eccentric orbits. The calculation is
-to the nearest second, and the time returned is the first even
-second after the body crosses the meridian.
+period of the C<$body> is close to synchronous, and will probably not
+work well for bodies in highly eccentric orbits. The calculation is to
+the nearest second, and the time returned is the first even second after
+the body crosses the meridian.
+
+=item ( $time, $above ) = $coord->next_meridian( $want )
+
+This method calculates the next meridian passage of the C<$coord> object
+over (or under) the location specified by the C<$coord> object's
+C<station> attribute.
+
+The optional C<$want> argument should be specified as true (e.g. 1) if
+you want the next passage above the observer, or as false (e.g. 0) if
+you want the next passage below the observer. If this argument is
+omitted or undefined, you get whichever passage is next.
+
+The start time of the search is the current time setting of the
+C<$coord> object.
+
+The returns are the time of the meridian passage, and an indicator which
+is true if the passage is above the observer (i.e. local noon if the
+C<$coord> object represents the Sun), or false if below (i.e. local
+midnight if the C<$coord> object represents the Sun). If called in
+scalar context, you get the time only.
+
+The current time of both C<$coord> and its C<station> are left at the
+returned time.
+
+The algorithm is by successive approximation. It will croak if the
+period of the C<$body> is close to synchronous, and will probably not
+work well for bodies in highly eccentric orbits. The calculation is to
+the nearest second, and the time returned is the first even second after
+the body crosses the meridian.
 
 =cut
 
 sub next_meridian {
-    my $self = shift;
-    ref $self or croak <<eod;
+    my ( $self, $body, $want ) = _expand_args_default_station( @_ );
+    ref $self or croak <<'EOD';
 Error - The next_meridian() method may not be called as a class method.
-eod
+EOD
 
-    my $body = shift;
-    ####isa ($body, __PACKAGE__) or croak <<eod;
-    $body->represents(__PACKAGE__) or croak <<eod;
+    $body->represents(__PACKAGE__) or croak <<"EOD";
 Error - The argument to next_meridian() must be a subclass of
         @{[__PACKAGE__]}.
-eod
+EOD
 
-    my $want = shift;
     defined $want and $want = $want ? 1 : 0;
 
     my $denom = $body->mean_angular_velocity -
 	$self->mean_angular_velocity;
     my $retro = $denom >= 0 ? 0 : 1;
-    ($denom = abs ($denom)) < 1e-11 and croak <<eod;
+    ($denom = abs ($denom)) < 1e-11 and croak <<'EOD';
 Error - The next_meridian() method will not work for geosynchronous
         bodies.
-eod
+EOD
 
     my $apparent = TWOPI / $denom;
     my $begin = $self->universal;
@@ -2899,6 +2949,8 @@ sub _expand_args_default_station {
 	unshift @args, $args[0]->get( 'station' );
 	embodies( $args[0], 'Astro::Coord::ECI' )
 	    or croak 'Station not set';
+	defined $args[1]->{universal}
+	    and $args[0]->universal( $args[1]->universal() );
     }
     return @args;
 }
