@@ -930,12 +930,15 @@ side effect of calling $tle->universal ($time).
 sub null {}
 
 
-=item @elements = Astro::Coord::ECI::TLE->parse (@data);
+=item @elements = Astro::Coord::ECI::TLE->parse( @data );
 
 This method parses a NORAD two- or three-line element set (or a
 mixture), returning a list of Astro::Coord::ECI::TLE objects. The
 L</Attributes> section identifies those attributes which will be filled
 in by this method.
+
+If the first argument is a hash reference, this will be used to set
+attributes in addition to those set by the parse operation.
 
 The input will be split into individual lines, and all blank lines and
 lines beginning with '#' will be eliminated. The remaining lines are
@@ -956,6 +959,7 @@ body is considered not to have a name.
 sub parse {
     my ($self, @args) = @_;
     my @rslt;
+    my $attrs = 'HASH' eq ref $args[0] ? shift @args : {};
 
     my @data;
     foreach my $datum (@args) {
@@ -970,7 +974,7 @@ eod
     }
 
     while (@data) {
-	my %ele = %static;
+	my %ele = ( %static, %{ $attrs } );
 	my $line = shift @data;
 	$line =~ s/\s+$//;
 	my $tle = "$line\n";
