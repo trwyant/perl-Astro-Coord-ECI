@@ -1,3 +1,23 @@
+0.047_01	2012-02-26	T. R. Wyant
+  In Astro::Coord::ECI:
+  * Add 'station' attribute, as origin of observer-centered coordinate
+    systems. If azel() is called with the invocant as the only
+    Astro::Coord::ECI argument, it returns the coordinates of the
+    invocant relative to the 'station' attribute.
+  * Factor out the Cartesian portion of the azel() method, and add
+    methods neu() and enu(), to provide local Cartesian coordinates
+    relative to the 'station' attribute.
+  * Add method equatorial_apparent(), to calculate apparent equatorial
+    coordinates as seen from the location in the 'station' attribute.
+  * Work on velocity transformations from eci() to ecef(), neu(), enu(),
+    azel(), and equatorial(). All these seem sane to me, though I still
+    have no worked examples to test against.
+  I intend the use of the 'station' attribute to be the preferred way to
+  get observer-relative coordinates. I would like to eventually
+  deprecate $station->azel( $body ) and friends, as well as the practice
+  of passing an explicit station to the pass() and flare() methods, but
+  whether this actually happens is another question.
+
 0.047		2012-01-20	T. R. Wyant
   Have the functionality related to the Astro::Coord::ECI::TLE
     'pass_threshold' attribute (introduced in 0.046) take visibility
