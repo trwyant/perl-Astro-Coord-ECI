@@ -1,3 +1,15 @@
+0.047_03	2012-03-01	T. R. Wyant
+  In the 'satpass' script's pass() subroutine, set the 'station'
+    attribute of all bodies in the @sky array before passing them to the
+    Astro::Coord::ECI::TLE pass() method.
+  In the Astro::Coord::ECI::TLE::Iridium flare() method, set the
+    'station' attribute of the object that represents the center of the
+    flare.
+  Have the first use of the Astro::Coord::ECI::TLE 'limb' attribute, the
+    satpass script 'lit' setting, and the Astro::Coord::ECI azel()
+    method with an 'upper' argument display a warning. These were
+    deprecated in September 2011.
+
 0.047_02	2012-02-27	T. R. Wyant
   In Astro::Coord::ECI:
   * Have next_azimuth(), next_elevation(), and next_meridian() make use
