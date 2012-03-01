@@ -36,12 +36,11 @@ for an example involving satellite pass prediction.
 =head1 NOTICE
 
 The two-argument form of the C<azel()> method is deprecated in favor of
-the two-argument form of the C<azel_offset()> method.  On the first
-release on or after March 1 2012, you will get a warning the first time
-you call the two-argument form of C<azel()>. On the first release at
-least six months after that, you will get a warning on C<every> call. On
-the first release at least six months after that, you will get a fatal
-error when you make a two-argument call to C<azel()>.
+the two-argument form of the C<azel_offset()> method, and a warning will
+be issued the first time it is used. On the first release on or after
+September 1 2012, you will get a warning on C<every> use. On the first
+release at least six months after that, you will get a fatal error when
+you make a two-argument call to C<azel()>.
 
 Release 0.047_01 contains a number of changes to the handling of
 relative positions:
@@ -294,14 +293,14 @@ The C<$upper> argument is as above, including the deprecation.
 
 
 {
-##  my $upper_deprecated;
+    my $upper_deprecated;
 
-    sub azel {
-##	@_ > 2
-##	    and warnings::enabled( 'deprecated' )
-##	    and not $upper_deprecated++
-##	    and carp q{The azel() 'upper' argument is deprecated; use },
-##		q{the azel_offset() 'offset' argument instead};
+    sub azel {	## no critic (RequireArgUnpacking)
+  	@_ > 2
+  	    and warnings::enabled( 'deprecated' )
+  	    and not $upper_deprecated++
+  	    and carp q{The azel() 'upper' argument is deprecated; use },
+  		q{the azel_offset() 'offset' argument instead};
 	@_ = _expand_args_default_station( @_ );
 	$_[2] = $_[2] ? 1 : 0;
 	goto &azel_offset;
@@ -2133,10 +2132,13 @@ EOD
 
     $angle ||= 0;
     defined $upper or $upper = $angle >= 0;
+    $upper = $upper ? 1 : 0;
 
     my $begin = $self->universal;
     my $original = $begin;
-    my $rise = ($self->azel ($body->universal ($begin), $upper))[1] < $angle || 0;
+    my $rise = (
+	$self->azel_offset( $body->universal( $begin ), $upper )
+    )[1] < $angle || 0;
 
     my ($end, $above) = $self->next_meridian ($body, $rise);
 
@@ -2150,8 +2152,8 @@ EOD
 
     while ($end - $begin > 1) {
 	my $mid = floor (($begin + $end) / 2);
-	my (undef, $elev) = $self->universal ($mid)->
-	    azel ($body->universal ($mid), $upper);
+	my ( undef, $elev ) = $self->universal( $mid )->
+	    azel_offset( $body->universal( $mid ), $upper );
 	($begin, $end) =
 	    ($elev < $angle || 0) == $rise ? ($mid, $end) : ($begin, $mid);
     }

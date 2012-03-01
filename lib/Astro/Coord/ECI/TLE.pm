@@ -99,10 +99,10 @@ through clearly.
 
 The C<limb> attribute is deprecated in favor of the
 L<Astro::Coord::ECI|Astro::Coord::ECI> C<edge_of_earths_shadow>
-attribute. On the first release on or after March 1 2012, you will get a
-warning on the first use. On the first release at least six months after
-that, you will get a warning on C<every> use. On the first release at
-least six months after that, you will get a fatal error on use.
+attribute, and you will get a warning on the first use. On the first
+release on or after September 1 2012, you will get a warning on C<every>
+use. On the first release at least six months after that, you will get a
+fatal error on use.
 
 =head1 DESCRIPTION
 
@@ -318,12 +318,12 @@ use constant SGP_RHO => .15696615;
 # This subroutine manages the warnings on the deprecation of the 'limb'
 # attribute.
 {
-##  my $limb_deprecated;
+    my $limb_deprecated;
     sub __limb_deprecation {
-##	warnings::enabled( 'deprecated' )
-##	    and not $limb_deprecated++
-##	    and carp q{The 'limb' attribute is deprecated; use the },
-##		q{'edge_of_earths_shadow' attribute instead};
+	warnings::enabled( 'deprecated' )
+	    and not $limb_deprecated++
+	    and carp q{The 'limb' attribute is deprecated; use the },
+		q{'edge_of_earths_shadow' attribute instead};
 	return;
     }
 }

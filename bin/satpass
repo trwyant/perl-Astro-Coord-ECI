@@ -2031,7 +2031,8 @@ $st and $st->set (webcmd => $_[1]);
 #
 
 sub show {
-@_ or @_ = sort keys %accessor;
+    # TODO 'lit' is deprecated. When it is removed, remove this.
+@_ or @_ = grep { 'lit' ne $_ } sort keys %accessor;
 foreach my $name (@_) {
     exists $accessor{$name} or die <<eod;
 Error - '$name' is not a valid setting.
@@ -2882,12 +2883,12 @@ foreach my $tle (@bodies) {
 }
 
 {
-##  my $lit_deprecated;
+    my $lit_deprecated;
 
     sub _lit_deprecated {
-##	not $lit_deprecated++
-##	    and warn q{The 'lit' parameter is deprecated. Use },
-##		q{the 'edge_of_earths_shadow' parameter instead}, "\n";
+	not $lit_deprecated++
+	    and warn q{The 'lit' parameter is deprecated. Use },
+		q{the 'edge_of_earths_shadow' parameter instead}, "\n";
 	return;
     }
 }
@@ -3797,11 +3798,11 @@ become a fatal error. This command has been deprecated in the
 documentation for quite a while.
 
 The C<lit> parameter (and the corresponding
-L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute) are
-deprecated. Starting in the first release on or after March 1 2012, a
-warning will be issued the first time this attribute is accessed. Six
-months (plus) after this happens, a warning will be issued at every use,
-and six months (plus) after that, it will be a fatal error.
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute) is
+deprecated, and a warning will be issued the first time it is accessed.
+Starting in the first release on or after September 1 2012, a warning
+will be issued at every use, and six months (plus) after that, it will
+be a fatal error.
 
 The C<geocode> command now prefers to use
 L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>. The use of

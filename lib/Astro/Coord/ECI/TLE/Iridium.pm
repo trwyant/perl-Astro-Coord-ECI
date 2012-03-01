@@ -584,7 +584,7 @@ eod
 
 #	Calculate whether satellite is above horizon.
 
-	my (undef, $elev, $rng) = $station->azel ($self, 0);
+	my ( undef, $elev, $rng ) = $station->azel_offset( $self, 0 );
 	$elev > $horizon or next;
 
 
