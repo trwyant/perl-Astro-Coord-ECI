@@ -1273,8 +1273,8 @@ my $sub_vector = do {
 	vector_dot_product ($q_p, $n);
     [$q_p->[0] * $k + $p->[0], $q_p->[1] * $k + $p->[1], $q_p->[2] * $k + $p->[2]];
     };
-my $sub_point = Astro::Coord::ECI->universal ($time)->
-    eci (@$sub_vector);
+my $sub_point = Astro::Coord::ECI->new(
+    station => $station )->universal( $time )->eci( @$sub_vector );
 
 
 #	Stash the data.
