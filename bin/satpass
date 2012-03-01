@@ -1604,6 +1604,12 @@ eod
 	    }
 	}
 
+#	Set the station for all the bodies in the sky
+
+    foreach my $body ( @sky ) {
+	$body->set( station => $sta );
+    }
+
 #	Foreach body to be modelled
 
     foreach my $tle (_select_observing_list ($pass_start)) {
