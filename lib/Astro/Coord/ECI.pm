@@ -2747,7 +2747,7 @@ sub _call_time_set {
     if ($exception) {
 	$self->{universal} = undef;
 	$self->{dynamical} = undef;
-	# Re-raise the exception not that we have cleaned up.
+	# Re-raise the exception now that we have cleaned up.
 	die $exception;	## no critic (RequireCarping)
     }
     return;
