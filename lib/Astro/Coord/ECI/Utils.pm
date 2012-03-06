@@ -143,10 +143,11 @@ our @EXPORT_OK = ( qw{
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
 	dynamical_delta embodies epoch2datetime equation_of_time
 	find_first_true intensity_to_magnitude jcent2000 jd2date
-	jd2datetime jday2000 julianday load_module looks_like_number max
-	min mod2pi nutation_in_longitude nutation_in_obliquity obliquity
-	omega rad2deg tan theta0 thetag vector_cross_product
-	vector_dot_product vector_magnitude vector_unitize
+	jd2datetime jday2000 julianday keplers_equation load_module
+	looks_like_number max min mod2pi nutation_in_longitude
+	nutation_in_obliquity obliquity omega rad2deg tan theta0 thetag
+	vector_cross_product vector_dot_product vector_magnitude
+	vector_unitize
        	__classisa __default_station __instance },
 	@time_routines );
 
@@ -681,6 +682,42 @@ Algorithms", 2nd Edition, Chapter 7, page 62.
 =cut
 
 sub julianday {return jday2000($_[0]) + 2_451_545.0}
+
+=item $ea = keplers_equation( $M, $e, $prec );
+
+This subroutine solves Kepler's equation for the given mean anomaly
+C<$M> in radians, eccentricity C<$e> and precision C<$prec> in radians.
+It returns the eccentric anomaly in radians, to the given precision.
+
+The C<$prec> argument is optional, and defaults to the radian equivalent
+of 0.001 degrees.
+
+The algorithm is Meeus' equation 30.7, with John M. Steele's amendment
+for large values for the correction, given on page 205 of Meeus' book,
+
+This subroutine is B<not> used in the computation of satellite orbits,
+since the models have their own implementation.
+
+=cut
+
+sub keplers_equation {
+    my ( $mean_anomaly, $eccentricity, $precision ) = @_;
+    defined $precision
+	or $precision = 1.74533e-5;	# Radians, = 0.001 degrees
+    my $curr = $mean_anomaly;
+    my $prev;
+    # Meeus' equation 30.7, page 199.
+    {
+	$prev = $curr;
+	my $delta = ( $mean_anomaly + $eccentricity * sin( $curr
+	    ) - $curr ) / ( 1 - $eccentricity * cos $curr );
+	# Steele's correction, page 205
+	$curr = $curr + max( -.5, min( .5, $delta ) );
+	$precision < abs( $curr - $prev )
+	    and redo;
+    }
+    return $curr;
+}
 
 =item $rslt = load_module ($module_name)
 

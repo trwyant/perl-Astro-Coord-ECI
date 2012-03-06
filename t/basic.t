@@ -251,6 +251,11 @@ u_cmp_eql jd2datetime => 2447273.5, [ 5, 88 ], '%1f',
 u_cmp_eql jd2datetime => 2447273.5, [ 7, 112 ], '%1f',
     'jd2datetime: year day of 2447273.5: Meeus ex 7.g.';
 
+u_cmp_eql keplers_equation => [
+    0.0872664625997165, 0.100, 1.74532925199433e-08,
+], 0.0969458666450593, '%.6f',
+    'keplers_equation: M = 5 deg, e = 0.100 to 0.000001 deg: Meeus ex 30.b';
+
 u_cmp_eql distsq => [ [ 3, 4 ], [ 0, 0 ] ], 25, undef,
     'distsq( [ 3, 4 ] )';
 

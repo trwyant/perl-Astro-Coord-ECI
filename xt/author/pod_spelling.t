@@ -214,6 +214,7 @@ precisions
 psiprime
 Puerto
 rad
+radian
 radians
 Ramon
 rcs
@@ -258,6 +259,7 @@ SPACETRACK
 Spacetrack
 specular
 STDERR
+Steele's
 Steffen
 Storable
 strasbg
