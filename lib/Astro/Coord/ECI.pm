@@ -2686,40 +2686,52 @@ This method returns the universal time previously set.
 =cut
 
 sub universal {
-    my ($self, @args) = @_;
-    unless (@args) {
-	ref $self or croak <<eod;
-Error - The universal() method may not be called as a class method
-        unless you specify arguments.
-eod
-	return $self->{universal} || croak <<eod;
-Error - Object's time has not been set.
-eod
-    }
+    my ( $self, $time, @args ) = @_;
 
-    if (@args == 1) {
-	$self = $self->new () unless ref $self;
-	return $self if defined $self->{universal} &&
-	    $args[0] == $self->{universal};
-	delete $self->{local_mean_time};
-	delete $self->{dynamical};
-	$self->{universal} = shift @args;
-	if ($self->{specified}) {
-	    if ($self->{inertial}) {
-		delete $self->{_ECI_cache}{fixed};
-	    } else {
-		delete $self->{_ECI_cache}{inertial};
-	    }
-	}
-	$self->_call_time_set ();	# Run the model if any
-
-    } else {
-	croak <<eod;
+    @args
+	and croak <<'EOD';
 Error - The universal() method must be called with either zero
         arguments (to retrieve the time) or one argument (to set the
         time).
-eod
+EOD
+
+    if ( defined $time ) {
+	return $self->__universal( $time, 1 );
+    } else {
+	ref $self or croak <<'EOD';
+Error - The universal() method may not be called as a class method
+        unless you specify arguments.
+EOD
+	defined $self->{universal}
+	    or croak <<'EOD';
+Error - Object's time has not been set.
+EOD
+	return $self->{universal};
     }
+}
+
+# Set universal time without running model
+
+sub __universal {
+    my ( $self, $time, $run_model ) = @_;
+    defined $time
+	or confess 'Programming error - __universal() requires a defined time';
+    $self = $self->new () unless ref $self;
+    defined $self->{universal}
+	and $time == $self->{universal}
+	and return $self;
+    delete $self->{local_mean_time};
+    delete $self->{dynamical};
+    $self->{universal} = $time;
+    if ($self->{specified}) {
+	if ($self->{inertial}) {
+	    delete $self->{_ECI_cache}{fixed};
+	} else {
+	    delete $self->{_ECI_cache}{inertial};
+	}
+    }
+    $run_model
+	and $self->_call_time_set();
     return $self;
 }
 

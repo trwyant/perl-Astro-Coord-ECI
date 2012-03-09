@@ -6396,7 +6396,7 @@ sub sgp4r {
 
 #>>>>trw	RETURN
 
-    $self->universal ($time);
+    $self->__universal( $time );
     $self->eci (@r[1..3], @v[1..3]);
     $self->equinox_dynamical ($self->{epoch_dynamical});
     return $self;
@@ -6768,7 +6768,7 @@ sub _convert_out {
     $args[3] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / SECSPERDAY);	# dx/dt
     $args[4] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / SECSPERDAY);	# dy/dt
     $args[5] *= (SGP_XKMPER / SGP_AE * SGP_XMNPDA / SECSPERDAY);	# dz/dt
-    $self->universal (pop @args);
+    $self->__universal( pop @args );
     $self->eci (@args);
 
     $self->equinox_dynamical ($self->{epoch_dynamical});
