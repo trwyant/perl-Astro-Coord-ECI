@@ -320,6 +320,36 @@ sub clear {
     return $self;
 }
 
+=item $value = $set->get( $name );
+
+This method returns the value of the named attribute.
+
+If the attribute name is C<'tle'>, it returns the concatenated TLE data
+of all TLEs in the set. Otherwise it simply returns the named attribute
+of the selected C<Astro::Coord::ECI::TLE> object.
+
+=cut
+
+{
+    my %override = (
+	tle	=> sub {
+	    my ( $self, $name ) = @_;
+	    my $output;
+	    foreach my $body ( $self->members() ) {
+		$output .= $body->get( 'tle' );
+	    }
+	    return $output;
+	},
+    );
+
+    sub get {
+	my ( $self, $name ) = @_;
+	$override{$name}
+	    and return $override{$name}->( $self, $name );
+	return $self->select()->get( $name );
+    }
+}
+
 =item $time = $set->max_effective_date(...);
 
 This method extends L<Astro::Coord::ECI::TLE/max_effective_date>
