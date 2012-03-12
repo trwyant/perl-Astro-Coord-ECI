@@ -2337,6 +2337,7 @@ sub precess_dynamical {
     if ( my $sta = $self->get( 'station' ) ) {
 	$sta->get( 'station' )
 	    and croak NO_CASCADING_STATIONS;
+	$sta->universal( $self->universal() );
 	$sta->precess_dynamical( $end );
     }
 

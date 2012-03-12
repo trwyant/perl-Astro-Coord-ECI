@@ -32,6 +32,7 @@ BEGIN {
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Star;
+use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::Utils qw{ deg2rad PARSEC SECSPERDAY };
@@ -315,6 +316,7 @@ $tle->set( pass_variant => PASS_VARIANT_VISIBLE_EVENTS |
     PASS_VARIANT_FAKE_MAX | PASS_VARIANT_START_END,
     station => $sta,
 );
+$star->set( station => $sta );
 if (
     eval {
 	@pass = $tle->pass(
@@ -325,7 +327,7 @@ if (
 	1;
     }
 ) {
-    ok @pass == 3, 'Found 6 passes over Greenwich'
+    ok @pass == 3, 'Found 3 passes over Greenwich'
 	or diag "Found @{[ scalar @pass ]} passes over Greenwich";
 } else {
     fail "Error in pass() method: $@";
@@ -351,11 +353,98 @@ is format_pass( $pass[2] ), <<'EOD', 'Pass 3';
 1980/10/15 05:34:08   0.0  25.1  1789.5 lit   end
 EOD
 
+{
+    my $sun = Astro::Coord::ECI::Sun->new( station => $sta );
+    $tle->set( appulse => deg2rad( 90 ) );
+    if (
+	eval {
+	    @pass = $tle->pass(
+		timegm( 0, 0, 0, 13, 9, 80 ),
+		timegm( 0, 0, 0, 14, 9, 80 ),
+		[ $sun ],
+	    );
+	    1;
+	}
+    ) {
+	ok @pass == 1, 'Found 1 passes over Greenwich'
+	    or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+    } else {
+	fail "Error in pass() method: $@";
+    }
+
+    is format_pass( $pass[0] ), <<'EOD', 'Pass 1';
+1980/10/13 05:39:02   0.0 199.0  1687.8 lit   start
+1980/10/13 05:42:43  55.9 115.6   255.5 lit   max
+1980/10/13 05:43:11  39.1  58.2   332.3 lit   apls
+                     -6.6  94.3    56.6 Sun
+1980/10/13 05:46:37   0.0  29.7  1778.5 lit   end
+EOD
+
+    my $moon = Astro::Coord::ECI::Moon->new( station => $sta );
+    if (
+	eval {
+	    @pass = $tle->pass(
+		timegm( 0, 0, 0, 13, 9, 80 ),
+		timegm( 0, 0, 0, 14, 9, 80 ),
+		[ $moon ],
+	    );
+	    1;
+	}
+    ) {
+	ok @pass == 1, 'Found 1 passes over Greenwich'
+	    or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+    } else {
+	fail "Error in pass() method: $@";
+    }
+
+    is format_pass( $pass[0] ), <<'EOD', 'Pass 1';
+1980/10/13 05:39:02   0.0 199.0  1687.8 lit   start
+1980/10/13 05:42:43  55.9 115.6   255.5 lit   max
+1980/10/13 05:46:37   0.0  29.7  1778.5 lit   end
+1980/10/13 05:46:37   0.0  29.7  1778.5 lit   apls
+                    -41.0  61.9    49.8 Moon
+EOD
+
+    my ( $tle2 ) = Astro::Coord::ECI::TLE->parse(
+	{ station => $sta },  <<'EOD' );
+11801
+1 11801U          80230.29629788  .01431103  00000-0  14311-1
+2 11801  46.7916 230.4354 7318036  47.4722  10.4117  2.28537848
+EOD
+
+    if (
+	eval {
+	    @pass = $tle->pass(
+		timegm( 0, 0, 0, 13, 9, 80 ),
+		timegm( 0, 0, 0, 14, 9, 80 ),
+		[ $tle2 ],
+	    );
+	    1;
+	}
+    ) {
+	ok @pass == 1, 'Found 1 passes over Greenwich'
+	    or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+    } else {
+	fail "Error in pass() method: $@";
+    }
+
+    is format_pass( $pass[0] ), <<'EOD', 'Pass 1';
+1980/10/13 05:39:02   0.0 199.0  1687.8 lit   start
+1980/10/13 05:39:02   0.0 199.0  1687.4 lit   apls
+                    -17.8 203.7    17.8 11801
+1980/10/13 05:42:43  55.9 115.6   255.5 lit   max
+1980/10/13 05:46:37   0.0  29.7  1778.5 lit   end
+EOD
+
+}
+
 note 'Passes over explicit location';
 
 @pass = ();
 $tle->set( pass_variant => PASS_VARIANT_VISIBLE_EVENTS |
-    PASS_VARIANT_FAKE_MAX | PASS_VARIANT_START_END );
+	PASS_VARIANT_FAKE_MAX | PASS_VARIANT_START_END,
+    appulse	=> deg2rad( 10 ),
+);
 if (
     eval {
 	@pass = $tle->pass(

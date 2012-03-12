@@ -6947,7 +6947,11 @@ eod
 
 sub _next_elevation_screen {
     my ( $sta, $pass_step, @args ) = @_;
+    ref $sta
+	or confess 'Programming error - station not a reference';
     my ( $suntim, $dawn ) = $sta->next_elevation( @args );
+    defined $suntim
+	or confess 'Programming error - time of next elevation undefined';
     $dawn or $pass_step = - $pass_step;
     my $sun_screen = $suntim + $pass_step / 2;
     return ( $suntim, $dawn, $sun_screen,
