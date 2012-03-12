@@ -1,3 +1,16 @@
+0.049		2012-03-12	T. R. Wyant
+  In the Astro::Coord::ECI precess_dynamical() method, set the time of
+    the station attribute (if any) before precessing it.
+  In Astro::Coord::ECI::TLE, throw an exception if the Sun never rises.
+    This should not happen, but was encountered while sorting out the
+    precess_dynamical() bug.
+  Independently test appulses of all relevant classes, since this is how
+    the precess_dynamical() bug manifested.
+  In Astro::Coord::ECI::TLE::Set, override the get() method, and have
+    get( 'tle' ) return the concatenated TLEs of all members.
+  In Astro::Coord::ECI::TLE::Iridium reflection() method, fix
+    two-argument azel() call.
+
 0.048		2012-03-08	T. R. Wyant
   Add keplers_equation() to Astro::Coord::ECI::Utils.
 
