@@ -390,9 +390,8 @@ sub azel_offset {
 	print "Debug azel_offset - ", Dumper ($self, $trn2, $offset);
     };
 
-    my ( $intermediate, $lclx, $lcly, $lclz, $velx, $vely, $velz ) =
+    my ( $lclx, $lcly, $lclz, $velx, $vely, $velz ) =
 	$self->_local_cartesian( $trn2 );
-    my ( $sinphi, $cosphi ) = @{ $intermediate };
 
     my $pos_vec = [ $lclx, $lcly, $lclz ];
     my $range = vector_magnitude( $pos_vec );
@@ -400,9 +399,7 @@ sub azel_offset {
 
     if ( defined $velz && defined $vely && defined $velx ) {
 
-	# We have velocities. To convert them, we start by transforming
-	# them into the same local Cartesian coordinate system used for
-	# positions.
+	# First we make up a velocity vector
 
 	my $vel_vec = [ $velx, $vely, $velz ];
 
@@ -1675,7 +1672,6 @@ sub neu {				# North, East, Up
     my $station = $self->get( 'station' )
 	or croak 'Station attribute required';
     my @vector = $station->_local_cartesian( $self );
-    shift @vector;			# Discard intermediate results
     $vector[0] = - $vector[0];		# Convert South to North.
     @vector > 3				# If we have velocity
 	and $vector[3] = - $vector[3];	# Convert South vel to North
@@ -1743,7 +1739,7 @@ sub _local_cartesian {
 	);
     }
 
-    return [ $sinlat, $coslat ], @tgt;
+    return @tgt;
 }
 
 =item $coord = $coord->local_mean_time ($time);
