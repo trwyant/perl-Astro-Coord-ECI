@@ -406,16 +406,6 @@ sub azel_offset {
 
 	my $vel_vec = [ $velx, $vely, $velz ];
 
-	# Because we are in a rotating frame of reference, we need a
-	# vector representing its rotation so that we can subtract this
-	# from the calculated inertial velocities to get the apparent
-	# rotational velocity in the frame of reference. We get this
-	# from the vector cross product of position vector and a vector
-	# pointing along the original ECEF Z-axis.
-
-	my $frame_rot_vec = vector_unitize(
-	    vector_cross_product( [ -$cosphi, 0, $sinphi ], $pos_vec) );
-
 	# To get the azimuthal angular velocity in radians per second
 	# (_not_ radians of azimuth, which vary with distance from the
 	# horizon) we first compute a unit vector in the azimuthal
