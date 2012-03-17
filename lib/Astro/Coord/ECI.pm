@@ -414,8 +414,7 @@ sub azel_offset {
 
 	my $azvec = vector_unitize(
 	    vector_cross_product( $pos_vec, [ 0, 0, 1 ] ) );
-	$velocity[0] = vector_dot_product( $azvec, $vel_vec ) / $range
-	;
+	$velocity[0] = vector_dot_product( $azvec, $vel_vec ) / $range;
 
 	# Similarly, we get the elevational angular velocity in radians
 	# per second by computing a unit vector in the elevational
@@ -426,17 +425,16 @@ sub azel_offset {
 
 	my $elvec = vector_unitize(
 	    vector_cross_product( $azvec, $pos_vec ) );
-	$velocity[1] = vector_dot_product( $elvec, $vel_vec ) / $range
-	;
+	$velocity[1] = vector_dot_product( $elvec, $vel_vec ) / $range;
 
 	# The radial velocity in recession is the easy one, and comes
 	# directly from John A. Magliacane's 'Predict' program. It is
 	# just the dot product of the position vector (since it already
 	# points in the right direction) with the velocity vector,
-	# divided by the magnitude of the position vector.
+	# divided by the magnitude of the position vector (i.e. the
+	# range).
 
-	$velocity[2] = vector_dot_product( $pos_vec, $vel_vec ) /
-	    vector_magnitude( $pos_vec );
+	$velocity[2] = vector_dot_product( $pos_vec, $vel_vec ) / $range;
 
 	# If the frequency is defined, we provide the Doppler shift as
 	# well.
