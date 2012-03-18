@@ -390,65 +390,14 @@ sub azel_offset {
 	print "Debug azel_offset - ", Dumper ($self, $trn2, $offset);
     };
 
-    my ( $lclx, $lcly, $lclz, $velx, $vely, $velz ) =
-	$self->_local_cartesian( $trn2 );
+    # _local_cartesian() returns NEU coordinates. Converting these to
+    # spherical gets Azimuth (clockwise from North), Elevation, and
+    # Range.
 
-    my $pos_vec = [ $lclx, $lcly, $lclz ];
-    my $range = vector_magnitude( $pos_vec );
-    my @velocity;
-
-    if ( defined $velz && defined $vely && defined $velx ) {
-
-	# First we make up a velocity vector
-
-	my $vel_vec = [ $velx, $vely, $velz ];
-
-	# To get the azimuthal angular velocity in radians per second
-	# (_not_ radians of azimuth, which vary with distance from the
-	# horizon) we first compute a unit vector in the azimuthal
-	# direction by the vector cross product of the position vector
-	# with an arbitrary vector in the Z direction of our local
-	# coordinate system. The azimuthal angular velocity is then the
-	# dot product of the unit azimuthal vector and the velocity
-	# vector, divided by the range.
-
-	my $azvec = vector_unitize(
-	    vector_cross_product( $pos_vec, [ 0, 0, 1 ] ) );
-	$velocity[0] = vector_dot_product( $azvec, $vel_vec ) / $range;
-
-	# Similarly, we get the elevational angular velocity in radians
-	# per second by computing a unit vector in the elevational
-	# direction as the vector cross product of the position vector
-	# with the azimuthal vector. The elevational angular velocity is
-	# then the dot product of the unit elevational vector and the
-	# velocity vector, divided by the range.
-
-	my $elvec = vector_unitize(
-	    vector_cross_product( $azvec, $pos_vec ) );
-	$velocity[1] = vector_dot_product( $elvec, $vel_vec ) / $range;
-
-	# The radial velocity in recession is the easy one, and comes
-	# directly from John A. Magliacane's 'Predict' program. It is
-	# just the dot product of the position vector (since it already
-	# points in the right direction) with the velocity vector,
-	# divided by the magnitude of the position vector (i.e. the
-	# range).
-
-	$velocity[2] = vector_dot_product( $pos_vec, $vel_vec ) / $range;
-
-	# If the frequency is defined, we provide the Doppler shift as
-	# well.
-
-	if ( defined( my $freq = $self->get( 'frequency' ) ) ) {
-	    $velocity[3] = - $freq * $velocity[2] / SPEED_OF_LIGHT;
-	}
-
-    }
-
-    my $azimuth = ( $lclx || $lcly ) ?
-	mod2pi (atan2 ($lcly, -$lclx)) :
-	0;
-    my $elevation = $range ? asin ($lclz / $range) : 0;
+    my ( $azimuth, $elevation, $range, @velocity ) =
+	_convert_cartesian_to_spherical(
+	    $self->_local_cartesian( $trn2 )
+	);
 
     # Adjust for upper limb and refraction if needed.
 
@@ -459,9 +408,9 @@ sub azel_offset {
 	);
 
     $self->{refraction} and
-	$elevation = $self->correct_for_refraction ($elevation);
+	$elevation = $self->correct_for_refraction( $elevation );
 
-    return ($azimuth, $elevation, $range, @velocity);
+    return ( $azimuth, $elevation, $range, @velocity );
 }
 
 
@@ -1669,11 +1618,7 @@ sub neu {				# North, East, Up
     my ( $self ) = @_;
     my $station = $self->get( 'station' )
 	or croak 'Station attribute required';
-    my @vector = $station->_local_cartesian( $self );
-    $vector[0] = - $vector[0];		# Convert South to North.
-    @vector > 3				# If we have velocity
-	and $vector[3] = - $vector[3];	# Convert South vel to North
-    return @vector;
+    return $station->_local_cartesian( $self );
 }
 
 # ( $temp, $X, $Y, $Z, $Xprime, $Yprime, $Zprime ) =
@@ -1681,7 +1626,9 @@ sub neu {				# North, East, Up
 # This method computes local Cartesian coordinates of $trn2 as seen from
 # $self. The first return is intermediate results useful for the azimuth
 # and elevation. The subsequent results are X, Y, and Z coordinates (and
-# velocities if available), in the South, East, Up coordinate system.
+# velocities if available), in the North, East, Up coordinate system.
+# This is a left-handed coordinate system, but so is the azel() system,
+# which it serves.
 
 sub _local_cartesian {
     my ( $self, $trn2 ) = @_;
@@ -1726,6 +1673,9 @@ sub _local_cartesian {
 	$tgt[0] * $sinlat - $tgt[2] * $coslat,
 	$tgt[0] * $coslat + $tgt[2] * $sinlat,
     );
+
+    $tgt[0] = - $tgt[0];	# Convert Southing to Northing
+
     if ( @tgt > 5 ) {
 	@tgt[ 3, 4 ] = (
 	      $tgt[3] * $coslon + $tgt[4] * $sinlon,
@@ -1735,6 +1685,8 @@ sub _local_cartesian {
 	    $tgt[3] * $sinlat - $tgt[5] * $coslat,
 	    $tgt[3] * $coslat + $tgt[5] * $sinlat,
 	);
+
+	$tgt[3] = - $tgt[3];	# Convert South velocity to North
     }
 
     return @tgt;
@@ -2855,6 +2807,107 @@ sub _check_right_ascension {
     return mod2pi($_[1]);
 }
 
+# @spherical = _convert_cartesian_to_spherical( @cartesian )
+#
+# This subroutine converts three-dimensional Cartesian coordinates to
+# spherical coordinates of the same handedness.
+#
+# The first three arguments are the X, Y, and Z coordinates, and are
+# required. Subsequent triplets af arguments are optional, and can
+# represent anything (velocity, acceleration ... ) at that point.
+#
+# The return is the spherical coordinates Phi (in the X-Y plane, e.g.
+# azimuth or longitude, in radians), Theta (perpendicular to the X-Y
+# plane, e.g.  elevation or latitude, in radians), and Rho (range). If
+# more than three triplets of arguments are specified, they will be
+# converted to spherical coordinates as though measured at that point,
+# and returned in the same order. That is, if you supplied X, Y, and Z
+# velocities, you will get back Phi, Theta, and Rho velocities, in that
+# order.
+
+sub _convert_cartesian_to_spherical {
+    my @cart_data = @_;
+    @cart_data
+	and not @cart_data % 3
+	or confess( 'Programming error - Want 3 or 6 arguments' );
+
+    # The first triplet is position. We extract it into its own array,
+    # then compute the corresponding spherical coordinates using the
+    # definition of the coordinate system.
+
+    my @cart_pos = splice @cart_data, 0, 3;
+    my $range = vector_magnitude( \@cart_pos );
+    my $azimuth = ( $cart_pos[0] || $cart_pos[1] ) ?
+	mod2pi( atan2 $cart_pos[1], $cart_pos[0] ) :
+	0;
+    my $elevation = $range ? asin( $cart_pos[2] / $range ) : 0;
+
+    # Accumulate results.
+
+    my @rslt = ( $azimuth, $elevation, $range );
+
+    # If we have velocity (accelelation, etc) components
+
+    if ( @cart_data ) {
+
+	# We compute unit vectors in the spherical coordinate system.
+
+	my $az_hat = vector_unitize(
+	    vector_cross_product( [ 0, 0, 1 ], \@cart_pos) );
+	my $el_hat = vector_unitize(
+	    vector_cross_product( \@cart_pos, $az_hat ) );
+	my $rng_hat = [ map { $_ / $range } @cart_pos ];
+
+	while ( @cart_data ) {
+
+	    # Each triplet is then converted by projecting the Cartesian
+	    # vector onto the appropriate unit vector. Azimuth and
+	    # elevation are also converted to radians by dividing by the
+	    # range. NOTE that this is the small-angle approximation.
+
+	    my @cart_info = splice @cart_data, 0, 3;
+	    push @rslt, vector_dot_product( $az_hat, \@cart_info ) / $range;
+	    push @rslt, vector_dot_product( $el_hat, \@cart_info ) / $range;
+	    push @rslt, vector_dot_product( $rng_hat, \@cart_info );
+	}
+
+    }
+
+    return @rslt;
+
+}
+
+sub _convert_spherical_to_cartesian {
+    my @sph_data = @_;
+    @sph_data
+	and not @sph_data % 3
+	or confess( 'Programming error - Want 3 or 6 arguments' );
+
+    # The first triplet is position. We extract it into its own array,
+    # then compute the corresponding Cartesian coordinates using the
+    # definition of the coordinate system.
+
+    my @sph_pos = splice @sph_data, 0, 3;
+    my $Z = $sph_pos[2] * sin $sph_pos[1];
+    my $rho = $sph_pos[2] * cos $sph_pos[1];
+    my $X = $rho * cos $sph_pos[0];
+    my $Y = $rho * sin $sph_pos[1];
+
+    # Accumulate results
+
+    my @rslt = ( $X, $Y, $Z );
+
+    # If we have velocity (accelelation, etc) components
+
+    if ( @sph_data ) {
+
+	# We compute unit vectors in the spherical coordinate system.
+
+    }
+
+    return @rslt;
+}
+
 #	@eci = $self->_convert_ecef_to_eci ()
 
 #	This subroutine converts the object's ECEF setting to ECI, and
@@ -3235,23 +3288,22 @@ appears to be at least mostly sane in the above sense of the word:
                  ^
                  |
                  v
-               ecef()     geocentric()     geodetic()
+               ecef()    geocentric()     geodetic()
                  |
                  v
-             [ seu() ] -> neu() -> enu()
+                neu() -> enu()
                  |
                  v
                azel()
 
 If the object's position and velocity were set in one set of units,
-other units are obtained by following the arrows. The C<[ seu() ]> (for
-South-East-Up) is bracketed because there is in fact no C<seu()> method,
-but this representation is used internally. The arrows below ecef() are
-one-way because it is not currently possible to set a position in these
-units. Similarly, the arrow from C<eci()> to C<equatorial()> is one-way
-because there is currently no way to set an equatorial velocity. There
-are no arrows to C<geocentric()>, C<geodetic()> and C<ecliptic()>
-because these conversions do not support velocities.
+other units are obtained by following the arrows. The arrows below
+ecef() are one-way because it is not currently possible to set a
+position in these units. Similarly, the arrow from C<eci()> to
+C<equatorial()> is one-way because there is currently no way to set an
+equatorial velocity. There are no arrows to C<geocentric()>,
+C<geodetic()> and C<ecliptic()> because these conversions do not support
+velocities.
 
 =head1 TERMINOLOGY AND CONVENTIONS
 
