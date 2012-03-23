@@ -260,12 +260,17 @@ sub aggregate {
     $class = ref $class if ref $class;
     my $opt = ref $args[0] eq 'HASH' ? shift @args : {};
     my %data;
-    foreach my $tle (@args) {
-	my $id = $tle->get ('id');
-	$data{$id} ||= [];
-	push @{$data{$id}}, $tle;
-    }
     my @rslt;
+    foreach my $tle ( @args ) {
+	my $model = $tle->get( 'model' );
+	my $id = $tle->get ('id');
+	if ( '' eq $id && 'null' eq $model ) {
+	    push @rslt, $tle;
+	} else {
+	    $data{$id} ||= [];
+	    push @{$data{$id}}, $tle;
+	}
+    }
     my $limit = $Singleton ? 0 : 1;
     foreach my $id (sort keys %data) {
 	my $items = @{$data{$id}};
