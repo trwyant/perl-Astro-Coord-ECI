@@ -742,6 +742,90 @@ eod
     return $self;
 }
 
+=item $coord = $coord->ecliptic_cartesian( $X, $Y, $Z, $time );
+
+This method sets the Cartesian L</Ecliptic> coordinates represented by
+the object in terms of C<X> (kilometers toward the vernal equinox), C<Y>
+(90 degrees along the ecliptic from C<X>), and C<Z> (toward ecliptic
+North).  The time is universal time.  The object itself is returned.
+
+The time argument is optional if the time represented by the object has
+already been set (e.g. by the universal() or dynamical() methods).
+
+This method can also be called as a class method, in which case it
+instantiates the desired object. In this case the time is not optional.
+
+B<Caveat:> you can pass in velocities (before the C<$time>) but they are
+unsupported, meaning that I can not at this point say whether they will
+be transformed sanely, much less correctly. B<Caveat programmer>.
+
+=item ( $X, $Y, $Z) = $coord->ecliptic_cartesian( $time );
+
+This method returns the Cartesian ecliptic coordinates of the object at
+the given time. The time is optional if the time represented by the
+object has already been set (e.g. by the universal() or dynamical()
+methods).
+
+B<Caveat:> velocities are unsupported by this method. That means you may
+(or may not, depending on the coordinates originally set) get them back,
+but I have not looked into whether they are actually correct.
+
+=cut
+
+sub ecliptic_cartesian {
+    my ( $self, @args ) = @_;
+
+    $self = $self->_check_coord( ecliptic_cartesian => \@args );
+
+    if ( @args ) {
+	@args % 3
+	    and croak <<'EOD';
+Error - The ecliptic_cartesian() method must be called with either zero
+        or one arguments (to retrieve coordinates), or three or four
+        arguments (to set coordinates). There is currently no six or
+        seven argument version.
+EOD
+	my $epsilon = obliquity( $self->dynamical() );
+	my $sin_epsilon = sin $epsilon;
+	my $cos_epsilon = cos $epsilon;
+	my @eci;
+	for ( my $inx = 0; $inx < @args; $inx += 3 ) {
+	    push @eci,   $args[ $inx ];
+	    push @eci, - $args[ $inx + 2 ] * $sin_epsilon +
+		$args[ $inx + 1 ] * $cos_epsilon;
+	    push @eci,   $args[ $inx + 2 ] * $cos_epsilon +
+		$args[ $inx + 1 ] * $sin_epsilon;
+	}
+	$self->eci( @eci );
+	$self->{_ECI_cache}{inertial}{ecliptic_cartesian} = \@args;
+	$self->{inertial} = 1;
+	$self->{specified} = 'ecliptic_cartesian';
+	return $self;
+    } else {
+	$self->{_ECI_cache}{inertial}{ecliptic_cartesian}
+	    and return @{
+		$self->{_ECI_cache}{inertial}{ecliptic_cartesian}
+	    };
+	my @eci = $self->eci();
+	my $epsilon = obliquity( $self->dynamical() );
+	my $sin_epsilon = sin $epsilon;
+	my $cos_epsilon = cos $epsilon;
+	my @ecliptic_cartesian;
+	for ( my $inx = 0; $inx < @eci; $inx += 3 ) {
+	    push @ecliptic_cartesian,   $eci[ $inx ];
+	    push @ecliptic_cartesian,   $eci[ $inx + 2 ] * $sin_epsilon +
+		$eci[ $inx + 1 ] * $cos_epsilon;
+	    push @ecliptic_cartesian,   $eci[ $inx + 2 ] * $cos_epsilon -
+		$eci[ $inx + 1 ] * $sin_epsilon;
+	}
+	return @{ 
+		$self->{_ECI_cache}{inertial}{ecliptic_cartesian} =
+		    \@ecliptic_cartesian
+	    };
+    }
+
+}
+
 
 =item $coord = $coord->ecliptic ($latitude, $longitude, $range, $time);
 
@@ -781,75 +865,28 @@ B<Caveat:> velocities are not returned by this method.
 sub ecliptic {
     my ($self, @args) = @_;
 
-    $self = $self->_check_coord (ecliptic => \@args);
+    $self = $self->_check_coord( ecliptic => \@args );
 
-    unless (@args) {
-	return @{$self->{_ECI_cache}{inertial}{ecliptic}}
-	    if $self->{_ECI_cache}{inertial}{ecliptic};
+    if ( @args ) {
 
-	my ($alpha, $delta, $rho) = $self->equatorial ();
-
-	my $epsilon = obliquity ($self->dynamical);
-	my $sinalpha = sin ($alpha);
-	my $cosdelta = cos ($delta);
-	my $sindelta = sin ($delta);
-	my $cosepsilon = cos ($epsilon);
-	my $sinepsilon = sin ($epsilon);
-
-	my $lambda = mod2pi (atan2 ($sinalpha * $cosepsilon +	# Meeus (13.1),
-	    $sindelta / $cosdelta * $sinepsilon, cos ($alpha)));#     pg 93.
-	my $beta = asin ($sindelta * $cosepsilon -		# Meeus (13.2), 
-	    $cosdelta * $sinepsilon * $sinalpha);		#     pg 93.
-
-	$self->{_ECI_cache}{inertial}{ecliptic} =
-	    [$beta, $lambda, $rho];
-
-	return @{$self->{_ECI_cache}{inertial}{ecliptic}}
-    }
-
-    if (@args == 3) {
-	ref $self or $self = $self->new ();
-	my ($beta, $lambda, $rho) = @args;
-	$beta = _check_latitude(latitude => $beta);
-	$lambda = _check_longitude(longitude => $lambda);
-
-	my $epsilon = obliquity ($self->dynamical);
-	my $sinlamda = sin ($lambda);
-	my $cosepsilon = cos ($epsilon);
-	my $sinepsilon = sin ($epsilon);
-	my $cosbeta = cos ($beta);
-	my $sinbeta = sin ($beta);
-	my $alpha = mod2pi (atan2 ($sinlamda * $cosepsilon -	# Meeus (13.3),
-	    $sinbeta / $cosbeta * $sinepsilon, cos ($lambda)));	#     pg 93.
-	my $delta = asin ($sinbeta * $cosepsilon +		# Meeus (13.4),
-	    $cosbeta * $sinepsilon * $sinlamda);		#     pg 93.
-	$self->{debug} and do {
-	    $beta >= PI and $beta -= TWOPI;
-	    print <<eod;
-Debug ecliptic -
-    beta = $beta (ecliptic latitude, radians)
-         = @{[rad2deg ($beta)]} (ecliptic latitude, degrees)
-    lambda = $lambda (ecliptic longitude, radians)
-         = @{[rad2deg ($lambda)]} (ecliptic longitude, degrees)
-    rho = $rho (range, kilometers)
-    epsilon = $epsilon (obliquity of ecliptic, radians)
-    alpha = $alpha (right ascension, radians)
-    delta = $delta (declination, radians)
-eod
-	};
-	$self->equatorial ($alpha, $delta, $rho);
+	@args % 3
+	    and croak 'Arguments are in threes, plus an optional time';
 	$self->{_ECI_cache}{inertial}{ecliptic} = \@args;
+	$self->ecliptic_cartesian(
+	    _convert_spherical_x_to_cartesian( @args ) );
 	$self->{specified} = 'ecliptic';
 	$self->{inertial} = 1;
+	return $self;
+
     } else {
-	croak <<eod;
-Error - The ecliptic() method must be called with either zero or one
-        arguments (to retrieve coordinates), or three or four arguments
-        (to set coordinates). There is currently no six or seven
-        argument version.
-eod
+
+	return @{ $self->{_ECI_cache}{inertial}{ecliptic} ||= [
+	    _convert_cartesian_to_spherical_x(
+		$self->ecliptic_cartesian() )
+	    ]
+	};
+
     }
-    return $self;
 }
 
 
@@ -915,16 +952,6 @@ If the L<refraction|/refraction> attribute of the $coord object is
 true, the coordinates will be corrected for atmospheric refraction using
 the correct_for_refraction() method.
 
-=begin comment
-
-The algorithm is lifted pretty much verbatim from the Calculate_RADec
-subroutine of SGP4 Pascal Library Version 2.65 by T. S. Kelso,
-available at L<http://celestrak.com/software/tskelso-sw.asp>. Dr.
-Kelso credits the algorithm to "Methods of Orbit Determination" by
-Pedro Ramon Escobal, pages 401 - 402.
-
-=end comment
-
 If velocities are available from both objects (i.e. if both objects are
 Astro::Coord::ECI::TLE objects) the return will contain velocity in
 right ascension, declination, and range, the first two being in radians
@@ -946,74 +973,34 @@ sub equatorial {
     my $time;
     $body or $time = $self->universal;
 
-    unless (@args) {
+    if ( @args ) {
+	@args % 3
+	    and croak 'Arguments must be in threes, with an optional time';
+	$body
+	    and croak 'You may not set the equatorial coordinates ',
+	'relative to an observer';
 
-	unless ($body) {
-	    $self->{_ECI_cache}{inertial}{equatorial}
-		and return @{$self->{_ECI_cache}{inertial}{equatorial}};
-	}
-	my @rslt = $self->_equatorial_reduced( $body );
-	$body or $self->{_ECI_cache}{inertial}{equatorial} = \@rslt;
-	return @rslt;
-    }
-
-    # The rotation matrix for equatorial to ECI is the inverse of the
-    # matrix for the opposite direction. Or it would be, except that
-    # that matrix assumed a negative value for the angle, in this one we
-    # assume a positive value for the angle, so the signs of the sine
-    # functions are reversed:
-    #
-    # +-                      -+   +-                      -+
-    # |  cos rasc -sin rasc  0 |   |  cos decl  0 -sin decl |
-    # |  sin rasc  cos rasc  0 | x |      0     1      0    | =
-    # |     0         0      1 |   |  sin decl  0  cos decl |
-    # +-                      -+   +-                      -+
-    #
-    # +-                                                 -+
-    # |  cos rasc cos decl  -sin rasc  -cos rasc sin decl |
-    # |  sin rasc cos decl   cos rasc  -sin rasc sin decl |
-    # |  sin decl                0      cos decl          |
-    # +-                                                 -+
-    #
-    if (@args == 3 || @args == 6) {
-	$body && croak <<eod;
-Error - You may not set the equatorial coordinates relative to an
-        observer.
-eod
 	my ($ra, $dec, $range, @eqvel) = @args;
-	$ra = _check_right_ascension('right ascension' => $ra);
-	$dec = _check_latitude(declination => $dec);
-	my $sin_dec = sin($dec);
-	my $cos_dec = cos($dec);
-	my $sin_ra = sin($ra);
-	my $cos_ra = cos($ra);
-	my $z = $range * $sin_dec;
-	my $r = $range * $cos_dec;
-	my $x = $r * $cos_ra;
-	my $y = $r * $sin_ra;
-	my @ecivel;
-	if (@eqvel) {
-	    $eqvel[0] *= $range;
-	    $eqvel[1] *= $range;
-	    $ecivel[0] = $eqvel[2] * $cos_ra * $cos_dec -
-		$eqvel[0] * $sin_ra - $eqvel[1] * $cos_ra * $sin_dec;
-	    $ecivel[1] = $eqvel[2] * $sin_ra * $cos_dec +
-		$eqvel[0] * $cos_ra - $eqvel[1] * $sin_ra * $sin_dec;
-	    $ecivel[2] = $eqvel[2] * $sin_dec + $eqvel[1] * $cos_dec;
-	}
-	$self->eci ($x, $y, $z, @ecivel);
+	$args[0] = _check_right_ascension( 'right ascension' => $args[0] );
+	$args[1] = _check_latitude( declination => $args[1] );
 	$self->{_ECI_cache}{inertial}{equatorial} = \@args;
+	$self->eci(
+	    _convert_spherical_to_cartesian( @args ) );
 	$self->{specified} = 'equatorial';
 	$self->{inertial} = 1;
+	return $self;
+
+    } elsif ( $body ) {
+
+	return $self->_equatorial_reduced( $body );
+
     } else {
-	croak <<eod;
-Error - The equatorial() method must be called with either zero or one
-        arguments (to retrieve coordinates), or three or four arguments
-        (to set coordinates), or six or seven arguments (to set
-        coordinates and velocity).
-eod
+
+	return @{ $self->{_ECI_cache}{inertial}{equatorial} ||= [
+	    _convert_cartesian_to_spherical( $self->eci() )
+	] };
+
     }
-    return $self;
 }
 
 =item ($rightasc, $declin, $range) = $coord->equatorial_apparent();
@@ -1562,6 +1549,10 @@ See L</Attributes> for a list of the attributes you can get.
 {	# Begin local symbol block.
 
     my %accessor = (
+	sun	=> sub {
+	    my ( $self, $name ) = @_;
+	    return ( $self->{sun} ||= $self->SUN_CLASS()->new() );
+	},
     );
 
     sub get {
@@ -1619,6 +1610,82 @@ sub neu {				# North, East, Up
     my $station = $self->get( 'station' )
 	or croak 'Station attribute required';
     return $station->_local_cartesian( $self );
+}
+
+=item @coords = $coord->heliocentric_ecliptic_cartesian()
+
+This method returns the Heliocentric ecliptic Cartesian position of the
+object. You can optionally pass time as an argument; this is equivalent
+to
+
+ @coords = $coord->universal( $time )
+     ->heliocentric_ecliptic_cartesian();
+
+At this time this object is not able to derive Heliocentric ecliptic
+Cartesian coordinates from other coordinates (say, ECI).
+
+=item $coord->heliocentric_ecliptic_cartesian( $X, $Y, $Z )
+
+This method sets the object's position in Heliocentric ecliptic
+Cartesian coordinates. Velocities may not be set at the moment, though
+this is planned. You may also pass an optional time as the last
+argument.
+
+The invocant is returned.
+
+=cut
+
+sub heliocentric_ecliptic_cartesian {
+    my ( $self, @args ) = @_;
+
+    $self = $self->_check_coord( heliocentric_ecliptic_cartesian => \@args );
+
+    if ( @args == 3 ) {
+	$self->{_ECI_cache} = {
+	    inertial => {
+		heliocentric_ecliptic_cartesian => \@args,
+	    },
+	};
+	$self->{specified} = 'heliocentric_ecliptic_cartesian';
+	$self->_convert_heliocentric_ecliptic_cartesian_to_eci();
+    } elsif ( @args ) {
+	croak 'heliocentric_ecliptic_cartesian() wants 0, 1, 3 or 4 arguments';
+    } else {
+	$self->{_ECI_cache}{inertial}{heliocentric_ecliptic_cartesian}
+	    and return @{
+		$self->{_ECI_cache}{inertial}{heliocentric_ecliptic_cartesian}
+	    };
+	return $self->_convert_eci_to_heliocentric_ecliptic_cartesian();
+    }
+    return $self;
+}
+
+=item @coords = $coord->heliocentric_ecliptic();
+
+This method returns the Heliocentric ecliptic coordinates of the object.
+
+=cut
+
+sub heliocentric_ecliptic {
+    my ( $self, @args ) = @_;
+
+    $self = $self->_check_coord( heliocentric_ecliptic => \@args );
+
+    if ( @args ) {
+	@args % 3
+	    and croak 'Arguments must be in threes, plus an optional time';
+	$self->{_ECI_cache}{inertial}{heliocentric_ecliptic} = \@args;
+	$self->heliocentric_ecliptic_cartesian(
+	    _convert_spherical_x_to_cartesian( @args ) );
+	$self->{specified} = 'heliocentric_ecliptic';
+	return $self;
+    } else {
+	return @{
+	    $self->{_ECI_cache}{inertial}{heliocentric_ecliptic} ||= [
+		_convert_cartesian_to_spherical_x(
+		    $self->heliocentric_ecliptic_cartesian() ) ] }
+    }
+    return $self;
 }
 
 # ( $temp, $X, $Y, $Z, $Xprime, $Yprime, $Zprime ) =
@@ -2548,6 +2615,7 @@ eod
     specified => undef,
     semimajor => \&_set_custom_ellipsoid,
     station => \&_set_station,
+    sun	=> \&_set_sun,
     twilight => \&_set_value,
 );
 
@@ -2571,6 +2639,17 @@ sub _set_station {
     }
     $hash->{$attr} = $value;
     return SET_ACTION_RESET;
+}
+
+use constant SUN_CLASS => 'Astro::Coord::ECI::Sun';
+
+sub _set_sun {
+    my ( $self, $name, $value ) = @_;
+    embodies( $value, $self->SUN_CLASS() )
+	or croak 'The value of the sun attribute must represent the Sun';
+    ref $value
+	or $value = $value->new();
+    return $value;
 }
 
 #	Unfortunately, the TLE subclass may need objects reblessed if
@@ -2657,9 +2736,18 @@ sub __universal {
     defined $self->{universal}
 	and $time == $self->{universal}
 	and return $self;
+    $self->__clear_time();
+    $self->{universal} = $time;
+    $run_model
+	and $self->_call_time_set();
+    return $self;
+}
+
+sub __clear_time {
+    my ( $self ) = @_;
+    delete $self->{universal};
     delete $self->{local_mean_time};
     delete $self->{dynamical};
-    $self->{universal} = $time;
     if ($self->{specified}) {
 	if ($self->{inertial}) {
 	    delete $self->{_ECI_cache}{fixed};
@@ -2667,9 +2755,7 @@ sub __universal {
 	    delete $self->{_ECI_cache}{inertial};
 	}
     }
-    $run_model
-	and $self->_call_time_set();
-    return $self;
+    return;
 }
 
 
@@ -2694,8 +2780,7 @@ sub _call_time_set {
     }
     --$self->{_no_set} or delete $self->{_no_set};
     if ($exception) {
-	$self->{universal} = undef;
-	$self->{dynamical} = undef;
+	$self->__clear_time();
 	# Re-raise the exception now that we have cleaned up.
 	die $exception;	## no critic (RequireCarping)
     }
@@ -2807,6 +2892,106 @@ sub _check_right_ascension {
     return mod2pi($_[1]);
 }
 
+# @cartesian = _convert_spherical_to_cartesian( @spherical )
+#
+# This subroutine converts spherical coordinates to Cartesian
+# coordinates of the same handedness.
+#
+# The first three arguments are Phi (in the X-Y plane, e.g. azimuth or
+# longitude, in radians), Theta (perpendicular to the X-Y plane, e.g.
+# elevation or latitude, in radians) and Rho (range). Subsequent
+# triplets of arguments are optional, and can represent derivitaves of
+# position (velocity, acceleration ... ) at that point.
+#
+# The return is the corresponding X, Y, and Z coordinates. If more than
+# three triplets of arguments are specified, they will be converted to
+# spherical coordinates as though measured at that point, and returned
+# in the same order. That is, if you supplied Phi, Theta, and Rho
+# velocities, you will get back X, Y, and Z velocities.  velocities, you
+# will get back Phi, Theta, and Rho velocities, in that order.
+
+sub _convert_spherical_to_cartesian {
+    my @sph_data = @_;
+    @sph_data
+	and not @sph_data % 3
+	or confess( 'Programming error - Want 3 or 6 arguments' );
+
+    # The first triplet is position. We extract it into its own array,
+    # then compute the corresponding Cartesian coordinates using the
+    # definition of the coordinate system.
+
+    my @sph_pos = splice @sph_data, 0, 3;
+    my $range = $sph_pos[2];
+    my $sin_theta = sin $sph_pos[1];
+    my $cos_theta = cos $sph_pos[1];
+    my $sin_phi = sin $sph_pos[0];
+    my $cos_phi = cos $sph_pos[0];
+    my $diag = $range * $cos_theta;
+
+    my $X = $diag * $cos_phi;
+    my $Y = $diag * $sin_phi;
+    my $Z = $range * $sin_theta;
+
+    # Accumulate results.
+
+    my @rslt = ( $X, $Y, $Z );
+
+    # If we have velocity (accelelation, etc) components
+
+    if ( @sph_data ) {
+
+	# We compute unit vectors in the Cartesian coordinate system.
+
+	# x = cos Theta cos Phi r + sin Theta cos Phi theta - sin Phi phi
+	# y = cos Theta sin Phi r + sin Theta sin Phi theta - cos Phi phi
+	# z = sin Theta r - cos Theta theta
+	# NOTE that we change the sign of the Theta component, since our
+	# Theta increases in the positive Z direction, but the source's
+	# increases in the negative Z direction.
+
+	my $X_hat = [ - $sin_phi, - $sin_theta * $cos_phi,
+	    $cos_theta * $cos_phi ];
+	my $Y_hat = [   $cos_phi, - $sin_theta * $sin_phi,
+	    $cos_theta * $sin_phi ];
+	my $Z_hat = [ 0, $cos_theta, $sin_theta ];
+
+	while ( @sph_data ) {
+
+	    # Each triplet is then converted by projecting the Cartesian
+	    # vector onto the appropriate unit vector. Azimuth and
+	    # elevation are also converted to radians by dividing by the
+	    # range. NOTE that this is the small-angle approximation.
+
+	    my @sph_info = splice @sph_data, 0, 3;
+	    $sph_info[0] *= $range;
+	    $sph_info[1] *= $range;
+	    push @rslt, vector_dot_product( $X_hat, \@sph_info );
+	    push @rslt, vector_dot_product( $Y_hat, \@sph_info );
+	    push @rslt, vector_dot_product( $Z_hat, \@sph_info );
+	}
+
+    }
+
+    return @rslt;
+}
+
+# @cartesian = _convert_spherical_x_to_cartesian( @spherical )
+#
+# This subroutine is a convenience wrapper for
+# _convert_spherical_to_cartesian(). The only difference is that the
+# arguments are Theta (perpendicular to the X-Y plane), Phi (in the X-Y
+# plane) and Rho, rather than Phi, Theta, Rho. This subroutine is my
+# penance for not having all the methods that involve spherical
+# coordinates return their arguments in the same order.
+
+sub _convert_spherical_x_to_cartesian {
+    my @args = @_;
+    for ( my $inx = 0; $inx < @args; $inx += 3 ) {
+	@args[ $inx, $inx + 1 ] = @args[ $inx + 1, $inx ];
+    }
+    return _convert_spherical_to_cartesian( @args );
+}
+
 # @spherical = _convert_cartesian_to_spherical( @cartesian )
 #
 # This subroutine converts three-dimensional Cartesian coordinates to
@@ -2851,19 +3036,71 @@ sub _convert_cartesian_to_spherical {
     if ( @cart_data ) {
 
 	# We compute unit vectors in the spherical coordinate system.
+	#
+	# The "Relationships among Unit Vectors" at
+	# http://plaza.obu.edu/corneliusk/mp/rauv.pdf (in the ref/
+	# directory) gives the transformation both ways. With x, y, and
+	# z being the Cartesian unit vectors, Theta and Phi being the
+	# elevation (in the range 0 to pi, 0 being along the + Z axis)
+	# and azimuth (X toward Y, i.e. right-handed), and r, theta, and
+	# phi being the corresponding unit vectors:
+	#
+	# r = sin Theta cos Phi x + sin Theta sin Phi y + cos Theta z
+	# theta = cos Theta cos Phi x + cos Theta sin Phi y - sin Theta z
+	# phi = - sin Phi x + cos phi y
+	#
+	# and
+	#
+	# x = sin Theta cos Phi r + cos Theta cos Phi theta - sin Phi phi
+	# y = sin Theta sin Phi r + cos Theta sin Phi theta - cos Phi phi
+	# z = cos Theta r - sin Theta theta
+	#
+	# It looks to me like I get the Theta convention I'm using by
+	# replacing sin Theta with cos Theta and cos Theta by sin Theta.
+	#
+	# The document was found at http://plaza.obu.edu/corneliusk/
+	# which is the page for Dr. Kevin Cornelius' Mathematical
+	# Physics (PHYS 4053) course at Ouachita Baptist University in
+	# Arkadelphia AR.
 
-	my $az_hat = vector_unitize(
-	    vector_cross_product( [ 0, 0, 1 ], \@cart_pos) );
-	my $el_hat = vector_unitize(
-	    vector_cross_product( \@cart_pos, $az_hat ) );
-	my $rng_hat = [ map { $_ / $range } @cart_pos ];
+	my $diag = sqrt( $cart_pos[0] * $cart_pos[0] +
+	    $cart_pos[1] * $cart_pos[1] );
+	my ( $sin_theta, $cos_theta, $sin_phi, $cos_phi );
+	if ( $range > 0 ) {
+	    $sin_theta = $cart_pos[2] / $range;
+	    $cos_theta = $diag / $range;
+	    if ( $diag > 0 ) {
+		$sin_phi = $cart_pos[1] / $diag;
+		$cos_phi = $cart_pos[0] / $diag;
+	    } else {
+		$sin_phi = 0;
+		$cos_phi = 1;
+	    }
+	} else {
+	    $sin_theta = $sin_phi = 0;
+	    $cos_theta = $cos_phi = 1;
+	}
+
+	# phi = - sin Phi x + cos phi y
+	my $az_hat = [ - $sin_phi, $cos_phi, 0 ];
+	# theta = sin Theta cos Phi x + sin Theta sin Phi y - cos Theta z
+	# NOTE that we change the sign, since our theta increases in the
+	# positive Z direction, but the source's increases in the
+	# negative Z direction.
+	my $el_hat = [ - $sin_theta * $cos_phi, - $sin_theta * $sin_phi,
+	    $cos_theta ];
+	# r = cos Theta cos Phi x + cos Theta sin Phi y + sin Theta z
+	my $rng_hat = [ $cos_theta * $cos_phi, $cos_theta * $sin_phi,
+	    $sin_theta ];
 
 	while ( @cart_data ) {
 
 	    # Each triplet is then converted by projecting the Cartesian
 	    # vector onto the appropriate unit vector. Azimuth and
 	    # elevation are also converted to radians by dividing by the
-	    # range. NOTE that this is the small-angle approximation.
+	    # range. NOTE that this is the small-angle approximation,
+	    # but since we assume we're dealing with derivitaves, it's
+	    # OK.
 
 	    my @cart_info = splice @cart_data, 0, 3;
 	    push @rslt, vector_dot_product( $az_hat, \@cart_info ) / $range;
@@ -2877,35 +3114,21 @@ sub _convert_cartesian_to_spherical {
 
 }
 
-sub _convert_spherical_to_cartesian {
-    my @sph_data = @_;
-    @sph_data
-	and not @sph_data % 3
-	or confess( 'Programming error - Want 3 or 6 arguments' );
+# @spherical = _convert_cartesian_to_spherical_x( @cartesian )
+#
+# This subroutine is a convenience wrapper for
+# _convert_cartesian_to_spherical(). The only difference is that the
+# return is Theta (perpendicular to the X-Y plane), Phi (in the X-Y
+# plane) and Rho, rather than Phi, Theta, Rho. This subroutine is my
+# penance for not having all the methods that involve spherical
+# coordinates return their arguments in the same order.
 
-    # The first triplet is position. We extract it into its own array,
-    # then compute the corresponding Cartesian coordinates using the
-    # definition of the coordinate system.
-
-    my @sph_pos = splice @sph_data, 0, 3;
-    my $Z = $sph_pos[2] * sin $sph_pos[1];
-    my $rho = $sph_pos[2] * cos $sph_pos[1];
-    my $X = $rho * cos $sph_pos[0];
-    my $Y = $rho * sin $sph_pos[1];
-
-    # Accumulate results
-
-    my @rslt = ( $X, $Y, $Z );
-
-    # If we have velocity (accelelation, etc) components
-
-    if ( @sph_data ) {
-
-	# We compute unit vectors in the spherical coordinate system.
-
+sub _convert_cartesian_to_spherical_x {
+    my @sph_data = _convert_cartesian_to_spherical( @_ );
+    for ( my $inx = 0; $inx < @sph_data; $inx += 3 ) {
+	@sph_data[ $inx, $inx + 1 ] = @sph_data[ $inx + 1, $inx ];
     }
-
-    return @rslt;
+    return @sph_data;
 }
 
 #	@eci = $self->_convert_ecef_to_eci ()
@@ -2963,19 +3186,6 @@ sub _convert_eci_to_ecef {
     @ecef[0, 1] = ($ecef[0] * $costh - $ecef[1] * $sinth,
 	    $ecef[0] * $sinth + $ecef[1] * $costh);
 
-=begin comment
-
-    if (@ecef > 3) {
-	$ecef[3] += $ecef[1] * $self->{angularvelocity};
-	$ecef[4] -= $ecef[0] * $self->{angularvelocity};
-	@ecef[3, 4] = ($ecef[3] * $costh - $ecef[4] * $sinth,
-		$ecef[3] * $sinth + $ecef[4] * $costh);
-    }
-
-=end comment
-
-=cut
-
     if ( @ecef > 3 ) {
 	@ecef[ 3, 4 ] = ( $ecef[3] * $costh - $ecef[4] * $sinth,
 	    $ecef[3] * $sinth + $ecef[4] * $costh );
@@ -2984,7 +3194,74 @@ sub _convert_eci_to_ecef {
     }
 
     $self->{_ECI_cache}{fixed}{ecef} = \@ecef;
+
+    defined wantarray
+	or return;
     return @ecef;
+}
+
+sub _convert_eci_to_heliocentric_ecliptic_cartesian {
+    my ( $self ) = @_;
+
+    my ( $x, $y, $z ) = $self->eci();
+
+    # $x = km in the direction of the Vernal Equinox
+    # $y = km in the direction 90 degrees east of the Vernal Equinox
+    # $z = km perpendicular to the equator.
+    # So we need to rotate z toward y by the obliquity of the ecliptic
+
+    my $dynamical = $self->dynamical();
+    my $epsilon = obliquity( $dynamical );
+    my $sin_epsilon = sin $epsilon;
+    my $cos_epsilon = cos $epsilon;
+
+    my $Z = $z * $cos_epsilon - $y * $sin_epsilon;
+    my $Y = $z * $sin_epsilon + $y * $cos_epsilon;
+
+    my $sun = $self->get( 'sun' )
+	or croak q{Attribute 'sun' not set};
+    my ( $X_s, $Y_s, $Z_s ) = $sun->universal( $self->universal() )->eci();
+
+    my @hec = ( $x - $X_s, $Y - $Y_s, $Z - $Z_s );
+
+    $self->set( equinox_dynamical => $dynamical );
+    $self->{_ECI_cache}{inertial}{heliocentric_ecliptic_cartesian} = \@hec;
+
+    defined wantarray
+	or return;
+    return @hec;
+}
+
+sub _convert_heliocentric_ecliptic_cartesian_to_eci {
+    my ( $self ) = @_;
+
+    my ( $x, $y, $z ) = $self->heliocentric_ecliptic_cartesian();
+
+    # $x = km in the direction of the Vernal Equinox
+    # $y = km in the direction 90 degrees east of the Vernal Equinox
+    # $z = km perpendicular to the ecliptic.
+    # So we need to rotate z toward y by the obliquity of the ecliptic
+
+    my $dynamical = $self->dynamical();
+    my $epsilon = obliquity( $dynamical );
+    my $sin_epsilon = sin $epsilon;
+    my $cos_epsilon = cos $epsilon;
+
+    my $Z =   $z * $cos_epsilon + $y * $sin_epsilon;
+    my $Y = - $z * $sin_epsilon + $y * $cos_epsilon;
+
+    my $sun = $self->get( 'sun' )
+	or croak q{Attribute 'sun' not set};
+    my ( $X_s, $Y_s, $Z_s ) = $sun->universal( $self->universal() )->eci();
+
+    my @eci = ( $x + $X_s, $Y + $Y_s, $Z + $Z_s );
+
+    $self->set( equinox_dynamical => $dynamical );
+    $self->{_ECI_cache}{inertial}{eci} = \@eci;
+
+    defined wantarray
+	or return;
+    return @eci;
 }
 
 #	my @args = _expand_args_default_station( @_ )
@@ -3565,7 +3842,7 @@ See L</Earth-Centered, Earth-fixed (ECEF) coordinates>.
 
 =head1 ACKNOWLEDGMENTS
 
-The author wishes to acknowledge the following individuals and
+The author wishes to acknowledge and thank the following individuals and
 organizations.
 
 Kazimierz Borkowski, whose "Accurate Algorithms to Transform
@@ -3610,6 +3887,12 @@ which kindly and patiently answered my intellectual-property questions.
 Goran Gasparovic of MIT, who asked for (and supplied information for)
 the ability to display results in apparent equatorial coordinates,
 rather than azimuth and elevation.
+
+Dr. Kevin Cornelius of Ouachita Baptist University, whose handout
+"Relationships Among Unit Vectors" for his Mathematical Physics class
+(PHYS 4053) provided a much surer and more expeditious way to handling
+velocity conversion from spherical to Cartesian (and vice versa) than my
+own ancient and rickety matrix math.
 
 =head1 BUGS
 

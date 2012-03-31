@@ -755,6 +755,19 @@ ok( ! Astro::Coord::ECI->represents( 'Astro::Coord::ECI::TLE' ),
     velocity_sanity azel => $body->universal( $time );
 
     velocity_sanity eci => $sta->universal( $time );
+
+    # I would love to have tested the internal routines before this, but
+    # the critical thing is velocity, and I have no test data. So
+    # assuming that the sanity tests are correct, we go back the other
+    # way and see how we do.
+
+    my @want = $body->universal( $time )->neu();
+    my @got = Astro::Coord::ECI::_convert_spherical_to_cartesian(
+	$body->azel() );
+    my @coord = qw{ X Y Z X_dot Y_dot Z_dot };
+    foreach my $inx ( 0 .. 5 ) {
+	tolerance $got[$inx], $want[$inx], 1e-12, $coord[$inx];
+    }
 }
 
 done_testing;
