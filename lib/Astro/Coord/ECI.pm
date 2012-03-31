@@ -2942,12 +2942,9 @@ sub _convert_spherical_to_cartesian {
 
 	# We compute unit vectors in the Cartesian coordinate system.
 
-	# x = cos Theta cos Phi r + sin Theta cos Phi theta - sin Phi phi
-	# y = cos Theta sin Phi r + sin Theta sin Phi theta - cos Phi phi
-	# z = sin Theta r - cos Theta theta
-	# NOTE that we change the sign of the Theta component, since our
-	# Theta increases in the positive Z direction, but the source's
-	# increases in the negative Z direction.
+	# x = cos Theta cos Phi r - sin Theta cos Phi theta - sin Phi phi
+	# y = cos Theta sin Phi r - sin Theta sin Phi theta - cos Phi phi
+	# z = sin Theta r + cos Theta theta
 
 	my $X_hat = [ - $sin_phi, - $sin_theta * $cos_phi,
 	    $cos_theta * $cos_phi ];
@@ -2959,8 +2956,10 @@ sub _convert_spherical_to_cartesian {
 
 	    # Each triplet is then converted by projecting the Cartesian
 	    # vector onto the appropriate unit vector. Azimuth and
-	    # elevation are also converted to radians by dividing by the
-	    # range. NOTE that this is the small-angle approximation.
+	    # elevation are also converted to length by multiplying by
+	    # the range. NOTE that this is the small-angle
+	    # approximation, but should be OK since we assume we're
+	    # dealing with derivatives of position.
 
 	    my @sph_info = splice @sph_data, 0, 3;
 	    $sph_info[0] *= $range;
@@ -3038,12 +3037,12 @@ sub _convert_cartesian_to_spherical {
 	# We compute unit vectors in the spherical coordinate system.
 	#
 	# The "Relationships among Unit Vectors" at
-	# http://plaza.obu.edu/corneliusk/mp/rauv.pdf (in the ref/
-	# directory) gives the transformation both ways. With x, y, and
-	# z being the Cartesian unit vectors, Theta and Phi being the
-	# elevation (in the range 0 to pi, 0 being along the + Z axis)
-	# and azimuth (X toward Y, i.e. right-handed), and r, theta, and
-	# phi being the corresponding unit vectors:
+	# http://plaza.obu.edu/corneliusk/mp/rauv.pdf (and retained in
+	# the ref/ directory) gives the transformation both ways. With
+	# x, y, and z being the Cartesian unit vectors, Theta and Phi
+	# being the elevation (in the range 0 to pi, 0 being along the +
+	# Z axis) and azimuth (X toward Y, i.e. right-handed), and r,
+	# theta, and phi being the corresponding unit vectors:
 	#
 	# r = sin Theta cos Phi x + sin Theta sin Phi y + cos Theta z
 	# theta = cos Theta cos Phi x + cos Theta sin Phi y - sin Theta z
@@ -3056,7 +3055,12 @@ sub _convert_cartesian_to_spherical {
 	# z = cos Theta r - sin Theta theta
 	#
 	# It looks to me like I get the Theta convention I'm using by
-	# replacing sin Theta with cos Theta and cos Theta by sin Theta.
+	# replacing sin Theta with cos Theta and cos Theta by sin Theta
+	# (because Dr. Cornelius takes 0 as the positive Z axis whereas
+	# I take zero as the X-Y plane) and changing the sign of theta
+	# (since Dr. Cornelius' Theta increases in the negative Z
+	# direction, whereas mine increases in the positive Z
+	# direction).
 	#
 	# The document was found at http://plaza.obu.edu/corneliusk/
 	# which is the page for Dr. Kevin Cornelius' Mathematical
@@ -3082,14 +3086,12 @@ sub _convert_cartesian_to_spherical {
 	}
 
 	# phi = - sin Phi x + cos phi y
+	# theta = - sin Theta cos Phi x - sin Theta sin Phi y + cos Theta z
+	# r = cos Theta cos Phi x + cos Theta sin Phi y + sin Theta z
+
 	my $az_hat = [ - $sin_phi, $cos_phi, 0 ];
-	# theta = sin Theta cos Phi x + sin Theta sin Phi y - cos Theta z
-	# NOTE that we change the sign, since our theta increases in the
-	# positive Z direction, but the source's increases in the
-	# negative Z direction.
 	my $el_hat = [ - $sin_theta * $cos_phi, - $sin_theta * $sin_phi,
 	    $cos_theta ];
-	# r = cos Theta cos Phi x + cos Theta sin Phi y + sin Theta z
 	my $rng_hat = [ $cos_theta * $cos_phi, $cos_theta * $sin_phi,
 	    $sin_theta ];
 
