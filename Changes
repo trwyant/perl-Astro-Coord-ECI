@@ -1,3 +1,18 @@
+0.049_01	2012-03-31	T. R. Wyant
+  In Astro::Coord::ECI:
+    * Add attribute 'sun', to hold the object used to convert to and
+      from Heliocentric coordinates.
+    * Add methods ecliptic_cartesian(), heliocentric_ecliptic(), and
+      heliocentric_ecliptic_cartesian().
+    * Consolidate code for conversion between Cartesian and spherical
+      coordinates.
+  In Astro::Coord::ECI::Set:
+    * Have the aggregate() method _not_ aggregate TLEs that have a blank
+      ID and model 'null'. This piece of ad-hocery was necessary to
+      prevent aggregation of "fake" TLEs representing different fixed
+      points in space (e.g. as created by the satpass or satpass2
+      'geodetic' command).
+
 0.049		2012-03-12	T. R. Wyant
   In the Astro::Coord::ECI precess_dynamical() method, set the time of
     the station attribute (if any) before precessing it.
