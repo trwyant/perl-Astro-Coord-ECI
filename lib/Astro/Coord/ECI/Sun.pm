@@ -238,21 +238,6 @@ sub correct_for_refraction {
 }
 
 
-=item $longitude = $sun->ecliptic_longitude ();
-
-This method returns the ecliptic longitude of the sun at its current
-time setting, in radians. It is really just a convenience method, since
-it is equivalent to ($sun->ecliptic)[1], and in fact that is how it is
-implemented.
-
-=cut
-
-sub ecliptic_longitude {
-    my $self = shift;
-    return ($self->ecliptic ())[1];
-}
-
-
 =item $long = $sun->geometric_longitude ()
 
 This method returns the geometric longitude of the Sun in radians at

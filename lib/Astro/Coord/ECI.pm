@@ -890,6 +890,21 @@ sub ecliptic {
 }
 
 
+=item $longitude = $coord->ecliptic_longitude();
+
+This method returns the ecliptic longitude of the body at its current
+time setting, in radians. It is really just a convenience method, since
+it is equivalent to C<< ( $coord->ecliptic() )[1] >>, and in fact that
+is how it is implemented.
+
+=cut
+
+sub ecliptic_longitude {
+    my ( $self ) = @_;
+    return ( $self->ecliptic() )[1];
+}
+
+
 =item $coord->equatorial ($rightasc, $declin, $range, $time);
 
 This method sets the L</Equatorial> coordinates represented by the
