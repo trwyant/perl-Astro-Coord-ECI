@@ -112,7 +112,7 @@ sub new {
 }
 
 
-=item @almanac = $sun->almanac($location, $start, $end);
+=item @almanac = $sun->almanac( $location, $start, $end );
 
 This method produces almanac data for the Sun for the given location,
 between the given start and end times. The location is assumed to be
@@ -151,41 +151,32 @@ L<Astro::Coord::ECI|Astro::Coord::ECI>, and documented there.
 
 =cut
 
-my @quarters = ('Spring equinox', 'Summer solstice', 'Fall equinox',
-	'Winter solstice');
+sub __almanac_event_type_iterator {
+    my ( $self, $station ) = @_;
 
-sub almanac {
-    my ( $self, $location, $start, $end ) = __default_station( @_ );
-    defined $start
-	or $start = $self->universal();
-    defined $end
-	or $end = $start + SECSPERDAY;
+    my $inx = 0;
 
-    my @almanac;
+    my @events = (
+	[ $station, next_elevation => [ $self, 0, 1 ], 'horizon',
+		[ 'Sunset', 'Sunrise' ] ],
+	[ $station, next_meridian => [ $self ], 'transit',
+		[ 'local midnight', 'local noon' ] ],
+	[ $station, next_elevation =>
+	    [ $self, $self->get( 'twilight' ), 0 ],
+		'twilight', ['end twilight', 'begin twilight'] ],
+	[ $self, next_quarter => [], 'quarter', '__quarter_name', ],
+    );
 
-    foreach (
-	[$location, next_elevation => [$self, 0, 1], 'horizon',
-		['Sunset', 'Sunrise']],
-	[$location, next_meridian => [$self], 'transit',
-		['local midnight', 'local noon']],
-	[$location, next_elevation => [$self, $self->get ('twilight'), 0],
-		'twilight', ['end twilight', 'begin twilight']],
-	[$self, next_quarter => [], 'quarter',
-		[@quarters]],
-    ) {
-	my ($obj, $method, $arg, $event, $descr) = @$_;
-	$obj->universal ($start);
-	while (1) {
-	    my ($time, $which) = $obj->$method (@$arg);
-	    last if $time >= $end;
-	    push @almanac, [$time, $event, $which, $descr->[$which]]
-		if $descr->[$which];
-	}
-    }
-    return (sort {$a->[0] <=> $b->[0]} @almanac);
+    return sub {
+	$inx < @events
+	    and return @{ $events[$inx++] };
+	return;
+    };
 }
 
-=item @almanac = $sun->almanac_hash($location, $start, $end);
+use Astro::Coord::ECI::Mixin qw{ almanac };
+
+=item @almanac = $sun->almanac_hash( $location, $start, $end );
 
 This convenience method wraps $sun->almanac(), but returns a list of
 hash references, sort of like Astro::Coord::ECI::TLE->pass()
@@ -205,18 +196,7 @@ elements 0 through 3 of the list returned by almanac().
 
 =cut
 
-sub almanac_hash {
-    return map {
-	body => $_[0],
-	station => $_[1],
-	time => $_->[0],
-	almanac => {
-	    event => $_->[1],
-	    detail => $_->[2],
-	    description => $_->[3],
-	}
-    }, almanac(@_);
-}
+use Astro::Coord::ECI::Mixin qw{ almanac_hash };
 
 =item $elevation = $tle->correct_for_refraction( $elevation )
 
@@ -343,44 +323,20 @@ minutes.
 
 =cut
 
-use constant QUARTER_INC => 86400 * 85;	# 85 days.
+use constant NEXT_QUARTER_INCREMENT => 86400 * 85;	# 85 days.
 
-sub next_quarter {
-    my ($self, $quarter) = @_;
-    $quarter = (defined $quarter ? $quarter :
-	floor ($self->ecliptic_longitude () / PIOVER2) + 1) % 4;
-    my $begin;
-    while (floor ($self->ecliptic_longitude () / PIOVER2) == $quarter) {
-	$begin = $self->dynamical;
-	$self->dynamical ($begin + QUARTER_INC);
-    }
-    while (floor ($self->ecliptic_longitude () / PIOVER2) != $quarter) {
-	$begin = $self->dynamical;
-	$self->dynamical ($begin + QUARTER_INC);
-    }
-    my $end = $self->dynamical ();
+*__next_quarter_coordinate = __PACKAGE__->can( 
+    'ecliptic_longitude' );
 
-    while ($end - $begin > 1) {
-	my $mid = floor (($begin + $end) / 2);
-	my $qq = floor ($self->dynamical ($mid)->ecliptic_longitude () /
-	    PIOVER2);
-	($begin, $end) = $qq == $quarter ?
-	    ($begin, $mid) : ($mid, $end);
-    }
+use Astro::Coord::ECI::Mixin qw{ next_quarter };
 
-    $self->dynamical ($end);
+=item $hash_reference = $sun->next_quarter_hash($want);
 
-    return wantarray ? (
-	$self->universal, $quarter, $quarters[$quarter]) : $self->universal;
-}
-
-=item $hash_reference = $moon->next_quarter_hash($want);
-
-This convenience method wraps $moon->next_quarter(), but returns the
+This convenience method wraps $sun->next_quarter(), but returns the
 data in a hash reference, sort of like Astro::Coord::ECI::TLE->pass()
 does. The hash contains the following keys:
 
-  {body} => the original object ($moon);
+  {body} => the original object ($sun);
   {almanac} => {
     {event} => 'quarter',
     {detail} => the quarter number (0 through 3);
@@ -393,20 +349,7 @@ through 2 of the list returned by next_quarter().
 
 =cut
 
-sub next_quarter_hash {
-    my ($self, @args) = @_;
-    my ($time, $quarter, $desc) = $self->next_quarter(@args);
-    my %hash = (
-	body => $self,
-	almanac => {
-	    event => 'quarter',
-	    detail => $quarter,
-	    description => $desc,
-	},
-	time => $time,
-    );
-    return wantarray ? %hash : \%hash;
-}
+use Astro::Coord::ECI::Mixin qw{ next_quarter_hash };
 
 =item $period = $sun->period ()
 
@@ -419,6 +362,16 @@ per Appendix I (pg 408) of Jean Meeus' "Astronomical Algorithms,"
 
 sub period {return 31558149.7632}	# 365.256363 * 86400
 
+{
+
+    my @quarters = ('Spring equinox', 'Summer solstice',
+	'Fall equinox', 'Winter solstice');
+
+    sub __quarter_name {
+	my ( $self, $quarter ) = @_;
+	return $quarters[$quarter];
+    }
+}
 
 =item $sun->time_set ()
 

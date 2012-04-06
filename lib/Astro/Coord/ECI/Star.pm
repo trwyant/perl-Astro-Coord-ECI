@@ -116,33 +116,27 @@ potentially returned:
 
 =cut
 
-sub almanac {
-    my ( $self, $location, $start, $end ) = __default_station( @_ );
-    defined $start
-	or $start = $self->universal();
-    defined $end
-	or $end = $start + SECSPERDAY;
+sub __almanac_event_type_iterator {
+    my ( $self, $station ) = @_;
 
-    my @almanac;
+    my $inx = 0;
 
     my $name = $self->get ('name') || $self->get ('id') || 'star';
-    foreach (
-	[$location, next_elevation => [$self, 0, 1], 'horizon',
-		["$name sets", "$name rises"]],
-	[$location, next_meridian => [$self], 'transit',
-		[undef, "$name transits meridian"]],
-    ) {
-	my ($obj, $method, $arg, $event, $descr) = @$_;
-	$obj->universal ($start);
-	while (1) {
-	    my ($time, $which) = $obj->$method (@$arg);
-	    last unless $time && $time < $end;
-	    push @almanac, [$time, $event, $which, $descr->[$which]]
-		if $descr->[$which];
-	}
-    }
-    return (sort {$a->[0] <=> $b->[0]} @almanac);
+    my @events = (
+	[ $station, next_elevation => [ $self, 0, 1 ], 'horizon',
+		[ "$name sets", "$name rises"] ],
+	[ $station, next_meridian => [ $self ], 'transit',
+		[ undef, "$name transits meridian"] ],
+    );
+
+    return sub {
+	$inx < @events
+	    and return @{ $events[$inx++] };
+	return;
+    };
 }
+
+use Astro::Coord::ECI::Mixin qw{ almanac };
 
 =item @almanac = $star->almanac_hash($location, $start, $end);
 
@@ -164,18 +158,7 @@ elements 0 through 3 of the list returned by almanac().
 
 =cut
 
-sub almanac_hash {
-    return map {
-	body => $_[0],
-	station => $_[1],
-	time => $_->[0],
-	almanac => {
-	    event => $_->[1],
-	    detail => $_->[2],
-	    description => $_->[3],
-	}
-    }, almanac(@_);
-}
+use Astro::Coord::ECI::Mixin qw{ almanac_hash };
 
 
 use constant NEVER_PASS_ELEV => 2 * __PACKAGE__->SECSPERDAY;

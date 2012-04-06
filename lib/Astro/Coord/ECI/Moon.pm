@@ -163,37 +163,27 @@ potentially returned:
 
 =cut
 
-my @quarters = ('New Moon', 'First quarter Moon', 'Full Moon',
-    'Last quarter Moon');
+sub __almanac_event_type_iterator {
+    my ( $self, $station ) = @_;
 
-sub almanac {
-    my ( $self, $location, $start, $end ) = __default_station( @_ );
-    defined $start
-	or $start = $self->universal();
-    defined $end
-	or $end = $start + SECSPERDAY;
+    my $inx = 0;
 
-    my @almanac;
+    my @events = (
+	[ $station, next_elevation => [ $self, 0, 1 ], 'horizon',
+		[ 'Moon set', 'Moon rise' ] ],
+	[ $station, next_meridian => [ $self ], 'transit',
+		[ undef, 'Moon transits meridian' ] ],
+	[ $self, next_quarter => [], 'quarter', '__quarter_name' ],
+    );
 
-    foreach (
-	[$location, next_elevation => [$self, 0, 1], 'horizon',
-		['Moon set', 'Moon rise']],
-	[$location, next_meridian => [$self], 'transit',
-		[undef, 'Moon transits meridian']],
-	[$self, next_quarter => [], 'quarter',
-		[@quarters]],
-    ) {
-	my ($obj, $method, $arg, $event, $descr) = @$_;
-	$obj->universal ($start);
-	while (1) {
-	    my ($time, $which) = $obj->$method (@$arg);
-	    last if $time >= $end;
-	    push @almanac, [$time, $event, $which, $descr->[$which]]
-		if $descr->[$which];
-	}
-    }
-    return (sort {$a->[0] <=> $b->[0]} @almanac);
+    return sub {
+	$inx < @events
+	    and return @{ $events[$inx++] };
+	return;
+    };
 }
+
+use Astro::Coord::ECI::Mixin qw{ almanac };
 
 =item @almanac = $moon->almanac_hash($location, $start, $end);
 
@@ -215,18 +205,7 @@ elements 0 through 3 of the list returned by almanac().
 
 =cut
 
-sub almanac_hash {
-    return map {
-	body => $_[0],
-	station => $_[1],
-	time => $_->[0],
-	almanac => {
-	    event => $_->[1],
-	    detail => $_->[2],
-	    description => $_->[3],
-	}
-    }, almanac( @_ );
-}
+use Astro::Coord::ECI::Mixin qw{ almanac_hash };
 
 =item $elevation = $moon->correct_for_refraction( $elevation )
 
@@ -264,36 +243,12 @@ returns the second B<after> the quarter.
 
 =cut
 
-use constant QUARTER_INC => 86400 * 6;	# 6 days.
+use constant NEXT_QUARTER_INCREMENT => 86400 * 6;	# 6 days.
 
-sub next_quarter {
-    my ($self, $quarter) = @_;
-    $quarter = (defined $quarter ? $quarter :
-	floor ($self->phase () / PIOVER2) + 1) % 4;
-    my $begin;
-    while (floor ($self->phase () / PIOVER2) == $quarter) {
-	$begin = $self->dynamical;
-	$self->dynamical ($begin + QUARTER_INC);	# Bump 6 days.
-    }
-    while (floor ($self->phase () / PIOVER2) != $quarter) {
-	$begin = $self->dynamical;
-	$self->dynamical ($begin + QUARTER_INC);	# Bump 6 days.
-    }
-    my $end = $self->dynamical ();
+*__next_quarter_coordinate = __PACKAGE__->can( 
+    'phase' );
 
-    while ($end - $begin > 1) {
-	my $mid = floor (($begin + $end) / 2);
-	my $qq = floor ($self->dynamical ($mid)->phase () / PIOVER2);
-	($begin, $end) = $qq == $quarter ?
-	    ($begin, $mid) : ($mid, $end);
-    }
-
-    $self->dynamical ($end);
-
-    return wantarray ?
-	($self->universal, $quarter, $quarters[$quarter]) :
-	$self->universal;
-}
+use Astro::Coord::ECI::Mixin qw{ next_quarter };
 
 =item $hash_reference = $moon->next_quarter_hash($want);
 
@@ -314,20 +269,7 @@ through 2 of the list returned by next_quarter().
 
 =cut
 
-sub next_quarter_hash {
-    my ($self, @args) = @_;
-    my ($time, $quarter, $desc) = $self->next_quarter(@args);
-    my %hash = (
-	body => $self,
-	almanac => {
-	    event => 'quarter',
-	    detail => $quarter,
-	    description => $desc,
-	},
-	time => $time,
-    );
-    return wantarray ? %hash : \%hash;
-}
+use Astro::Coord::ECI::Mixin qw{ next_quarter_hash };
 
 =item $period = $moon->period ()
 
@@ -337,6 +279,17 @@ This method returns the sidereal period of the Moon, per Appendix I
 =cut
 
 sub period {return 2360591.5968}	# 27.321662 * 86400
+
+{
+
+    my @quarters = ('New Moon', 'First quarter Moon', 'Full Moon',
+	'Last quarter Moon');
+
+    sub __quarter_name {
+	my ( $self, $quarter ) = @_;
+	return $quarters[$quarter];
+    }
+}
 
 
 =item ($phase, $illum) = $moon->phase ($time);

@@ -19,6 +19,7 @@ inc/Astro/Coord/ECI/Satpass.pm
 inc/Astro/Coord/ECI/SetDelegate.pm
 inc/Astro/Coord/ECI/Test.pm
 lib/Astro/Coord/ECI.pm
+lib/Astro/Coord/ECI/Mixin.pm
 lib/Astro/Coord/ECI/Moon.pm
 lib/Astro/Coord/ECI/OVERVIEW.pod
 lib/Astro/Coord/ECI/Star.pm
