@@ -1662,6 +1662,7 @@ sub heliocentric_ecliptic_cartesian {
 	    },
 	};
 	$self->{specified} = 'heliocentric_ecliptic_cartesian';
+	$self->{inertial} = 1;
 	$self->_convert_heliocentric_ecliptic_cartesian_to_eci();
     } elsif ( @args ) {
 	croak 'heliocentric_ecliptic_cartesian() wants 0, 1, 3 or 4 arguments';
