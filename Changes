@@ -1,10 +1,9 @@
-0.049_02	2012-04-06	T. R. Wyant
-  Add module Astro::Coord::ECI::Mixin, to provide common-logic methods
-    which do not seem to fit into the hierarchy. Initially, these are
-    almanac(), almanac_hash(), next_quarter(), and next_quarter_hash().
-  Replace the relevant methods in Astro::Coord::ECI::Moon, ::Star, and
-    ::Sun with those from Astro::Coord::ECI::Mixin.
-  Move method ecliptic_longitude() from Astro::Coord::ECI::Sun to
+0.049_03	2012-04-12	T. R. Wyant
+  Have Astro::Coord::ECI method heliocentric_ecliptic_cartesian() set
+    the object's {inertial} to true.
+  Add module Astro::Coord::ECI::Mixin to provide common-logic methods
+    which do not seem to fit the object hierarchy.
+  Promote method ecliptic_longitude() from Astro::Coord::ECI::Sun to
     Astro::Coord::ECI.
 
 0.049_01	2012-03-31	T. R. Wyant
