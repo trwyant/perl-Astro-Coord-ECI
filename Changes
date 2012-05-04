@@ -1,3 +1,6 @@
+0.050		2012-05-04	T. R. Wyant
+  Go to production version number. No other changes.
+
 0.049_03	2012-04-12	T. R. Wyant
   Have Astro::Coord::ECI method heliocentric_ecliptic_cartesian() set
     the object's {inertial} to true.
