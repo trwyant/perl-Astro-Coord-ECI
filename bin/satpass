@@ -2327,7 +2327,10 @@ if ($verb eq 'add' || $verb eq 'drop') {
 	$tle->rebless ();
 	}
     }
-  elsif ($verb eq 'show' || $verb eq 'iridium') {
+  elsif ( $verb eq 'iridium' ) {
+    die "The 'iridium' subcommand is removed; use 'show' instead\n";
+    }
+  elsif ( $verb eq 'show' ) {
     my @data = Astro::Coord::ECI::TLE->status ('show');
     @data = sort {$a->[3] cmp $b->[3]} @data if $cmdopt{name};
     @_ and @data = _select_matching_data (
@@ -2336,12 +2339,6 @@ if ($verb eq 'add' || $verb eq 'drop') {
 	print <<eod;
 status add $tle->[0] $tle->[1] $status_code_map[$tle->[2]] '$tle->[3]' '$tle->[4]'
 eod
-	}
-
-    if ( $verb eq 'iridium' ) {
-    #   warnings::enabled( 'deprecated' ) and
-	warn "The 'iridium' subcommand is deprecated; use 'show' instead\n";
-	$verb = 'show';
 	}
     }
   else {
@@ -3798,10 +3795,9 @@ installed but not L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>.
 After six months this will become a warning on every use, and after
 another six months this will become fatal.
 
-The C<status iridium> command now issues a deprecation warning every
-time it is issued. In the first release after May 1 2012 this will
-become a fatal error. This command has been deprecated in the
-documentation for quite a while.
+The C<status iridium> command is now fatal. It has been deprecated in
+favor of C<status show> for some time now, and has warned on every use
+since version 0.044 (October 19 2011).
 
 The C<lit> parameter (and the corresponding
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute) is

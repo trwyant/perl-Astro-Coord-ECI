@@ -1,5 +1,7 @@
 0.050		2012-05-04	T. R. Wyant
-  Go to production version number. No other changes.
+  The 'status iridium' command in the 'satpass' script is now fatal;
+    it has been deprecated in favor of 'status show' for some time,
+    issued a warning on every use since version 0.044.
 
 0.049_03	2012-04-12	T. R. Wyant
   Have Astro::Coord::ECI method heliocentric_ecliptic_cartesian() set
