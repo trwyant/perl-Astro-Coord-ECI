@@ -42,6 +42,19 @@ September 1 2012, you will get a warning on C<every> use. On the first
 release at least six months after that, you will get a fatal error when
 you make a two-argument call to C<azel()>.
 
+Release 0.049_01 contains a consolidation of coordinate transform code
+which inadvertently prevented the Doppler shift from being returned by
+the C<azel()> and C<azel_offset()> methods. This has been rectified by
+release 0.050_01. B<But> while doing this work I realized that the
+Doppler calculation was using the C<frequency> attribute of the
+observing station, not the satellite. The reinstated code will take the
+C<frequency> from either place, but prefers the satellite. I intend to
+deprecate the use of the observer's C<frequency> attribute in the usual
+way. Six months (plus) from the release of 0.051, the first use of the
+observer's C<frequency> attribute will result in a warning. Six months
+after that, every use will result in a warning, and in another six
+months it will become fatal.
+
 Release 0.047_01 contains a number of changes to the handling of
 relative positions:
 
@@ -372,13 +385,18 @@ L<A NOTE ON VELOCITIES|/A NOTE ON VELOCITIES>, below, for details.
 If velocities are available I<and> you have provided a non-zero value
 for the C<frequency> attribute, you will get the Doppler shift as the
 seventh element of the returned array. The I<caveats> about velocity in
-recession apply to the Doppler shift as well.
+recession apply to the Doppler shift as well. The frequency can come
+from either the C<$coord> or C<$coord2> object, but the C<$coord2> is
+preferred, and getting frequency from the C<$coord> object will be put
+through a deprecation cycle and removed.
 
 =item ( $azimuth, $elevation, $range ) = $coord->azel_offset( $offset );
 
 This method computes the azimuth, elevation, and range if the C<$coord>
 object as seen from the location stored in the C<$coord> object's
-C<station> attribute.
+C<station> attribute. The functionality is as above, except for the fact
+that in the above version the station is the invocant, whereas in this
+version the orbiting body is the invocant.
 
 =cut
 
@@ -398,6 +416,17 @@ sub azel_offset {
 	_convert_cartesian_to_spherical(
 	    $self->_local_cartesian( $trn2 )
 	);
+
+    # If the frequency is defined, we provide the Doppler shift as well.
+
+    my $freq = $trn2->get( 'frequency' );
+    if ( not defined $freq ) {
+	$freq = $self->get( 'frequency' );
+	# TODO deprecate frequency from station.
+    }
+    if ( defined $freq ) {
+	$velocity[3] = - $freq * $velocity[2] / SPEED_OF_LIGHT;
+    }
 
     # Adjust for upper limb and refraction if needed.
 

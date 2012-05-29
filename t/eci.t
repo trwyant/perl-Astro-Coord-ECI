@@ -16,8 +16,6 @@ use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
 Astro::Coord::ECI->set (debug => 0);
 
-sub velocity_sanity ($$;$);
-
 # universal time
 # Tests: universal()
 
@@ -755,6 +753,19 @@ ok( ! Astro::Coord::ECI->represents( 'Astro::Coord::ECI::TLE' ),
     velocity_sanity azel => $body->universal( $time );
 
     velocity_sanity eci => $sta->universal( $time );
+
+    {
+	$body->set( frequency => 1_000_000 );
+	my @azel = $body->azel();
+	if ( @azel > 6 ) {
+	    # This is just to be sure it is calculated consistently; I
+	    # have no idea whether I am getting the right answer.
+	    tolerance $azel[6], .25, 0.01, 'Doppler shift';
+	} else {
+	    fail 'No Doppler calculated';
+	}
+	$body->set( frequency => undef );
+    }
 
     # I would love to have tested the internal routines before this, but
     # the critical thing is velocity, and I have no test data. So
