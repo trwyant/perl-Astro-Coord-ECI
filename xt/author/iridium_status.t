@@ -30,7 +30,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm (0, 0, 0, 1, 8, 111);
+my $asof = timegm( 0, 0, 16, 29, 4, 112 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -94,7 +94,7 @@ Aug. 8, 2011:  Iridium 26 apparently failed.  Replaced by Iridium 11.
  24836   Iridium 914    tum      Failed; was called Iridium 14
  24841   Iridium 16     tum      Removed from operation about April 7, 2005
  24842   Iridium 911    tum      Failed; was called Iridium 11
- 24870   Iridium 17     tum?     Failed in August 2005?
+ 24870   Iridium 17     tum      Failed in August 2005
  24871   Iridium 920    tum      Failed; was called Iridium 20
  24873   Iridium 921    tum      Failed; was called Iridium 21
  24906   Iridium 23              Partial failure? in November 2010
