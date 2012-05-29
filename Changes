@@ -1,3 +1,11 @@
+0.050_01	2012-05-29	T. R. Wyant
+  Reinstate the Doppler calculation in Astro::Coord::ECI's
+    azel_offset(). Thanks to Vidar Tyldum for finding this omission.
+    While in the Doppler code, made the satellite the primary source of
+    the frequency. Getting the frequency from the observer object is
+    being put through a deprecation cycle, and will eventually result in
+    an error.
+
 0.050		2012-05-04	T. R. Wyant
   The 'status iridium' command in the 'satpass' script is now fatal;
     it has been deprecated in favor of 'status show' for some time,
