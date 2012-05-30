@@ -417,15 +417,18 @@ sub azel_offset {
 	    $self->_local_cartesian( $trn2 )
 	);
 
-    # If the frequency is defined, we provide the Doppler shift as well.
+    # If the velocity and frequency are defined, we provide the Doppler
+    # shift as well.
 
-    my $freq = $trn2->get( 'frequency' );
-    if ( not defined $freq ) {
-	$freq = $self->get( 'frequency' );
-	# TODO deprecate frequency from station.
-    }
-    if ( defined $freq ) {
-	$velocity[3] = - $freq * $velocity[2] / SPEED_OF_LIGHT;
+    if ( defined $velocity[2] ) {
+	my $freq = $trn2->get( 'frequency' );
+	if ( not defined $freq ) {
+	    $freq = $self->get( 'frequency' );
+	    # TODO deprecate frequency from station.
+	}
+	if ( defined $freq ) {
+	    $velocity[3] = - $freq * $velocity[2] / SPEED_OF_LIGHT;
+	}
     }
 
     # Adjust for upper limb and refraction if needed.
