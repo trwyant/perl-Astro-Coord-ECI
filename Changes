@@ -1,3 +1,7 @@
+0.050_02	2012-05-30	T. R. Wyant
+  Make the Astro::Coord::ECI azel_offset() Doppler calculation
+    contingent on the availability of a radial velocity value.
+
 0.050_01	2012-05-29	T. R. Wyant
   Reinstate the Doppler calculation in Astro::Coord::ECI's
     azel_offset(). Thanks to Vidar Tyldum for finding this omission.
