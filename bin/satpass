@@ -1130,8 +1130,8 @@ sub _geocode_us__soap_lite {
     my $set_loc = defined $loc;
     defined $loc or $loc = $parm{location};
 
-#    $soap_lite_deprecated++
-#	or warn 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
+    $soap_lite_deprecated++
+	or warn 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
 
     #	Manufacture a SOAP::Lite object appropriate to the version of
     #	SOAP::Lite we have installed.
@@ -3788,12 +3788,12 @@ horizon is.
 
 The use of the L<SOAP::Lite|SOAP::Lite> interface to
 L<http://geocoder.us> is deprecated in favor of the
-L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> module. Beginning
-the first release on or after June 1 2011, a deprecation warning will be
-issued the first time you geocode, if you have L<SOAP::Lite|SOAP::Lite>
-installed but not L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>.
-After six months this will become a warning on every use, and after
-another six months this will become fatal.
+L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> module. With this
+release, a deprecation warning will be issued the first time you
+geocode, if you have L<SOAP::Lite|SOAP::Lite> installed but not
+L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>.  At the first
+release after December 1 2012 this will become a warning on every use,
+and after another six months this will become fatal.
 
 The C<status iridium> command is now fatal. It has been deprecated in
 favor of C<status show> for some time now, and has warned on every use
