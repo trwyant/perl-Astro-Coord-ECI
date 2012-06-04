@@ -243,6 +243,7 @@ BEGIN {
 	PASS_EVENT_END
 	PASS_VARIANT_VISIBLE_EVENTS
 	PASS_VARIANT_FAKE_MAX
+	PASS_VARIANT_NO_ILLUMINATION
 	PASS_VARIANT_START_END
 	PASS_VARIANT_NONE
 	BODY_TYPE_UNKNOWN
@@ -1202,10 +1203,11 @@ use constant PASS_EVENT_END => dualvar( 12, 'end' );
 use constant PASS_VARIANT_VISIBLE_EVENTS => 0x01;
 use constant PASS_VARIANT_FAKE_MAX	=> 0x02;
 use constant PASS_VARIANT_START_END	=> 0x04;
+use constant PASS_VARIANT_NO_ILLUMINATION => 0x08;
 use constant PASS_VARIANT_NONE => 0x00;		# Must be 0.
 
 my @pass_variant_mask = (
-    PASS_VARIANT_START_END,
+    PASS_VARIANT_NO_ILLUMINATION | PASS_VARIANT_START_END,
     PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX |
 	PASS_VARIANT_START_END,
 );
@@ -1269,9 +1271,18 @@ eod
     $effective_horizon < $screening_horizon
 	and $screening_horizon = $effective_horizon;
 
-#	We need the sun at some point.
+#	We need the sun at some point, maybe
 
-    my $sun = Astro::Coord::ECI::Sun->new ();
+    my ( $sun, $suntim, $dawn, $sun_screen, $sun_limit );
+    if ( $pass_variant & PASS_VARIANT_NO_ILLUMINATION ) {
+	$suntim = $sun_screen = $sun_limit = $pass_end + SECSPERDAY;
+	$dawn = 1;
+    } else {
+	$sun = Astro::Coord::ECI::Sun->new ();
+	( $suntim, $dawn, $sun_screen, $sun_limit ) =
+	    _next_elevation_screen( $sta->universal( $pass_start ),
+		$pass_step, $sun, $twilight );
+    }
 
 
 #	For each time to be covered
@@ -1280,9 +1291,6 @@ eod
     my $bigstep = 5 * $step;
     my $littlestep = $step;
     my $end = $pass_end;
-    my ( $suntim, $dawn, $sun_screen, $sun_limit ) =
-        _next_elevation_screen( $sta->universal( $pass_start ),
-	    $pass_step, $sun, $twilight );
     my @info;	# Information on an individual pass.
     my @passes;	# Accumulated informtion on all passes.
     my $visible;
@@ -1470,32 +1478,36 @@ eod
 		if $debug;
 	    foreach (sort {$a->[0] <=> $b->[0]} @time) {
 		my ( $time, $evnt_name, @extra ) = @$_;
-		($suntim, $dawn) =
-		    $sta->universal ($time)->next_elevation ($sun,
-			$twilight)
-		    if !$suntim || $time >= $suntim;
 		my ($azm, $elev, $rng) = $sta->azel (
 		    $tle->universal ($time));
-		my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
-		1 == $litup
-		    and $tle->__sun_elev_from_sat( $time ) < 0
-		    and $litup = 0;
+		my @illumination;
+		if ( $sun ) {
+		    ($suntim, $dawn) =
+			$sta->universal ($time)->next_elevation ($sun,
+			    $twilight)
+			if !$suntim || $time >= $suntim;
+		    my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
+		    1 == $litup
+			and $tle->__sun_elev_from_sat( $time ) < 0
+			and $litup = 0;
+		    push @illumination, illumination => $lighting[$litup];
+		}
 		push @info, {
 		    azimuth => $azm,
 		    body => $tle,
 		    elevation => $elev,
 		    event => $evnt_name,
-		    illumination => $lighting[$litup],
 		    range => $rng,
 		    station => $sta,
 		    time => $time,
+		    @illumination,
 		    @extra,
 		};
 	    }
 
 	    # Compute illumination changes
 
-	    {
+	    if ( $sun ) {
 		my @illum;
 		my $prior;
 		foreach my $evt ( @info ) {
@@ -1624,27 +1636,34 @@ eod
 		    $sta->angle ($body->universal ($when),
 			    $tle->universal ($when));
 		next if $angle > $appulse_dist;
-		my $illum = $info[0]{illumination};
-		foreach my $evt ( @info ) {
-		    $evt->{time} > $when
-			and last;
-		    $illum = $evt->{illumination};
-		}
 		my ( $azimuth, $elevation, $range ) = $sta->azel( $tle );
-		push @info, {
-		    body	=> $tle,
-		    event	=> PASS_EVENT_APPULSE,
-		    illumination	=> $illum,
-		    station	=> $sta,
-		    time	=> $when,
-		    azimuth	=> $azimuth,
-		    elevation	=> $elevation,
-		    range	=> $range,
-		    appulse	=> {
-			angle	=> $angle,
-			body	=> $body,
-		    },
-		};
+
+		{	# Localize
+		    my @illumination;
+		    if ( $sun ) {
+			my $illum = $info[0]{illumination};
+			foreach my $evt ( @info ) {
+			    $evt->{time} > $when
+				and last;
+			    $illum = $evt->{illumination};
+			}
+			push @illumination, illumination => $illum;
+		    }
+		    push @info, {
+			body	=> $tle,
+			event	=> PASS_EVENT_APPULSE,
+			station	=> $sta,
+			time	=> $when,
+			azimuth	=> $azimuth,
+			elevation	=> $elevation,
+			range	=> $range,
+			appulse	=> {
+			    angle	=> $angle,
+			    body	=> $body,
+			},
+			@illumination,
+		    };
+		}
 		warn <<"EOD" if $debug;	## no critic (RequireCarping)
 	    $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S',
 		localtime $time[$#time][0]]}
@@ -1671,16 +1690,22 @@ EOD
 		    # the end of that part of @info, but in practice we
 		    # exit the for loop before we get to that point.
 
-		    while ( $info[$inx]{time} < $it ) {
-			$illum = $info[$inx++]{illumination};
+		    {	# Localize
+			my @illumination;
+			if ( $sun ) {
+			    while ( $info[$inx]{time} < $it ) {
+				$illum = $info[$inx++]{illumination};
+			    }
+			    push @illumination, illumination => $illum;
+			}
+			push @info, {
+			    body => $tle,
+			    event => PASS_EVENT_NONE,
+			    station => $sta,
+			    time => $it,
+			    @illumination,
+			};
 		    }
-		    push @info, {
-			body => $tle,
-			event => PASS_EVENT_NONE,
-			illumination => $illum,
-			station => $sta,
-			time => $it,
-		    };
 		    $lazy_pass_position
 			or @{ $info[-1] }{
 			    qw{azimuth elevation range } } =
@@ -1712,29 +1737,40 @@ eod
 	    next;
 	}
 
+	{	# Localize
 
-#	Calculate whether the body is visible.
+	    # Calculate whether the body is visible.
 
-	my $litup = $time < $sun_screen ? 2 - $dawn : 1 + $dawn;
-	my $sun_elev_from_sat = $tle->__sun_elev_from_sat( $time );
-	$visible ||= $elev > $screening_horizon && ( ! $want_visible ||
-	    $litup == 1 && $sun_elev_from_sat >= $min_sun_elev_from_sat );
-	$litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
-	$litup == 1
-	    and $sun_elev_from_sat < 0
-	    and $litup = 0;
+	    my @illumination;
+	    if ( $sun ) {
+		my $litup = $time < $sun_screen ? 2 - $dawn : 1 + $dawn;
+		my $sun_elev_from_sat = $tle->__sun_elev_from_sat( $time );
+		$visible ||= $elev > $screening_horizon && (
+		    ! $want_visible ||
+		    $litup == 1 && $sun_elev_from_sat >= $min_sun_elev_from_sat
+		);
+		$litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
+		$litup == 1
+		    and $sun_elev_from_sat < 0
+		    and $litup = 0;
+		push @illumination, illumination => $lighting[$litup];
+	    } else {
+		$visible = $elev > $screening_horizon;
+	    }
 
 
-#	Accumulate results.
+	    # Accumulate results.
 
-	push @info, {
-	    azimuth => $azm,
-	    elevation => $elev,
-	    event => PASS_EVENT_NONE,
-	    illumination => $lighting[$litup],
-	    range => $rng,
-	    time => $time,
-	};
+	    push @info, {
+		azimuth => $azm,
+		elevation => $elev,
+		event => PASS_EVENT_NONE,
+		range => $rng,
+		time => $time,
+		@illumination,
+	    };
+
+	}
 
     }
     return @passes;
@@ -7995,6 +8031,14 @@ replace either C<PASS_EVENT_RISE> or C<PASS_EVENT_LIT>, and
 C<PASS_EVENT_END> will replace either C<PASS_EVENT_SET>,
 C<PASS_EVENT_SHADOWED>, or C<PASS_EVENT_DAY>. Otherwise, they replace
 C<PASS_EVENT_RISE> and C<PASS_EVENT_SET> respectively.
+
+* C<PASS_VARIANT_NO_ILLUMINATION> - Specifies that no illumination
+calculations are to be made at all. This means no C<PASS_EVENT_LIT>,
+C<PASS_EVENT_SHADOWED>, or C<PASS_EVENT_DAY> events are generated, and
+that the C<illumination> key on other events will not be present. I find
+that setting this (with C<< visible => 0 >>) saves about 20% in wall
+clock time versus not setting it. Your mileage may, of course, vary.
+This has no effect unless the C<visible> attribute is false.
 
 * C<PASS_VARIANT_NONE> - Specifies that no pass variant processing take
 place.

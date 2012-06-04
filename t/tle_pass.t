@@ -567,6 +567,44 @@ is format_pass( $pass[0] ), <<'EOD', 'Pass 1, with interval';
 1980/10/14 05:40:27   0.0  27.3  1782.5 lit   set
 EOD
 
+@pass = ();
+$tle->set(
+    interval		=> 0,
+    lazy_pass_position	=> 0,
+    pass_variant	=> PASS_VARIANT_NO_ILLUMINATION,
+    visible		=> 0,
+);
+if (
+    eval {
+	@pass = $tle->pass(
+	    $sta,
+	    timegm( 0, 0, 0, 12, 9, 80 ),
+	    timegm( 0, 0, 0, 19, 9, 80 ),
+	    [ $star ],
+	);
+	1;
+    }
+) {
+    ok @pass == 13, 'Found 13 passes over Greenwich'
+	or diag "Found @{[ scalar @pass ]} passes over Greenwich";
+} else {
+    fail "Error in pass() method: $@";
+}
+
+is format_pass( $pass[2] ), <<'EOD', 'Pass 3';
+1980/10/13 05:39:02   0.0 199.0  1687.8       rise
+1980/10/13 05:42:42  55.8 119.1   255.7       apls
+                     49.6 118.3     6.2 Epsilon Leonis
+1980/10/13 05:42:43  55.9 115.6   255.5       max
+1980/10/13 05:46:37   0.0  29.7  1778.5       set
+EOD
+
+is format_pass( $pass[6] ), <<'EOD', 'Pass 7';
+1980/10/15 05:26:29   0.0 210.3  1693.5       rise
+1980/10/15 05:30:12  63.7 297.6   239.9       max
+1980/10/15 05:34:08   0.0  25.1  1789.5       set
+EOD
+
 done_testing;
 
 1;
