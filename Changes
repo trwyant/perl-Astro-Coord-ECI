@@ -1,3 +1,13 @@
+0.050_03	2012-06-04	T. R. Wyant
+  Use YAML instead of YAML::Any, since they are both in the same distro,
+    and YAML does not suffer from deprecation warnings.
+  Add pass variant PASS_VARIANT_NO_ILLUMINATION. If attribute 'visible'
+    is false, this causes no illumination calculations at all to be
+    done.  This seems to save 20% in calculation time, but your mileage
+    may vary, especially inside the Arctic or Antarctic Circles.
+  Have bin/satpass warn the first time it geocodes if geocoding is done
+    directly using SOAP::Lite.
+
 0.050_02	2012-05-30	T. R. Wyant
   Make the Astro::Coord::ECI azel_offset() Doppler calculation
     contingent on the availability of a radial velocity value.
