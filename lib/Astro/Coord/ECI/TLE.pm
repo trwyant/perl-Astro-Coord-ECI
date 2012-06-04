@@ -2131,9 +2131,9 @@ eod
 	    map {[$_->{id}, $_->{type}, $_->{status}, $_->{name},
 	    $_->{comment}]} values %status);
     } elsif ($cmd eq 'yaml') {	# <<<< Undocumented!!!
-	load_module( 'YAML::Any' )
-	    or croak 'YAML::Any not available';
-	print YAML::Any::Dump( \%status );
+	load_module( 'YAML' )
+	    or croak 'YAML not available';
+	print YAML::Dump( \%status );
     } else {
 	croak <<eod;
 Error - '$cmd' is not a legal status() command.
