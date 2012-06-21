@@ -30,7 +30,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm( 0, 0, 16, 29, 4, 112 );
+my $asof = timegm( 0, 0, 0, 22, 5, 112 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -260,7 +260,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated August 27, 2011 **</strong></p>
+<p align="center"><strong>** Updated June 20, 2012 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -280,15 +280,15 @@ href="iridium11and26.htm"> take over from Iridium 26</a> (24903,
 station, and also that Iridium 23 retains some functionality.
 Orbital Plane 2 has no other spare satellite. ***</p>
 
-<pre>Orbital  &lt;-------- Operational satellites --------&gt;   Spares (in current sequence)
+<pre>Orbital  &lt;-------- Operational satellites --------&gt;   Spares
 Plane
 Plane 1:  <a href="iridium74and21.htm">21</a>  72  75  70  62  63  64  65  66  67  68   14; <a
 href="iridium74and21.htm">74</a> (partial failure?)
 Plane 2:  22  <a href="iridium11and23.htm">23</a>  76  25  45  46  47  20  49  <a
-href="iridium11and26.htm">11</a>   3   
+href="iridium11and26.htm">11</a>   3   <a href="iridium94.htm">94 (launched to plane 3, but is evidently in the process of being migrated to plane 2)</a>
 Plane 3:  55  <a href="iridium28and95.htm">95</a>  29  <a
 href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32  <a
-href="iridium33collision.htm">91</a>  57  58  59  60   94  96  
+href="iridium33collision.htm">91</a>  57  58  59  60   96  
 Plane 4:  19  34  35  <a href="iridium36and97.htm">97</a>   <a
 href="iridium5and51.htm">5</a>@  6   7   8   4  37  61   <a
 href="iridium5and51.htm">51</a> (partial failure?)@;  
@@ -304,12 +304,12 @@ Plane                                          <em>     </em>
 Plane 1:  73t
 Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           48d
 Plane 3:  <a href="iridium28and95.htm">28</a>   <a
-href="iridium33collision.htm"><font color="#FF0000">33</font></a>                     27d           <em>Iridium 33 was fragmented by the collison of February 10, 2009</em>
+href="iridium33collision.htm"><font color="#FF0000">33</font></a>t                    27d           <em>Iridium 33 was fragmented by the collison of February 10, 2009</em>
 Plane 4:  <a href="iridium36and97.htm">36</a>t
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          85d   <a
 href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
 Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
-href="iridium17and77.htm">17</a>      79d           </pre>
+href="iridium17and77.htm">17</a>t     79d           </pre>
 
 <p>t indicates satellites that have been reported as tumbling out
 of control. </p>
