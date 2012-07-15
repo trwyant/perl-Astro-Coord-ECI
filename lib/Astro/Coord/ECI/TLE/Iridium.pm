@@ -1522,6 +1522,23 @@ sub _time_in_zone {
     return localtime $time;
 }
 
+{
+    my %json_map = (
+	operational_status	=> sub {
+	    my ( $self ) = @_;
+	    return ( qw{ + S - } )[ $self->get( 'status' ) ];
+	},
+    );
+
+    sub TO_JSON {
+	my ( $self ) = @_;
+	return $self->__to_json(
+	    \%json_map,
+	    $self->SUPER::TO_JSON(),
+	);
+    }
+}
+
 1;
 
 __END__

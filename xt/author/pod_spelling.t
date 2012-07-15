@@ -143,6 +143,7 @@ jcent
 jd
 jday
 Jenness
+JSON
 jul
 julianday
 Kazimierz
@@ -171,6 +172,7 @@ meanmotion
 Meeus
 merchantability
 min
+mish
 mixin
 mma
 mmas
