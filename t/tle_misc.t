@@ -3,17 +3,7 @@ package main;
 use strict;
 use warnings;
 
-BEGIN {
-    eval {
-	require Test::More;
-	Test::More->VERSION( 0.88 );	# Because of done_testing()
-	Test::More->import();
-	1;
-    } or do {
-	print "1..0 # skip Test::More 0.88 required\n";
-	exit;
-    }
-}
+use Test::More 0.88;
 
 use Astro::Coord::ECI::TLE qw{ :constants };
 
