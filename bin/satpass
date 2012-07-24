@@ -2455,7 +2455,8 @@ EOD
 	json	=> sub {
 	    my ( $bodies ) = @_;
 	    _load_module( 'JSON' );
-	    my $json = JSON->new()->pretty()->utf8()->convert_blessed();
+	    my $json = JSON->new()->pretty()->canonical()->utf8()
+		->convert_blessed();
 	    print $json->encode( $bodies );
 	    return;
 	},

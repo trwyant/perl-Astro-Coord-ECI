@@ -118,6 +118,17 @@ sub _recommend_io_string {
 EOD
 }
 
+sub _recommend_json {
+    local $@ = undef;
+    eval { require JSON; 1 } and return;
+    return <<'EOD';
+    * JSON is not installed, or can not be loaded.
+      You need the JSON module only if you intend to pass JSON orbital
+      data obtained from Space Track to the Astro::Coord::ECI::TLE
+      parse() method.
+EOD
+}
+
 {
 
     my %misbehaving_os = map { $_ => 1 } qw{ MSWin32 cygwin };
