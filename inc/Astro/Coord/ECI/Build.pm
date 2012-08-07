@@ -10,7 +10,7 @@ use File::Spec;
 
 my @generated_dir = qw{ xt author generated };
 my @hide = qw{
-    Astro::SIMBAD::Client Astro::SpaceTrack
+    Astro::SIMBAD::Client Astro::SpaceTrack DateTime DateTime::TimeZone
     Date::Manip Geo::Coder::Geocoder::US JSON Test::MockTime Time::y2038
 };
 

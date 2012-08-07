@@ -1507,19 +1507,41 @@ sub set {
 }
 
 # For use of -am and -pm
-sub _time_in_zone {
-    my ( $self, $time ) = @_;
+{
+    my $date_time_available = eval {
+	load_module( 'DateTime' );
+	load_module( 'DateTime::TimeZone' );
+	1;
+    };
 
-    defined( my $zone = $self->get( 'zone' ) )
-	or return localtime $time;
+    sub _time_in_zone {
+	my ( $self, $time ) = @_;
 
-    looks_like_number( $zone )
-	and return gmtime( $zone * 3600 + $time );
+	defined( my $zone = $self->get( 'zone' ) )
+	    or return localtime $time;
 
-    # TODO use DateTime if available
+	looks_like_number( $zone )
+	    and return gmtime( $zone * 3600 + $time );
 
-    local $ENV{TZ} = $zone;
-    return localtime $time;
+	if ( $date_time_available ) {
+
+	    my $dt = DateTime->from_epoch(
+		epoch		=> $time,
+		time_zone	=> $zone,
+	    );
+
+	    my @localtime = map { $dt->$_() } qw{ second minute hour day
+	    month_0 year day_of_week_0 day_of_year_0 is_dst };
+	    $localtime[5] -= 1900;
+	    return @localtime;
+
+	} else {
+
+	    local $ENV{TZ} = $zone;
+	    return localtime $time;
+
+	}
+    }
 }
 
 {
@@ -1625,7 +1647,7 @@ Technically, the default is 0. But if the object is manufactured by
 Astro::Coord::ECI::TLE->parse(), the status will be set based on the
 internal status table in Astro::Coord::ECI::TLE.
 
-=item zone (number)
+=item zone (number or string)
 
 This attribute is used to determine whether a flare took place in the
 C<am> or C<pm>. It can be set to a number of possible values:
@@ -1636,15 +1658,17 @@ that is.
 * A numeric value is interpreted as an offset in hours east of
 Greenwich; hours west are negative.
 
-* Anything else is interpreted as a zone name; $ENV{TZ} is set to this,
-and then C<localtime()> is called. Whether this has the desired effect
-depends on your operating system.
+* Anything else is interpreted as a zone name. If L<DateTime|DateTime>
+is available, it is used to convert the time to the named zone, throwing
+an exception if the zone name is not recognized.
+
+Otherwise, $ENV{TZ} is set to the zone, and then C<localtime()> is
+called. Whether this has the desired effect depends on your operating
+system.
 
 Yes, this is a bit of a crock, but I realized (B<after> putting out
 0.036, with the Iridium flare tests that anyone can run) that I needed
-to do B<something> to get a user's-zone-independent test. Eventually I
-may make use of DateTime if that is available, but I do not want to make
-that a prerequisite.
+to do B<something> to get a user's-zone-independent test.
 
 The default is C<undef>.
 
