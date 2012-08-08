@@ -2477,7 +2477,6 @@ sub tle {
     @specified > 1
 	and die 'You may not specify more than one of ',
 	    join( ', ', map { "-$_" } @specified ), "\n";
-    my $dtfmt = "$parm{date_format} $parm{time_format}";
     my $bodies = $cmdopt{choose} ? [ _select_observing_list() ] : \@bodies;
     if ( @specified ) {
 	my $code = $tle_formatter{$specified[0]}

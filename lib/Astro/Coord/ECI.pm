@@ -402,7 +402,6 @@ version the orbiting body is the invocant.
 
 sub azel_offset {
     my ( $self, $trn2, $offset ) = _expand_args_default_station( @_ );
-    my $cache = ($self->{_ECI_cache} ||= {});
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
 	print "Debug azel_offset - ", Dumper ($self, $trn2, $offset);
@@ -1027,7 +1026,7 @@ sub equatorial {
 	    and croak 'You may not set the equatorial coordinates ',
 	'relative to an observer';
 
-	my ($ra, $dec, $range, @eqvel) = @args;
+##	my ($ra, $dec, $range, @eqvel) = @args;
 	$args[0] = _check_right_ascension( 'right ascension' => $args[0] );
 	$args[1] = _check_latitude( declination => $args[1] );
 	$self->{_ECI_cache}{inertial}{equatorial} = \@args;
@@ -1747,7 +1746,6 @@ sub heliocentric_ecliptic {
 
 sub _local_cartesian {
     my ( $self, $trn2 ) = @_;
-    my $cache = ( $self->{_ECI_cache} ||= {} );
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
 	print "Debug local_cartesian - ", Dumper( $self, $trn2 );

@@ -49,8 +49,6 @@ print <<eod;
 #
 eod
 
-my $tle;
-my $oid;
 my @gravconst = (72, 84);
 my @max_delta = (0) x 2;
 foreach my $tle (@satrecs) {

@@ -90,7 +90,7 @@ foreach my $body (@tle) {
 @closest or die "No bodies found. Did you look in the library?\n";
 my $fmt = "%6s  %6.2f  %6.2f  %6.2f\n";
 foreach my $body (@closest) {
-    my ($ra, $dec, $range) = $body->equatorial_apparent();
+    my ( $ra, $dec ) = $body->equatorial_apparent();
     printf $fmt, $body->get('id'), rad2deg($ra), rad2deg($dec),
 	rad2deg($separation);
 }

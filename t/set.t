@@ -232,7 +232,6 @@ sub insert (@);
 
 {	# Begin local symbol block.
     my $set = Astro::Coord::ECI::TLE::Set->new ();
-    my $status = 'empty';
 
     ok $set->can( 'members' ),
 	'Empty set has a members() method';

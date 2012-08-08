@@ -25,34 +25,6 @@ my %opt = (
     format => '%d-%b-%Y %H:%M:%S',
 );
 
-my $usage = <<eod;
-
-Generate almanac data.
-
-usage: almanac [options] latitude longitude height
-
-where latitude is degrees north of the equator,
-    longitude is degrees east of the Greenwich, and
-    height is meters above sea level.
-If no position is provided, it defaults to the contents of environment
-variable ALMANAC_POSITION, or to 1600 Pennsylvania Avenue Washington DC
-if the environment variable is not provided.
-
-The options are
-  -format strftime_format
-    specify the format for displaying dates and times;
-  -help
-    display this text and then exit;
-  -moon
-    display Moon data;
-  -sun
-    display Sun data;
-  -tomorrow
-    get the almanac data for tomorrow, not today.
-
-If you do not specify either -sun or -moon, both will be generated.
-eod
-
 GetOptions( \%opt,
     qw{ format=s moon! sun! tomorrow! },
     help => sub { pod2usage( { -verbose => 2 } ) },

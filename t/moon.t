@@ -84,13 +84,13 @@ use Test::More 0.88;
 
     my $got = $moon->dynamical( $time )->next_quarter( 0 );
 
-    tolerance $got, $want, 2,
+    tolerance $got, $want, $tolerance,
 	'Next new Moon after February 1 1977 00:00:00 dynamical',
 	\&format_time;
 
     $got = $moon->dynamical( $time )->next_quarter_hash( 0 );
 
-    tolerance $got->{time}, $want, 2,
+    tolerance $got->{time}, $want, $tolerance,
 	'Hash of next new Moon after February 1 1977 00:00:00 dynamical',
 	\&format_time;
 }
