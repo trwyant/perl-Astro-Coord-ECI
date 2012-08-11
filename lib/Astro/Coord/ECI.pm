@@ -2695,7 +2695,7 @@ sub _set_sun {
 	or croak 'The value of the sun attribute must represent the Sun';
     ref $value
 	or $value = $value->new();
-    return $value;
+    return SET_ACTION_NONE;
 }
 
 #	Unfortunately, the TLE subclass may need objects reblessed if
