@@ -168,8 +168,10 @@ sub __almanac_event_type_iterator {
 
     my $inx = 0;
 
+    my $horizon = $station->__get_almanac_horizon();
+
     my @events = (
-	[ $station, next_elevation => [ $self, 0, 1 ], 'horizon',
+	[ $station, next_elevation => [ $self, $horizon, 1 ], 'horizon',
 		[ 'Moon set', 'Moon rise' ] ],
 	[ $station, next_meridian => [ $self ], 'transit',
 		[ undef, 'Moon transits meridian' ] ],

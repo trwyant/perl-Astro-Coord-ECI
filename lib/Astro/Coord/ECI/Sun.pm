@@ -156,13 +156,15 @@ sub __almanac_event_type_iterator {
 
     my $inx = 0;
 
+    my $horizon = $station->__get_almanac_horizon();
+
     my @events = (
-	[ $station, next_elevation => [ $self, 0, 1 ], 'horizon',
+	[ $station, next_elevation => [ $self, $horizon, 1 ], 'horizon',
 		[ 'Sunset', 'Sunrise' ] ],
 	[ $station, next_meridian => [ $self ], 'transit',
 		[ 'local midnight', 'local noon' ] ],
 	[ $station, next_elevation =>
-	    [ $self, $self->get( 'twilight' ), 0 ],
+	    [ $self, $self->get( 'twilight' ) + $horizon, 0 ],
 		'twilight', ['end twilight', 'begin twilight'] ],
 	[ $self, next_quarter => [], 'quarter', '__quarter_name', ],
     );

@@ -162,6 +162,8 @@ my %known_ellipsoid;	# Known reference ellipsoids. We define these
 		# just before the reference_ellipsoid() method for
 		# convenience.
 my %static = (	# The geoid, etc. Geoid gets set later.
+#   almanac_horizon	=> set when instantiated, so that the following
+#   _almanac_horizon	=>     gets set automatically by the mutator.
     angularvelocity => 7.292114992e-5,	# Of surface of Earth, 1998. Meeus, p.83
     debug => 0,
     diameter => 0,
@@ -183,11 +185,12 @@ to the set() method once the object has been instantiated.
 =cut
 
 sub new {
-    my ($class, @args) = @_;
-    ref $class and $class = ref $class;
-    my $self = bless {%static}, $class;
+    my ( $class, @args ) = @_;
+    my $self = bless { %static }, ref $class || $class;
     $self->{inertial} = $self->_initial_inertial();
-    @args and $self->set (@args);
+    @args and $self->set( @args );
+    exists $self->{almanac_horizon}
+	or $self->set( almanac_horizon => 0 );
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
 	print "Debug - Instantiated ", Dumper ($self);
@@ -2643,6 +2646,7 @@ eod
 #	bitwise 'or' of the desired action masks, defined above.
 
 %mutator = (
+    almanac_horizon	=> \&_set_almanac_horizon,
     angularvelocity => \&_set_value,
     debug => \&_set_value,
     diameter => \&_set_value,
@@ -2664,6 +2668,37 @@ eod
     sun	=> \&_set_sun,
     twilight => \&_set_value,
 );
+
+{
+    # TODO this will all be nicer if I had state variables.
+
+    my %special = (
+	horizon	=> sub { return $_[0]->get( 'horizon' ); },
+	height	=> sub { return $_[0]->dip(); },
+    );
+
+    sub _set_almanac_horizon {
+	my ( $hash, $attr, $value ) = @_;
+	defined $value
+	    or $value = 0;	# Default
+	if ( $special{$value} ) {
+	    $hash->{"_$attr"} = $special{$value};
+	} elsif ( looks_like_number( $value ) ) {
+	    $hash->{"_$attr"} = sub { return $_[0]->get( $attr ) };
+	} else {
+	    croak "'$value' is an invalid value for '$attr'";
+	}
+	$hash->{$attr} = $value;
+	return SET_ACTION_NONE;
+    }
+}
+
+#	Get the actual value of the almanac horizon, from whatever
+#	source.
+
+sub __get_almanac_horizon {
+    goto $_[0]{_almanac_horizon};
+}
 
 #	If you set semimajor or flattening, the ellipsoid name becomes
 #	undefined. Also clear any cached geodetic coordinates.
@@ -3391,6 +3426,24 @@ __END__
 This class has the following attributes:
 
 =over
+
+=item almanac_horizon (radians or string)
+
+This attribute specifies the horizon used for almanac calculations, as
+radians above or below the plans of the observer.  It can also be set to
+the following strings:
+
+* C<height> adjusts the horizon in proportion to the observer's height
+above sea level. This assumes a spherical Earth and an unobstructed
+horizon.
+
+* C<horizon> causes the value of the C<horizon> attribute to be used for
+almanac calculations also. Changes in C<horizon> will be tracked.
+
+When doing almanac calculations, it is the C<almanac_horizon> of the
+observer that is used.
+
+The default is C<0>.
 
 =item angularvelocity (radians per second)
 

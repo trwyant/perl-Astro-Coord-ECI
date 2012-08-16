@@ -62,6 +62,7 @@ my %cmdquote;	# 1 if we keep quotes when parsing the command.
 
 my %exported;	# True if the parameter is exported.
 my %parm = (
+##    almanac_horizon	=> 0, set below
     appulse => 0,
     autoheight => 1,
     background => 1,
@@ -81,7 +82,7 @@ my %parm = (
     flare_mag_night => 0,
     geometric => 1,
     gmt => 0,
-    horizon => 20,	# Degrees
+##    horizon => 20, set below
     lit => undef,	# Deprecated. Unused but must be present until
 			# removed.
     local_coord => 'azel_rng',
@@ -96,6 +97,7 @@ my %parm = (
     singleton => 0,
     time_format => '%H:%M:%S',
 ##    timing => 0,
+##    twilignt => 'civil', set below
     verbose => 0,
     visible => 1,
     webcmd => ''
@@ -105,6 +107,7 @@ $parm{tz} = $ENV{TZ} if $ENV{TZ};
 my %macro;
 
 my %mutator = (
+    almanac_horizon => \&_set_almanac_horizon,
     appulse => \&_set_angle,
     autoheight => \&_set_unmodified,
     backdate => \&_set_unmodified,
@@ -175,7 +178,9 @@ my %twilight_def = (
     );
 my %twilight_abbr = abbrev (keys %twilight_def);
 
-set (twilight => 'civil');
+set( twilight	=> 'civil' );
+set( horizon	=> 20 );
+set( almanac_horizon => 0 );
 
 my $inifn = $^O eq 'MSWin32' || $^O eq 'VMS' || $^O eq 'MacOS' ?
     'satpass.ini' : '.satpass';
@@ -1918,15 +1923,30 @@ eod
     }    
 }
 
+sub _set_almanac_horizon {
+    my ( $name, $value ) = @_;
+    $value = _parse_angle( $value );
+    Astro::Coord::ECI->new( almanac_horizon => $value );
+    $parm{$name} = $value;
+    $parm{"_$name"} = looks_like_number( $value ) ?
+	deg2rad( $value ) :
+	$value;
+    return;
+}
+
 sub _set_angle {
-$parm{$_[0]} = _parse_angle ($_[1]);
+    my ( $name, $value ) = @_;
+    $parm{$name} = _parse_angle( $value );
+    $parm{"_$name"} = deg2rad( $value );
+    return;
 }
 
 sub _set_angle_or_undef {
     defined $_[1]
 	and $_[1] ne 'undef'
 	and goto &_set_angle;
-    $parm{$_[0]} = undef;
+    $parm{$_[0]} = $parm{"_$_[0]"} = undef;
+    return;
 }
 
 sub _set_ellipsoid {
@@ -2841,9 +2861,11 @@ Error - You must set height, latitude, and longitude to use this
         function.
 eod
     Astro::Coord::ECI->new (
-	    refraction => $parm{refraction},
-	    name => $parm{location} || 'Station',
-	    id => 'station',
+	    almanac_horizon	=> $parm{_almanac_horizon},
+	    horizon		=> $parm{_horizon},
+	    refraction		=> $parm{refraction},
+	    name		=> $parm{location} || 'Station',
+	    id			=> 'station',
 	    )
 	->geodetic (
 	    deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
@@ -3004,6 +3026,10 @@ sub _mytime {
 
 #	Parses an angle in degrees, hours:minutes:seconds, or
 #	degreesDminutesMsecondsS and returns the angle in degrees.
+#
+#	NOTE that the almanac_horizon code relies on this returning
+#	whatever it is given unless it is recognized as
+#	hours:minutes:seconds or degreesDminutesMsecondsS.
 
 sub _parse_angle {
 my $angle = shift;
@@ -5107,9 +5133,26 @@ true, or 0 for false. The evaluation rules are those of Perl itself:
 
 The parameters are:
 
-=for html <a name="appulse"></a>
+=for html <a name="almanac_horizon"></a>
 
 =over
+
+=item almanac_horizon (numeric or string)
+
+This parameter specifies the horizon used for almanac calculations, in
+degrees above or below the plane of the observer. The following strings
+are also accepted:
+
+* C<height> causes the horizon to be adjusted for the height of the
+observer above sea level. This adjustment assumes a spherical Earth and
+an unobstructed horizon.
+
+* C<horizon> causes the value of the C<horizon> setting to be used for
+almanac calculations also.
+
+The default is C<0>.
+
+=for html <a name="appulse"></a>
 
 =item appulse (numeric)
 
