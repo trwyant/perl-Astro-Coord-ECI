@@ -3615,10 +3615,7 @@ in all cases if it becomes a problem.
 =item twilight (numeric, radians)
 
 This attribute represents the elevation of the center of the Sun's disk
-at the beginning and end of twilight. It should probably be an
-attribute of the Sun subclass, since it is only used by the almanac ()
-method of that subclass, but it's here so you can blindly set it when
-computing almanac data.
+at the beginning and end of twilight.
 
 Some of the usual values are:
 
@@ -3626,15 +3623,11 @@ Some of the usual values are:
  nautical twilight: -12 degrees
  astronomical twilight: -18 degrees
 
-For example, to set nautical twilight you could do
-
- $eci->set( twilight => 'nautical' );
-
-or, equivalently,
-
- $eci->set( twilight => deg2rad( -12 ) );
-
-where C<deg2rad()> is imported from Astro::Coord::ECI::Utils.
+B<Note> that the documentation at this point used to say (or at least
+imply) that the strings C<'civil'>, C<'nautical'>, and C<'astronomical'>
+were acceptable. This has never been the case to my knowledge, so since
+I have received no bug reports, I have considered the bug to be in the
+documentation, and removed the relevant text as of version 0.052.
 
 The default is -6 degrees (or, actually, the equivalent in radians).
 
