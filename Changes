@@ -1,3 +1,25 @@
+0.051_01	2012-08-18	T. R. Wyant
+  Add attribute almanac_horizon to Astro::Coord::ECI. This sets the
+    horizon for almanac calculations. The default is 0 (radians), but
+    other values are possible, as well as 'horizon' (meaning, use the
+    value of the 'horizon' attribute) and 'height' (meaning, depress the
+    horizon for the height of the observer above sea level). The satpass
+    script allows access to this.
+  Add JSON support for Astro::Coord::ECI::TLE and
+    Astro::Coord::ECI::TLE::Iridium. This includes the ability of
+    Astro::Coord::ECI::TLE->parse() to handle JSON orbital elements from
+    the Space Track REST interface (provided the optional JSON module
+    can be loaded), and hooks in both classes for them to serialize
+    themselves into Space-Track-like JSON.
+  Add -json option to the satpass script's tle() command, to get
+    canonical JSON output.
+  Make use of DateTime (if available) to interpret a non-numeric
+    Astro::Coord::ECI::TLE::Iridium zone attribute. If DateTime is not
+    available, fall back to the old implementation of setting $ENV{TZ}
+    and hoping localtime() responds to this.
+  Correct the documentation of the Astro::Coord::ECI 'twilight'
+    attribute, which really can not be set to 'civil', etc.
+
 0.051		2012-06-08	T. R. Wyant
   No changes since 0.050_03.
 

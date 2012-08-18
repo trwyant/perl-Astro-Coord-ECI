@@ -144,7 +144,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.051';
+our $VERSION = '0.051_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -3627,7 +3627,7 @@ B<Note> that the documentation at this point used to say (or at least
 imply) that the strings C<'civil'>, C<'nautical'>, and C<'astronomical'>
 were acceptable. This has never been the case to my knowledge, so since
 I have received no bug reports, I have considered the bug to be in the
-documentation, and removed the relevant text as of version 0.052.
+documentation, and removed the relevant text as of version 0.051_01.
 
 The default is -6 degrees (or, actually, the equivalent in radians).
 
