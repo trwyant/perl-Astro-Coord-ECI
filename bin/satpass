@@ -2436,7 +2436,6 @@ sub times {
 my %tle_formatter;
 
 BEGIN {
-    $cmdlgl{tle} = [qw{celestia choose=s@ json verbose}];
     %tle_formatter = (
 	celestia	=> sub {
 	    my ( $bodies ) = @_;
@@ -2472,14 +2471,14 @@ EOD
 	    }
 	    return;
 	},
-	json	=> sub {
-	    my ( $bodies ) = @_;
-	    _load_module( 'JSON' );
-	    my $json = JSON->new()->pretty()->canonical()->utf8()
-		->convert_blessed();
-	    print $json->encode( $bodies );
-	    return;
-	},
+#	json	=> sub {
+#	    my ( $bodies ) = @_;
+#	    _load_module( 'JSON' );
+#	    my $json = JSON->new()->pretty()->canonical()->utf8()
+#		->convert_blessed();
+#	    print $json->encode( $bodies );
+#	    return;
+#	},
 	verbose	=> sub {
 	    my ( $bodies ) = @_;
 	    my $dtfmt = "$parm{date_format} $parm{time_format}";
@@ -2489,11 +2488,12 @@ EOD
 	    return;
 	},
     );
+    $cmdlgl{tle} = [ 'choose=s@', keys %tle_formatter ];
 }
 
 
 sub tle {
-    my @specified = grep { $cmdopt{$_} } qw{ celestia json verbose };
+    my @specified = grep { $cmdopt{$_} } keys %tle_formatter;
     @specified > 1
 	and die 'You may not specify more than one of ',
 	    join( ', ', map { "-$_" } @specified ), "\n";
@@ -5094,10 +5094,6 @@ specified, the whole observing list is used.
 
 The C<-verbose> qualifier causes the data to be displayed verbosely,
 one item per line, labeled and with units if applicable.
-
-The C<-json> qualifier causes the data to be displayed in JSON format.
-It may not be combined with C<-verbose>, and it will fail unless the
-optional L<JSON|JSON> module is installed.
 
 =item validate start_time end_time
 

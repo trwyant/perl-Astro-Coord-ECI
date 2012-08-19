@@ -22,6 +22,12 @@ closest
     bodies closest to the given position as seen from Parliament House
     in Australia.
 
+convert_tle
+    This Perl script reads orbital data in either TLE or JSON format,
+    and converts it to the other format. The JSON is similar to (read:
+    uses the same keys as) the Space Track REST interface. The -help
+    option gets you the documentation.
+
 iridium
     This Perl script uses Astro::SpaceTrack (not included) to download
     Iridium data from http://celestrak.com/ and predict flares for the
