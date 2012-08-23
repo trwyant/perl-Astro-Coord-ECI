@@ -70,7 +70,7 @@ foreach my $key ( qw{
     ok exists $hash->{$key}, "Hash key $key is present for Vanguard 1";
 }
 
-delete $hash->{CREATION_DATE};
+_fudge_json( $hash );
 
 is_deeply $hash, {
     'ARG_OF_PERICENTER' => '331.7664',
@@ -156,7 +156,7 @@ foreach my $key ( qw{
 	"Hash key $key is present for a fictitious Iridium satellite";
 }
 
-delete $hash->{CREATION_DATE};
+_fudge_json( $hash );
 
 is_deeply $hash, {
     'ARG_OF_PERICENTER' => '331.7664',
@@ -189,6 +189,21 @@ is_deeply $hash, {
 
 
 done_testing;
+
+sub _fudge_json {
+    my ( $hash ) = @_;
+
+    # We have no idea what the creation date is going to be, so we just
+    # ignore it.
+    delete $hash->{CREATION_DATE};
+
+    # MSWin32 (at least!) insists on a three-digit exponent, so we fudge
+    # it back to two.
+    $hash->{MEAN_MOTION_DOT} =~ s{ (?<= e [+-] ) ( \d+ ) \z }
+	{ sprintf '%02d', $1 }smxe;
+
+    return;
+}
 
 1;
 
