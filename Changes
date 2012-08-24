@@ -1,3 +1,9 @@
+0.051_02	2012-08-23	T. R. Wyant
+  Fudge the JSON in t/tle_json.t for system-to-system differences in
+    floating point representations (2-digit vs 3-digit exponent).
+  Remove the -json output formatting option from the satpass tle()
+    command. Instead, provide eg/convert_tle.
+
 0.051_01	2012-08-18	T. R. Wyant
   Add attribute almanac_horizon to Astro::Coord::ECI. This sets the
     horizon for almanac calculations. The default is 0 (radians), but
