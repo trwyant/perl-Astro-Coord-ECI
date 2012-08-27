@@ -1,3 +1,7 @@
+0.051_03	2012-08-26	T. R. Wyant
+  Enhance Astro::Coord::ECI::TLE->parse() to parse Iridium status off
+    the name if it is present.
+
 0.051_02	2012-08-23	T. R. Wyant
   Fudge the JSON in t/tle_json.t for system-to-system differences in
     floating point representations (2-digit vs 3-digit exponent).
