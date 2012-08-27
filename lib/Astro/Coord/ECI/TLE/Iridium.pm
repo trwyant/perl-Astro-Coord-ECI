@@ -138,15 +138,21 @@ use constant MMAPHI => deg2rad (-130);	# The MMAs are at an angle of
 					# them "flat".
 use constant TWOPIOVER3 => TWOPI / 3;	# 120 degrees, in radians.
 
+use constant STATUS_IN_SERVICE => 0;
+use constant STATUS_SPARE => 1;
+use constant STATUS_TUMBLING => 2;
+
 my %mutator = (
     algorithm => sub {
-	my $method = "_flare_$_[2]";
-	croak "Error - Unknown flare algorithm name $_[2]"
-	    unless $_[0]->can ($method);
-	$_[0]->{&ATTRIBUTE_KEY}{$_[1]} = $_[2];
-	$_[0]->{&ATTRIBUTE_KEY}{_algorithm_method} = $method;
-	},
-    );
+	my ( $self, $name, $value ) = @_;
+	my $method = "_flare_$value";
+	croak "Error - Unknown flare algorithm name $value"
+	    unless $self->can ($method);
+	$self->{&ATTRIBUTE_KEY}{$name} = $value;
+	$self->{&ATTRIBUTE_KEY}{_algorithm_method} = $method;
+    },
+    status	=> \&_set_operational_status,
+);
 foreach my $key (qw{am day extinction max_mirror_angle pm status zone}) {
     $mutator{$key} = sub {$_[0]->{&ATTRIBUTE_KEY}{$_[1]} = $_[2]};
 }
@@ -1544,12 +1550,62 @@ sub set {
     }
 }
 
+sub __parse_name {
+    my ( $self, $name ) = @_;
+    defined $name
+	and $name =~ s/ \s* [[] ( \S ) []] \s* \z //smx
+	and $self->_set_operational_status( status => $1 );
+    return $self->SUPER::__parse_name( $name );
+}
+
+{
+    my @encode_status;
+    $encode_status[STATUS_IN_SERVICE]	= '+';
+    $encode_status[STATUS_SPARE]	= 'S';
+    $encode_status[STATUS_TUMBLING]	= '-';
+
+    sub __encode_operational_status {
+	my ( $self, $name, $status ) = @_;
+	defined $status
+	    or $status = $self->get( 'status' );
+	defined $encode_status[ $status ]
+	    or return STATUS_TUMBLING;
+	return $encode_status[ $status ];
+    }
+}
+
+
+{
+
+    my %status_map = (
+	STATUS_IN_SERVICE()	=> STATUS_IN_SERVICE,
+	''			=> STATUS_IN_SERVICE,
+	'+'			=> STATUS_IN_SERVICE,
+	STATUS_SPARE()		=> STATUS_SPARE,
+	'?'			=> STATUS_SPARE,
+	'S'			=> STATUS_SPARE,
+	's'			=> STATUS_SPARE,
+    );
+
+    sub __decode_operational_status {
+	my ( $value ) = @_;
+	defined $value
+	    or return STATUS_IN_SERVICE;;
+	defined $status_map{$value}
+	    or return STATUS_TUMBLING;
+	return $status_map{$value};
+    }
+}
+
+sub _set_operational_status {
+    my ( $self, $name, $value ) = @_;
+    $self->{&ATTRIBUTE_KEY}{$name} = __decode_operational_status( $value );
+    return $self;
+}
+
 {
     my %json_map = (
-	operational_status	=> sub {
-	    my ( $self ) = @_;
-	    return ( qw{ + S - } )[ $self->get( 'status' ) ];
-	},
+	operational_status	=> \&__encode_operational_status,
     );
 
     sub TO_JSON {

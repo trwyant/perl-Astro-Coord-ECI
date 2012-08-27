@@ -983,18 +983,12 @@ eod
 
     while (@data) {
 	my %ele = ( %static, %{ $attrs } );
+	my $name;
 	my $line = shift @data;
 	$line =~ s/\s+$//;
 	my $tle = "$line\n";
 	$line =~ m{ \A 1 (\s* \d+) }smx and length $1 == 6 or do {
-	    my %adhoc;
-	    $line =~ s{ \s* -- ( [-\w]+ ) \s+ ( \S+ ) }
-		{ _parse_adhoc( \%adhoc, $1, $2 ) }smxge;
-	    foreach my $name ( qw{ effective rcs } ) {
-		exists $adhoc{$name}
-		    and $ele{$name} = delete $adhoc{$name};
-	    }
-	    $line ne '' and $ele{name} = $line;
+	    $name = $line;
 	    $line = shift @data;
 	    $tle .= "$line\n";
 	};
@@ -1049,18 +1043,27 @@ eod
 	    $temp /= SGP_XMNPDA;
 	    $ele{$_} *= $temp;
 	}
+
 	my $body = __PACKAGE__->new (%ele);	# Note that setting the
 						# ID does the reblessing.
+	$body->__parse_name( $name );
 	$body->{tle} = $tle;
 	push @rslt, $body;
     }
     return @rslt;
 }
 
-sub _parse_adhoc {
-    my ( $hash, $name, $value ) = @_;
-    $hash->{$name} = $value;
-    return '';
+sub __parse_name {
+    my ( $self, $name ) = @_;
+    defined $name
+	or return;
+    $name =~ s{ \s* -- ( effective | rcs ) \s+ ( \S+ ) }{
+	$self->set( $1 => $2 );
+	''
+    }smxge;
+    $name ne ''
+	and $self->set( name => $name );
+    return;
 }
 
 # Parse information for the above from
@@ -2077,18 +2080,6 @@ Initially, the status table is populated with the status as of December
 
 =cut
 
-use constant STATUS_IN_SERVICE => 0;
-use constant STATUS_SPARE => 1;
-use constant STATUS_TUMBLING => 2;
-
-my %status_map = (
-    ''	=> STATUS_IN_SERVICE,
-    '+'	=> STATUS_IN_SERVICE,
-    '?'	=> STATUS_SPARE,
-    'S' => STATUS_SPARE,
-    's' => STATUS_SPARE,
-);
-
 sub status {
     shift;	# Ignore the class name.
     my $cmd = shift;
@@ -2106,9 +2097,9 @@ eod
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
 	my $status = shift || 0;
-	$status =~ m/\D/
-	    and $status = exists $status_map{$status} ?
-	       $status_map{$status} : STATUS_TUMBLING;
+	if ( my $code = $class->can( '__decode_operational_status' ) ) {
+	    $status = $code->( $status );
+	}
 	my $name = shift || '';
 	my $comment = shift || '';
 	$status{$id} = {
@@ -7186,11 +7177,14 @@ sub _initial_inertial{ return 1 };
 	my $oid = $self->get('id');
 	my @line0;
 
-	{
-	    my $name;
-	    defined ($name = $self->get('name'))
-		and $name ne ''
+	if ( defined ( my $name = $self->get( 'name' ) ) ) {
+	    $name =~ s/ \s+ \z //smx;
+	    $name ne ''
 		and push @line0, substr $name, 0, 24;
+	}
+
+	if ( my $code = $self->can( '__encode_operational_status' ) ) {
+	    push @line0, sprintf '[%s]', $code->( $self, 'status' );
 	}
 
 	foreach my $name ( sort keys %hack ) {
@@ -7400,7 +7394,7 @@ sub _next_elevation_screen {
 # The following as of 29-Aug-2011, from McCants' document dated
 # 27-Aug-2011.
 # The difference from 0.042_02 is that McCants and Sladen show Iridium
-# 23 (OID 24906) as begin in service (agreeing with Kelso, whose
+# 23 (OID 24906) as being in service (agreeing with Kelso, whose
 # document was the basis for the previous version, and so resulting in
 # no change here). But they also reported Iridium 26 (OID 24903) as
 # being out of service. Kelso has not picked this up yet.
@@ -7414,7 +7408,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 76',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25432
+               'id' => '25432'
              },
   '25106' => {
                'comment' => '',
@@ -7422,7 +7416,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 47',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25106
+               'id' => '25106'
              },
   '24925' => {
                'comment' => '',
@@ -7430,7 +7424,7 @@ sub _next_elevation_screen {
                'name' => 'Dummy mass 1',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24925
+               'id' => '24925'
              },
   '24948' => {
                'comment' => '',
@@ -7438,7 +7432,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 28',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24948
+               'id' => '24948'
              },
   '24870' => {
                'comment' => '',
@@ -7446,7 +7440,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 17',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24870
+               'id' => '24870'
              },
   '27451' => {
                'comment' => '',
@@ -7454,7 +7448,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 98',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 27451
+               'id' => '27451'
              },
   '25530' => {
                'comment' => '',
@@ -7462,7 +7456,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 84',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25530
+               'id' => '25530'
              },
   '25273' => {
                'comment' => '',
@@ -7470,7 +7464,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 57',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25273
+               'id' => '25273'
              },
   '24792' => {
                'comment' => '',
@@ -7478,7 +7472,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 8',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24792
+               'id' => '24792'
              },
   '24793' => {
                'comment' => '',
@@ -7486,7 +7480,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 7',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24793
+               'id' => '24793'
              },
   '25105' => {
                'comment' => '',
@@ -7494,7 +7488,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 24',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25105
+               'id' => '25105'
              },
   '24966' => {
                'comment' => '',
@@ -7502,7 +7496,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 35',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24966
+               'id' => '24966'
              },
   '25527' => {
                'comment' => '',
@@ -7510,7 +7504,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 2',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25527
+               'id' => '25527'
              },
   '24965' => {
                'comment' => '',
@@ -7518,7 +7512,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 19',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24965
+               'id' => '24965'
              },
   '25344' => {
                'comment' => '',
@@ -7526,7 +7520,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 73',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25344
+               'id' => '25344'
              },
   '25276' => {
                'comment' => '',
@@ -7534,7 +7528,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 60',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25276
+               'id' => '25276'
              },
   '24841' => {
                'comment' => '',
@@ -7542,7 +7536,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 16',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24841
+               'id' => '24841'
              },
   '24950' => {
                'comment' => '',
@@ -7550,7 +7544,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 31',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24950
+               'id' => '24950'
              },
   '25288' => {
                'comment' => '',
@@ -7558,7 +7552,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 65',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25288
+               'id' => '25288'
              },
   '25531' => {
                'comment' => '',
@@ -7566,7 +7560,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 83',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25531
+               'id' => '25531'
              },
   '25169' => {
                'comment' => '',
@@ -7574,7 +7568,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 52',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25169
+               'id' => '25169'
              },
   '24869' => {
                'comment' => '',
@@ -7582,7 +7576,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 15',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24869
+               'id' => '24869'
              },
   '25319' => {
                'comment' => '',
@@ -7590,7 +7584,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 69',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25319
+               'id' => '25319'
              },
   '24872' => {
                'comment' => '',
@@ -7598,7 +7592,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 18',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24872
+               'id' => '24872'
              },
   '25320' => {
                'comment' => '',
@@ -7606,7 +7600,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 71',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25320
+               'id' => '25320'
              },
   '25263' => {
                'comment' => '',
@@ -7614,7 +7608,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 61',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25263
+               'id' => '25263'
              },
   '25467' => {
                'comment' => '',
@@ -7622,7 +7616,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 82',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25467
+               'id' => '25467'
              },
   '25262' => {
                'comment' => '',
@@ -7630,7 +7624,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 51',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25262
+               'id' => '25262'
              },
   '25342' => {
                'comment' => '',
@@ -7638,7 +7632,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 70',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25342
+               'id' => '25342'
              },
   '25170' => {
                'comment' => '',
@@ -7646,7 +7640,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 56',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25170
+               'id' => '25170'
              },
   '25172' => {
                'comment' => '',
@@ -7654,7 +7648,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 50',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25172
+               'id' => '25172'
              },
   '24871' => {
                'comment' => '',
@@ -7662,7 +7656,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 920',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24871
+               'id' => '24871'
              },
   '25778' => {
                'comment' => '',
@@ -7670,7 +7664,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 21',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25778
+               'id' => '25778'
              },
   '25291' => {
                'comment' => '',
@@ -7678,7 +7672,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 68',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25291
+               'id' => '25291'
              },
   '25468' => {
                'comment' => '',
@@ -7686,7 +7680,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 81',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25468
+               'id' => '25468'
              },
   '27376' => {
                'comment' => '',
@@ -7694,7 +7688,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 96',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 27376
+               'id' => '27376'
              },
   '24969' => {
                'comment' => '',
@@ -7702,7 +7696,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 34',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24969
+               'id' => '24969'
              },
   '25272' => {
                'comment' => '',
@@ -7710,7 +7704,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 55',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25272
+               'id' => '25272'
              },
   '25431' => {
                'comment' => '',
@@ -7718,7 +7712,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 3',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25431
+               'id' => '25431'
              },
   '25287' => {
                'comment' => '',
@@ -7726,7 +7720,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 64',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25287
+               'id' => '25287'
              },
   '25578' => {
                'comment' => '',
@@ -7734,7 +7728,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 11',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25578
+               'id' => '25578'
              },
   '24949' => {
                'comment' => '',
@@ -7742,7 +7736,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 30',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24949
+               'id' => '24949'
              },
   '27450' => {
                'comment' => '',
@@ -7750,7 +7744,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 97',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 27450
+               'id' => '27450'
              },
   '25077' => {
                'comment' => '',
@@ -7758,7 +7752,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 42',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25077
+               'id' => '25077'
              },
   '25343' => {
                'comment' => '',
@@ -7766,7 +7760,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 72',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25343
+               'id' => '25343'
              },
   '24926' => {
                'comment' => '',
@@ -7774,7 +7768,7 @@ sub _next_elevation_screen {
                'name' => 'Dummy mass 2',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24926
+               'id' => '24926'
              },
   '25042' => {
                'comment' => '',
@@ -7782,7 +7776,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 39',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25042
+               'id' => '25042'
              },
   '27374' => {
                'comment' => '',
@@ -7790,7 +7784,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 94',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 27374
+               'id' => '27374'
              },
   '25471' => {
                'comment' => '',
@@ -7798,7 +7792,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 77',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25471
+               'id' => '25471'
              },
   '25078' => {
                'comment' => '',
@@ -7806,7 +7800,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 44',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25078
+               'id' => '25078'
              },
   '25041' => {
                'comment' => '',
@@ -7814,7 +7808,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 40',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25041
+               'id' => '25041'
              },
   '24842' => {
                'comment' => '',
@@ -7822,7 +7816,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 911',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24842
+               'id' => '24842'
              },
   '24904' => {
                'comment' => '',
@@ -7830,7 +7824,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 25',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24904
+               'id' => '24904'
              },
   '24907' => {
                'comment' => '',
@@ -7838,7 +7832,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 22',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24907
+               'id' => '24907'
              },
   '25289' => {
                'comment' => '',
@@ -7846,7 +7840,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 66',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25289
+               'id' => '25289'
              },
   '25108' => {
                'comment' => '',
@@ -7854,7 +7848,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 49',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25108
+               'id' => '25108'
              },
   '24906' => {
                'comment' => '',
@@ -7862,7 +7856,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 23',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24906
+               'id' => '24906'
              },
   '24836' => {
                'comment' => '',
@@ -7870,7 +7864,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 914',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24836
+               'id' => '24836'
              },
   '25286' => {
                'comment' => '',
@@ -7878,7 +7872,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 63',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25286
+               'id' => '25286'
              },
   '25528' => {
                'comment' => '',
@@ -7886,7 +7880,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 86',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25528
+               'id' => '25528'
              },
   '24795' => {
                'comment' => '',
@@ -7894,7 +7888,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 5',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24795
+               'id' => '24795'
              },
   '24839' => {
                'comment' => '',
@@ -7902,7 +7896,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 10',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24839
+               'id' => '24839'
              },
   '27375' => {
                'comment' => '',
@@ -7910,7 +7904,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 95',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 27375
+               'id' => '27375'
              },
   '24837' => {
                'comment' => '',
@@ -7918,7 +7912,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 12',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24837
+               'id' => '24837'
              },
   '24796' => {
                'comment' => '',
@@ -7926,7 +7920,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 4',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24796
+               'id' => '24796'
              },
   '24905' => {
                'comment' => '',
@@ -7934,7 +7928,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 46',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24905
+               'id' => '24905'
              },
   '27373' => {
                'comment' => '',
@@ -7942,7 +7936,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 90',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 27373
+               'id' => '27373'
              },
   '25275' => {
                'comment' => '',
@@ -7950,7 +7944,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 59',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25275
+               'id' => '25275'
              },
   '24873' => {
                'comment' => '',
@@ -7958,7 +7952,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 921',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24873
+               'id' => '24873'
              },
   '24903' => {
                'comment' => '',
@@ -7966,7 +7960,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 26',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24903
+               'id' => '24903'
              },
   '24794' => {
                'comment' => '',
@@ -7974,7 +7968,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 6',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24794
+               'id' => '24794'
              },
   '25290' => {
                'comment' => '',
@@ -7982,7 +7976,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 67',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25290
+               'id' => '25290'
              },
   '25577' => {
                'comment' => '',
@@ -7990,7 +7984,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 20',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25577
+               'id' => '25577'
              },
   '27372' => {
                'comment' => '',
@@ -7998,7 +7992,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 91',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 27372
+               'id' => '27372'
              },
   '24945' => {
                'comment' => '',
@@ -8006,7 +8000,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 32',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24945
+               'id' => '24945'
              },
   '25274' => {
                'comment' => '',
@@ -8014,7 +8008,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 58',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25274
+               'id' => '25274'
              },
   '25040' => {
                'comment' => '',
@@ -8022,7 +8016,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 41',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25040
+               'id' => '25040'
              },
   '25777' => {
                'comment' => '',
@@ -8030,7 +8024,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 14',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25777
+               'id' => '25777'
              },
   '24946' => {
                'comment' => '',
@@ -8038,7 +8032,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 33',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24946
+               'id' => '24946'
              },
   '25469' => {
                'comment' => '',
@@ -8046,7 +8040,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 80',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25469
+               'id' => '25469'
              },
   '25173' => {
                'comment' => '',
@@ -8054,7 +8048,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 53',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25173
+               'id' => '25173'
              },
   '24967' => {
                'comment' => '',
@@ -8062,7 +8056,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 36',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24967
+               'id' => '24967'
              },
   '25171' => {
                'comment' => '',
@@ -8070,7 +8064,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 54',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25171
+               'id' => '25171'
              },
   '24968' => {
                'comment' => '',
@@ -8078,7 +8072,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 37',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24968
+               'id' => '24968'
              },
   '25039' => {
                'comment' => '',
@@ -8086,7 +8080,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 43',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25039
+               'id' => '25039'
              },
   '25043' => {
                'comment' => '',
@@ -8094,7 +8088,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 38',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25043
+               'id' => '25043'
              },
   '24840' => {
                'comment' => '',
@@ -8102,7 +8096,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 13',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24840
+               'id' => '24840'
              },
   '24944' => {
                'comment' => '',
@@ -8110,7 +8104,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 29',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 24944
+               'id' => '24944'
              },
   '25345' => {
                'comment' => '',
@@ -8118,7 +8112,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 74',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25345
+               'id' => '25345'
              },
   '25285' => {
                'comment' => '',
@@ -8126,7 +8120,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 62',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25285
+               'id' => '25285'
              },
   '25104' => {
                'comment' => '',
@@ -8134,7 +8128,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 45',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25104
+               'id' => '25104'
              },
   '25346' => {
                'comment' => '',
@@ -8142,7 +8136,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 75',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
-               'id' => 25346
+               'id' => '25346'
              }
 );
 

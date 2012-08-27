@@ -21,6 +21,9 @@ BEGIN {
 # right to distribute the TLE data.
 
 use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE::Iridium;
+
+Astro::Coord::ECI::TLE->status( add => 88889, iridium => '+' );
 
 my @bodies;
 {
@@ -70,3 +73,6 @@ Satellite X --effective 1980/275/12:00:00 --rcs 5.021
 --effective 1980/275/12:00:00 --rcs 5.021
 1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    87
 2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  1058
+Iridium X [S]
+1 88889U          80275.98708465  .00073094  13844-3  66816-4 0    88
+2 88889  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  1059
