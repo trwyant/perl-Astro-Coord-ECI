@@ -219,8 +219,10 @@ sub _fudge_json {
 
     # MSWin32 (at least!) insists on a three-digit exponent, so we fudge
     # it back to two.
-    $hash->{MEAN_MOTION_DOT} =~ s{ (?<= e [+-] ) ( \d+ ) \z }
-	{ sprintf '%02d', $1 }smxe;
+    foreach my $key ( qw{ BSTAR MEAN_MOTION_DOT } ) {
+	$hash->{$key} =~ s{ (?<= e [+-] ) ( \d+ ) \z }
+	    { sprintf '%02d', $1 }smxe;
+    }
 
     return;
 }
