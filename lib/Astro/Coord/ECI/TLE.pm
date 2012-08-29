@@ -6806,12 +6806,15 @@ encoded with a four-digit year.
 	    my $year = $self->get( 'launch_year' );
 	    my $num = $self->get( 'launch_num' );
 	    my $part = $self->get( 'launch_piece' );
+	    # As of August 27 2012, this is no longer yyyy-lllp, it is
+	    # yylllp, same as it has always been in the TLE format.
+	    $year %= 100;
 	    foreach ( $year, $num, $part ) {
 		defined $_
 		    and $_ =~ m/ \S /smx
 		    or return;
 	    }
-	    return sprintf '%04d-%03d%s', $year, $num, $part;
+	    return sprintf '%02d%03d%s', $year, $num, $part;	# ditto
 	},
 	LAUNCH_NUM	=> 'launch_num',
 	LAUNCH_PIECE	=> 'launch_piece',
