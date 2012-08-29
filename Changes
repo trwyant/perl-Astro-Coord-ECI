@@ -1,3 +1,12 @@
+0.051_04	2012-08-29	T. R. Wyant
+  Remove support for the 'horizon' setting of the Astro::Coord::ECI
+    'almanac_horizon' attribute. This was introdiced in 0.051_01, but on
+    second thought I decided the 'horizon' logic was ill-conceived.
+  Change the JSON representation of the International Launch Designator
+    to track Space Track change by Space Track to REST predicate
+    INTLDES.
+  Further corrections to t/tle_json.t for OS-dependant failures.
+
 0.051_03	2012-08-26	T. R. Wyant
   Enhance Astro::Coord::ECI::TLE->parse() to parse Iridium status off
     the name if it is present.
