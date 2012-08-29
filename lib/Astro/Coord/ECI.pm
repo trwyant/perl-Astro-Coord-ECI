@@ -2673,7 +2673,7 @@ eod
     # TODO this will all be nicer if I had state variables.
 
     my %special = (
-	horizon	=> sub { return $_[0]->get( 'horizon' ); },
+##	horizon	=> sub { return $_[0]->get( 'horizon' ); },
 	height	=> sub { return $_[0]->dip(); },
     );
 
@@ -3431,17 +3431,14 @@ This class has the following attributes:
 
 This attribute specifies the horizon used for almanac calculations, as
 radians above or below the plans of the observer.  It can also be set to
-the following strings:
+the following string:
 
 * C<height> adjusts the horizon in proportion to the observer's height
 above sea level. This assumes a spherical Earth and an unobstructed
 horizon.
 
-* C<horizon> causes the value of the C<horizon> attribute to be used for
-almanac calculations also. Changes in C<horizon> will be tracked.
-
 When doing almanac calculations, it is the C<almanac_horizon> of the
-observer that is used.
+observer that is used, not the C<almanac_horizon> of the observed body.
 
 The default is C<0>.
 
