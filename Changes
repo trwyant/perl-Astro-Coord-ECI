@@ -1,3 +1,6 @@
+0.052		2012-09-05	T. R. Wyant
+  No changes since 0.051_04.
+
 0.051_04	2012-08-29	T. R. Wyant
   Remove support for the 'horizon' setting of the Astro::Coord::ECI
     'almanac_horizon' attribute. This was introdiced in 0.051_01, but on
