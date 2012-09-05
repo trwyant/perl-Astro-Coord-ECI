@@ -1,5 +1,11 @@
 0.052		2012-09-05	T. R. Wyant
-  No changes since 0.051_04.
+  Per schedule, the following deprecated items will produce a warning on
+    each use:
+    * The 'upper' argument of the Astro::Coord::ECI azel() method;
+    * The Astro::Coord::ECI::TLE 'limb' attribute;
+    * The satpass 'lit' setting.
+  All these warnings will become fatal in the first release on or after
+  March 1 2013.
 
 0.051_04	2012-08-29	T. R. Wyant
   Remove support for the 'horizon' setting of the Astro::Coord::ECI

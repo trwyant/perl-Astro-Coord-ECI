@@ -308,19 +308,14 @@ The C<$upper> argument is as above, including the deprecation.
 =cut
 
 
-{
-    my $upper_deprecated;
-
-    sub azel {	## no critic (RequireArgUnpacking)
-  	@_ > 2
-  	    and warnings::enabled( 'deprecated' )
-  	    and not $upper_deprecated++
-  	    and carp q{The azel() 'upper' argument is deprecated; use },
-  		q{the azel_offset() 'offset' argument instead};
-	@_ = _expand_args_default_station( @_ );
-	$_[2] = $_[2] ? 1 : 0;
-	goto &azel_offset;
-    }
+sub azel {	## no critic (RequireArgUnpacking)
+    @_ > 2
+	and warnings::enabled( 'deprecated' )
+	and carp q{The azel() 'upper' argument is deprecated; use },
+	    q{the azel_offset() 'offset' argument instead};
+    @_ = _expand_args_default_station( @_ );
+    $_[2] = $_[2] ? 1 : 0;
+    goto &azel_offset;
 }
 
 

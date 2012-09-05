@@ -2944,12 +2944,9 @@ foreach my $tle (@bodies) {
 }
 
 {
-    my $lit_deprecated;
-
     sub _lit_deprecated {
-	not $lit_deprecated++
-	    and warn q{The 'lit' parameter is deprecated. Use },
-		q{the 'edge_of_earths_shadow' parameter instead}, "\n";
+	warn q{The 'lit' parameter is deprecated. Use },
+	    q{the 'edge_of_earths_shadow' parameter instead}, "\n";
 	return;
     }
 }
