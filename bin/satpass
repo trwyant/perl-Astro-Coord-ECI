@@ -2266,8 +2266,11 @@ $fh = $hdl;
 #	In addition to the usual command qualifiers, st takes -verbose,
 #	which means to display all data fetched.
 
+my %st_suppress_output;
+
 BEGIN {
-$cmdlgl{st} = [qw{end=s start=s verbose}];
+    $cmdlgl{st} = [qw{end=s start=s verbose}];
+    %st_suppress_output = map { $_ => 1 } '', 'set';
 }
 
 sub st {
@@ -2323,7 +2326,7 @@ if (!$rslt->is_success) {
     __PACKAGE__->_iridium_status (@rest);
     $cmdopt{verbose} and print $rslt->content, "\n";
     }
-  elsif ($content ne 'set' || $cmdopt{verbose}) {
+  elsif ( ! $st_suppress_output{$content} || $cmdopt{verbose}) {
     print $rslt->content, "\n";
     }
 }
