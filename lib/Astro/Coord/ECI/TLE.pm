@@ -7619,7 +7619,7 @@ sub _next_elevation_screen {
              },
   '25262' => {
                'comment' => '',
-               'status' => 1,
+               'status' => 0,
                'name' => 'Iridium 51',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
