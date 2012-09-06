@@ -4,18 +4,16 @@ use strict;
 use warnings;
 
 use POSIX qw{strftime};
-use Test;
+use Test::More 0.88;
 use Time::Local;
 
 eval {
     require LWP::UserAgent;
     1;
 } or do {
-    print "1..0 # skip LWP::UserAgent not available\n";
+    plan skip_all => 'LWP::UserAgent not available';
     exit;
 };
-
-plan tests => 6;
 
 use constant TFMT => '%d %b %Y %H:%M:%S GMT';
 
@@ -24,8 +22,8 @@ my %mth;
     my $inx = 0;
     foreach my $nam (qw{jan feb mar apr may jun jul aug sep oct nov dec}) {
 	$mth{$nam} = $inx++;
-	}
     }
+}
 
 my $fail = 0;
 my $test = 0;
@@ -529,65 +527,76 @@ href="index.htm">Rod Sladen's Home Page</a>]</h6>
 </body>
 </html>
 EOD
-	) {
-    my ($what, $url, $expect, $file, $data) = @$_;
-    $test++;
-    my ($skip, $rslt, $got, $dt) = parse_date ($url);
-    defined $got or $got = 'undef';
-    $dt ||= 0;
-    print <<eod;
-#
-# Test $test: Date of $what
-#       URL: $url
-#    Expect: before @{[strftime TFMT, gmtime $expect]}
-#       Got: $got
-eod
-    skip ($skip, $dt < $expect);
+) {
 
-    $test++;
-    $skip ||= 'No comparison data provided' unless $data;
-    if ($data && $rslt) {
-	$got = $rslt->content ();
-	1 while $got =~ s/\015\012/\n/gm;
-	$skip = '';
+    SKIP: {
+
+	my ($what, $url, $expect, $file, $data) = @$_;
+	my ($skip, $rslt, $got, $dt) = parse_date ($url);
+
+	if ( $skip ) {
+	    my $msg = "$url: $skip";
+	    diag $msg;
+	    skip $msg, 2;
 	}
-      else {
-	$got = $skip ||= 'No known reason';
+
+	defined $got or $got = 'undef';
+	$dt ||= 0;
+        cmp_ok $dt, '<', $expect, "$what last modified before @{[
+		strftime( TFMT, gmtime $expect ) ]}"
+	    or diag "$what actually modified @{[
+		strftime( TFMT, gmtime $dt )]}";
+
+	$test++;
+
+	$data
+	    or skip 'No comparison data provided', 1;
+
+	if ($data && $rslt) {
+	    $got = $rslt->content();
+	    1 while $got =~ s/\015\012/\n/gm;
+	    $skip = '';
+	} else {
+	    $got = $skip ||= 'No known reason';
 	}
-    print <<eod;
+	print <<eod;
 #
 # Test $test: Content of $what
 #       URL: $url
 eod
-    skip ($skip, $got eq $data);
-    unless ($skip || $got eq $data) {
-	if (open (my $fh, '>', "$file.expect")) {
-	    print $fh $data;
-	    close $fh;
-	} else {
-	    warn "Failed to open $file.expect: $!\n";
-	}
-	if (open (my $fh, '>', "$file.got")) {
-	    print $fh $got;
-	    close $fh;
-	} else {
-	    warn "Failed to open $file.got: $!\n";
-	}
-	warn <<eod;
-#
-# Expected and gotten information written to $file.expect and
-# $file.got respectively.
-#
-eod
-	}
-    }
+	is $got, $data, "$what content"
+	    or do {
+	    if (open (my $fh, '>', "$file.expect")) {
+		print $fh $data;
+		close $fh;
+	    } else {
+		diag "Failed to open $file.expect: $!";
+	    }
+	    if (open (my $fh, '>', "$file.got")) {
+		print $fh $got;
+		close $fh;
+	    } else {
+		diag "Failed to open $file.got: $!";
+	    }
+	    diag <<"EOD";
 
-warn <<eod if $fail;
-#
-# Failures in this test script simply mean that the Iridium status
-# information shipped with the package may be out of date.
-#
-eod
+Expected and gotten information written to $file.expect and
+$file.got respectively.
+
+EOD
+	};
+    }
+}
+
+$fail
+    and diag <<'EOD';
+
+Failures in this test script simply mean that the Iridium status
+information shipped with the package may be out of date.
+
+EOD
+
+done_testing;
 
 sub parse_date {
     my ($url) = @_;
