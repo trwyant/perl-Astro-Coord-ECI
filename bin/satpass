@@ -2323,7 +2323,7 @@ if (!$rslt->is_success) {
     __PACKAGE__->_iridium_status (@rest);
     $cmdopt{verbose} and print $rslt->content, "\n";
     }
-  elsif ($content || $cmdopt{verbose}) {
+  elsif ($content ne 'set' || $cmdopt{verbose}) {
     print $rslt->content, "\n";
     }
 }
