@@ -1,3 +1,11 @@
+0.053		2012-09-10	T. R. Wyant
+  Suppress the 'OK' after an st( set => ...) in the satpass script.
+  Address satpass script Term::ReadLine load failures under the test
+    harness by doing the load in an eval, and falling back to the
+    non-ReadLine case.
+  Update the canned status table in Astro::Coord::ECI for the fact that
+    both Sladen and McCants call Iridium 51 (OID 25262) in service.
+
 0.052		2012-09-05	T. R. Wyant
   Per schedule, the following deprecated items will produce a warning on
     each use:
