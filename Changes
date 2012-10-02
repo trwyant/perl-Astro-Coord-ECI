@@ -1,3 +1,10 @@
+0.053_01	2012-10-02	T. R. Wyant
+  INCOMPATIBLE CHANGE: In the JSON representaion of a TLE, the common
+    name of the body is now OBJECT_NAME, not SATNAME. This was done to
+    track the usage of Space Track, which did not previously have the
+    common name in its TLE data. The SATNAME field will still be used if
+    it appears in input, but is being put through a deprecation cycle.
+
 0.053		2012-09-10	T. R. Wyant
   Suppress the 'OK' after an st( set => ...) in the satpass script.
   Address satpass script Term::ReadLine load failures under the test

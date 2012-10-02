@@ -105,7 +105,8 @@ release after March 1 2013, you will get a fatal error on use.
 Use of the L<SATNAME> JSON attribute to represent the common name of the
 satellite is deprecated in favor of the L<OBJECT_NAME> attribute, since
 the latter is what Space Track uses in their TLE data. Beginning with
-[%% next_version %%], JSON output of TLEs will use the new name.
+0.053_01, JSON output of TLEs will use the new name.
+
 Beginning with the first release after April 1 2013, loading JSON TLE
 data which specifies L<SATNAME> will produce a warning the first time it
 happens. Six months after that, there will be a warning every time it
@@ -217,7 +218,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.053';
+our $VERSION = '0.053_01';
 
 use base qw{Astro::Coord::ECI Exporter};
 
