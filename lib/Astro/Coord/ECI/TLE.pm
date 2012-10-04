@@ -6854,7 +6854,13 @@ encoded with a four-digit year.
 	},
 	RCSVALUE	=> 'rcs',
 	REV_AT_EPOCH	=> 'revolutionsatepoch',
-	TLE_LINE0	=> 'name',
+	TLE_LINE0	=> sub {
+	    my ( $self ) = @_;
+	    my $name = $self->get( 'name' );
+	    defined $name
+		and $name = "0 $name";
+	    return $name;
+	},
 	effective_date	=> sub {
 	    my ( $self ) = @_;
 	    return _format_json_time( $self->get( 'effective' ) );
