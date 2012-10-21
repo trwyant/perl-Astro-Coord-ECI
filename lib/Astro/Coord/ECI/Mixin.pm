@@ -8,7 +8,7 @@ use warnings;
 use Carp;
 
 use Astro::Coord::ECI::Utils qw{ __default_station PIOVER2 SECSPERDAY };
-use Exporter qw{ import };
+use Exporter ();
 use POSIX qw{ floor };
 
 our $VERSION = '0.054';
@@ -22,6 +22,11 @@ our %EXPORT_TAGS = (
     almanac	=> [ qw{ almanac almanac_hash } ],
     quarter	=> [ qw{ next_quarter next_quarter_hash } ],
 );
+
+BEGIN {
+    # Because 5.6.2's Exporter does not export 'import()'.
+    *import = \&Exporter::import;
+}
 
 sub almanac {
     my ( $self, $station, $start, $end ) = __default_station( @_ );

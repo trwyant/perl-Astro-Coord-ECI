@@ -7,7 +7,7 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
-use Astro::Coord::ECI::Test qw{ format_time :tolerance };
+use Astro::Coord::ECI::Test qw{ :tolerance format_time };
 use Astro::Coord::ECI::Utils qw{ :time deg2rad PI TWOPI };
 use Test::More 0.88;
 

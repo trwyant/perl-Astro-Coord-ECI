@@ -7,7 +7,7 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
-use Astro::Coord::ECI::Test qw{ format_time :tolerance };
+use Astro::Coord::ECI::Test qw{ :tolerance format_time };
 use Astro::Coord::ECI::SetDelegate;
 use Astro::Coord::ECI::Utils qw{ :time };
 use Test::More 0.88;
