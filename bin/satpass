@@ -2365,10 +2365,8 @@ if ($verb eq 'add' || $verb eq 'drop') {
     die "The 'iridium' subcommand is removed; use 'show' instead\n";
     }
   elsif ( $verb eq 'show' ) {
-    my @data = Astro::Coord::ECI::TLE->status ('show');
+    my @data = Astro::Coord::ECI::TLE->status( 'show', @_ );
     @data = sort {$a->[3] cmp $b->[3]} @data if $cmdopt{name};
-    @_ and @data = _select_matching_data (
-	[map {[$_->[1], $_->[3], $_]} @data], \@_);
     foreach my $tle (@data) {
 	print <<eod;
 status add $tle->[0] $tle->[1] $status_code_map[$tle->[2]] '$tle->[3]' '$tle->[4]'

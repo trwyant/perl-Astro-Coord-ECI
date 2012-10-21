@@ -2088,27 +2088,27 @@ Initially, the status table is populated with the status as of December
 =cut
 
 sub status {
-    shift;	# Ignore the class name.
-    my $cmd = shift;
+    my ( $class, $cmd, @arg ) = @_;
     if ($cmd eq 'add') {
-	my $id = shift or croak <<eod;
+	my ( $id, $type, $status, $name, $comment ) = @arg;
+	$id or croak <<eod;
 Error - The status ('add') call requires a NORAD ID.
 eod
 	$id =~ m/ \D /smx
 	    or $id = sprintf '%05d', $id;
-	my $type = shift or croak <<eod;
+	$type or croak <<eod;
 Error - The status (add => $id) call requires a type.
 eod
 	my $class = $type_map{$type} || $type;
 	__classisa( $class, __PACKAGE__ ) or croak <<eod;
 Error - $type must specify a subclass of @{[__PACKAGE__]}.
 eod
-	my $status = shift || 0;
+	$status ||= 0;
 	if ( my $code = $class->can( '__decode_operational_status' ) ) {
 	    $status = $code->( $status );
 	}
-	my $name = shift || '';
-	my $comment = shift || '';
+	$name ||= '';
+	$comment ||='';
 	$status{$id} = {
 	    comment => $comment,
 	    status => $status,
@@ -2118,7 +2118,7 @@ eod
 	    class => $class,
 	};
     } elsif ($cmd eq 'clear') {
-	my $type = shift;
+	my ( $type ) = @arg;
 	if (!defined $type) {
 	    %status = ();
 	} else {
@@ -2131,21 +2131,32 @@ eod
 	    }
 	}
     } elsif ($cmd eq 'drop') {
-	my $id = shift or croak <<eod;
+	my $id = $arg[0] or croak <<eod;
 Error - The status ('drop') call requires a NORAD ID.
 eod
 	delete $status{$id};
     } elsif ($cmd eq 'dump') {	# <<<< Undocumented!!!
 	local $Data::Dumper::Terse = 1;
-	print __PACKAGE__, " status = ", Dumper (\%status);
+	local $Data::Dumper::Sortkeys = 1;
+	my $data = @arg ?
+	    +{ map { $_ => $status{$_} } grep { $status{$_} } @arg } :
+	    \%status;
+	print __PACKAGE__, " status = ", Dumper ( $data );
     } elsif ($cmd eq 'show') {
-	return (sort {$a->[0] <=> $b->[0]}
-	    map {[$_->{id}, $_->{type}, $_->{status}, $_->{name},
-	    $_->{comment}]} values %status);
+	return (
+	    sort { $a->[0] <=> $b->[0] }
+	    map { [ $_->{id}, $_->{type}, $_->{status}, $_->{name},
+		$_->{comment} ] }
+	    map { defined $status{$_} ? $status{$_} : () }
+	    @arg ? @arg : keys %status
+	);
     } elsif ($cmd eq 'yaml') {	# <<<< Undocumented!!!
 	load_module( 'YAML' )
 	    or croak 'YAML not available';
-	print YAML::Dump( \%status );
+	my $data = @arg ?
+	    +{ map { $_ => $status{$_} } grep { $status{$_} } @arg } :
+	    \%status;
+	print YAML::Dump( $data );
     } else {
 	croak <<eod;
 Error - '$cmd' is not a legal status() command.
