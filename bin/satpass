@@ -3140,6 +3140,13 @@ eod
 
 BEGIN {
     eval {
+
+	# Workaround for bug (well, _I_ think it's a bug) introduced
+	# into Date::Manip with 6.34, while fixing RT #78566. My bug
+	# report is RT #80435.
+	my $path = $ENV{PATH};
+	local $ENV{PATH} = $path;
+
 	require Date::Manip;
 
 	my $tz_init = grep { m/ \A TZ= /smx } Date::Manip::Date_Init();
