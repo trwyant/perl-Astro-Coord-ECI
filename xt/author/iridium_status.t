@@ -28,7 +28,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm( 0, 0, 0, 20, 9, 112 );
+my $asof = timegm( 0, 0, 0, 29, 9, 112 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -45,8 +45,8 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of July, 2012
-===============================
+Iridium status as of October, 2012
+==================================
 
 Iridiums not listed in the following table are thought to be stable
 in orbit and capable of generating flares.
@@ -88,8 +88,10 @@ Mar. 2, 2009:  Iridium 91 was placed into service to replace Iridium 33
 Nov. 3, 2010:  Iridium 11 was placed into service next to Iridium 23
 Aug. 8, 2011:  Iridium 26 apparently failed.  Replaced by Iridium 11.
 July, 2012:    Iridium 51 was moved next to Iridium 7
+July 20, 2012: Iridium 4 is no longer station keeping
 
  NCat    Name           Status   Comment
+ 24796   Iridium 4      unc      Failed? No longer station keeping after July 20, 2012
  24836   Iridium 914    tum      Failed; was called Iridium 14
  24841   Iridium 16     tum      Removed from operation about April 7, 2005
  24842   Iridium 911    tum      Failed; was called Iridium 11
