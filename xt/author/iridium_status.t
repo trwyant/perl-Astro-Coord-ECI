@@ -28,7 +28,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm( 0, 0, 0, 29, 9, 112 );
+my $asof = timegm( 0, 0, 0, 16, 10, 112 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -261,7 +261,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated July 27, 2012 **</strong></p>
+<p align="center"><strong>** Updated November 15, 2012**</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -271,25 +271,27 @@ Failures</a>.</p>
 <p><strong>Latest changes </strong>(see below for earlier
 changes): </p>
 
-<p>*** In late July 2012,<a href="iridium7and51.htm"> Iridium 51
-(25262, 1998-018A). which had been out of the operational
-constellation for many years, was moved in the postion previously
-occupied by Iridium 7 (24793, 1997-020B)</a>, while Iridum 7 was
-moved to follow slightly behind it. The two satellites are each
-providing some of the functionality for the given slot. Orbital
-Plane 4 has no other spare satellite. ***</p>
+<p>*** On 13 November, 2012, Iridium 94 (27374, 2002-005C), which
+had been migrating over the past year from orbital place 3,
+arrived at orbital plane 2, and was immediately raised to
+operational altitude to replace Iridium 23 (24906, 1997-043D)
+which had evidently failed, though retaining at least some
+functionality. Iridium 23 remains at operational altitude a few
+seconds behind Iridium 94 ***</p>
 
 <pre>Orbital  &lt;-------- Operational satellites --------&gt;   Spares
 Plane
 Plane 1:  <a href="iridium74and21.htm">21</a>  72  75  70  62  63  64  65  66  67  68   14; <a
 href="iridium74and21.htm">74</a> (partial failure?)
-Plane 2:  22  <a href="iridium11and23.htm">23</a>  76  25  45  46  47  20  49  <a
-href="iridium11and26.htm">11</a>   3   <a href="iridium94.htm">94 (launched to plane 3, but is evidently in the process of being migrated to plane 2)</a>
+Plane 2:  22  <a href="iridium94.htm">94</a>z 76  25  45  46  47  20  49  <a
+href="iridium11and26.htm">11</a>   3   <a
+href="iridium11and23.htm">23</a>z (spare, presumably partial failure, but remains at operational altitude, a few seconds behind Iridium 94)
 Plane 3:  55  <a href="iridium28and95.htm">95</a>  29  <a
 href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32  <a
 href="iridium33collision.htm">91</a>  57  58  59  60   96  
 Plane 4:  19  34  35  <a href="iridium36and97.htm">97</a>   <a
-href="iridium5and51.htm">5</a>@  6  <a href="iridium7and51.htm">51/7</a> 8   4  37  61   
+href="iridium5and51.htm">5</a>@  6  <a href="iridium7and51.htm">51/7</a> 8   <font
+color="#FF0000"><em>4</em></font>  37  61   <em>[note that Iridium  4 is no longer maintaining its position in the constellation]</em>
 Plane 5:  50  56  52  53  <a href="iridium9and84.htm">84</a>  10  54  12  13  83  <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
 Plane 6:  18  42  40  39  80  <a href="iridium17and77.htm">77</a>  15  81  <a
@@ -302,7 +304,7 @@ Plane                                          <em>     </em>
 Plane 1:  73t
 Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           48d
 Plane 3:  <a href="iridium28and95.htm">28</a>   <a
-href="iridium33collision.htm"><font color="#FF0000">33</font></a>t                    27d           <em>Iridium 33 was fragmented by the collison of February 10, 2009</em>
+href="iridium33collision.htm"><font color="#FF0000">33</font></a>t                    27d           <em>Iridium 33 was fragmented by the collison with Cosmos 2251 on February 10, 2009</em>
 Plane 4:  <a href="iridium36and97.htm">36</a>t
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          85d   <a
 href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
@@ -371,6 +373,14 @@ which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
 
+<p>On 13 November, 2012, Iridium 94 (27374, 2002-005C), which had
+been migrating over the past year from orbital place 3, arrived
+at orbital plane 2, and was immediately raised to operational
+altitude to replace Iridium 23 (24906, 1997-043D) which had
+evidently failed, though retaining at least some functionality.
+Iridium 23 remains at operational altitude a few seconds behind
+Iridium 94.</p>
+
 <p>In late July 2012,<a href="iridium7and51.htm"> Iridium 51
 (25262, 1998-018A). which had been out of the operational
 constellation for many years, was moved in the postion previously
@@ -435,8 +445,8 @@ evidently failed on station. </p>
 one of two spare satellites in orbital plane 1, was raised to
 operational altitude, presumably to <a href="iridium74and21.htm">replace</a>
 Iridium 74 (25345, 1998-032B),. which was lowered to the
-engineering orbit. It is as yet unclear whether Iridium 74 has
-failed completely</p>
+engineering orbit. It is unclear whether Iridium 74 has failed
+completely</p>
 
 <p>On January 1, 2006, the Spacecom labelling of <a
 href="iridium90and%2091.htm">Iridium 90 and Iridium 91</a> was
