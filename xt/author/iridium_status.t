@@ -28,7 +28,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm( 0, 0, 0, 16, 10, 112 );
+my $asof = timegm( 0, 0, 0, 23, 10, 112 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -261,7 +261,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated November 15, 2012**</strong></p>
+<p align="center"><strong>** Updated November 22, 2012**</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -270,6 +270,13 @@ Failures</a>.</p>
 
 <p><strong>Latest changes </strong>(see below for earlier
 changes): </p>
+
+<p>*** On 20 November, 2012, Iridium 96 (27376, 2002-005e),
+previously spare in orbital place 3, begain migrating towards
+orbital plane 4, which currently has no on-orbit spare, This will
+leave orbital place 3 withour a spare. The migration is likely to
+take around twelve months. The intention may be for Iridium 96 to
+take over from Iridium 4 (24796, 1997-020E). ***</p>
 
 <p>*** On 13 November, 2012, Iridium 94 (27374, 2002-005C), which
 had been migrating over the past year from orbital place 3,
@@ -288,7 +295,7 @@ href="iridium11and26.htm">11</a>   3   <a
 href="iridium11and23.htm">23</a>z (spare, presumably partial failure, but remains at operational altitude, a few seconds behind Iridium 94)
 Plane 3:  55  <a href="iridium28and95.htm">95</a>  29  <a
 href="iridium30and31.htm">31</a>  <a href="iridium30and31.htm">30</a>  32  <a
-href="iridium33collision.htm">91</a>  57  58  59  60   96  
+href="iridium33collision.htm">91</a>  57  58  59  60   96  (launched to plane 3, but now migrating towards plane 4)
 Plane 4:  19  34  35  <a href="iridium36and97.htm">97</a>   <a
 href="iridium5and51.htm">5</a>@  6  <a href="iridium7and51.htm">51/7</a> 8   <font
 color="#FF0000"><em>4</em></font>  37  61   <em>[note that Iridium  4 is no longer maintaining its position in the constellation]</em>
@@ -373,6 +380,14 @@ which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
 
+<p>On 20 November, 2012, Iridium 96 (27376, 2002-005E),
+previously the spare satellite in orbital place 3, begain
+migrating towards orbital plane 4, which currently has no
+on-orbit spare, This leaves orbital place 3 withour a spare. The
+migration is likely to take around twelve months. The intention
+may be for Iridium 96 to take over from Iridium 4 (24796,
+1997-020E)</p>
+
 <p>On 13 November, 2012, Iridium 94 (27374, 2002-005C), which had
 been migrating over the past year from orbital place 3, arrived
 at orbital plane 2, and was immediately raised to operational
@@ -380,6 +395,10 @@ altitude to replace Iridium 23 (24906, 1997-043D) which had
 evidently failed, though retaining at least some functionality.
 Iridium 23 remains at operational altitude a few seconds behind
 Iridium 94.</p>
+
+<p>In mid 2012, Iridium 4 (24796, 1997-020E) ceased to maintain
+its position in the constellation. Plane 4 currently has no
+on-orbit spare</p>
 
 <p>In late July 2012,<a href="iridium7and51.htm"> Iridium 51
 (25262, 1998-018A). which had been out of the operational
@@ -398,7 +417,7 @@ over from Iridium 26</a> (24903, 1997-043A). <br>
 This suggests that Iridium 26 must have failed on station, and
 also that Iridium 23 retained some functionality. <br>
 Orbital Plane 2 had no other spare satellite, but <a
-href="iridium94.htm">Iridium 94 (27374, 2002-005C) is in process
+href="iridium94.htm">Iridium 94 (27374, 2002-005C) was in process
 of migrating</a> from Orbital Place 3.</p>
 
 <p>In early November 2010, Iridium 11 (originally 25577,
@@ -494,8 +513,10 @@ for more details on the launch. This launch was directed at
 orbital plane 3, which previously had no spares. Perhaps
 surprisingly, there was initially no indication that it was
 intended to drift some of the spares to other orbital planes.
-Hoever, Iridium 90 (initially labelled as Iridium 91) was
-subesquently moved to orbital plane 5.</p>
+However, Iridium 90 (initially labelled as Iridium 91) was
+subesquently moved to orbital plane 5, and Iridium 94 was later
+moved to orbital plane 2. Iridium 96 is now being moved towards
+plane 4.</p>
 
 <p>@ <a href="iridium5and51.htm">Iridium 5 and Iridium 51 were
 confused</a> during August 2001.</p>
