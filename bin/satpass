@@ -1138,15 +1138,12 @@ sub _geocode_us_join {
     return join ' ', grep { defined $_ && '' ne $_ } map { $info->{$_} } @keys;
 }
 
-my $soap_lite_deprecated;
-
 sub _geocode_us__soap_lite {
     my ( $loc ) = @_;
     my $set_loc = defined $loc;
     defined $loc or $loc = $parm{location};
 
-    $soap_lite_deprecated++
-	or warn 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
+    warn 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
 
     #	Manufacture a SOAP::Lite object appropriate to the version of
     #	SOAP::Lite we have installed.

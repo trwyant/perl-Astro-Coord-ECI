@@ -37,10 +37,8 @@ for an example involving satellite pass prediction.
 
 The two-argument form of the C<azel()> method is deprecated in favor of
 the two-argument form of the C<azel_offset()> method, and a warning will
-be issued the first time it is used. On the first release on or after
-September 1 2012, you will get a warning on C<every> use. On the first
-release at least six months after that, you will get a fatal error when
-you make a two-argument call to C<azel()>.
+be issued on C<every> use. On the first after April 1 2013 you will get
+a fatal error when you make a two-argument call to C<azel()>.
 
 Release 0.049_01 contains a consolidation of coordinate transform code
 which inadvertently prevented the Doppler shift from being returned by
@@ -398,6 +396,8 @@ version the orbiting body is the invocant.
 
 =cut
 
+my $deprecate_frequency;
+
 sub azel_offset {
     my ( $self, $trn2, $offset ) = _expand_args_default_station( @_ );
     $self->{debug} and do {
@@ -421,6 +421,12 @@ sub azel_offset {
 	my $freq = $trn2->get( 'frequency' );
 	if ( not defined $freq ) {
 	    $freq = $self->get( 'frequency' );
+	    defined $freq
+		and not $deprecate_frequency++
+		and warnings::enabled( 'deprecated' )
+		and carp 'Specification of frequency on the ',
+		    'observing station is deprecated, and will ',
+		    'become an error in a future release';
 	    # TODO deprecate frequency from station.
 	}
 	if ( defined $freq ) {
