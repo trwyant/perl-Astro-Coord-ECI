@@ -1,3 +1,10 @@
+0.056		2012-12-08	T. R. Wyant
+  Deprecation warnings:
+  * The Doppler calculation warns the first time the frequency comes
+    from the station rather than the satellite.
+  * The satpass script warns every time geocoding is done if
+    Geo::Coder::Geocoder::US is not installed.
+
 0.055		2012-10-27	T. R. Wyant
   Workaround for problem with Date::Manip clobbering $ENV{PATH} when it
     is loaded.
