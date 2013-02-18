@@ -28,7 +28,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm( 0, 0, 0, 23, 10, 112 );
+my $asof = timegm( 0, 0, 14, 18, 1, 113 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -89,6 +89,7 @@ Nov. 3, 2010:  Iridium 11 was placed into service next to Iridium 23
 Aug. 8, 2011:  Iridium 26 apparently failed.  Replaced by Iridium 11.
 July, 2012:    Iridium 51 was moved next to Iridium 7
 July 20, 2012: Iridium 4 is no longer station keeping
+Nov. 13, 2012: Iridium 94 was placed into service next to Iridium 23.
 
  NCat    Name           Status   Comment
  24796   Iridium 4      unc      Failed? No longer station keeping after July 20, 2012
@@ -118,7 +119,7 @@ July 20, 2012: Iridium 4 is no longer station keeping
  25778   Iridium 21              Replaced Iridium 74   was called Iridium 21A
  27372   Iridium 91              Replaced Iridium 33 about Mar. 2, 2009   was called Iridium 90
  27373   Iridium 90     ?        Spare (new plane Jan. 2008)   was called Iridium 91
- 27374   Iridium 94     ?        Spare
+ 27374   Iridium 94              Next to Iridium 23
  27375   Iridium 95              Replaced Iridium 28 about July 26, 2008
  27376   Iridium 96     ?        Spare
  27450   Iridium 97              Replaced Iridium 36 on Jan. 10, 2007
@@ -133,9 +134,6 @@ tum     tumbling - no flares, but flashes seen on favorable transits.
 unc     uncontrolled
 
 ?       controlled, but not at operational altitude - flares may be unreliable.
-
-man     maneuvering, at least slightly. Flares may be unreliable and the
-        object may be early or late against prediction.
 
 ===================================
 
