@@ -1139,56 +1139,7 @@ sub _geocode_us_join {
 }
 
 sub _geocode_us__soap_lite {
-    my ( $loc ) = @_;
-    my $set_loc = defined $loc;
-    defined $loc or $loc = $parm{location};
-
-    warn 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
-
-    #	Manufacture a SOAP::Lite object appropriate to the version of
-    #	SOAP::Lite we have installed.
-
-    $cmdopt{debug} and SOAP::Trace->import ('all');
-    my $soap = _soapdish ('http://rpc.geocoder.us/Geo/Coder/US',
-	    'http://geocoder.us/service/soap', '#');
-
-    #	Query rpc.geocoder.us, and strain out various errors we might
-    #	get back.
-
-    my $rslt = $soap->geocode ($loc)->result;
-    $cmdopt{debug} and SOAP::Trace->import ('all');
-    $rslt or die <<'EOD';
-Error - Failed to access geocoder.us.
-EOD
-
-    local $Data::Dumper::Terse = 1;
-    $cmdopt{debug} and print "Result: ", Dumper ($rslt), "\n";
-
-    @$rslt or die <<"EOD";
-Error - Failed to parse address
-        "$loc".
-EOD
-    $rslt->[0]{lat} or die <<"EOD";
-Error - Failed to find address
-        "$loc".
-EOD
-
-    #	Display our results.
-
-    foreach my $hash (@{ $rslt }) {
-	print "\n", $hash->format_multiline, "\n";
-    }
-
-    #	If we got exactly one result back, set our latitude and
-    #	longitude, and query for height if desired.
-
-    if (@$rslt == 1) {
-	$set_loc and $parm{location} = $rslt->[0]->format_line;
-	@parm{qw{latitude longitude}} = @{$rslt->[0]}{qw{lat long}};
-	print "\n";
-	show (($set_loc ? 'location' : ()), qw{latitude longitude});
-	_geocode_height ();
-    }
+    die 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
 }
 
 #	We have the following synonyms, based on the fact that ISO 3166
@@ -3408,37 +3359,6 @@ $rslt[4] and $rslt[4] /= 1000;
 wantarray ? @rslt : join ' ', @rslt;
 }
 
-
-#	$soap_object = _soapdish ($uri, $proxy, $action)
-
-#	Manufacture a SOAP::Lite object for the given uri and proxy.
-#	We need this because SOAP::Lite has changed significantly since
-#	the 2002 version that is to this day (2006) bundled with
-#	ActivePerl.
-
-#	The action argument is the separater for building the
-#	SOAPAction header. It defaults to '' (suitable for .NET's
-#	delicate digestion). If you want to restore SOAP::Lite's
-#	original behavior, specify '#'. Any other values are
-#	_NOT_ supported, and may result in a visit from unsympathetic
-#	men in snap-brim hats, dark glasses, and bad suits.
-
-sub _soapdish {
-    my ( $uri, $proxy, $action ) = @_;
-    defined $action
-	or $action = '';
-    return SOAP::Lite->can( 'default_ns' ) ?
-	SOAP::Lite
-	    ->default_ns( $uri )
-	    ->on_action(sub { return join $action, @_ } )
-	    ->proxy( $proxy, timeout => 30 ) :
-	SOAP::Lite
-	    ->envprefix( 'soap' )
-	    ->on_action( sub { return join $action, @_ } )
-	    ->uri( $uri )
-	    ->proxy( $proxy, timeout => 30 );
-}
-
 #	@list = _sort_observing_list ()
 
 #	This subroutine sorts the observing list into ascending order
@@ -3861,13 +3781,9 @@ to decouple how high a pass need to be to be reported from how high the
 horizon is.
 
 The use of the L<SOAP::Lite|SOAP::Lite> interface to
-L<http://geocoder.us> is deprecated in favor of the
-L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> module. With this
-release, a deprecation warning will be issued the first time you
-geocode, if you have L<SOAP::Lite|SOAP::Lite> installed but not
-L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>.  At the first
-release after December 1 2012 this will become a warning on every use,
-and after another six months this will become fatal.
+L<http://geocoder.us> is no longer supported.  As of version 0.057,
+attempting to geocode without
+L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> is a fatal error.
 
 The C<status iridium> command is now fatal. It has been deprecated in
 favor of C<status show> for some time now, and has warned on every use
@@ -3879,11 +3795,6 @@ deprecated, and a warning will be issued the first time it is accessed.
 Starting in the first release on or after September 1 2012, a warning
 will be issued at every use, and six months (plus) after that, it will
 be a fatal error.
-
-The C<geocode> command now prefers to use
-L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US>. The use of
-L<SOAP::Lite|SOAP::Lite> is deprecated, and will result in a warning in
-the first release after June 1 2012.
 
 A production version of the C<Asto-App-Satpass2> package, which is the
 planned successor to this script, was released February 5 2012.
