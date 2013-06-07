@@ -36,9 +36,8 @@ for an example involving satellite pass prediction.
 =head1 NOTICE
 
 The two-argument form of the C<azel()> method is deprecated in favor of
-the two-argument form of the C<azel_offset()> method, and a warning will
-be issued on C<every> use. On the first after April 1 2013 you will get
-a fatal error when you make a two-argument call to C<azel()>.
+the two-argument form of the C<azel_offset()> method, and a fatal error
+will be thrown on every use.
 
 Release 0.049_01 contains a consolidation of coordinate transform code
 which inadvertently prevented the Doppler shift from being returned by
@@ -67,8 +66,8 @@ C<Astro::Coord::ECI> object.
 
 =item
 
-It adds method equatorial_apparent() has been introduced, to give
-the position of a body relative to its C<station> attribute.
+It adds method equatorial_apparent(), to give the position of a body
+relative to its C<station> attribute.
 
 =item
 
@@ -266,20 +265,13 @@ attribute, or undef if the attribute name is not valid.
 sub attribute {return exists $mutator{$_[1]} ? __PACKAGE__ : undef}
 
 
-=item ($azimuth, $elevation, $range) = $coord->azel ($coord2, $upper);
+=item ($azimuth, $elevation, $range) = $coord->azel( $coord2 );
 
 This method takes another coordinate object, and computes its azimuth,
 elevation, and range in reference to the object doing the computing.
 The return is azimuth in radians measured clockwise from North (always
 positive), elevation above the horizon in radians (negative if
 below), and range in kilometers.
-
-If the optional 'upper' argument is true, the calculation will be of
-the upper limb of the object, using the 'diameter' attribute of the
-$coord2 object.
-
-The C<$upper> argument is B<deprecated>, and will be removed in a future
-release.
 
 As a side effect, the time of the $coord object may be set from the
 $coord2 object.
@@ -294,22 +286,19 @@ methods, the C<$coord> object's method is used.
 This method is implemented in terms of azel_offset(). See that method's
 documentation for further details.
 
-=item ( $azimuth, $elevation, $range ) = $coord->azel( $upper );
+=item ( $azimuth, $elevation, $range ) = $coord->azel();
 
 This method computes the azimuth, elevation, and range if the C<$coord>
 object as seen from the position stored in the C<$coord> object's
 C<station> attribute. An exception will be thrown if the C<station>
 attribute is not set.
 
-The C<$upper> argument is as above, including the deprecation.
-
 =cut
 
 
 sub azel {	## no critic (RequireArgUnpacking)
     @_ > 2
-	and warnings::enabled( 'deprecated' )
-	and carp q{The azel() 'upper' argument is deprecated; use },
+	and croak q{The azel() 'upper' argument is deprecated; use },
 	    q{the azel_offset() 'offset' argument instead};
     @_ = _expand_args_default_station( @_ );
     $_[2] = $_[2] ? 1 : 0;
