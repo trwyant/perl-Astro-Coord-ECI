@@ -106,11 +106,11 @@ satellite is deprecated in favor of the L<OBJECT_NAME> attribute, since
 the latter is what Space Track uses in their TLE data. Beginning with
 0.053_01, JSON output of TLEs will use the new name.
 
-Beginning with the first release after April 1 2013, loading JSON TLE
-data which specifies L<SATNAME> will produce a warning the first time it
-happens. Six months after that, there will be a warning every time it
-happens. A further six months later, loading JSON TLE data which
-specifies L<SATNAME> will become a fatal error.
+Beginning with release 0.056, loading JSON TLE data which specifies
+L<SATNAME> will produce a warning the first time it happens. Six months
+after that, there will be a warning every time it happens. A further six
+months later, loading JSON TLE data which specifies L<SATNAME> will
+become a fatal error.
 
 =head1 DESCRIPTION
 
@@ -7009,6 +7009,8 @@ encoded with a four-digit year.
 	return $rslt;
     }
 
+    my $satname_deprecated;
+
     sub _parse_json {
 	my ( $self, @args ) = @_;
 	defined $have_json
@@ -7029,6 +7031,10 @@ BODY_LOOP:
 		$decode ) {
 
 		if ( exists $hash->{SATNAME} ) {	# TODO Deprecated
+		    not $satname_deprecated++
+			and warnings::enabled( 'deprecated' )
+			and carp 'The SATNAME JSON key is deprecated ',
+			    'in favor of the OBJECT_NAME key';
 		    exists $hash->{OBJECT_NAME}
 			or $hash->{OBJECT_NAME} = $hash->{SATNAME};
 		    delete $hash->{SATNAME};
