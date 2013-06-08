@@ -97,10 +97,9 @@ actually be visible above the threshold to be reported. This is actually
 how the attribute would have worked when introduced if I had thought it
 through clearly.
 
-The C<limb> attribute is deprecated in favor of the
-L<Astro::Coord::ECI|Astro::Coord::ECI> C<edge_of_earths_shadow>
-attribute, and you will get a warning on C<every> use. On the first
-release after March 1 2013, you will get a fatal error on use.
+The C<limb> attribute has been removed. Attempts to use it will result
+in a fatal error. Use the L<Astro::Coord::ECI|Astro::Coord::ECI>
+C<edge_of_earths_shadow> attribute instead.
 
 Use of the L<SATNAME> JSON attribute to represent the common name of the
 satellite is deprecated in favor of the L<OBJECT_NAME> attribute, since
@@ -329,10 +328,8 @@ use constant SGP_RHO => .15696615;
 # attribute.
 {
     sub __limb_deprecation {
-	warnings::enabled( 'deprecated' )
-	    and carp q{The 'limb' attribute is deprecated; use the },
+	croak q{The 'limb' attribute has been removed; use the },
 		q{'edge_of_earths_shadow' attribute instead};
-	return;
     }
 }
 
@@ -8387,13 +8384,9 @@ This attribute tells the pass() method how to compute illumination
 of the body. If true, it is computed based on the upper limb of the
 source of illumination; if false, it is based on the center.
 
-This attribute is B<deprecated>, in favor of the superclass'
-C<edge_of_earths_shadow> attribute, which it is implemented in terms of.
-The mutator sets C<edge_of_earths_shadow> to C<1> for a true value or
-C<0> for a false value.  The accessor returns true for B<any> non-zero
-value of C<edge_of_earths_shadow>.
-
-The default is 1 (i.e. true).
+This attribute has been removed in favor of the superclass'
+C<edge_of_earths_shadow> attribute. Any attempt to use it will result in
+a fatal error.
 
 =item meananomaly (numeric, parse)
 
