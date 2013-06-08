@@ -97,16 +97,17 @@ actually be visible above the threshold to be reported. This is actually
 how the attribute would have worked when introduced if I had thought it
 through clearly.
 
-The C<limb> attribute has been removed. Attempts to use it will result
-in a fatal error. Use the L<Astro::Coord::ECI|Astro::Coord::ECI>
-C<edge_of_earths_shadow> attribute instead.
+The C<limb> attribute has been removed as of version [%% next_version %%].
+Attempts to use it will result in a fatal error. Use the
+L<Astro::Coord::ECI|Astro::Coord::ECI> C<edge_of_earths_shadow>
+attribute instead.
 
 Use of the L<SATNAME> JSON attribute to represent the common name of the
 satellite is deprecated in favor of the L<OBJECT_NAME> attribute, since
 the latter is what Space Track uses in their TLE data. Beginning with
 0.053_01, JSON output of TLEs will use the new name.
 
-Beginning with release 0.056, loading JSON TLE data which specifies
+Beginning with release [%% next_version %%], loading JSON TLE data which specifies
 L<SATNAME> will produce a warning the first time it happens. Six months
 after that, there will be a warning every time it happens. A further six
 months later, loading JSON TLE data which specifies L<SATNAME> will
@@ -8390,9 +8391,9 @@ This attribute tells the pass() method how to compute illumination
 of the body. If true, it is computed based on the upper limb of the
 source of illumination; if false, it is based on the center.
 
-This attribute has been removed in favor of the superclass'
-C<edge_of_earths_shadow> attribute. Any attempt to use it will result in
-a fatal error.
+This attribute has been removed as of version [%% next_version %%] in
+favor of the superclass' C<edge_of_earths_shadow> attribute. Any attempt
+to use it will result in a fatal error.
 
 =item meananomaly (numeric, parse)
 

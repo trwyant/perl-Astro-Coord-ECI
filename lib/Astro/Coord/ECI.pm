@@ -35,9 +35,10 @@ for an example involving satellite pass prediction.
 
 =head1 NOTICE
 
-The two-argument form of the C<azel()> method is deprecated in favor of
-the two-argument form of the C<azel_offset()> method, and a fatal error
-will be thrown on every use.
+The two-argument form of the C<azel()> method is removed in favor of
+the two-argument form of the C<azel_offset()> method. As of version 
+[%% next_version %%] a fatal error will be thrown on every use of the
+two-argument form of C<azel()>.
 
 Release 0.049_01 contains a consolidation of coordinate transform code
 which inadvertently prevented the Doppler shift from being returned by
@@ -298,7 +299,7 @@ attribute is not set.
 
 sub azel {	## no critic (RequireArgUnpacking)
     @_ > 2
-	and croak q{The azel() 'upper' argument is deprecated; use },
+	and croak q{The azel() 'upper' argument is removed; use },
 	    q{the azel_offset() 'offset' argument instead};
     @_ = _expand_args_default_station( @_ );
     $_[2] = $_[2] ? 1 : 0;

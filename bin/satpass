@@ -3781,7 +3781,7 @@ to decouple how high a pass need to be to be reported from how high the
 horizon is.
 
 The use of the L<SOAP::Lite|SOAP::Lite> interface to
-L<http://geocoder.us> is no longer supported.  As of version 0.057,
+L<http://geocoder.us> is no longer supported.  As of version [%% next_version %%],
 attempting to geocode without
 L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> is a fatal error.
 
@@ -5364,11 +5364,8 @@ If true (i.e. 1) it is considered to be lit if the upper limb of the
 sun is above the horizon, as seen from the body. If false (i.e. 0), the
 body is considered lit if the center of the sun is above the horizon.
 
-This badly-named parameter corresponds to the equally-badly-named
-L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute.
-
-This parameter has been removed, and use of it will generate a fatal
-error. Please use the
+This parameter has been removed as of version [%% next_version %%], and
+use of it will generate a fatal error. Please use the
 L<edge_of_earths_shadow|/edge_of_earths_shadow> parameter instead.
 
 =for html <a name="local_coord"></a>
