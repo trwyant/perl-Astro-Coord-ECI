@@ -43,15 +43,16 @@ two-argument form of C<azel()>.
 Release 0.049_01 contains a consolidation of coordinate transform code
 which inadvertently prevented the Doppler shift from being returned by
 the C<azel()> and C<azel_offset()> methods. This has been rectified by
-release 0.050_01. B<But> while doing this work I realized that the
-Doppler calculation was using the C<frequency> attribute of the
-observing station, not the satellite. The reinstated code will take the
-C<frequency> from either place, but prefers the satellite. I intend to
-deprecate the use of the observer's C<frequency> attribute in the usual
-way. Six months (plus) from the release of 0.051, the first use of the
-observer's C<frequency> attribute will result in a warning. Six months
-after that, every use will result in a warning, and in another six
-months it will become fatal.
+release 0.050_01.
+
+While doing this work I realized that the Doppler calculation was using
+the C<frequency> attribute of the observing station, not the satellite.
+The reinstated code will take the C<frequency> from either place, but
+prefers the satellite. I intend to deprecate the use of the observer's
+C<frequency> attribute in the usual way. As of version [%% next_version %%],
+the first use of the observer's C<frequency> attribute will result in a
+warning. Six months after that, every use will result in a warning, and
+in another six months it will become fatal.
 
 Release 0.047_01 contains a number of changes to the handling of
 relative positions:
@@ -357,6 +358,10 @@ farther away from the Equator), elevational velocity in radians per
 second, and velocity in recession in kilometers per second, in that
 order.
 
+If velocities are available for both bodies B<and> the C<$coord2> object
+has its C<frequency> attribute set, the returned array will contain
+seven elements, with the seventh being the Doppler shift.
+
 The algorithm for recessional velocity comes from John A. Magliacane's
 C<Predict> program, available at
 L<http://www.qsl.net/kd2bd/predict.html>. The transverse velocity
@@ -373,7 +378,7 @@ for the C<frequency> attribute, you will get the Doppler shift as the
 seventh element of the returned array. The I<caveats> about velocity in
 recession apply to the Doppler shift as well. The frequency can come
 from either the C<$coord> or C<$coord2> object, but the C<$coord2> is
-preferred, and getting frequency from the C<$coord> object will be put
+preferred, and getting frequency from the C<$coord> object is being put
 through a deprecation cycle and removed.
 
 =item ( $azimuth, $elevation, $range ) = $coord->azel_offset( $offset );
@@ -384,9 +389,11 @@ C<station> attribute. The functionality is as above, except for the fact
 that in the above version the station is the invocant, whereas in this
 version the orbiting body is the invocant.
 
-=cut
+This version also returns velocities if they are available for both
+bodies, and Doppler shift if in addition the C<frequency> attribute of
+the invocant is set.
 
-my $deprecate_frequency;
+=cut
 
 sub azel_offset {
     my ( $self, $trn2, $offset ) = _expand_args_default_station( @_ );
@@ -412,7 +419,6 @@ sub azel_offset {
 	if ( not defined $freq ) {
 	    $freq = $self->get( 'frequency' );
 	    defined $freq
-		and not $deprecate_frequency++
 		and warnings::enabled( 'deprecated' )
 		and carp 'Specification of frequency on the ',
 		    'observing station is deprecated, and will ',
