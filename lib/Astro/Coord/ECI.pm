@@ -37,7 +37,7 @@ for an example involving satellite pass prediction.
 
 The two-argument form of the C<azel()> method is removed in favor of
 the two-argument form of the C<azel_offset()> method. As of version 
-[%% next_version %%] a fatal error will be thrown on every use of the
+0.056_01 a fatal error will be thrown on every use of the
 two-argument form of C<azel()>.
 
 Release 0.049_01 contains a consolidation of coordinate transform code
@@ -49,7 +49,7 @@ While doing this work I realized that the Doppler calculation was using
 the C<frequency> attribute of the observing station, not the satellite.
 The reinstated code will take the C<frequency> from either place, but
 prefers the satellite. I intend to deprecate the use of the observer's
-C<frequency> attribute in the usual way. As of version [%% next_version %%],
+C<frequency> attribute in the usual way. As of version 0.056_01,
 the first use of the observer's C<frequency> attribute will result in a
 warning. Six months after that, every use will result in a warning, and
 in another six months it will become fatal.
@@ -143,7 +143,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.056';
+our $VERSION = '0.056_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;

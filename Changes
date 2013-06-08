@@ -1,3 +1,19 @@
+0.056_01	2013-06-08	T. R. Wyant
+  Deprecations:
+  * The two-argument form of azel() is now fatal.
+  * The satpass script fails if you try to geocode without
+    Geo::Coder::Geocoder::US.
+  * Use of the satpass script 'lit' setting is now fatal; instead use
+    'edge_of_earths_shadow'.
+  * Use of the Astro::Coord::ECI::TLE 'limb' attribute is now fatal;
+    instead use 'edge_of_earths_shadow'.
+  * Feeding a JSON file to Astro::Coord::ECI::TLE->parse() which uses
+    the SATNAME key is deprecated, and produces a warning. This warning
+    will become fatal in the future. Instead use OBJECT_NAME.
+  * Warn every time a Doppler shift is computed using the station's
+    frequency. This will become fatal in the future. The frequency
+    should be set on the orbiting object.
+
 0.056		2012-12-08	T. R. Wyant
   Deprecation warnings:
   * The Doppler calculation warns the first time the frequency comes

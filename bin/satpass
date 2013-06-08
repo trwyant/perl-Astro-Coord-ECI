@@ -37,7 +37,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.056';
+our $VERSION = '0.056_01';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -3781,7 +3781,7 @@ to decouple how high a pass need to be to be reported from how high the
 horizon is.
 
 The use of the L<SOAP::Lite|SOAP::Lite> interface to
-L<http://geocoder.us> is no longer supported.  As of version [%% next_version %%],
+L<http://geocoder.us> is no longer supported.  As of version 0.056_01,
 attempting to geocode without
 L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> is a fatal error.
 
@@ -5364,7 +5364,7 @@ If true (i.e. 1) it is considered to be lit if the upper limb of the
 sun is above the horizon, as seen from the body. If false (i.e. 0), the
 body is considered lit if the center of the sun is above the horizon.
 
-This parameter has been removed as of version [%% next_version %%], and
+This parameter has been removed as of version 0.056_01, and
 use of it will generate a fatal error. Please use the
 L<edge_of_earths_shadow|/edge_of_earths_shadow> parameter instead.
 
