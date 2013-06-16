@@ -2008,7 +2008,7 @@ The object itself is returned, to allow call chaining.
 		$multiplier *= $_;
 	    }
 
-	    my ( $lat, $lon, $alt ) = $self->geodetic();
+	    my ( $lat, $lon ) = $self->geodetic();
 	    $lat = ( $lat + PIOVER2 ) * $multiplier / PI;
 	    $lon = ( $lon + PI ) * $multiplier / TWOPI;
 	    $lat = floor( "$lat" );
