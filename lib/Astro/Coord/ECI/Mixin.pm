@@ -152,11 +152,12 @@ This package supplies the following public methods:
 
  my @almanac = $body->almanac( $station, $start, $end );
 
-This method produces almanac data for the C<$body> for the given location,
-between the given start and end times. The location is assumed to be
-Earth-Fixed - that is, you can't do this for something in orbit.
+This method produces almanac data for the C<$body> for the given
+observing station, between the given start and end times. The station is
+assumed to be Earth-Fixed - that is, you can't do this for something in
+orbit.
 
-The C<$location> argument may be omitted if the C<station> attribute has
+The C<$station> argument may be omitted if the C<station> attribute has
 been set. That is, this method can also be called as
 
  my @almanac = $body->almanac( $start, $end )
@@ -204,7 +205,7 @@ return the event detail description.
 
 =head2 almanac_hash
 
- my @almanac = $body->almanac_hash( $location, $start, $end );
+ my @almanac = $body->almanac_hash( $station, $start, $end );
 
 This convenience method wraps $body->almanac(), but returns a list of
 hash references, sort of like Astro::Coord::ECI::TLE->pass()
@@ -287,7 +288,9 @@ This package can not define any public attributes.
 
 =head1 SEE ALSO
 
-<<< replace or remove boilerplate >>>
+The C<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
+documentation for a discussion of how the pieces/parts of this
+distribution go together and how to use them.
 
 =head1 SUPPORT
 

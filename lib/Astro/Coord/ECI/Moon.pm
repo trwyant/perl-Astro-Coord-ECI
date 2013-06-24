@@ -129,13 +129,13 @@ sub new {
 }
 
 
-=item @almanac = $moon->almanac ($location, $start, $end);
+=item @almanac = $moon->almanac ($station, $start, $end);
 
-This method produces almanac data for the Moon for the given location,
-between the given start and end times. The location is assumed to be
-Earth-Fixed - that is, you can't do this for something in orbit.
+This method produces almanac data for the Moon for the given observing
+station, between the given start and end times. The station is assumed
+to be Earth-Fixed - that is, you can't do this for something in orbit.
 
-The C<$location> argument may be omitted if the C<station> attribute has
+The C<$station> argument may be omitted if the C<station> attribute has
 been set. That is, this method can also be called as
 
  @almanac = $moon->almanac( $start, $end )
@@ -187,7 +187,7 @@ sub __almanac_event_type_iterator {
 
 use Astro::Coord::ECI::Mixin qw{ almanac };
 
-=item @almanac = $moon->almanac_hash($location, $start, $end);
+=item @almanac = $moon->almanac_hash($station, $start, $end);
 
 This convenience method wraps $moon->almanac(), but returns a list of
 hash references, sort of like Astro::Coord::ECI::TLE->pass()
@@ -490,6 +490,10 @@ The author wishes to acknowledge Jean Meeus, whose book "Astronomical
 Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
+
+The C<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
+documentation for a discussion of how the pieces/parts of this
+distribution go together and how to use them.
 
 The B<Astro-MoonPhase> package by Brett Hamilton, which contains a
 function-based module to compute the current phase, distance and

@@ -1893,12 +1893,12 @@ sub local_time {
     return $self->local_mean_time() + equation_of_time($dyntim);
 }
 
-=item ( $location, $height ) = $coord->maidenhead( $precision );
+=item ( $maidenhead_loc, $height ) = $coord->maidenhead( $precision );
 
-This method returns the location in the Maidenhead Locator System.
-Height above the reference ellipsoid is not part of the system, but is
-returned anyway, in kilometers. The $precision is optional, and is an
-integer greater than 0.
+This method returns the location of the object in the Maidenhead Locator
+System.  Height above the reference ellipsoid is not part of the system,
+but is returned anyway, in kilometers. The $precision is optional, and
+is an integer greater than 0.
 
 The default precision is 4, but this can be modified by setting
 C<$Astro::Coord::ECI::DEFAULT_MAIDENHEAD_PRECISION> to the desired
@@ -1923,7 +1923,7 @@ to shifting some grid squares very slightly to the north-west, but in
 practice it seems to give better results for points on the boundaries of
 the grid squares.
 
-=item $coord->maidenhead( $location, $height );
+=item $coord->maidenhead( $maidenhead_loc, $height );
 
 This method sets the geodetic location in the Maidenhead Locator System.
 Height above the reference ellipsoid is not part of the system, but is

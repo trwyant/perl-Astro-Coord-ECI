@@ -118,6 +118,11 @@ generate warnings.
 
 All distances, both input and output, are in kilometers.
 
+=head2 Times
+
+All times are seconds since the system's epoch. That is, the kind of
+time returned by C<time()>.
+
 =head1 TERMINOLOGY
 
 Forecasting satellite visibility is an activity on the border between
@@ -196,6 +201,18 @@ A common variant of this format is sometimes called 'NASA TLE'. The
 format is the same, but the two lines of model data are preceded by a
 line containing the common name of the L<body|/Body> being modeled.
 
+With the introduction of the REST (or Version 2) interface to the Space
+Track web site, a third representation of TLE data, as JSON, has become
+available.
+
+Given a chunk of TLE data, the
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>
+L<parse()|Astro::Coord::ECI::TLE/parse> method can be used to turn it
+into L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> or
+L<Astro::Coord::ECI::TLE::Iridium|Astro::Coord::ECI::TLE::Iridium>
+objects. If your data are in JSON format, you will need the optional
+L<JSON|JSON> module installed.
+
 In practice, TLE data have an effective date, and a shelf life measured
 from that effective date. Unfortunately, the TLE data do not contain
 either of these.
@@ -217,12 +234,6 @@ matter of minutes. For something like the International Space Station,
 the shelf life is cut short when the station is boosted into a higher
 orbit. One would hope that the Human Space Flight data would take
 account of this, but in fact it appears not always to do so.
-
-Given a chunk of TLE data, the
-L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>
-L<parse()|Astro::Coord::ECI::TLE/parse> method can be used to turn it
-into L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> or
-L<Astro::Coord::ECI::TLE::Iridium|Astro::Coord::ECI::TLE::Iridium> objects.
 
 Most sources of data provide only a single current TLE for a given
 object. If you are processing historical data from Space Track, or if
@@ -487,6 +498,12 @@ access Space Track. On or about that date they changed from straight
 http to secure http (C<https:>), and C<0.052> is the version at which
 L<Astro::SpaceTrack|Astro::SpaceTrack> gained this functionality.
 
+As of about July 16 2013, you will need
+L<Astro::SpaceTrack|Astro::SpaceTrack> version C<0.054> or higher to
+access Space Track. On or about that date they will retire the version 1
+interface, so you will need an C<Astro::SpaceTrack> that adequately
+supports the new interface.
+
 =head2 CelesTrak
 
 Dr. T. S. Kelso's L<http://celestrak.com/> is a good source for the more
@@ -501,15 +518,12 @@ without them.
 
 =head2 NASA Human Space Flight
 
-NASA makes International Space Station and space shuttle data available
-at L<http://spaceflight.nasa.gov/realdata/elements/>, but the
-L<TLEs|/TLE> have to be dug out of the data. Unlike the other sources,
-these data include predictions of future data, so that you can (for
-example) get data for a Space Shuttle flight that has not yet launched.
-If you're more than a day or so before the lunch, at least some of this
-data will be too far from its 'as-of' date to be useful.
-L<Astro::SpaceTrack|Astro::SpaceTrack> will dig out the data for you,
-and you do not need a username or password.
+NASA makes International Space Station data available at
+L<http://spaceflight.nasa.gov/realdata/elements/>, but the L<TLEs|/TLE>
+have to be dug out of the data.  L<Astro::SpaceTrack|Astro::SpaceTrack>
+will dig out the data for you, and you do not need a username or
+password.  Unlike the other sources, these data include predictions of
+future TLEs.
 
 =head2 Amateur Radio Satellite Corporation
 
