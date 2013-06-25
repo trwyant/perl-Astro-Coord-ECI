@@ -1,3 +1,13 @@
+0.056_02	2013-06-25	T. R. Wyant
+  Take spaces as equivalent to zeroes in numeric fields (which I believe
+    is the old FORTRAN behavior), and in the numeric portions of the
+    international launch designator.
+  As a consequence of the above, the 'international' attribute will be
+    zero-filled on retrieval.
+  Update docs. Replace 'location' by 'station' where that is what is
+    meant. Add a (very brief) explanation of times to the overview. Also
+    add information on the Space Track REST interface to the overview.
+
 0.056_01	2013-06-08	T. R. Wyant
   Deprecations:
   * The two-argument form of azel() is now fatal.
