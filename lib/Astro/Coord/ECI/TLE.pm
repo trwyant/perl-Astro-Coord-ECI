@@ -1018,6 +1018,15 @@ eod
 		argumentofperigee meananomaly meanmotion
 		revolutionsatepoch}} =
 		unpack 'x2A5x1A8x1A8x1A7x1A8x1A8x1A11A5', $line;
+
+	    foreach my $key ( qw{ id epoch firstderivative
+		secondderivative bstardrag ephemeristype elementnumber
+		id_2 inclination ascendingnode eccentricity
+		argumentofperigee meananomaly meanmotion }
+	    ) {
+		$ele{$key} =~ s/ \s /0/smxg;
+	    }
+
 	    $ele{id} == $ele{id_2} or
 		croak "Invalid data. Line 1 was for id $ele{id} but ",
 		    "line 2 was for $ele{id_2}";
@@ -7348,6 +7357,9 @@ sub _set_intldes {
     my ( $year, $num, $piece );
 
     if ( defined $val && $val =~ m/ \S /smx ) {
+
+	$val =~ s/ \s+ \z //smx;
+	$val =~ s/ \s /0/smxg;
 
 	foreach my $re (
 	    qr< ( \d+ ) - ( \d+ ) ( .+ ) >smx,
