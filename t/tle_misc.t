@@ -7,9 +7,11 @@ use Test::More 0.88;
 
 use Astro::Coord::ECI::TLE qw{ :constants };
 
-plan( tests => 12 );
-
 my $tle = Astro::Coord::ECI::TLE->new();
+
+note '';
+
+note 'Test derivation of body type from name';
 
 ok( $tle->body_type() == BODY_TYPE_UNKNOWN,
     'TLE without name is unknown body type' );
@@ -35,6 +37,31 @@ test_body_type( $tle, 'Foosat pkm', BODY_TYPE_ROCKET_BODY );
 test_body_type( $tle, 'Foosat', BODY_TYPE_PAYLOAD );
 
 test_body_type( $tle, 'Debut', BODY_TYPE_PAYLOAD );
+
+note '';
+
+note 'Test explicitly setting portions of international designator';
+
+$tle->set( launch_year => 13, launch_num => 2, launch_piece => 'b' );
+
+cmp_ok $tle->get( 'launch_year' ), '==', 2013,
+    'Launch year, set individually';
+
+cmp_ok $tle->get( 'launch_num' ), '==', 2,
+    'Launch number, set individually';
+
+is $tle->get( 'launch_piece' ), 'B',
+    'Launch piece, set individually';
+
+is $tle->get( 'international' ), '13002B',
+    'International launch designator, from individual fields';
+
+$tle->set( launch_year	=> undef );
+
+is $tle->get( 'international' ), '  002B',
+    'Result of making launch_year undef';
+
+done_testing;
 
 sub test_body_type {	## no critic (RequireArgUnpacking)
     my ( $body, $name, $want ) = @_;

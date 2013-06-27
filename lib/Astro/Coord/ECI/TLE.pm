@@ -7354,73 +7354,101 @@ eod
 sub _set_intldes {
     my ( $self, $name, $val ) = @_;
 
-    my ( $year, $num, $piece );
-
     if ( defined $val && $val =~ m/ \S /smx ) {
 
-	$val =~ s/ \s+ \z //smx;
-	$val =~ s/ \s /0/smxg;
+	my $working = $val;
+
+	$working =~ s/ \s+ \z //smx;
+	$working =~ s/ \s /0/smxg;
 
 	foreach my $re (
 	    qr< ( \d+ ) - ( \d+ ) ( .+ ) >smx,
 	    qr< ( \d{2} ) ( \d{3} ) ( .+ ) >smx,
 	) {
-	    $val =~ m/ \A $re \z /smx
+	    $working =~ m/ \A $re \z /smx
 		or next;
-	    ( $year, $num, $piece ) = ( $1, $2, $3 );
-	    last;
+	    my ( $year, $num, $piece ) = ( $1, $2, $3 );
+
+	    $year < 100
+		and $year += $year < 57 ? 2000 : 1900;
+
+	    $self->{launch_year} = $year;
+	    $self->{launch_num} = $num;
+	    $self->{launch_piece} = $piece;
+
+	    $self->{$name} = $val;
+
+	    return 0;
 	}
 
-	defined $year
-	    or croak "Invalid international launch designator '$val'";
-
-	if ( $year < 100 ) {
-	    $year += $year < 57 ? 2000 : 1900;
-	}
-
-    } else {
-	$year = $num = $piece = $val = '';
     }
 
     # We bypass the public interface to avoid thrashing
 
-    $self->{launch_year} = $year;
-    $self->{launch_num} = $num;
-    $self->{launch_piece} = $piece;
+    $self->{launch_year} =
+	$self->{launch_num} =
+	$self->{launch_piece} = undef;
 
     $self->{$name} = $val;
+
     return 0;
 }
 
 {
-
-    my %intldes_format = (
-	launch_year	=> '%02d',
-	launch_num	=> '%03d',
-	launch_piece	=> '%s',
+    my %intldes_valid = (
+	launch_year	=> sub {
+	    my ( $val ) = @_;
+	    $val =~ m/ \A \d+ \z /smx
+		and $val <= 9999
+		or croak 'Invalid launch_year';
+	    $val < 100
+		and $val += $val < 57 ? 2000 : 1900;
+	    return $val + 0;
+	},
+	launch_num	=> sub {
+	    my ( $val ) = @_;
+	    $val =~ m/ \A \d+ \z /smx
+		and $val < 1000
+		or croak 'Invalid launch_num';
+	    return $val + 0;
+	},
+	launch_piece	=> sub {
+	    my ( $val ) = @_;
+	    $val =~ m/ \A [[:alpha:]]+ \z /smx
+		or croak 'Invalid launch_piece';
+	    return uc $val;
+	},
     );
 
-    my @intldes_parts = ( qw{ launch_year launch_num launch_piece } );
+    my $value_or_empty = sub {
+	my ( $self, $name ) = @_;
+	return defined $self->{$name} ? $self->{$name} : '';
+    };
 
     sub _set_intldes_part {
 	my ( $self, $name, $val ) = @_;
+
+	$self->{$name} = defined $val ?
+	    $intldes_valid{$name}->( $val ) :
+	    $val;
+
 	my %intldes;
-	foreach my $name ( @intldes_parts ) {
-	    my $val = $self->get( $name );
-	    defined $val	# Oh, for Perl 5.10 and //.
-		or $val = '';
-	    $intldes{$name} = $val;
+	foreach my $key ( qw{ launch_year launch_num launch_piece } ) {
+	    $intldes{$key} = $value_or_empty->( $self, $key );
 	}
-	if ( defined $val && $val =~ m/ \S /smx ) {
-	    $intldes{$name} = sprintf $intldes_format{$name}, $val;
-	} else {
-	    $intldes{$name} = '';
-	}
-	$self->{international} = join '', map { $intldes{$_} }
-	    @intldes_parts;
-	$self->{$name} = $val;
+	$intldes{launch_year} eq ''
+	    or $intldes{launch_year} %= 100;
+
+	my $tplt = join '',
+	    ( $intldes{launch_year} eq '' ? '%2s' : '%02d' ),
+	    ( $intldes{launch_num} eq '' ? '%3s' : '%03d' ),
+	    '%s';
+	$self->{international} = sprintf $tplt, map { $intldes{$_} }
+	    qw{ launch_year launch_num launch_piece };
+
 	return 0;
     }
+
 }
 
 sub _next_elevation_screen {
