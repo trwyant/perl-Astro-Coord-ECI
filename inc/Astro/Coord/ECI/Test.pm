@@ -59,34 +59,39 @@ sub _dor {
 }
 
 sub format_pass {
-    my ( $pass ) = @_;
+    my @passes = @_;
     my $rslt = '';
-    $pass or return $rslt;
-    foreach my $event ( @{ $pass->{events} } ) {
-	$rslt .= sprintf '%19s %5s %5s %7s %-5s %-5s',
-	    format_time( $event->{time} ),
-	    _format_optional( '%5.1f', $event, 'elevation', \&rad2deg ),
-	    _format_optional( '%5.1f', $event, 'azimuth', \&rad2deg ),
-	    _format_optional( '%7.1f', $event, 'range' ),
-	    _format_event( $event->{illumination} ),
-	    _format_event( $event->{event} ),
-	    ;
-	$rslt =~ s/ \s+ \z //smx;
+    foreach my $pass ( @passes ) {
+	$pass
+	    or next;
 	$rslt .= "\n";
-	if ( $event->{appulse} ) {
-	    my $sta = $event->{station};
-	    my ( $az, $el ) = $sta->azel(
-		$event->{appulse}{body}->universal( $event->{time} ) );
-	    $rslt .= sprintf '%19s %5.1f %5.1f %7.1f %s', '',
-		rad2deg( $el ),
-		rad2deg( $az ),
-		rad2deg( $event->{appulse}{angle} ),
-		$event->{appulse}{body}->get( 'name' ),
+	foreach my $event ( @{ $pass->{events} } ) {
+	    $rslt .= sprintf '%19s %5s %5s %7s %-5s %-5s',
+		format_time( $event->{time} ),
+		_format_optional( '%5.1f', $event, 'elevation', \&rad2deg ),
+		_format_optional( '%5.1f', $event, 'azimuth', \&rad2deg ),
+		_format_optional( '%7.1f', $event, 'range' ),
+		_format_event( $event->{illumination} ),
+		_format_event( $event->{event} ),
 		;
 	    $rslt =~ s/ \s+ \z //smx;
 	    $rslt .= "\n";
+	    if ( $event->{appulse} ) {
+		my $sta = $event->{station};
+		my ( $az, $el ) = $sta->azel(
+		    $event->{appulse}{body}->universal( $event->{time} ) );
+		$rslt .= sprintf '%19s %5.1f %5.1f %7.1f %s', '',
+		    rad2deg( $el ),
+		    rad2deg( $az ),
+		    rad2deg( $event->{appulse}{angle} ),
+		    $event->{appulse}{body}->get( 'name' ),
+		    ;
+		$rslt =~ s/ \s+ \z //smx;
+		$rslt .= "\n";
+	    }
 	}
     }
+    $rslt =~ s/ \A \n //smx;
     $rslt =~ s/ (?<= \s ) - (?= 0 [.] 0+ \s ) / /smxg;
     return $rslt;
 }
@@ -235,12 +240,12 @@ them.
 
 =head2 format_pass
 
- print format_pass( $pass );
+ print format_pass( $pass, ... );
 
-This subroutine converts the given C<$pass> (which is a reference to one
-of the hashes returned by the C<Astro::Coord::ECI::TLE> C<pass()>
-method) to a string. The output contains the events of the pass one per
-line, with date and time (ISO-8601-ish, GMT), azimuth, elevation and
+This subroutine converts the given C<$pass>es (which are references to
+the hashes returned by the C<Astro::Coord::ECI::TLE> C<pass()>
+method) to a string. The output contains the events of the passes one
+per line, with date and time (ISO-8601-ish, GMT), azimuth, elevation and
 range (or blanks if not present), illumination, and event name for each
 pass.  For appulses the time, position, and name of the appulsed body
 are also provided, on a line after the event.
