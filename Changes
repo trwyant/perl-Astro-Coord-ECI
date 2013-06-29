@@ -1,3 +1,7 @@
+0.056_03	2013-06-28	T. R. Wyant
+  Go back to simply allowing invalid international launch designators.
+    They started getting rejected about release 0.051_01 (2012-08-18).
+
 0.056_02	2013-06-25	T. R. Wyant
   Take spaces as equivalent to zeroes in numeric fields (which I believe
     is the old FORTRAN behavior), and in the numeric portions of the
