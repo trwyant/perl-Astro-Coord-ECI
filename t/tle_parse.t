@@ -33,10 +33,8 @@ EOD
     'Parse TLE with leading spaces.'
     or diag $@;
 
-foreach my $attr ( qw{ international } ) {
-    cmp_ok $got->get( $attr ), 'eq', $want->get( $attr ),
-	"Got expected '$attr' value";
-}
+is $got->get( 'international' ), ' 8  2B',
+    q{Got expected 'international' value};
 
 foreach my $attr ( qw{ id epoch firstderivative secondderivative
     bstardrag ephemeristype elementnumber inclination ascendingnode
