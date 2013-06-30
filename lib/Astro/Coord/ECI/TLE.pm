@@ -1214,6 +1214,22 @@ certainly not the time of the event. If you make use of the {body}
 object you will probably need to set its time to the time of the event
 before you do so.
 
+Note 3:
+
+The algorithm for computing appulses has been modified slightly in
+version [%% next_release %%]. This modification only applies to elements
+of the optional C<\@sky> array that represent artificial satellites.
+
+The problem I'm trying to address is that two satellites in very similar
+orbits can appear to converge again after their appulse, due to their
+increasing distance from the observer. If this happens early enough in
+the pass it can fool the binary search algorithm that determines the
+appulse time.
+
+The revision is to first step across the pass, finding the closest
+approach of the two bodies. A binary search is then done on a small
+interval around the closest approach.
+
 =cut
 
 use constant PASS_EVENT_NONE => dualvar (0, '');	# Guaranteed false.
@@ -1806,34 +1822,32 @@ eod
 
 }
 
-# The following is absolute ad-hocery.
-#
-# The problem it attempts to deal with is that if two satellites with
-# similar orbits rise about the same time, they may appear to approach,
-# diverge, and approach again. The last apparent approach is because
-# they are receding from the observer faster than from each other.
+# The problem the following attempts to deal with is that if two
+# satellites with similar orbits rise about the same time, they may
+# appear to approach, diverge, and approach again. The last apparent
+# approach is because they are receding from the observer faster than
+# from each other.
 #
 # What the following code attempts to do is to provide reasonable
 # brackets around the time of closest approach. If the body is a TLE
-# object and the orbits are "sufficiently similar", we step across the
-# pass in 30-second intervals, and return the times of the second- and
-# third-closest positions found. Otherwise we just return the beginning
-# and end of the pass.
+# object, we step across the pass in 30-second intervals, and return the
+# interval 30 seconds before and after the closest position found.
+# Otherwise we just return the beginning and end of the pass.
 #
-# The Devil is in the details, though, and I have been unable to
-# adequately determine the criteria for "sufficiently similar" orbits.
-# Inclination and ascending node are both clearly involved, but I feel
-# like some measure of the time arrived at ascending node should be
-# involved. Worse, the limits for inclination and ascending node are
-# pretty much a guess.
+# Originally there was an attempt to determine if the orbits were
+# "sufficiently close", and only step across if that was the case. But
+# it proved impracticable to define "sufficiently close", and it was
+# determined by benchmarking that the preliminary stepping had only a
+# minimal effect on the algorithm's execution time. So we step any time
+# we are computing an appulse of an artificial satellite to another
+# artificial satellite.
 
 {
 
-    # The following are to be used only here. Pretend they are
-    # localized.
+    # The following manifest constant is to be used only here. Pretend
+    # it is localized.
 
-    use constant INCL_LIMIT		=> deg2rad( 20 );
-    use constant ASCEND_NODE_LIMIT	=> deg2rad( 20 );
+    use constant APPULSE_CHECK_STEP	=> 30;	# seconds
 
     sub _pass_bracket_appulse {
 	my ( $sta, $tle, $body, $first_time, $last_time ) = @_;
@@ -1843,57 +1857,28 @@ eod
 	embodies( $body, 'Astro::Coord::ECI::TLE' )
 	    or return ( $first_time, $last_time );
 
-=begin comment
-
-	# The problem we're trying to avoid does not occur unless the
-	# two orbits are "sufficiently similar".
-	# But since we don't know what "sufficiently similar" means, and
-	# since benchmarking shows that this is not markedly slower than
-	# using the entire interval (126 vs 124 seconds for 200
-	# identical passes), we just reduce the interval for any TLE.
-	abs( $body->get( 'inclination' ) - $tle->get( 'inclination' ) )
-		> INCL_LIMIT
-	    and return ( $first_time, $last_time );
-	abs( $body->get( 'ascendingnode' ) - $tle->get( 'ascendingnode' ) )
-		> ASCEND_NODE_LIMIT
-	    and return ( $first_time, $last_time );
-
-=end comment
-
-=cut
-
 	# OK, we think we have a problem. Step across the entire pass in
 	# 30-second intervals and find the one where the two bodies
 	# approach most closely.
-	my ( @trial, $inx, $smallest );
-	for ( my $time = $first_time; $time <= $last_time; $time += 30
+	my ( $smallest, $mark );
+	for ( my $time = $first_time; $time <= $last_time;
+	    $time += APPULSE_CHECK_STEP
 	) {
 	    my $angle = $sta->angle(
 		$body->universal( $time ),
 		$tle->universal( $time ),
 	    );
-	    push @trial, [ $angle, $time ];
 	    defined $smallest
 		and $angle > $smallest
-		or ( $smallest, $inx ) = ( $angle, $#trial );
+		or ( $smallest, $mark ) = ( $angle, $time );
 	}
 
-	# It may be that the closest approach is after the last time
-	# computed but before the satellite sets. We cover that here.
-	if ( $trial[-1][1] < $last_time ) {
-	    my $angle = $sta->angle(
-		$body->universal( $last_time ),
-		$tle->universal( $last_time ),
-	    );
-	    push @trial, [ $angle, $last_time ];
-	    defined $smallest
-		and $angle > $smallest
-		or ( $smallest, $inx ) = ( $angle, $#trial );
-	}
-
-	# Return the times that bracket the smallest.
-	return ( $trial[max( 0, $inx - 1 )][1], $trial[min(
-	    $#trial, $inx + 1 )][1] );
+	# We return an interval around this closest point as the
+	# interval in which to apply the binary search algorithm.
+	return (
+	    max( $mark - APPULSE_CHECK_STEP, $first_time ),
+	    min( $mark + APPULSE_CHECK_STEP, $last_time ),
+	);
     }
 }
 
