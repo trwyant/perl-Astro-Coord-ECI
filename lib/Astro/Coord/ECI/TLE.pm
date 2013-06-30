@@ -224,7 +224,7 @@ use base qw{Astro::Coord::ECI Exporter};
 
 use Astro::Coord::ECI::Utils qw{ :params :time deg2rad dynamical_delta
     embodies find_first_true load_module looks_like_number
-    max mod2pi PI PIOVER2 rad2deg
+    max min mod2pi PI PIOVER2 rad2deg
     SECSPERDAY TWOPI thetag __default_station };
 
 use Carp qw{carp croak confess};
@@ -1653,7 +1653,9 @@ eod
 	    # than 1 second resolution to detect a transit.
 
 	    foreach my $body (@sky) {
-		my $when = find_first_true ($first_time, $last_time,
+		my $when = find_first_true(
+		    _pass_bracket_appulse( $sta, $tle, $body,
+			$first_time, $last_time ),
 		    sub {$sta->angle ($body->universal ($_[0]),
 				    $tle->universal ($_[0])) <
 			    $sta->angle ($body->universal ($_[0] + .1),
@@ -1802,6 +1804,97 @@ eod
     }
     return @passes;
 
+}
+
+# The following is absolute ad-hocery.
+#
+# The problem it attempts to deal with is that if two satellites with
+# similar orbits rise about the same time, they may appear to approach,
+# diverge, and approach again. The last apparent approach is because
+# they are receding from the observer faster than from each other.
+#
+# What the following code attempts to do is to provide reasonable
+# brackets around the time of closest approach. If the body is a TLE
+# object and the orbits are "sufficiently similar", we step across the
+# pass in 30-second intervals, and return the times of the second- and
+# third-closest positions found. Otherwise we just return the beginning
+# and end of the pass.
+#
+# The Devil is in the details, though, and I have been unable to
+# adequately determine the criteria for "sufficiently similar" orbits.
+# Inclination and ascending node are both clearly involved, but I feel
+# like some measure of the time arrived at ascending node should be
+# involved. Worse, the limits for inclination and ascending node are
+# pretty much a guess.
+
+{
+
+    # The following are to be used only here. Pretend they are
+    # localized.
+
+    use constant INCL_LIMIT		=> deg2rad( 20 );
+    use constant ASCEND_NODE_LIMIT	=> deg2rad( 20 );
+
+    sub _pass_bracket_appulse {
+	my ( $sta, $tle, $body, $first_time, $last_time ) = @_;
+
+	# The problem we're trying to avoid does not occur unless the
+	# body is a TLE.
+	embodies( $body, 'Astro::Coord::ECI::TLE' )
+	    or return ( $first_time, $last_time );
+
+=begin comment
+
+	# The problem we're trying to avoid does not occur unless the
+	# two orbits are "sufficiently similar".
+	# But since we don't know what "sufficiently similar" means, and
+	# since benchmarking shows that this is not markedly slower than
+	# using the entire interval (126 vs 124 seconds for 200
+	# identical passes), we just reduce the interval for any TLE.
+	abs( $body->get( 'inclination' ) - $tle->get( 'inclination' ) )
+		> INCL_LIMIT
+	    and return ( $first_time, $last_time );
+	abs( $body->get( 'ascendingnode' ) - $tle->get( 'ascendingnode' ) )
+		> ASCEND_NODE_LIMIT
+	    and return ( $first_time, $last_time );
+
+=end comment
+
+=cut
+
+	# OK, we think we have a problem. Step across the entire pass in
+	# 30-second intervals and find the one where the two bodies
+	# approach most closely.
+	my ( @trial, $inx, $smallest );
+	for ( my $time = $first_time; $time <= $last_time; $time += 30
+	) {
+	    my $angle = $sta->angle(
+		$body->universal( $time ),
+		$tle->universal( $time ),
+	    );
+	    push @trial, [ $angle, $time ];
+	    defined $smallest
+		and $angle > $smallest
+		or ( $smallest, $inx ) = ( $angle, $#trial );
+	}
+
+	# It may be that the closest approach is after the last time
+	# computed but before the satellite sets. We cover that here.
+	if ( $trial[-1][1] < $last_time ) {
+	    my $angle = $sta->angle(
+		$body->universal( $last_time ),
+		$tle->universal( $last_time ),
+	    );
+	    push @trial, [ $angle, $last_time ];
+	    defined $smallest
+		and $angle > $smallest
+		or ( $smallest, $inx ) = ( $angle, $#trial );
+	}
+
+	# Return the times that bracket the smallest.
+	return ( $trial[max( 0, $inx - 1 )][1], $trial[min(
+	    $#trial, $inx + 1 )][1] );
+    }
 }
 
 
