@@ -1,6 +1,14 @@
+0.056_04	2013-06-30	T. R. Wyant
+  Modify the appulse algorithm when the appulsing body is a satellite,
+    since the original algorithm did not necessarily converge to the
+    correct time for satellites in similar orbits. Thanks to Vidar
+    Tyldum for bringing this to my attention, and working with me on it.
+
 0.056_03	2013-06-28	T. R. Wyant
   Go back to simply allowing invalid international launch designators.
     They started getting rejected about release 0.051_01 (2012-08-18).
+    Thanks to Vidar Tyldum for bringing this to my attention, and
+    working with me on it.
 
 0.056_02	2013-06-25	T. R. Wyant
   Take spaces as equivalent to zeroes in numeric fields (which I believe
