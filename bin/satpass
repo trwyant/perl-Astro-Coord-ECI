@@ -307,6 +307,9 @@ Copyright 2005-2013 by Thomas R. Wyant, III.
 
 Enter 'help' for help. See the help for terms of use.
 
+As of release [%% next_release %%] this script is deprecated. See
+'NOTES' in the help for details.
+
 eod
 $opt{version} and exit;
 
@@ -1335,7 +1338,7 @@ if ($parm{webcmd}) {
 	"http://search.cpan.org/~wyant/Astro-satpass-$VERSION/");
     }
   else {
-    my $arg = lc $_[0];
+    my $arg = defined $_[0] ? lc $_[0] : '';
     my @ha;
     if (my $fn = $help_module{$arg}) {
 	$fn =~ s|::|/|g;
@@ -3774,6 +3777,12 @@ macros can be defined to issue frequently-used commands.
  satpass> exit
 
 =head1 NOTICE
+
+As of release [%% next_release %%] this script is deprecated. See below
+for details. In the first release of the year 2014 I intend to remove
+the question in the installer that allows this script to be installed,
+and to rename the entire distribution from the current C<Astro-satpass>
+to C<Astro-Coord-ECI>.
 
 This release supports the new C<pass_threshold> attribute of
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>, which provides a way
