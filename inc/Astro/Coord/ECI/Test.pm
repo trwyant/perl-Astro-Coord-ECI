@@ -5,7 +5,7 @@ use 5.006002;
 use strict;
 use warnings;
 
-our $VERSION = '0.056_04';
+our $VERSION = '0.057';
 
 use base qw{ Exporter };
 

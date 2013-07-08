@@ -37,7 +37,7 @@ $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 #	Initialization
 #
 
-our $VERSION = '0.056_04';
+our $VERSION = '0.057';
 
 use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
@@ -307,8 +307,8 @@ Copyright 2005-2013 by Thomas R. Wyant, III.
 
 Enter 'help' for help. See the help for terms of use.
 
-As of release [%% next_release %%] this script is deprecated. See
-'NOTES' in the help for details.
+As of release 0.057 this script is deprecated. See 'NOTES' in the help
+for details.
 
 eod
 $opt{version} and exit;
@@ -3778,11 +3778,11 @@ macros can be defined to issue frequently-used commands.
 
 =head1 NOTICE
 
-As of release [%% next_release %%] this script is deprecated. See below
-for details. In the first release of the year 2014 I intend to remove
-the question in the installer that allows this script to be installed,
-and to rename the entire distribution from the current C<Astro-satpass>
-to C<Astro-Coord-ECI>.
+As of release 0.057 this script is deprecated. See below for details. In
+the first release of the year 2014 I intend to remove the question in
+the installer that allows this script to be installed, and to rename the
+entire distribution from the current C<Astro-satpass> to
+C<Astro-Coord-ECI>.
 
 This release supports the new C<pass_threshold> attribute of
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>, which provides a way
