@@ -3341,13 +3341,29 @@ _load_module ('Astro::SIMBAD::Client');
 my $query = shift;
 my $simbad = Astro::SIMBAD::Client->new (
     format => {txt => 'FORMAT_TXT_SIMPLE_BASIC'},
-    parser => {txt => 'Parse_TXT_Simple'},
+    parser => {
+	script	=> 'Parse_TXT_Simple',
+	txt	=> 'Parse_TXT_Simple',
+    },
     server => $parm{simbad_url},
     type => 'txt',
 );
-my @rslt = $simbad->query (id => $query) or die <<eod;
+# I prefer script() to query() these days because the former does
+# not require SOAP::Lite, which seems to be getting flakier as time
+# goes on.
+# TODO get rid of $fmt =~ s/// once I massage
+# FORMAT_TXT_SIMPLE_BASIC in Astro::SIMBAD::Client
+#   my @rslt = $simbad->query (id => $query)
+## my @rslt = $simbad->query (id => $query) or die <<eod;
+my $fmt = Astro::SIMBAD::Client->FORMAT_TXT_SIMPLE_BASIC();
+$fmt =~ s/ \n //smxg;
+my @rslt = $simbad->script( <<"EOD" )
+format obj "$fmt"
+query id $query
+EOD
+    or die <<"EOD";
 Error - No entry found for $query.
-eod
+EOD
 @rslt > 1 and die <<eod;
 Error - More than one entry found for $query.
 eod
