@@ -1093,11 +1093,16 @@ sub __parse_name {
 
 This method returns passes of the body over the given station between
 the given start end end times. The \@sky argument is background bodies
-to compute appulses with.
+to compute appulses with (see note 3).
+
+A pass is detected by this method when the body sets. This means that
+passes are not usefully detected for geosynchronous or
+near-geosynchronous bodies, and that passes where the body sets after
+the C<$end> time will not be detected.
 
 All arguments are optional, the defaults being
 
- $station = the 'station' attribute
+ $station = the 'station' attribute of the invocant
  $start = time()
  $end = $start + 7 days
  \@sky = []
@@ -1217,7 +1222,7 @@ before you do so.
 Note 3:
 
 The algorithm for computing appulses has been modified slightly in
-version [%% next_release %%]. This modification only applies to elements
+version 0.056_04. This modification only applies to elements
 of the optional C<\@sky> array that represent artificial satellites.
 
 The problem I'm trying to address is that two satellites in very similar
