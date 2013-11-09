@@ -28,7 +28,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm( 0, 0, 14, 18, 1, 113 );
+my $asof = timegm( 0, 0, 0, 4, 10, 113 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -45,8 +45,8 @@ Status for Iridium payloads
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
 <pre>
-Iridium status as of October, 2012
-==================================
+Iridium status as of Novenber, 2012
+===================================
 
 Iridiums not listed in the following table are thought to be stable
 in orbit and capable of generating flares.
@@ -121,7 +121,7 @@ Nov. 13, 2012: Iridium 94 was placed into service next to Iridium 23.
  27373   Iridium 90     ?        Spare (new plane Jan. 2008)   was called Iridium 91
  27374   Iridium 94              Next to Iridium 23
  27375   Iridium 95              Replaced Iridium 28 about July 26, 2008
- 27376   Iridium 96     ?        Spare
+ 27376   Iridium 96     ?        Inclination 87.2 - migrating between planes
  27450   Iridium 97              Replaced Iridium 36 on Jan. 10, 2007
  27451   Iridium 98     ?        Spare (new plane May 2007)
 
