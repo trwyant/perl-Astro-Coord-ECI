@@ -1308,7 +1308,16 @@ eod
     # We need the number of radians the satellite travels in a minute so
     # we can be slightly conservative determining whether the satellite
     # might be lit while screening for a pass.
-    my $min_sun_elev_from_sat = - TWOPI / $tle->period() * 60;
+    # TODO For something not in orbit the period should be undefined.
+    # But we might call pass() on it anyway because something like a
+    # sounding rocket would still rise and set. What we have at the
+    # moment is a total crock, but until I can figure out something
+    # better ...
+    my $period = $tle->period();
+    # TODO the next statement is the crock referred to just above
+    defined $period
+	or $period = 90 * 60;	# Pretend we're in a 90 min orbit
+    my $min_sun_elev_from_sat = - TWOPI / $period * 60;
 
     # We also want to be slightly conservative when deciding whether the
     # satellite passes above the horizon. Since the above is clearly too
@@ -1939,6 +1948,9 @@ largest difference was about a millisecond, again for OID 23333.
 Neither of these differences seems to me significant, but I thought it
 would be easier to take the model into account than to explain why I did
 not.
+
+A note on subclassing: A body that is not in orbit should return a
+period of C<undef>.
 
 =cut
 
