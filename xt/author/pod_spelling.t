@@ -79,7 +79,7 @@ designator
 distsq
 DMOD
 Dominik
-Drexel's
+Drexel
 ds
 du
 dualvar
@@ -195,6 +195,7 @@ orbitaux
 orizuru
 Ouachita
 Palau
+params
 parametres
 pbcopy
 pbpaste
@@ -236,7 +237,7 @@ Rico
 rightascension
 Roehric
 ruggedizing
-Saemundsson's
+Saemundsson
 SATCAT
 Satpass
 satpass
