@@ -1,3 +1,13 @@
+0.058		2013-11-25	T. R. Wyant
+  Handle undef period in pass(). At the moment it's handled by fudging in
+    90 minutes, which is bogus, but lets me experiment objects whose
+    motion is defined by a list of positions. 
+  Add a paragraph on how passes are detected to the
+    Astro::Coord::ECI::TLE pass() documentation.
+  In the satpass script, implement 'sky lookup' in terms of
+    Astro::SIMBAD::Client script() rather than query(), so that we do not
+    need SOAP::Lite.
+
 0.057		2013-07-08	T. R. Wyant
   Deprecate the satpass script.
 
