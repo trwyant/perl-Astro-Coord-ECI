@@ -61,6 +61,28 @@ $tle->set( launch_year	=> undef );
 is $tle->get( 'international' ), '  002B',
     'Result of making launch_year undef';
 
+note <<'EOD';
+
+The following tests UNSUPPORTED AND EXPERIMENTAL functionality.
+
+EOD
+
+is $tle->__list_type(), 'inertial', q<Initial list type is 'inertial'>;
+
+$tle->set( model => 'null' );
+
+$tle->universal( time );
+
+$tle->ecef( 1000, 1000, 1000 );
+
+is $tle->__list_type(), 'fixed',
+    q<Setting fixed coordinates makes the list type 'fixed'>;
+
+$tle->eci( 1000, 1000, 1000 );
+
+is $tle->__list_type(), 'inertial',
+    q<Setting inertial coordinates makes the list type 'inertial'>;
+
 done_testing;
 
 sub test_body_type {	## no critic (RequireArgUnpacking)

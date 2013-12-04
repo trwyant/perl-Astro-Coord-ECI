@@ -7279,6 +7279,15 @@ sub _convert_out {
 
 sub _initial_inertial{ return 1 };
 
+# Unsupported, experimental, and subject to change or retraction without
+# notice. The intent is to provide a way for the Astro::App::Satpass2
+# 'list' command to pick an appropriate template to format each line of
+# the listing based on the object being listed.
+sub __list_type {
+    my ( $self ) = @_;
+    return $self->{inertial} ? 'inertial' : 'fixed';
+}
+
 # *equinox_dynamical = \&Astro::Coord::ECI::equinox_dynamical;
 
 #	$text = $self->_make_tle();
