@@ -1,3 +1,7 @@
+0.059		2013-12-03	T. R. Wyant
+  Make the zero-argument form of the maidenhead() method conform to the
+    docs.
+
 0.058		2013-11-25	T. R. Wyant
   Handle undef period in pass(). At the moment it's handled by fudging in
     90 minutes, which is bogus, but lets me experiment objects whose
