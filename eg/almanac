@@ -38,7 +38,7 @@ my @args = @ARGV;
     or @args = ( 38.898748, -77.037684, 16.68 );
 
 $opt{sun}
-    and $opt{moon}
+    or $opt{moon}
     or $opt{sun} = $opt{moon} = 1;
 
 #	Stash position where it's convenient.
