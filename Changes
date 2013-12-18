@@ -1,3 +1,9 @@
+0.060		2013-12-18	T. R. Wyant
+  In eg/almanac, correct the handling of -sun and -moon when exactly one
+    is specified.  The erroneous processing forced both to be asserted
+    in all circumstances. Thanks to Mike Donn for reporting the
+    problem. and pointing out the solution.
+
 0.059		2013-12-03	T. R. Wyant
   Make the zero-argument form of the maidenhead() method conform to the
     docs.
