@@ -519,9 +519,10 @@ test ($time) is true. The resolution is $limit, which defaults to 1 if
 not specified. If the times are reversed (i.e. the start time is after
 the end time) the time returned is the last time test ($time) is true.
 
-The test () function is assumed to be false for the first part of the
-interval, and true for the rest. If this assumption is violated, the
-result of this subroutine should be considered meaningless.
+The C<test()> function is called with the Perl time as its only
+argument. It is assumed to be false for the first part of the interval,
+and true for the rest. If this assumption is violated, the result of
+this subroutine should be considered meaningless.
 
 The calculation is done by, essentially, a binary search; the interval
 is repeatedly split, the function is evaluated at the midpoint, and a
