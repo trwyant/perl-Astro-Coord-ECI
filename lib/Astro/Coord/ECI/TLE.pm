@@ -103,8 +103,8 @@ the latter is what Space Track uses in their TLE data. Beginning with
 0.053_01, JSON output of TLEs will use the new name.
 
 Beginning with release 0.056_01, loading JSON TLE data which specifies
-L<SATNAME> will produce a warning the first time it happens. Six months
-after that, there will be a warning every time it happens. A further six
+L<SATNAME> produces a warning the first time it happens. As of version
+[%% next_version %%] there is a warning every time it happens. Six
 months later, loading JSON TLE data which specifies L<SATNAME> will
 become a fatal error.
 
@@ -7114,8 +7114,6 @@ encoded with a four-digit year.
 	return $rslt;
     }
 
-    my $satname_deprecated;
-
     sub _parse_json {
 	my ( $self, @args ) = @_;
 	defined $have_json
@@ -7136,8 +7134,7 @@ BODY_LOOP:
 		$decode ) {
 
 		if ( exists $hash->{SATNAME} ) {	# TODO Deprecated
-		    not $satname_deprecated++
-			and warnings::enabled( 'deprecated' )
+		    warnings::enabled( 'deprecated' )
 			and carp 'The SATNAME JSON key is deprecated ',
 			    'in favor of the OBJECT_NAME key';
 		    exists $hash->{OBJECT_NAME}
