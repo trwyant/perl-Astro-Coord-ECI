@@ -82,8 +82,6 @@ my %parm = (
     geometric => 1,
     gmt => 0,
 ##    horizon => 20, set below
-    lit => undef,	# Deprecated. Unused but must be present until
-			# removed.
     local_coord => 'azel_rng',
     model => 'model',
     pass_threshold => undef,
@@ -129,11 +127,6 @@ my %mutator = (
     height => \&_set_unmodified,
     horizon => \&_set_angle,
     latitude => \&_set_angle,
-    lit => sub {
-	_lit_deprecated();
-	set ( edge_of_earths_shadow => $_[1] ? 1 : 0 );
-	return;
-    },
     local_coord => \&_set_local_coord,
     location => \&_set_unmodified,
     longitude => \&_set_angle,
@@ -160,10 +153,6 @@ my %mutator = (
     );
 
 my %accessor = (
-    lit => sub {
-	_lit_deprecated();
-	return $parm{edge_of_earths_shadow} ? 1 : 0;
-    },
     desired_equinox_dynamical => \&_get_time,
 );
 foreach (keys %mutator) {$accessor{$_} ||= \&_show_unmodified};
@@ -2014,8 +2003,6 @@ $st and $st->set (webcmd => $_[1]);
 #
 
 sub show {
-    # TODO 'lit' is deprecated. When it is removed, remove this.
-@_ or @_ = grep { 'lit' ne $_ } sort keys %accessor;
 foreach my $name (@_) {
     exists $accessor{$name} or die <<eod;
 Error - '$name' is not a valid setting.
@@ -2899,15 +2886,6 @@ foreach my $tle (@bodies) {
     }
 
 }
-
-{
-    sub _lit_deprecated {
-	die q{The 'lit' parameter has been removed. Use },
-	    q{the 'edge_of_earths_shadow' parameter instead}, "\n";
-	return;
-    }
-}
-
 
 #	$handle = _memio ($access, \$memory)
 
@@ -3808,10 +3786,6 @@ L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> is a fatal error.
 The C<status iridium> command is now fatal. It has been deprecated in
 favor of C<status show> for some time now, and has warned on every use
 since version 0.044 (October 19 2011).
-
-The C<lit> parameter (and the corresponding
-L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<limb> attribute) has
-been removed, and a fatal error will occur if it is accessed.
 
 A production version of the C<Asto-App-Satpass2> package, which is the
 planned successor to this script, was released February 5 2012.
@@ -5374,19 +5348,6 @@ See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
 
 There is no default; you must specify a value.
-
-=for html <a name="lit"></a>
-
-=item lit (boolean)
-
-This parameter specifies how to determine if a body is lit by the sun.
-If true (i.e. 1) it is considered to be lit if the upper limb of the
-sun is above the horizon, as seen from the body. If false (i.e. 0), the
-body is considered lit if the center of the sun is above the horizon.
-
-This parameter has been removed as of version 0.056_01, and
-use of it will generate a fatal error. Please use the
-L<edge_of_earths_shadow|/edge_of_earths_shadow> parameter instead.
 
 =for html <a name="local_coord"></a>
 

@@ -97,11 +97,6 @@ actually be visible above the threshold to be reported. This is actually
 how the attribute would have worked when introduced if I had thought it
 through clearly.
 
-The C<limb> attribute has been removed as of version 0.056_01.
-Attempts to use it will result in a fatal error. Use the
-L<Astro::Coord::ECI|Astro::Coord::ECI> C<edge_of_earths_shadow>
-attribute instead.
-
 Use of the L<SATNAME> JSON attribute to represent the common name of the
 satellite is deprecated in favor of the L<OBJECT_NAME> attribute, since
 the latter is what Space Track uses in their TLE data. Beginning with
@@ -325,15 +320,6 @@ use constant SGP_RHO => .15696615;
 # XM0 => meananomaly
 # XNO => meanmotion
 
-# This subroutine manages the warnings on the deprecation of the 'limb'
-# attribute.
-{
-    sub __limb_deprecation {
-	croak q{The 'limb' attribute has been removed; use the },
-		q{'edge_of_earths_shadow' attribute instead};
-    }
-}
-
 #	List all the legitimate attributes for the purposes of the
 #	get and set methods. Possible values of the hash are:
 #	    undef => read-only attribute
@@ -399,11 +385,6 @@ eod
     revolutionsatepoch => 0,
     debug => 0,
     geometric => 0,	# Use geometric horizon for pass rise/set.
-    limb => sub {	# Whether lit when upper limb above horizon.
-	$_[0]->__limb_deprecation();
-	$_[0]->set( edge_of_earths_shadow => $_[2] ? 1 : 0 );
-	return 0;
-    },
     visible => 0,	# Pass() reports only illuminated passes.
     appulse => 0,	# Maximum appulse to report.
     interval => 0,	# Interval for pass() positions, if positive.
@@ -740,10 +721,6 @@ L</Attributes> section for a description of the attributes.
 
 {
     my %accessor = (
-	limb => sub {
-	    $_[0]->__limb_deprecation();
-	    return $_[0]->get( 'edge_of_earths_shadow' ) ? 1 : 0;
-	},
 	tle => sub {$_[0]{$_[1]} ||= $_[0]->_make_tle()},
     );
     sub get {
@@ -8586,16 +8563,6 @@ to call C<universal()> on the event's C<{body}>, passing it the event's
 C<{time}>, before retrieving the coordinates you want.
 
 The default is 0 (i.e. false).
-
-=item limb (boolean, static)
-
-This attribute tells the pass() method how to compute illumination
-of the body. If true, it is computed based on the upper limb of the
-source of illumination; if false, it is based on the center.
-
-This attribute has been removed as of version 0.056_01 in
-favor of the superclass' C<edge_of_earths_shadow> attribute. Any attempt
-to use it will result in a fatal error.
 
 =item meananomaly (numeric, parse)
 
