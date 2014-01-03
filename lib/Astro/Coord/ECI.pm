@@ -49,10 +49,10 @@ While doing this work I realized that the Doppler calculation was using
 the C<frequency> attribute of the observing station, not the satellite.
 The reinstated code will take the C<frequency> from either place, but
 prefers the satellite. I intend to deprecate the use of the observer's
-C<frequency> attribute in the usual way. As of version 0.056_01,
-the first use of the observer's C<frequency> attribute will result in a
-warning. Six months after that, every use will result in a warning, and
-in another six months it will become fatal.
+C<frequency> attribute in the usual way. As of version 0.056, the first
+use of the observer's C<frequency> attribute resulted in a warning. As
+of version 0.056_01, every use resulted in a warning. As of version
+[%% next_version %%], any use of the observer's frequency is fatal.
 
 Release 0.047_01 contains a number of changes to the handling of
 relative positions:
@@ -418,11 +418,9 @@ sub azel_offset {
 	if ( not defined $freq ) {
 	    $freq = $self->get( 'frequency' );
 	    defined $freq
-		and warnings::enabled( 'deprecated' )
-		and carp 'Specification of frequency on the ',
-		    'observing station is deprecated, and will ',
-		    'become an error in a future release';
-	    # TODO deprecate frequency from station.
+		and croak 'Calculation of Doppler shift based ',
+		    'on the frequency attribute of the observing ',
+		    'station is not allowed';
 	}
 	if ( defined $freq ) {
 	    $velocity[3] = - $freq * $velocity[2] / SPEED_OF_LIGHT;
