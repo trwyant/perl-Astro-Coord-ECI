@@ -14,10 +14,6 @@ Astro-SpaceTrack
 DateManip
 IO-String
 
-If you have the gumption to get SOAP::Lite working, have at it,
-but I'm not going to cover that here; all it gets you is the
-geocode functionality anyway.
-
 Once you have expanded the required kits, you need to convert
 them from Unix line terminations to Mac line terminations. This
 is not bad, just tedious. You need to make a MacPerl droplet out

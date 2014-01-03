@@ -98,11 +98,6 @@ sub _recommend_geo_coder_geocoder_us {
       command, but is otherwise unused by this package. If you do not
       intend to use this functionality, this package is not needed.
 EOD
-    eval { require SOAP::Lite; 1 }
-	and $recommendation .= <<'EOD';
-      The SOAP::Lite interface to the geocoding service is deprecated,
-      and will eventually be removed.
-EOD
     return $recommendation;
 }
 

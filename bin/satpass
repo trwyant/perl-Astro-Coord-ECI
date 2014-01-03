@@ -1082,14 +1082,13 @@ eod
     BEGIN {
 	%interface = (
 	    'Geo::Coder::Geocoder::US' => \&_geocode_us__geo_coder,
-	    'SOAP::Lite'	=> \&_geocode_us__soap_lite,
 	);
     }
 
     sub geocode_us {
 
 	my $class = _load_module(
-	    [ 'Geo::Coder::Geocoder::US', 'SOAP::Lite' ],  'geocode_us' );
+	    [ 'Geo::Coder::Geocoder::US' ],  'geocode_us' );
 	my $code = $interface{$class}
 	    or die "Programming error - Unexpected geocoding class $class";
 	goto &$code;
@@ -1139,10 +1138,6 @@ sub _geocode_us_format_address {
 sub _geocode_us_join {
     my ( $info, @keys ) = @_;
     return join ' ', grep { defined $_ && '' ne $_ } map { $info->{$_} } @keys;
-}
-
-sub _geocode_us__soap_lite {
-    die 'Geocoding through SOAP::Lite is deprecated. Please install Geo::Coder::Geocoder::US';
 }
 
 #	We have the following synonyms, based on the fact that ISO 3166
