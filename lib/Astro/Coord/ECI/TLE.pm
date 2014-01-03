@@ -220,7 +220,7 @@ use warnings;
 
 our $VERSION = '0.060';
 
-use base qw{Astro::Coord::ECI Exporter};
+use base qw{ Astro::Coord::ECI Exporter };
 
 use Astro::Coord::ECI::Utils qw{ :params :time deg2rad dynamical_delta
     embodies find_first_true load_module looks_like_number
@@ -762,6 +762,31 @@ L</Attributes> section for a description of the attributes.
     }
 }
 
+=item @events = $tle->intrinsic_events( $start, $end );
+
+This method returns any events that are intrinsic to the C<$tle> object.
+If optional argument C<$start> is defined, only events occurring at or
+after that Perl time are returned. Similarly, if optional argument
+C<$end> is defined, only events occurring before that Perl time are
+returned.
+
+The return is an array of array references. Each array reference
+specifies the Perl time of the event and a text description of the
+event.
+
+At this level of the object hierarchy nothing is returned. Subclasses
+may override this to add C<pass()> events. The overrides should return
+anything returned by C<SUPER::intrinsic_events(...)> in addition to
+anything they return themselves.
+
+The order of the returned events is undefined.
+
+=cut
+
+sub intrinsic_events {
+    return;
+}
+
 
 =item $deep = $tle->is_deep();
 
@@ -1290,7 +1315,6 @@ eod
 	PASS_EVENT_DAY,
     );
     my $verbose = $tle->get ('interval');
-    my $lazy_pass_position = $tle->get( 'lazy_pass_position' );
     my $pass_step = 60;
     my $horizon = $tle->get ('horizon');
     my $effective_horizon = $tle->get ('geometric') ? 0 : $horizon;
@@ -1304,6 +1328,7 @@ eod
     defined $pass_threshold
 	and $pass_threshold > $horizon
 	or $pass_threshold = $horizon;
+    my $pass_backup_earliest = $tle->__pass_backup_earliest();
 
     # We need the number of radians the satellite travels in a minute so
     # we can be slightly conservative determining whether the satellite
@@ -1410,7 +1435,8 @@ eod
 #	    period. Pick up that part now.
 
 	    {	# Single-iteration loop.
-		my $time = $info[0]{time} - $step;
+		( my $time = $info[0]{time} - $step ) < $pass_backup_earliest
+		    and last;
 		my ( $try_azm, $try_elev, $try_rng ) = $sta->azel (
 		    $tle->universal( $time ) );
 		last if $try_elev < $effective_horizon;
@@ -1696,45 +1722,46 @@ eod
 			    $tle->universal ($when));
 		next if $angle > $appulse_dist;
 		my ( $azimuth, $elevation, $range ) = $sta->azel( $tle );
+		push @info, {
+		    body	=> $tle,
+		    event	=> PASS_EVENT_APPULSE,
+		    station	=> $sta,
+		    time	=> $when,
+		    azimuth	=> $azimuth,
+		    elevation	=> $elevation,
+		    range	=> $range,
+		    appulse	=> {
+			angle	=> $angle,
+			body	=> $body,
+		    },
+		    _find_illumination( $sun, $when, \@info ),
+		};
 
-		{	# Localize
-		    my @illumination;
-		    if ( $sun ) {
-			my $illum = $info[0]{illumination};
-			foreach my $evt ( @info ) {
-			    $evt->{time} > $when
-				and last;
-			    $illum = $evt->{illumination};
-			}
-			push @illumination, illumination => $illum;
-		    }
-		    push @info, {
-			body	=> $tle,
-			event	=> PASS_EVENT_APPULSE,
-			station	=> $sta,
-			time	=> $when,
-			azimuth	=> $azimuth,
-			elevation	=> $elevation,
-			range	=> $range,
-			appulse	=> {
-			    angle	=> $angle,
-			    body	=> $body,
-			},
-			@illumination,
-		    };
-		}
 		warn <<"EOD" if $debug;	## no critic (RequireCarping)
 	    $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S',
 		localtime $time[$#time][0]]}
 EOD
 	    }
 
+	    # Add in the intrinsic events if there are any.
+	    foreach my $evt (
+		$tle->intrinsic_events( $first_time, $last_time )
+	    ) {
+		my ( $when, $event ) = @{ $evt };
+		push @info, {
+		    body	=> $tle,
+		    event	=> $event,
+		    station	=> $sta,
+		    time	=> $when,
+		    _find_illumination( $sun, $when, \@info ),
+		    $tle->_find_position( $sta, $when ),
+		};
+	    }
+
 	    # If we're verbose, calculate the points.
 
 	    if ( $verbose ) {
 
-		my $inx = 0;
-		my $illum = $info[$inx++]{illumination};
 		my %events = map { $_->{time} => 1 } @info;
 		for ( my $it = ceil( $first_time ); $it < $last_time;
 		    $it += $verbose ) {
@@ -1749,26 +1776,14 @@ EOD
 		    # the end of that part of @info, but in practice we
 		    # exit the for loop before we get to that point.
 
-		    {	# Localize
-			my @illumination;
-			if ( $sun ) {
-			    while ( $info[$inx]{time} < $it ) {
-				$illum = $info[$inx++]{illumination};
-			    }
-			    push @illumination, illumination => $illum;
-			}
-			push @info, {
-			    body => $tle,
-			    event => PASS_EVENT_NONE,
-			    station => $sta,
-			    time => $it,
-			    @illumination,
-			};
-		    }
-		    $lazy_pass_position
-			or @{ $info[-1] }{
-			    qw{azimuth elevation range } } =
-			    $sta->azel( $tle->universal( $it ) );
+		    push @info, {
+			body => $tle,
+			event => PASS_EVENT_NONE,
+			station => $sta,
+			time => $it,
+			_find_illumination( $sun, $it, \@info ),
+			$tle->_find_position( $sta, $it ),
+		    };
 		}
 	    }
 
@@ -1894,6 +1909,14 @@ eod
 	    min( $mark + APPULSE_CHECK_STEP, $last_time ),
 	);
     }
+}
+
+# Unpublished, and subject to retraction. The sole purpose of this is to
+# give the experimental Astro::Coord::ECI::Point class a way to prevent
+# the Astro::Coord::ECI::TLE pass() method from backing up ad infinitum
+# trying to find the time when the body rises.
+sub __pass_backup_earliest {
+    return 0;
 }
 
 
@@ -7272,6 +7295,41 @@ sub _convert_out {
     $self->equinox_dynamical ($self->{epoch_dynamical});
 
     return $self;
+}
+
+# Called by pass() to find the illumination. The arguments are the sun
+# object (or nothing), the time, and a reference to the pass information
+# hash. The return is either nothing (if $sun is not defined) or
+# ( illumination => $illum ).
+sub _find_illumination {
+    my ( $sun, $when, $info ) = @_;
+    $sun
+	or return;
+    my $illum = $info->[0]{illumination};
+    foreach my $evt ( @{ $info } ) {
+	$evt->{time} > $when
+	    and last;
+	$illum = $evt->{illumination};
+    }
+    return ( illumination	=> $illum );
+}
+
+# Called by pass() to calculate azimuth, elevation, and range. The
+# arguments are the TLE object, the station object, and the time. If the
+# TLE's 'lazy_pass_position' attribute is true, nothing is returned.
+# Otherwise the azimuth, elevation, and range are calculated and
+# returned as three name/value pairs (i.e. a six-element list).
+sub _find_position {
+    my ( $tle, $sta, $when ) = @_;
+    $tle->get( 'lazy_pass_position' )
+	and return;
+    $tle->universal( $when );
+    my ( $azimuth, $elevation, $range ) = $sta->azel( $tle );
+    return (
+	azimuth	=> $azimuth,
+	elevation	=> $elevation,
+	range		=> $range,
+    );
 }
 
 # Initial value of the 'inertial' attribute. TLEs are assumed to be
