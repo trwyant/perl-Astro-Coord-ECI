@@ -300,8 +300,7 @@ attribute is not set.
 
 sub azel {	## no critic (RequireArgUnpacking)
     @_ > 2
-	and croak q{The azel() 'upper' argument is removed; use },
-	    q{the azel_offset() 'offset' argument instead};
+	and croak q{Too many arguments};
     @_ = _expand_args_default_station( @_ );
     $_[2] = $_[2] ? 1 : 0;
     goto &azel_offset;
