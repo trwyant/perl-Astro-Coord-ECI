@@ -28,7 +28,7 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new ();
-my $asof = timegm( 0, 0, 0, 4, 10, 113 );
+my $asof = timegm( 0, 0, 3, 7, 0, 114 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
