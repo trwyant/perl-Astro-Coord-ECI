@@ -38,7 +38,7 @@ $mbv >= 0.28 and $attr{meta_merge} = {
     },
     resources => {
 	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
-	license => [ 'http://dev.perl.org/licenses/' ],
+	license => 'http://dev.perl.org/licenses/',
     },
 };
 

@@ -122,7 +122,7 @@ $mmv >= 6.4501 and $attr{META_MERGE} = {
     dynamic_config => 1,
     resources => {
 	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
-	license => [ 'http://dev.perl.org/licenses/' ],
+	license => 'http://dev.perl.org/licenses/',
     },
 };
 
