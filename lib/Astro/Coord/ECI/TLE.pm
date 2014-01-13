@@ -104,7 +104,7 @@ the latter is what Space Track uses in their TLE data. Beginning with
 
 Beginning with release 0.056_01, loading JSON TLE data which specifies
 L<SATNAME> produces a warning the first time it happens. As of version
-[%% next_version %%] there is a warning every time it happens. Six
+0.061 there is a warning every time it happens. Six
 months later, loading JSON TLE data which specifies L<SATNAME> will
 become a fatal error.
 
@@ -213,7 +213,7 @@ package Astro::Coord::ECI::TLE;
 use strict;
 use warnings;
 
-our $VERSION = '0.060';
+our $VERSION = '0.061';
 
 use base qw{ Astro::Coord::ECI Exporter };
 

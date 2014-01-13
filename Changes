@@ -1,3 +1,42 @@
+0.061		2014-01-13	T. R. Wyant
+  On install, warn that I intend to remove the 'install satpass'
+    question asked by Build.PL and Makefile.PL. The only way to install
+    the satpass script will be to run Build.PL or Makefile.PL with the
+    '-y' option. Also warn of eventual package name change, from
+    'Astro-satpass' to 'Astro-Coord-ECI'.
+  Warn every time Astro::Coord::ECI::TLE->parse() encounters JSON key
+    SATNAME. This was removed while Space Track's REST interface is
+    still in beta.
+  Computation of a Doppler shift based on the station's 'frequency'
+    attribute is now fatal. The body's 'frequency' attribute should be
+    set instead.
+  Remove all references to the satpass 'lit' setting and the
+    corresponding Astro::Coord::ECI 'limb' attribute, which were
+    deprecated out long since.
+  Remove all mention of the 'upper' argument to the Astro::Coord::ECI
+    azel() method. It's still an exception to pass a second argument,
+    though.
+  Remove all references to SOAP::Lite in the satpass code, except for
+    POD saying it was gone.
+  Various changes to Astro::Coord::ECI::TLE to try to support
+    prospective classes representing non-orbiting objects. These are
+    experimental, and may change or be retracted with little or no
+    notice. The hope is a class that can represent the objects in one of
+    NASA's .kmz files that are published for certain launches. These
+    include:
+    * Refactoring illumination and periodic position calculations in the
+      pass() method;
+    * Add public method intrinsic_events(), which returns events
+      intrinsic to the body, rather than observational ones like rise
+      and set, and call it in the pass() method;
+    * Add protected (and therefore doubly experimental) method
+      __pass_backup_earliest() to limit how hard the pass() method tries
+      to find a rise time when the pass starts with the body above the
+      horizon.
+    I have no idea whether the class this is in support of will ever see
+    the light of day.
+  Improve Astro::Coord::ECI::Utils::find_first_true() documentation.
+
 0.060		2013-12-18	T. R. Wyant
   In eg/almanac, correct the handling of -sun and -moon when exactly one
     is specified.  The erroneous processing forced both to be asserted

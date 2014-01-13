@@ -52,7 +52,7 @@ prefers the satellite. I intend to deprecate the use of the observer's
 C<frequency> attribute in the usual way. As of version 0.056, the first
 use of the observer's C<frequency> attribute resulted in a warning. As
 of version 0.056_01, every use resulted in a warning. As of version
-[%% next_version %%], any use of the observer's frequency is fatal.
+0.061, any use of the observer's frequency is fatal.
 
 Release 0.047_01 contains a number of changes to the handling of
 relative positions:
@@ -143,7 +143,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.060';
+our $VERSION = '0.061';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
