@@ -6873,10 +6873,6 @@ so:
  my $json = JSON->new()->convert_blessed( 1 );
  print $json->encode( $tle );
 
-Since the Space Track REST interface is currently in beta, I have to
-assume that the keys returned may change. Any changes B<will> be tracked
-by this method.
-
 The returned keys are a mish-mash of the keys returned by the Space
 Track C<satcat> and C<tle> classes, plus others that are not maintained
 by Space Track. Since the Space Track keys are all upper case, I have
