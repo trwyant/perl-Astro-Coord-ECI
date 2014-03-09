@@ -5,7 +5,7 @@ use 5.006002;
 use strict;
 use warnings;
 
-use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE qw{ BODY_TYPE_DEBRIS BODY_TYPE_PAYLOAD };
 use Astro::Coord::ECI::TLE::Iridium;
 use Test::More 0.88;	# Because of done_testing();
 
@@ -36,6 +36,12 @@ EOD
 
 my ( $tle ) = Astro::Coord::ECI::TLE->parse( $vanguard );
 
+$tle->set(
+    file	=> 42,
+    ordinal	=> 666,
+    originator	=> 'Arthur Dent',
+);
+
 my $hash = $tle->TO_JSON();
 
 foreach my $key ( qw{
@@ -49,6 +55,7 @@ foreach my $key ( qw{
 	EPHEMERIS_TYPE
 	EPOCH
 	EPOCH_MICROSECONDS
+	FILE
 	INCLINATION
 	INTLDES
 	LAUNCH_NUM
@@ -60,6 +67,10 @@ foreach my $key ( qw{
 	MEAN_MOTION_DOT
 	NORAD_CAT_ID
 	OBJECT_NAME
+	OBJECT_NUMBER
+	OBJECT_TYPE
+	ORDINAL
+	ORIGINATOR
 	RA_OF_ASC_NODE
 	RCSVALUE
 	REV_AT_EPOCH
@@ -84,6 +95,7 @@ is_deeply $hash, {
     'EPHEMERIS_TYPE' => '0',
     'EPOCH' => '2000-06-27 18:50:19',
     'EPOCH_MICROSECONDS'	=> '733568',
+    FILE	=> '42',
     'INCLINATION' => '34.2682',
     'INTLDES' => '58002B',
     'LAUNCH_NUM' => '002',
@@ -95,6 +107,10 @@ is_deeply $hash, {
     'MEAN_MOTION_DDOT' => '0',
     'NORAD_CAT_ID' => '00005',
     'OBJECT_NAME' => 'VANGUARD 1',
+    'OBJECT_NUMBER'	=> '00005',
+    OBJECT_TYPE	=> uc BODY_TYPE_PAYLOAD,
+    ORDINAL	=> 666,
+    ORIGINATOR	=> 'Arthur Dent',
     'RA_OF_ASC_NODE' => '348.7242',
     'RCSVALUE' => '0.254',
     'REV_AT_EPOCH' => '41366',
@@ -124,6 +140,10 @@ FAKE IRIDIUM
 2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667
 EOD
 
+$tle->set(
+    object_type	=> 'Debris',
+);
+
 $hash = $tle->TO_JSON();
 
 foreach my $key ( qw{
@@ -148,6 +168,8 @@ foreach my $key ( qw{
 	MEAN_MOTION_DOT
 	NORAD_CAT_ID
 	OBJECT_NAME
+	OBJECT_NUMBER
+	OBJECT_TYPE
 	RA_OF_ASC_NODE
 	REV_AT_EPOCH
 	TLE_LINE0
@@ -183,7 +205,9 @@ is_deeply $hash, {
     'MEAN_MOTION_DDOT' => '0',
     'NORAD_CAT_ID' => '00005',
     'OBJECT_NAME' => 'FAKE IRIDIUM',
+    'OBJECT_NUMBER'	=> '00005',
     'RA_OF_ASC_NODE' => '348.7242',
+    OBJECT_TYPE	=> uc BODY_TYPE_DEBRIS,
     'REV_AT_EPOCH' => '41366',
     'TLE_LINE0' => '0 FAKE IRIDIUM',
     'TLE_LINE1' => '1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753',
