@@ -142,12 +142,12 @@ our @EXPORT_OK = ( qw{
 	SPEED_OF_LIGHT TWOPI acos asin
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
 	dynamical_delta embodies epoch2datetime equation_of_time
-	find_first_true intensity_to_magnitude jcent2000 jd2date
-	jd2datetime jday2000 julianday keplers_equation load_module
-	looks_like_number max min mod2pi nutation_in_longitude
-	nutation_in_obliquity obliquity omega rad2deg tan theta0 thetag
-	vector_cross_product vector_dot_product vector_magnitude
-	vector_unitize
+	find_first_true fold_case intensity_to_magnitude jcent2000
+	jd2date jd2datetime jday2000 julianday keplers_equation
+	load_module looks_like_number max min mod2pi
+	nutation_in_longitude nutation_in_obliquity obliquity omega
+	rad2deg tan theta0 thetag vector_cross_product
+	vector_dot_product vector_magnitude vector_unitize
        	__classisa __default_station __instance },
 	@time_routines );
 
@@ -562,6 +562,15 @@ sub find_first_true {
     }
     return $end;
 }
+
+=item $folded = fold_case( $text );
+
+This function folds the case of its input, kinda sorta. It maps to
+C<CORE::fc> if that is available, otherwise it maps to C<CORE::lc>.
+
+=cut
+
+*fold_case = CORE->can( 'fc' ) || CORE->can( 'lc' );
 
 
 =item $difference = intensity_to_magnitude ($ratio)
