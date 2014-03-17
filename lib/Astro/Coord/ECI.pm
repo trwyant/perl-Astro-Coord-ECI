@@ -2383,7 +2383,9 @@ sub precess_dynamical {
 	    "attribute undefined";
     $start ||= $self->dynamical ();
 
-    if ( my $sta = $self->get( 'station' ) ) {
+    my $sta;
+    if ( $sta = $self->get( 'station' ) and $sta->get( 'inertial' ) 
+    ) {
 	$sta->get( 'station' )
 	    and croak NO_CASCADING_STATIONS;
 	$sta->universal( $self->universal() );
@@ -2421,12 +2423,19 @@ sub precess_dynamical {
     my $alpha = mod2pi(atan2 ($A , $B) + $z);
     my $delta = asin($C);
 
-    $self->equatorial ($alpha, $delta, $rho0);
-    $self->set (equinox_dynamical => $end);
-
-    if ( my $sta = $self->get( 'station' ) ) {
-	$sta->precess_dynamical( $end );
+    if ( $self->get( 'inertial' ) ) {
+	$self->equatorial ($alpha, $delta, $rho0);
+    } else {
+	# This jumping-through-hoops is because if we have an object
+	# defined in an Earth-fixed coordinate system, simply setting
+	# Equatorial coordinates converts it to an inertial system. So
+	# we have to retrieve the initially-set coordinate system and
+	# put it back the way it was.
+	my $method = $self->{specified};
+	$self->equatorial ($alpha, $delta, $rho0);
+	$self->$method( $self->$method() );
     }
+    $self->set (equinox_dynamical => $end);
 
     return $self;
 }
@@ -3239,6 +3248,11 @@ eod
 	$data[3] -= $data[1] * $self->{angularvelocity};
 	$data[4] += $data[0] * $self->{angularvelocity};
     }
+
+    # A bunch of digging says this was added by Subversion commit 697,
+    # which was first released with Astro::Coord::ECI version 0.014. The
+    # comment says "Handle equinox in conversion between eci and ecef.
+    # Correctly, I hope." I'm leaving it in for now, but ...
     $self->set (equinox_dynamical => $self->dynamical);
     return @{$self->{_ECI_cache}{inertial}{eci} = \@data};
 }
