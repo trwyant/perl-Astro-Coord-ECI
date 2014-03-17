@@ -15,6 +15,7 @@ use Test::More 0.88;
 
 our @EXPORT_OK = qw{
     format_pass format_time
+    magnitude
     tolerance tolerance_frac
     velocity_sanity
 };
@@ -110,6 +111,29 @@ sub format_time {
     my @parts = gmtime int( $time + 0.5 );
     return sprintf '%04d/%02d/%02d %02d:%02d:%02d', $parts[5] + 1900,
 	$parts[4] + 1, @parts[ 3, 2, 1, 0 ];
+}
+
+sub magnitude (@) {
+    my ( $tle, @arg ) = @_;
+    my ( $want, $name ) = splice @arg, -2;
+    my $got;
+    eval {
+	$got = $tle->magnitude( @arg );
+	defined $got
+	    and $got = sprintf '%.1f', $got;
+	1;
+    } or do {
+	@_ = "$name failed: $@";
+	goto &fail;
+    };
+    if ( defined $want ) {
+	$want = sprintf '%.1f', $want;
+	@_ = ( $got, 'eq', $want, $name );
+	goto &cmp_ok;
+    } else {
+	@_ = ( ! defined $got, $name );
+	goto &ok;
+    }
 }
 
 sub tolerance (@) {
