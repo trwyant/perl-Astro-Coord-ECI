@@ -2339,11 +2339,9 @@ universal time.>
 =cut
 
 sub precess {
-    my $self = shift;
-    if (@_ && $_[0]) {
-	$_[0] += dynamical_delta ($_[0]);
-    }
-    return $self->precess_dynamical (@_);
+    $_[1]
+	and $_[1] += dynamical_delta( $_[1] );
+    goto &precess_dynamical;
 }
 
 
@@ -2361,6 +2359,10 @@ unaffected by this operation.>
 As a side effect, the value of the 'equinox_dynamical' attribute will be
 set to the dynamical time corresponding to the argument.
 
+As of version [%% next_version %%], this does nothing to non-inertial
+objects -- that is, those whose position was set in Earth-fixed
+coordinates.
+
 If the object's 'station' attribute is set, the station is also
 precessed.
 
@@ -2377,8 +2379,12 @@ sub precess_dynamical {
     $end
 	or croak "No equinox time specified";
 
-    (defined (my $start = $self->get ('equinox_dynamical'))
-	|| !$self->get ('inertial'))
+    # Non-inertial coordinate systems are not referred to the equinox,
+    # and so do not get precessed.
+    $self->get( 'inertial' )
+	or return $self;
+
+    defined ( my $start = $self->get( 'equinox_dynamical' ) )
 	or carp "Warning - Precess called with equinox_dynamical ",
 	    "attribute undefined";
     $start ||= $self->dynamical ();
@@ -2423,18 +2429,7 @@ sub precess_dynamical {
     my $alpha = mod2pi(atan2 ($A , $B) + $z);
     my $delta = asin($C);
 
-    if ( $self->get( 'inertial' ) ) {
-	$self->equatorial ($alpha, $delta, $rho0);
-    } else {
-	# This jumping-through-hoops is because if we have an object
-	# defined in an Earth-fixed coordinate system, simply setting
-	# Equatorial coordinates converts it to an inertial system. So
-	# we have to retrieve the initially-set coordinate system and
-	# put it back the way it was.
-	my $method = $self->{specified};
-	$self->equatorial ($alpha, $delta, $rho0);
-	$self->$method( $self->$method() );
-    }
+    $self->equatorial ($alpha, $delta, $rho0);
     $self->set (equinox_dynamical => $end);
 
     return $self;
