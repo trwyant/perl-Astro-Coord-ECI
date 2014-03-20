@@ -1,5 +1,6 @@
 ^\.#
 /\.#
+^\.ackrc
 ^Astro-satpass-
 ^attic/
 ^_build/

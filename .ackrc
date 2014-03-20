@@ -1,0 +1,4 @@
+# Project-specific settings for ack:
+
+# By default, ignore the mega_test files and logs.
+--ignore-file=match:/\Amega_test/
