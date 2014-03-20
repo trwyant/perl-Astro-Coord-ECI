@@ -1026,6 +1026,7 @@ sub equatorial {
 ##	my ($ra, $dec, $range, @eqvel) = @args;
 	$args[0] = _check_right_ascension( 'right ascension' => $args[0] );
 	$args[1] = _check_latitude( declination => $args[1] );
+	foreach my $key (@kilatr) {delete $self->{$key}}
 	$self->{_ECI_cache}{inertial}{equatorial} = \@args;
 	$self->eci(
 	    _convert_spherical_to_cartesian( @args ) );
