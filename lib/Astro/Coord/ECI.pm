@@ -143,7 +143,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.061';
+our $VERSION = '0.061_01';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
@@ -2360,7 +2360,7 @@ unaffected by this operation.>
 As a side effect, the value of the 'equinox_dynamical' attribute will be
 set to the dynamical time corresponding to the argument.
 
-As of version [%% next_version %%], this does nothing to non-inertial
+As of version 0.061_01, this does nothing to non-inertial
 objects -- that is, those whose position was set in Earth-fixed
 coordinates.
 

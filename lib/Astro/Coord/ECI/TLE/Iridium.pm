@@ -121,7 +121,7 @@ use warnings;
 
 use base qw{Astro::Coord::ECI::TLE};
 
-our $VERSION = '0.061';
+our $VERSION = '0.061_01';
 
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{:all};
@@ -1456,9 +1456,9 @@ the 'status' key is true.
 
 If called in scalar context, a reference to the \@data list is returned.
 
-B<NOTE> that prior to [%% next_version %%] the C<$time> argument
-defaulted to the current time. This behavior was undocumented, and
-therefore I felt free to change it.
+B<NOTE> that prior to 0.061_01 the C<$time> argument defaulted to the
+current time. This behavior was undocumented, and therefore I felt free
+to change it.
 
 =cut
 

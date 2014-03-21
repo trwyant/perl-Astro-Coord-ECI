@@ -1,3 +1,34 @@
+0.061_01	2014-03-20	T. R. Wyant
+  Computation of (perhaps very) approximate magnitudes for satellites is
+    now supported. Changes to support this include:
+    - A magnitude() method on all classes that represent satellites;
+    - An intrinsic_magnitude attribute (defaulting to undef) on
+      Astro::Coord::ECI::TLE objects;
+    - Default intrinsic_magnitude to 7 on
+      Astro::Coord::ECI::TLE::Iridium objects;
+    - A canned table of intrinsic magnitudes in Astro::Coord::ECI::TLE
+      which includes most of the objects in the Celestrak visual list,
+      with magnitudes from Mike McCants' mcnames.zip and vsnames.zip
+      files;
+    - Support in the Astro::Coord::ECI::TLE parse() method to set the
+      magnitude of satellites that are in the table;
+    - Static method magnitude_table() on Astro::Coord::ECI::TLE to
+      maintain the canned magnitude table;
+    - Modify the Astro::Coord::ECI::Sun magnitude() method to take an
+      observing station argument (which is ignored) to be consistent
+      with the same-named Astro::Coord::ECI::TLE method.
+  The precess() and precess_dynamical() methods now do nothing to
+    objects set to Earth-fixed coordinates. Previously they were
+    converted to Ecliptic (and therefore inertial) coordinates, which
+    manifested as a bug when the observing station was an attribute of a
+    star.
+  Support new (to us) Space Track JSON keys FILE, OBJECT_TYPE, ORDINAL
+    and ORIGINATOR with same-named (except for being lower case)
+    attributes.
+  Method body_type() now returns the 'object_type' attribute if that is
+    defined. If not it computes its return from the object name, like it
+    always has.
+
 0.061		2014-01-13	T. R. Wyant
   On install, warn that I intend to remove the 'install satpass'
     question asked by Build.PL and Makefile.PL. The only way to install
