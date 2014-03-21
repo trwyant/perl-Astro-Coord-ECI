@@ -12,6 +12,7 @@ eg/positions
 eg/README
 eg/sh_script
 eg/tle_period.t
+eg/visual
 eg/xml
 inc/Astro/Coord/ECI/Build.pm
 inc/Astro/Coord/ECI/Meta.pm
@@ -41,8 +42,10 @@ README.MacOS
 t/basic.t
 t/eci.t
 t/eci_maidenhead.t
+t/mcnames.mag
 t/moon.t
 t/parse_time.t
+t/quicksat.mag
 t/set.t
 t/sgp4-ver.tle
 t/star.t
@@ -53,6 +56,7 @@ t/tle_effective.t
 t/tle_exception.t
 t/tle_flare.t
 t/tle_json.t
+t/tle_mag.t
 t/tle_misc.t
 t/tle_parse.t
 t/tle_pass.t
@@ -63,6 +67,7 @@ xt/author/changes.t
 xt/author/critic.t
 xt/author/executable.t
 xt/author/iridium_status.t
+xt/author/magnitude_status.t
 xt/author/kwalitee.t
 xt/author/manifest.t
 xt/author/perlcriticrc
@@ -71,4 +76,3 @@ xt/author/pod_coverage.t
 xt/author/pod_spelling.t
 xt/author/satpass.t
 xt/author/satpass_geocode.t
-META.json

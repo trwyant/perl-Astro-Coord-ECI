@@ -176,6 +176,7 @@ mish
 mixin
 mma
 mmas
+Molczan
 Moon's
 MoonPhase
 MSWin
@@ -189,6 +190,7 @@ nutation
 obliquity
 Observatoire
 OID
+OIDs
 op
 oped
 orbitaux
@@ -218,6 +220,7 @@ precession
 precisions
 psiprime
 Puerto
+Quicksat
 rad
 radian
 radians

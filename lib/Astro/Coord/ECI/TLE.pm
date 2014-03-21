@@ -217,15 +217,16 @@ our $VERSION = '0.061';
 
 use base qw{ Astro::Coord::ECI Exporter };
 
-use Astro::Coord::ECI::Utils qw{ :params :time deg2rad dynamical_delta
-    embodies find_first_true fold_case load_module looks_like_number
-    max min mod2pi PI PIOVER2 rad2deg
+use Astro::Coord::ECI::Utils qw{ :params :time deg2rad distsq
+    dynamical_delta embodies find_first_true fold_case load_module
+    looks_like_number max min mod2pi PI PIOVER2 rad2deg
     SECSPERDAY TWOPI thetag __default_station };
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use IO::File;
 use POSIX qw{ ceil floor fmod strftime };
+use Scalar::Util ();
 
 BEGIN {
     local $@;
@@ -422,6 +423,7 @@ eod
 	$doit and $_[0]->rebless ();
 	return 0;
     },
+    intrinsic_magnitude	=> \&_set_optional_float_no_reinit,
 );
 my %static = (
     appulse => deg2rad (10),	# Report appulses < 10 degrees.
@@ -445,6 +447,8 @@ foreach (keys %attrib) {
     $model_attrib{$_} = 1 if $attrib{$_} && !ref $attrib{$_}
 }
 my %status;	# Subclassing data - initialized at end
+my %magnitude_table;	# Magnitude data - initialized at end
+my $magnitude_adjust = 0;	# Adjustment to magnitude table value
 
 use constant TLE_INIT => '_init';
 
@@ -830,6 +834,254 @@ This method can be called as a static method, or even as a subroutine.
 
 }	# End local symbol block
 
+=item $mag = $tle->magnitude( $station );
+
+This method returns the magnitude of the body as seen from the given
+station. If no C<$station> is specified, the object's C<'station'>
+attribute is used. If that is not set, and exception is thrown.
+
+This is calculated from the C<'intrinsic_magnitude'> attribute, the
+distance from the station to the satellite, and the fraction of the
+satellite illuminated. The formula is from Mike McCants.
+
+We return C<undef> if the C<'intrinsic_magnitude'> or C<'illum'>
+attributes are C<undef>, or if the illuminating body is below the
+horizon as seen from the satellite.
+
+Some very desultory investigation of International Space Station
+magnitude predictions suggests that this method produces magnitude
+estimates about half a magnitude less bright than Heavens Above.
+
+=cut
+
+sub magnitude {
+    my ( $self, $sta ) = __default_station( @_ );
+
+    # If we have no standard magnitude, just return undef.
+    defined( my $std_mag = $self->get( 'intrinsic_magnitude' ) )
+	or return undef;	## no critic (ProhibitExplicitReturnUndef)
+
+    # If we have no illuminating body for some reason, we also have to
+    # just return undef.
+    my $illum = $self->get( 'illum' )
+	or return undef;	## no critic (ProhibitExplicitReturnUndef)
+
+    # Pick up the time.
+    my $time = $self->universal();
+
+    # If the illuminating body is below the horizon, we return undef.
+    $self->__sun_elev_from_sat( $time ) < 0
+	and return undef;	## no critic (ProhibitExplicitReturnUndef)
+
+    # Compute the range.
+    my ( undef, $elev, $range ) = $sta->azel( $self );
+
+    # If the satellite is below the horizon, just return undef
+    $elev < 0
+	and return undef;	## no critic (ProhibitExplicitReturnUndef)
+
+    # Adjust the magnitude if the illuminating body is not the Sun.
+    my $mag_adj = $illum->isa( 'Astro::Coord::ECI::Sun' ) ? 0 :
+	$illum->magnitude() - Astro::Coord::ECI::Sun->MEAN_MAGNITUDE();
+
+    # Compute the fraction of the satellite illuminated.
+    my $frac_illum = ( 1 + cos( $self->angle( $illum, $sta ) ) ) / 2;
+
+    # Finally we get to McCants' algorithm
+    return $std_mag + $mag_adj - 15.75 +
+	2.5 * log( $range ** 2 / $frac_illum ) / log( 10 );
+
+}
+
+=item Astro::Coord::ECI::TLE->magnitude_table( command => arguments ...)
+
+This method maintains the internal magnitude table, which is used by the
+parse() method to fill in magnitudes, since they are not normally
+available from the usual sources.  The first argument determines what is
+done to the status table; subsequent arguments depend on the first
+argument. Valid commands and arguments are:
+
+C<magnitude_table( add => $id, $mag )> adds a magnitude entry to the
+table, replacing the existing entry for the given OID if any.
+
+C<magnitude_table( adjust => $adjustment )> maintains a magnitude
+adjustment to be added to the value in the magnitude table before
+setting the C<intrinsic_magnitude> of an object. If the argument is
+C<undef> the current adjustment is returned; otherwise the argument
+becomes the new adjustment. Actual magnitude table entries are not
+modified by this operation; the adjustment is done in the C<parse()>
+method.
+
+C<magnitude_table( 'clear' )> clears the magnitude table.
+
+C<magnitude_table( drop => $id )> removes the given OID from the table
+if it is there.
+
+C<magnitude_table( magnitude => \%mag ) replaces the magnitude table
+with the contents of the given hash. The keys will be normalized to 5
+digits.
+
+C<magnitude_table( molczan => $file_name, $mag_offset )> replaces the
+magnitude table with the contents of the named Molczan-format file. The
+C<$file_name> argument can also be a scalar reference with the scalar
+containing the data, or an open handle. The C<$mag_offset> is an
+adjustment to be added to the magnitudes read from the file, and
+defaults to 0.
+
+C<magnitude_table( quicksat => $file_name, $mag_offset )> replaces the
+magnitude table with the contents of the named Quicksat-format file. The
+C<$file_name> argument can also be a scalar reference with the scalar
+containing the data, or an open handle. The C<$mag_offset> is an
+adjustment to be added to the magnitudes read from the file, and
+defaults to 0. In addition to this value, C<0.7> is added to the
+magnitude before storage to adjust the data from full-phase to
+half-phase.
+
+C<magnitude_table( show => ... )> returns an array which is a slice of
+the magnitude table, which is stored as a hash. In other words, it
+returns OID/magnitude pairs in no particular order. If any further
+arguments are passed, they are the OIDs to return. Otherwise all are
+returned.
+
+Examples of Molczan-format data are contained in F<mcnames.zip> and
+F<vsnames.zip> available on Mike McCants' web site; these can be fetched
+using the L<Astro::SpaceTrack|Astro::SpaceTrack> C<mccants()> method. An
+example of Quicksat-format data is contained in F<qsmag.zip>. See Mike
+McCants' web site, L<http://www.prismnet.com/~mmccants/> for an
+explanation of the differences.
+
+Note that if you have one of the reported pure Perl versions of
+L<Scalar::Util|Scalar::Util>, you can not pass open handles to
+functionality that would otherwise accept them.
+
+=cut
+
+
+{
+    my $openhandle = Scalar::Util->can( 'openhandle' ) || sub { return };
+
+    my $parse_file = sub {
+	my ( $file_name, $mag_offset, $parse_info ) = @_;
+	defined $mag_offset
+	    or $mag_offset = 0;
+	$mag_offset += $parse_info->{mag_offset};
+	my %mag;
+	my $fh;
+	if ( $openhandle->( $file_name ) ) {
+	    $fh = $file_name;
+	} else {
+	    open $fh, '<', $file_name	## no critic (RequireBriefOpen)
+		or croak "Failed to open $file_name: $!";
+	}
+	while ( <$fh> ) {
+	    chomp;
+	    m/ \A \s* (?: \# | \z ) /smx
+		and next;	# Extension to syntax.
+	    $parse_info->{pad} > length
+		and $_ = sprintf '%-*s', $parse_info->{pad}, $_;
+	    my ( $id, $mag ) = unpack $parse_info->{template};
+	    $mag =~ s/ \s+ //smxg;
+	    looks_like_number( $mag )
+		or next;
+	    $mag{ _normalize_oid( $id ) } = $mag + $parse_info->{mag_offset};
+	}
+	close $fh;
+	%magnitude_table = %mag;
+    };
+
+    my %cmd_def = (
+	add	=> sub {
+	    my ( $id, $mag ) = @_;
+	    defined $id
+		and $id =~ m/ \A [0-9]+ \z /smx
+		and defined $mag
+		and looks_like_number( $mag )
+		or croak 'magnitude_table add needs an OID and a magnitude';
+	    $magnitude_table{ _normalize_oid( $id ) } = $mag;
+	    return;
+	},
+	adjust	=> sub {
+	    my ( $adj ) = @_;
+	    if ( defined $adj ) {
+		looks_like_number( $adj )
+		    or croak 'magnitude_table adjust needs a floating point number';
+		$magnitude_adjust = $adj;
+		return;
+	    } else {
+		return $magnitude_adjust;
+	    }
+	},
+	clear	=> sub {
+	    %magnitude_table = ();
+	    return;
+	},
+	dump	=> sub {
+	    local $Data::Dumper::Terse = 1;
+	    local $Data::Dumper::Sortkeys = 1;
+	    print Dumper( \%magnitude_table );
+	    return;
+	},
+	drop	=> sub {
+	    my ( $id ) = @_;
+	    defined $id
+		and $id =~ m/ \A [0-9]+ \z /smx
+		or croak 'magnitude_table drop needs an OID';
+	    delete $magnitude_table{ _normalize_oid( $id ) };
+	    return;
+	},
+	magnitude	=> sub {
+	    my ( $tbl ) = @_;
+	    'HASH' eq ref $tbl
+		or croak 'magnitude_table magnitude needs a hash ref';
+	    my %mag;
+	    while ( my ( $key, $val ) = each %{ $tbl } ) {
+		$key =~ m/ \A [0-9]+ \z /smx
+		    or croak "OID '$key' must be numeric";
+		looks_like_number( $val )
+		    or croak "Magnitude '$val' must be numeric";
+		$mag{ _normalize_oid( $key ) } = $val;
+	    }
+	    %magnitude_table = %mag;
+	    return;
+	},
+	molczan	=> sub {
+	    my ( $file_name, $mag_factor ) = @_;
+	    $parse_file->( $file_name, $mag_factor, {
+		    mag_offset	=> 0,
+		    pad		=> 49,
+		    template	=> 'a5x32a5',
+		} );
+	    return;
+	},
+	quicksat	=> sub {
+	    my ( $file_name, $mag_factor ) = @_;
+	    $parse_file->( $file_name, $mag_factor, {
+		    mag_offset	=> 0.7,
+		    pad		=> 56,
+		    template	=> 'a5x28a5',
+		} );
+	    return;
+	},
+	show	=> sub {
+	    my ( @arg ) = @_;
+	    @arg
+		or return %magnitude_table;
+	    return (
+		map { $_ => $magnitude_table{$_} }
+		grep { defined $magnitude_table{$_} }
+		map { _normalize_oid( $_ ) } @arg
+	    );
+	},
+    );
+
+    sub magnitude_table {
+	my ( undef, $cmd, @arg ) = @_;	# Invocant not used
+	my $code = $cmd_def{$cmd}
+	    or croak "'$cmd' is not a valid magnitude_table subcommand";
+	return $code->( @arg );
+    }
+}
+
 =item $time = $tle->max_effective_date(...);
 
 This method returns the maximum date among its arguments and the
@@ -956,22 +1208,12 @@ mixture), returning a list of Astro::Coord::ECI::TLE objects. The
 L</Attributes> section identifies those attributes which will be filled
 in by this method.
 
-If the first argument is a hash reference, this will be used to set
-attributes in addition to those set by the parse operation.
-
 The input will be split into individual lines, and all blank lines and
 lines beginning with '#' will be eliminated. The remaining lines are
 assumed to represent two- or three-line element sets, in so-called
 external format. Internal format (denoted by a 'G' in column 79 of line
 1 of the set, not counting the common name if any) is not supported,
 and the presence of such data will result in an exception being thrown.
-
-There are two pieces of ad-hoc data that will be parsed from the name
-portion of a NASA TLE and put into the appropriate attribute:
-C<< --effective effective_date >> and C<< --rcs radar_cross_section >>.
-These go in the C<effective> and C<rcs> attributes, respectively. If,
-after removing these ad-hoc entries, the name is the empty string, the
-body is considered not to have a name.
 
 =cut
 
@@ -1073,6 +1315,19 @@ eod
 	$body->__parse_name( $name );
 	$body->{tle} = $tle;
 	push @rslt, $body;
+    }
+
+    if ( keys %magnitude_table ) {
+	foreach my $tle ( @rslt ) {
+	    defined( my $oid = $tle->get( 'id' ) )
+		or next;
+	    defined $tle->get( 'intrinsic_magnitude' )
+		and next;
+	    defined( my $std_mag = $magnitude_table{ _normalize_oid( $oid ) } )
+		or next;
+	    $tle->set( intrinsic_magnitude => $std_mag +
+		$magnitude_adjust );
+	}
     }
     return @rslt;
 }
@@ -2161,7 +2416,6 @@ sub set {
     $clear and delete $self->{&TLE_INIT};
     return $self;
 }
-
 
 =item Astro::Coord::ECI::TLE->status (command => arguments ...)
 
@@ -6992,6 +7246,7 @@ encoded with a four-digit year.
 	    my ( $self ) = @_;
 	    return _format_json_time( $self->get( 'effective' ) );
 	},
+	intrinsic_magnitude	=> 'intrinsic_magnitude',
     );
 
     sub _format_json_time {
@@ -7106,6 +7361,7 @@ encoded with a four-digit year.
 	ORDINAL		=> 'ordinal',
 	ORIGINATOR	=> 'originator',
 	effective_date	=> 'effective',
+	intrinsic_magnitude	=> 'intrinsic_magnitude',
     );
 
     sub _decode_json_time {
@@ -7338,6 +7594,22 @@ sub __list_type {
     return $self->{inertial} ? 'inertial' : 'fixed';
 }
 
+# _looks_like_real
+#
+# This returns a boolean which is true if the input looks like a real
+# number and is false otherwise. It is based on looks_like_number, but
+# excludes things like NaN, and Inf.
+sub _looks_like_real {
+    my ( $number ) = @_;
+    looks_like_number( $number )
+	or return;
+    $number =~ m/ \A nan \z /smxi
+	and return;
+    $number =~ m/ \A [+-]? inf (?: inity )? \z /smxi
+	and return;
+    return 1;
+}
+
 # *equinox_dynamical = \&Astro::Coord::ECI::equinox_dynamical;
 
 #	$text = $self->_make_tle();
@@ -7477,6 +7749,17 @@ sub _make_tle_checksum {
     }
     $sum = $sum % 10;
     return sprintf "%-68s%i\n", substr ($buffer, 0, 68), $sum;
+}
+
+#	_normalize_oid
+#
+#	Normalize an OID by expanding it to five digits.
+
+sub _normalize_oid {
+    my ( $oid ) = @_;
+    $oid =~ m/ [^0-9] /smx
+	and return $oid;
+    return sprintf '%05d', $oid;
 }
 
 #	_set_illum
@@ -7637,6 +7920,22 @@ sub _set_intldes {
 	}
 	return 0;
     }
+}
+
+# _set_optional_float_no_reinit
+#
+# This acts as a mutator for any attribute whose value is either undef
+# or a floating-point number, and which does not cause the model to be
+# renitialized when its value changes. We disallow NaN.
+
+sub _set_optional_float_no_reinit {
+    my ( $self, $name, $value ) = @_;
+    if ( defined $value && ! _looks_like_real( $value ) ) {
+	carp "Invalid $name '$value'; must be a float or undef";
+	$value = undef;
+    }
+    $self->{$name} = $value;
+    return 0;
 }
 
 # _set_optional_unsigned_integer_no_reinit
@@ -8422,6 +8721,250 @@ sub _next_elevation_screen {
              }
 );
 
+# The following is all the Celestrak visual list that have magnitudes in
+# either McCants' vsnames.mag or mcnames.mag files, with the former
+# being preferred. It is generated by the following:
+#
+#   $ eg/visual -merge
+#
+# Last-Modified: Tue, 07 Jan 2014 03:07:16 GMT
+
+%magnitude_table = (
+  '00694' => 3.5,
+  '00733' => 5.0,
+  '00877' => 5.0,
+  '02802' => 5.5,
+  '03230' => 6.0,
+  '03597' => 6.5,
+  '03598' => 5.0,
+  '03669' => 9.0,
+  '04327' => 6.5,
+  '04814' => 5.0,
+  '05118' => 5.0,
+  '05560' => 5.0,
+  '05730' => 5.0,
+  '06073' => 6.5,
+  '06153' => 6.0,
+  '06155' => 5.0,
+  '07004' => 5.0,
+  '08063' => 5.5,
+  '08459' => 6.0,
+  '10114' => 5.5,
+  '10861' => 5.0,
+  '10967' => 4.0,
+  '11267' => 5.5,
+  '11574' => 5.0,
+  '11672' => 5.0,
+  '11822' => 5.5,
+  '11849' => 5.5,
+  '11933' => 5.0,
+  '12054' => 4.0,
+  '12139' => 5.0,
+  '12154' => 5.5,
+  '12155' => 5.0,
+  '12389' => 4.5,
+  '12465' => 5.0,
+  '12585' => 6.0,
+  '12904' => 5.0,
+  '13068' => 5.0,
+  '13154' => 5.5,
+  '13402' => 6.0,
+  '13403' => 5.0,
+  '13819' => 5.5,
+  '14208' => 5.0,
+  '14372' => 5.5,
+  '14484' => 5.0,
+  '14699' => 5.0,
+  '14819' => 5.5,
+  '14820' => 5.5,
+  '15354' => 5.0,
+  '15483' => 5.5,
+  '15772' => 5.0,
+  '15945' => 5.5,
+  '16111' => 5.0,
+  '16182' => 4.0,
+  '16496' => 5.5,
+  '16792' => 5.5,
+  '16882' => 5.5,
+  '16908' => 5.0,
+  '17295' => 5.0,
+  '17567' => 5.5,
+  '17589' => 5.5,
+  '17590' => 4.0,
+  '17912' => 5.5,
+  '17973' => 5.0,
+  '18153' => 5.5,
+  '18187' => 5.0,
+  '18749' => 5.5,
+  '18958' => 5.5,
+  '19046' => 5.0,
+  '19120' => 3.5,
+  '19210' => 4.5,
+  '19257' => 5.5,
+  '19573' => 5.0,
+  '19574' => 5.0,
+  '19650' => 3.5,
+  '20261' => 6.0,
+  '20262' => 6.5,
+  '20323' => 5.5,
+  '20453' => 5.5,
+  '20465' => 5.0,
+  '20466' => 5.0,
+  '20511' => 5.0,
+  '20580' => 3.0,
+  '20625' => 3.5,
+  '20663' => 5.5,
+  '20666' => 5.5,
+  '20775' => 5.0,
+  '21088' => 5.0,
+  '21397' => 5.5,
+  '21422' => 5.0,
+  '21423' => 5.5,
+  '21574' => 6.0,
+  '21610' => 4.5,
+  '21819' => 5.5,
+  '21820' => 5.5,
+  '21876' => 5.5,
+  '21938' => 5.0,
+  '22220' => 3.5,
+  '22285' => 3.5,
+  '22286' => 5.0,
+  '22566' => 3.5,
+  '22626' => 5.0,
+  '22803' => 3.5,
+  '22830' => 5.0,
+  '23087' => 5.0,
+  '23088' => 3.5,
+  '23343' => 3.5,
+  '23405' => 3.5,
+  '23560' => 4.5,
+  '23561' => 4.5,
+  '23705' => 3.5,
+  '24298' => 3.5,
+  '24680' => 5.5,
+  '24883' => 6.0,
+  '25063' => 4.5,
+  '25064' => 5.0,
+  '25400' => 3.5,
+  '25407' => 3.5,
+  '25544' => -0.5,
+  '25723' => 5.0,
+  '25732' => 5.0,
+  '25860' => 4.5,
+  '25861' => 3.5,
+  '25979' => 4.5,
+  '25994' => 3.5,
+  '26070' => 3.5,
+  '26473' => 3.5,
+  '26474' => 3.5,
+  '26874' => 4.5,
+  '26906' => 3.5,
+  '26934' => 4.5,
+  '27006' => 3.5,
+  '27386' => 4.5,
+  '27387' => 4.0,
+  '27421' => 5.5,
+  '27422' => 4.5,
+  '27424' => 4.0,
+  '27432' => 4.5,
+  '27550' => 5.5,
+  '27597' => 3.5,
+  '27601' => 3.5,
+  '27640' => 5.5,
+  '27665' => 5.5,
+  '27698' => 4.5,
+  '28059' => 5.5,
+  '28096' => 3.5,
+  '28222' => 5.0,
+  '28230' => 5.0,
+  '28353' => 3.5,
+  '28376' => 5.0,
+  '28415' => 5.0,
+  '28480' => 4.5,
+  '28499' => 4.5,
+  '28538' => 3.5,
+  '28646' => 3.5,
+  '28647' => 3.5,
+  '28738' => 4.0,
+  '28773' => 5.0,
+  '28888' => 5.5,
+  '28931' => 4.0,
+  '28932' => 4.5,
+  '28939' => 5.5,
+  '29093' => 4.0,
+  '29228' => 4.5,
+  '29252' => 5.5,
+  '29393' => 4.5,
+  '29507' => 3.5,
+  '29659' => 5.5,
+  '30586' => 5.5,
+  '30587' => 5.5,
+  '30778' => 4.0,
+  '31114' => 4.0,
+  '31598' => 4.5,
+  '31702' => 3.5,
+  '31789' => 6.5,
+  '31792' => 4.0,
+  '31793' => 3.5,
+  '31798' => 5.5,
+  '32053' => 5.5,
+  '32284' => 5.5,
+  '32290' => 5.5,
+  '32376' => 5.5,
+  '32751' => 6.0,
+  '33053' => 6.0,
+  '33106' => 5.5,
+  '33245' => 5.5,
+  '33272' => 4.5,
+  '33410' => 4.0,
+  '33412' => 6.5,
+  '33500' => 3.5,
+  '33504' => 6.0,
+  '33505' => 5.5,
+  '34602' => 6.5,
+  '34840' => 5.5,
+  '36089' => 3.5,
+  '36095' => 3.5,
+  '36104' => 5.5,
+  '36105' => 4.2,
+  '36123' => 5.5,
+  '36125' => 4.5,
+  '36416' => 4.0,
+  '36520' => 5.5,
+  '36597' => 5.0,
+  '36800' => 5.5,
+  '36835' => 4.5,
+  '37181' => 5.5,
+  '37215' => 4.5,
+  '37216' => 6.5,
+  '37253' => 3.5,
+  '37348' => 4.5,
+  '37673' => 4.0,
+  '37731' => 3.5,
+  '37766' => 4.5,
+  '37782' => 4.0,
+  '37814' => 4.2,
+  '37820' => 4.0,
+  '37932' => 5.0,
+  '37942' => 4.0,
+  '37955' => 4.2,
+  '38039' => 4.5,
+  '38109' => 4.0,
+  '38341' => 4.5,
+  '38355' => 4.5,
+  '38737' => 5.0,
+  '38755' => 5.5,
+  '38758' => 4.5,
+  '38770' => 3.5,
+  '38773' => 4.5,
+  '38862' => 4.5,
+  '39000' => 4.0,
+  '39014' => 4.0,
+  '39019' => 4.5,
+  '39025' => 4.5,
+  '39130' => 5.0,
+);
+
 1;
 
 __END__
@@ -8618,6 +9161,14 @@ needed) giving the last two digits of the launch year (in the range
 the order of the launch within the year, and one to three letters
 designating the "part" of the launch, with payload(s) getting the
 first letters, and spent boosters, debris, etc getting the rest.
+
+=item intrinsic_magnitude (numeric or undef)
+
+If defined, this is the typical magnitude of the body at half phase and
+range 1000 kilometers, when illuminated by the Sun. I am not sure how
+standard this definition really is.  This is the definition used by Ted
+Molczan, but Mike McCants' Quicksat data uses maximum magnitude full
+phase.
 
 =item lazy_pass_position (boolean, static)
 

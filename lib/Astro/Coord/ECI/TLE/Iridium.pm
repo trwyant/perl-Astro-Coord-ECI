@@ -167,6 +167,7 @@ my %static = (		# static values
     am => 1,
     day => 1,
     extinction => 1,
+    intrinsic_magnitude	=> 7.0,
     max_mirror_angle => DEFAULT_MAX_MIRROR_ANGLE,
     pm => 1,
     status => '',
@@ -251,25 +252,33 @@ the object is assumed capable of generating flares.
 
 =cut
 
-sub after_reblessing {
-    my ($self, $attrs) = @_;
-    if (defined $attrs) {
-	$attrs = {%$attrs};
-    } else {
-	$attrs = {};
-    }
-    ref $attrs eq 'HASH' or croak <<eod;
+{
+    # This seems to me to be a bit of a crock, but I can think of no
+    # other way to prevent the intrinsic_magnitude from being clobbered
+    # as not relevant to the class.
+    my %retain = map { $_ => 1 }
+	qw{ intrinsic_magnitude }, keys %mutator;
+
+    sub after_reblessing {
+	my ($self, $attrs) = @_;
+	if (defined $attrs) {
+	    $attrs = {%$attrs};
+	} else {
+	    $attrs = {};
+	}
+	ref $attrs eq 'HASH' or croak <<eod;
 Error - The argument of after_reblessing(), if any, must be a hash
-        reference.
+	reference.
 eod
-    foreach my $key (keys %static) {
-	$attrs->{$key} = $static{$key} unless defined $attrs->{$key};
+	foreach my $key (keys %static) {
+	    $attrs->{$key} = $static{$key} unless defined $attrs->{$key};
+	}
+	foreach my $key (keys %$attrs) {
+	    delete $attrs->{$key} unless $retain{$key};
+	}
+	$self->set (%$attrs);
+	return;
     }
-    foreach my $key (keys %$attrs) {
-	delete $attrs->{$key} unless exists $mutator{$key};
-    }
-    $self->set (%$attrs);
-    return;
 }
 
 
@@ -1398,12 +1407,40 @@ sub _make_status {
     return wantarray ? %stat : \%stat;
 }
 
+=item $mag = $tle->magnitude( $station );
+
+This override of the superclass' method method returns the magnitude of
+the body as seen from the given station at the body's currently-set
+time. If no C<$station> is specified, the object's C<'station'>
+attribute is used.  If that is not set, and exception is thrown.
+
+This method calls the superclass' C<magnitude()>, and returns C<undef>
+if the superclass does. Otherwise it adds to the magnitude of the body
+itself the magnitude of any flare in progress, and returns the result.
+
+=cut
+
+sub magnitude {
+    my ( $self, $sta ) = __default_station( @_ );
+    defined( my $mag = $self->SUPER::magnitude( $sta ) )
+	or return undef;	## no critic (ProhibitExplicitReturnUndef)
+    my $time = $self->universal();
+    my @flare = grep { defined }
+	map { $_->{magnitude} }
+	$self->reflection( $sta, $time );
+    @flare
+	and $mag = add_magnitudes( $mag, @flare );
+    return $mag;
+}
+
 
 =item @data = $tle->reflection ($station, $time)
 
 This method returns a list of references to hashes containing the same
 data as returned for a flare, calculated for the given observer and time
-for all Main Mission Antennae. Note the following differences from the
+for all Main Mission Antennae. If C<$time> is C<undef>, the current time
+setting of the invocant is used. If C<$station> is C<undef> the current
+C<station> attribute is used. Note the following differences from the
 flare() hash:
 
 If the hash contains a 'status' key which is true (in the Perl sense),
@@ -1419,19 +1456,23 @@ the 'status' key is true.
 
 If called in scalar context, a reference to the \@data list is returned.
 
+B<NOTE> that prior to [%% next_version %%] the C<$time> argument
+defaulted to the current time. This behavior was undocumented, and
+therefore I felt free to change it.
+
 =cut
 
 sub reflection {
-    my ($self, @args) = @_;
+    my ( $self, $station, $time ) = __default_station( @_ );
     my $method = "_reflection_$self->{&ATTRIBUTE_KEY}{algorithm}";
-    return $self->$method (@args);
+    return $self->$method( $station, $time );
 }
 
 
 sub _reflection_fixed {
-    my $self = shift;
-    my $station = shift;
-    my $time = shift || time ();
+    my ( $self, $station, $time ) = @_;
+    defined $time
+	or $time = $self->universal();
     my $debug = $self->get ('debug');
     my $illum = $self->get ('illum')->universal ($time);
 
@@ -1651,6 +1692,12 @@ compare forecast magnitudes to nearby stars may wish to set this to some
 value Perl considers false (e.g. undef).
 
 The default is 1 (i.e. true).
+
+=item intrinsic_magnitude (numeric or undef)
+
+This attribute is inherited from the parent class, but unlike the parent
+(which defaults it to C<undef>), this class defaults it to C<7.0>, which
+is the average intrinsic magnitude for an Iridium satellite.
 
 =item max_mirror_angle (angle in radians)
 

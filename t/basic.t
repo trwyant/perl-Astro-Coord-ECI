@@ -111,6 +111,9 @@ u_cmp_eql equation_of_time => timegm( 0, 0, 0, 13, 9, 92 ),
 u_cmp_eql obliquity => timegm( 0, 0, 0, 10, 3, 87 ), 0.409167475225493,
     '%.5f', 'obliquity: Midnight Nov 3 1987: Meeus ex 22.a';
 
+u_cmp_eql add_magnitudes => [ 4.73, 5.22, 5.60 ], 3.93, '%.2f',
+    'add_magnitudes: Meeus ex 56.b';
+
 u_cmp_eql intensity_to_magnitude => 500, -6.75, '%.2f',
     'intensity_to_magnitude: 500: Meeus ex 56.e';
 

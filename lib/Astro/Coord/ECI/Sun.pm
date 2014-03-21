@@ -58,6 +58,8 @@ use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use POSIX qw{floor strftime};
 
+use constant MEAN_MAGNITUDE => -26.8;
+
 my %static = (
     id => 'Sun',
     name => 'Sun',
@@ -238,7 +240,7 @@ eod
 }
 
 
-=item ($point, $intens, $central) = magnitude ($theta, $omega);
+=item ($point, $intens, $central) = $sun->magnitude ($theta, $omega);
 
 This method returns the magnitude of the Sun at a point $theta radians
 from the center of its disk, given that the disk's angular radius
@@ -260,17 +262,24 @@ the average magnitude of the Sun, which is taken to be -26.8.
 The limb-darkening algorithm and the associated constants come from
 L<http://en.wikipedia.org/wiki/Limb_darkening>.
 
+For consistency's sake, an observing station can optionally be passed as
+the first argument (i.e. before C<$theta>). This is currently ignored.
+
 =cut
 
 {	# Begin local symbol block
 
     my $central_mag;
     my @limb_darkening = (.3, .93, -.23);
-    my $mean_mag = -26.8;
 
     sub magnitude {
-	my ($self, $theta, $omega) = @_;
-	return $mean_mag unless defined $theta;
+	my ( $self, @args ) = @_;
+	# We want to accept a station as the second argument for
+	# consistency's sake, though we do not (at this point) use it.
+	embodies( $args[0], 'Astro::Coord::ECI' )
+	    and shift @args;
+	my ( $theta, $omega ) = @args;
+	return MEAN_MAGNITUDE unless defined $theta;
 	unless (defined $omega) {
 	    my @eci = $self->eci ();
 	    $omega = $self->get ('diameter') / 2 /
@@ -282,7 +291,7 @@ L<http://en.wikipedia.org/wiki/Limb_darkening>.
 	    foreach my $a (@limb_darkening) {
 		$sum += $a / $quotient++;
 	    }
-	    $central_mag = $mean_mag - intensity_to_magnitude (2 * $sum);
+	    $central_mag = MEAN_MAGNITUDE - intensity_to_magnitude (2 * $sum);
 	}
 	my $intens = 0;
 	my $point;

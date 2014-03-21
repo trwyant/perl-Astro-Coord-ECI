@@ -1478,6 +1478,31 @@ eod
 
 ########################################################################
 #
+#	magnitude_table() - Maintain magnitude table
+#
+
+sub magnitude_table {
+    my @arg = @_;
+    @arg
+	or @arg = 'show';
+    my $cmd = shift @arg;
+
+    if ( $cmd eq 'show' ) {
+	foreach my $item ( Astro::Coord::ECI::TLE->magnitude_table(
+		$cmd	=> @arg ) ) {
+	    print join( ' ', qw{ magnitude_table add }, @{ $item } ), "\n";
+	}
+    } elsif ( $cmd eq 'adjust' && ! defined $arg[0] ) {
+	print join( ' ', qw{ magnitude_table adjust },
+	    Astro::Coord::ECI::TLE->magnitude_table( 'adjust' ) ), "\n";
+    } else {
+	Astro::Coord::ECI::TLE->magnitude_table( $cmd, @arg );
+    }
+    return;
+}
+
+########################################################################
+#
 #	pass () - Predict passes over the observer's location, using
 #		the Astro::Coord::ECI::TLE->pass() method.
 #
@@ -1690,7 +1715,7 @@ foreach my $body (@sky) {
 #
 
 BEGIN {
-$cmdlgl{position} = [qw{choose=s@ questionable|spare quiet realtime}];
+$cmdlgl{position} = [qw{choose=s@ magnitude! questionable|spare quiet realtime}];
 }
 
 sub position {
@@ -1712,10 +1737,17 @@ my $sun = Astro::Coord::ECI::Sun->new ();
 
 #	Print a header.
 
-printf <<eod, _format_location (),
-%s            name @{[$lcfmt->()]} %-*s illum
-eod
+if ( $cmdopt{magnitude} ) {
+    printf <<"EOD", _format_location (),
+%s            name @{[$lcfmt->()]} %-*s illum mag
+EOD
 	length (strftime $dtfmt, _mytime(time)), 'epoch of data';
+} else {
+    printf <<"EOD", _format_location (),
+%s            name @{[$lcfmt->()]} %-*s illum
+EOD
+	length (strftime $dtfmt, _mytime(time)), 'epoch of data';
+}
 
 #	Tell aggregate() how to work.
 
@@ -1743,9 +1775,20 @@ while ($time <= $endtm) {
 		($sta->azel ($sun->universal ($time)))[1] > $twilight ? 2 :
 ##		($body->azel ($sun))[1] > $body->dip() ? 1 : 0;
 		$body->__sun_elev_from_sat( $time ) >= 0 ? 1 : 0;
-	    printf "%16s %s %s %s\n", $name, $lcfmt->( $body ),
-		strftime ($dtfmt, _mytime($body->get ('epoch'))),
-		$lighting[$illum] || '';
+	    my $line;
+	    if ( $cmdopt{magnitude} ) {
+		my $mag = $body->magnitude( $sta );
+		$mag = defined $mag ? sprintf( '%4.1f', $mag ) : '';
+		$line = sprintf '%16s %s %s %5s %4s', $name, $lcfmt->( $body ),
+		    strftime ($dtfmt, _mytime($body->get ('epoch'))),
+		    $lighting[$illum] || '', $mag;
+	    } else {
+		$line = sprintf '%16s %s %s %5s', $name, $lcfmt->( $body ),
+		    strftime ($dtfmt, _mytime($body->get ('epoch'))),
+		    $lighting[$illum] || '';
+	    }
+	    $line =~ s/ \s+ \z //smx;
+	    print $line, "\n";
 
 	    if ($body->can_flare ($cmdopt{questionable})) {
 ##		$indent ||= length (sprintf '%16s %s', $name,
@@ -2259,11 +2302,13 @@ if (!$rslt->is_success) {
     __PACKAGE__->_iridium_status (@rest);
     $cmdopt{verbose} and print $rslt->content, "\n";
     }
+  elsif ( $content eq 'molczan' || $content eq 'quicksat' ) {
+    magnitude_table( $content, \( $rslt->content() ) );
+    }
   elsif ( ! $st_suppress_output{$content} || $cmdopt{verbose}) {
     print $rslt->content, "\n";
     }
 }
-
 
 ########################################################################
 #
@@ -4581,6 +4626,40 @@ to prevent endless recursion. It becomes defined again when it exits.
 Be aware that there is no syntax checking done when the macro is
 defined. You only find out if your macro definition is good by
 trying to execute it.
+
+=for html <a name="magnitude_table"></a>
+
+=item magnitude_table ...
+
+This command displays or maintains the satellite magnitude table. This
+table is used to initialize satellite magnitudes.
+
+See the L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> documentation
+for information on how this table is populated initially. If you have
+installed Astro::SpaceTrack, you can update the status using one of the
+commands that fetches magnitude data, such as C<'st mccants vsnames'>,
+or you can update it using the 'add', 'clear', and 'drop' subcommands,
+which are discussed in more detail below.
+
+C<add> adds the given body to the magnitude table. The arguments are OID
+and magnitude.
+
+C<clear> clears the magnitude table.
+
+C<drop> drops the given body from the magnitude table. The argument is
+the OID to be dropped.
+
+C<molczan> reloads the magnitude table with the contents of the named
+Molczan-format file. An optional second argument is a magnitude offset
+to be added to the magnitudes read.
+
+C<quicksat> reloads the magnitude table with the contents of the named
+Quicksat-format file. An optional second argument is a magnitude offset
+to be added to the magnitudes read.
+
+C<show> displays the contents of the magnitude table, as a series of
+C<'magnitude_table add'> commands. If arguments are passed, only those
+OIDs specified in the arguments are displayed.
 
 =for html <a name="pass"></a>
 

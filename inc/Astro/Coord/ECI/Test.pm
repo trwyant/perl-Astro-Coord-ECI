@@ -115,10 +115,10 @@ sub format_time {
 
 sub magnitude (@) {
     my ( $tle, @arg ) = @_;
-    my ( $want, $name ) = splice @arg, -2;
+    my ( $time, $want, $name ) = splice @arg, -3;
     my $got;
     eval {
-	$got = $tle->magnitude( @arg );
+	$got = $tle->universal( $time )->magnitude( @arg );
 	defined $got
 	    and $got = sprintf '%.1f', $got;
 	1;

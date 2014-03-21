@@ -21,7 +21,7 @@ BEGIN {
     eval {
 	use lib qw{ inc };
 	require Astro::Coord::ECI::Test;
-	Astro::Coord::ECI::Test->import( qw{ format_pass } );
+	Astro::Coord::ECI::Test->import( qw{ format_pass magnitude } );
 	1;
     } or do {
 	plan skip_all => 'Can not load Astro::Coord::ECI::Test from inc';
@@ -87,7 +87,10 @@ my ( $tle ) = Astro::Coord::ECI::TLE->parse( <<'EOD' );
 1 88888U          80275.98708465  .00073094  13844-3  66816-4 0    8
 2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518  105
 EOD
-$tle->set( geometric => 1 );
+$tle->set(
+    geometric	=> 1,
+    intrinsic_magnitude	=> 3.0,
+);
 
 my @pass;
 
@@ -115,6 +118,14 @@ is format_pass( $pass[0] ), <<'EOD', 'Pass 1';
 1980/10/13 05:42:43  55.9 115.6   255.5 lit   max
 1980/10/13 05:46:37   0.0  29.7  1778.5 lit   set
 EOD
+
+note <<'EOD';
+The following magnitude test is really only a regression test, since I
+have no idea what the correct magnitude is.
+EOD
+
+magnitude $tle, $sta, $pass[0]{events}[2]{time},
+    0.6, 'Magnitude at max of pass 1';
 
 is format_pass( $pass[1] ), <<'EOD', 'Pass 2';
 1980/10/14 05:32:49   0.0 204.8  1691.2 lit   rise

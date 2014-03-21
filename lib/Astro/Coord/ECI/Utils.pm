@@ -139,7 +139,7 @@ our @EXPORT;
 our @EXPORT_OK = ( qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
 	PERL2000 PI PIOVER2 SECSPERDAY SECS_PER_SIDERIAL_DAY
-	SPEED_OF_LIGHT TWOPI acos asin
+	SPEED_OF_LIGHT TWOPI acos add_magnitudes asin
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
 	dynamical_delta embodies epoch2datetime equation_of_time
 	find_first_true fold_case intensity_to_magnitude jcent2000
@@ -187,6 +187,23 @@ Programming error - Trying to take the arc cosine of a number greater
         than 1.
 eod
     return atan2 (sqrt (1 - $_[0] * $_[0]), $_[0])
+}
+
+=item $mag = add_magnitudes( $mag1, $mag2, ... );
+
+This subroutine computes the total magnitude of a list of individual
+magnitudes.  The algorithm comes from Jean Meeus' "Astronomical
+Algorithms", Second Edition, Chapter 56, Page 393.
+
+=cut
+
+sub add_magnitudes {
+    my @arg = @_;
+    my $sum = 0;
+    foreach my $mag ( @arg ) {
+	$sum += 10 ** ( -0.4 * $mag );
+    }
+    return -2.5 * log( $sum ) / log( 10 );
 }
 
 
