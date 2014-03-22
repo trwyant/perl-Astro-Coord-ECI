@@ -848,6 +848,11 @@ We return C<undef> if the C<'intrinsic_magnitude'> or C<'illum'>
 attributes are C<undef>, or if the illuminating body is below the
 horizon as seen from the satellite.
 
+After this method returns the time set in the station attribute should
+be considered undefined. In fact, it will be set to the same time as the
+invocant if a defined magnitude was returned. But if C<undef> was
+returned, the station's time may not have been changed.
+
 Some very desultory investigation of International Space Station
 magnitude predictions suggests that this method produces magnitude
 estimates about half a magnitude less bright than Heavens Above.
@@ -873,8 +878,8 @@ sub magnitude {
     $self->__sun_elev_from_sat( $time ) < 0
 	and return undef;	## no critic (ProhibitExplicitReturnUndef)
 
-    # Compute the range.
-    my ( undef, $elev, $range ) = $sta->azel( $self );
+    # Compute the range amd the elevation.
+    my ( undef, $elev, $range ) = $sta->universal( $time )->azel( $self );
 
     # If the satellite is below the horizon, just return undef
     $elev < 0
