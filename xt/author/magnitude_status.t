@@ -5,7 +5,7 @@ use 5.008;
 use strict;
 use warnings;
 
-use Astro::SpaceTrack;
+use Astro::SpaceTrack 0.084;
 use HTTP::Date;
 use LWP::UserAgent;
 use Test::More 0.88;	# Because of done_testing();
