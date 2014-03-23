@@ -1,3 +1,8 @@
+0.061_02	2014-03-23	T. R. Wyant
+  Have Astro::Coord::ECI::TLE magnitude() method set the station's time.
+  Correct logic for building the fold_case() utliity subroutine under
+    Perls before 5.16.
+
 0.061_01	2014-03-20	T. R. Wyant
   Computation of (perhaps very) approximate magnitudes for satellites is
     now supported. Changes to support this include:
