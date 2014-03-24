@@ -1,3 +1,7 @@
+0.061_03	2014-03-24	T. R. Wyant
+  The 'unpack' built-in does not default to $_ as the buffer to unpack
+    under Perls before 5.10.
+
 0.061_02	2014-03-23	T. R. Wyant
   Have Astro::Coord::ECI::TLE magnitude() method set the station's time.
   Correct logic for building the fold_case() utliity subroutine under
