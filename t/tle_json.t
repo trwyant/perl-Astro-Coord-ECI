@@ -14,6 +14,8 @@ eval {
     1;
 } or plan skip_all => 'Optional module JSON required';
 
+_json_config();
+
 my $version = Astro::Coord::ECI::TLE->VERSION();
 
 # The following TLE data are from sgp4-ver.tle, and ultimately from
@@ -125,10 +127,29 @@ is_deeply $hash, {
 
 my $json = JSON->new()->utf8()->convert_blessed();
 
-{
-    my $data = $json->encode( [ $tle ] );
-    my ( $tle2 ) = Astro::Coord::ECI::TLE->parse( $data );
-    is $tle2->get( 'tle' ), $vanguard, 'Vanguard 1 round-trip via JSON';
+{   # Local symbol block. Also single-iteration loop.
+    my $name = 'Vanguard 1 round-trip via JSON';
+
+    my $data;
+    eval {
+	$data = $json->encode( [ $tle ] );
+	1;
+    } or do {
+	fail "$name failed to encode JSON: $@";
+	last;
+    };
+
+    my $tle2;
+    eval {
+	( $tle2 ) = Astro::Coord::ECI::TLE->parse( $data );
+	1;
+    } or do {
+	fail "$name failed to parse JSON: $@";
+	diag $data;
+	last;
+    };
+
+    is $tle2->get( 'tle' ), $vanguard, $name;
 }
 
 Astro::Coord::ECI::TLE->status( add => 5, iridium => 'S' );
@@ -256,6 +277,21 @@ sub _fudge_json {
 	    { sprintf '%02d', $1 }smxe;
     }
 
+    return;
+}
+
+sub _json_config {
+    diag '';
+    foreach my $json ( qw{ JSON JSON::PP JSON::XS } ) {
+	my $version;
+	eval {
+	    $version = $json->VERSION();
+	    1;
+	};
+	defined $version
+	    or $version = 'undef';
+	diag sprintf '%-10s %s', $json, $version;
+    }
     return;
 }
 
