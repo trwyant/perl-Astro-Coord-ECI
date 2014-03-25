@@ -1,3 +1,7 @@
+0.061_04	2014-03-25	T. R. Wyant
+  Add diagnostics to t/tle_json.t, and robustify, to try to track down
+    sporadic failures.
+
 0.061_03	2014-03-24	T. R. Wyant
   The 'unpack' built-in does not default to $_ as the buffer to unpack
     under Perls before 5.10.
