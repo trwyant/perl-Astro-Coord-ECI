@@ -90,6 +90,22 @@ indicated.
 
 =head1 NOTICE
 
+Users of JSON functionality (if any!) should be aware of a potential
+problem in the way L<JSON::XS|JSON::XS> encodes numbers. The problem
+basically is that the locale leaks into the encoded JSON, and if the
+locale uses commas for decimal points the encoded JSON can not be
+decoded. As I understand the discussion on the associated Perl ticket
+the problem has always been there, but changes introduced in Perl 5.19.8
+made it more likely to manifest.
+
+Unfortunately the nature of the JSON interface is such that I have no
+control over the issue, since the workaround needs to be applied at the
+point the JSON C<encode()> method is called. See test F<t/tle_json.t>
+for the workaround that allows tests to pass in the affected locales.
+The relevant L<JSON::XS|JSON::XS> ticket is
+L<https://rt.cpan.org/Ticket/Display.html?id=93307>. The relevant Perl
+ticket is L<https://rt.perl.org/Ticket/Display.html?id=121317>.
+
 The C<pass_threshold> attribute has undergone a slight change in
 functionality from version 0.046, in which it was introduced. In the new
 functionality, if the C<visible> attribute is true, the satellite must
