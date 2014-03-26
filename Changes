@@ -1,3 +1,9 @@
+0.061_05	2014-03-26	T. R. Wyant
+  In t/tle_json.t, work around problem that occurs when JSON::XS encodes
+    a number in a locale that uses a comma as the decimal point, such as
+    'de_DE.UTF-8'. Make a note of this in Astro::Coord::ECI::TLE, since
+    there is nothing I can do in my code to actually fix the problem.
+
 0.061_04	2014-03-25	T. R. Wyant
   Add diagnostics to t/tle_json.t, and robustify, to try to track down
     sporadic failures.
