@@ -1,3 +1,6 @@
+0.061_06	2014-03-27	T. R. Wyant
+  Require correct Perl version in t/tle_mag.t
+
 0.061_05	2014-03-26	T. R. Wyant
   In t/tle_json.t, work around problem that occurs when JSON::XS encodes
     a number in a locale that uses a comma as the decimal point, such as
