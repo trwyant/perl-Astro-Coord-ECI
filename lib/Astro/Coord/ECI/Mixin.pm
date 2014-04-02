@@ -11,7 +11,7 @@ use Astro::Coord::ECI::Utils qw{ __default_station PIOVER2 SECSPERDAY };
 use Exporter ();
 use POSIX qw{ floor };
 
-our $VERSION = '0.061_06';
+our $VERSION = '0.062';
 
 our @EXPORT_OK = qw{
     almanac almanac_hash
