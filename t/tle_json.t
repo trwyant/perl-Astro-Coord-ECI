@@ -14,8 +14,6 @@ eval {
     1;
 } or plan skip_all => 'Optional module JSON required';
 
-_json_config();
-
 my $version = Astro::Coord::ECI::TLE->VERSION();
 
 # The following TLE data are from sgp4-ver.tle, and ultimately from
@@ -154,6 +152,7 @@ my $json = JSON->new()->utf8()->convert_blessed()->canonical();
     } or do {
 	setlocale( LC_NUMERIC, $locale );
 	fail "$name failed to encode JSON: $@";
+	_json_config();
 	last;
     };
     setlocale( LC_NUMERIC, $locale );
@@ -164,11 +163,13 @@ my $json = JSON->new()->utf8()->convert_blessed()->canonical();
 	1;
     } or do {
 	fail "$name failed to parse JSON: $@";
+	_json_config();
 	diag $data;
 	last;
     };
 
-    is $tle2->get( 'tle' ), $vanguard, $name;
+    is $tle2->get( 'tle' ), $vanguard, $name
+	or diag _json_config();
 }
 
 Astro::Coord::ECI::TLE->status( add => 5, iridium => 'S' );
