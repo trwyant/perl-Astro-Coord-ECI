@@ -1,5 +1,6 @@
 0.062		2014-04-01	T. R. Wyant
-  No changes since 0.061_06.
+  Update canned status for Iridium 29 (24944). Kelso says it's tumbling.
+  t/tle_json.t now only dumps versions on an error.
 
 0.061_06	2014-03-27	T. R. Wyant
   Require correct Perl version in t/tle_mag.t
