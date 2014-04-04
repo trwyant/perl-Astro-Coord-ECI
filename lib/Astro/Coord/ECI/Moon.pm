@@ -296,9 +296,14 @@ sub period {return 2360591.5968}	# 27.321662 * 86400
 
 =item ($phase, $illum) = $moon->phase ($time);
 
-This method calculates the current phase of the moon in radians, and
-its illuminated fraction as a number from 0 to 1. If the time is
-omitted, the current time of the $moon object is used.
+This method calculates the current phase of the moon and its illuminated
+fraction. If the time is omitted, the current time of the $moon object
+is used.
+
+The phase is returned as a number from C<0> to C<2 * PI> radians, with
+C<0> being New Moon, C<PI / 2> being First Quarter, and so on. The
+illuminated fraction is a number from C<0> (New Moon) to C<1> (Full
+Moon).
 
 If called in scalar context, you get the phase.
 
