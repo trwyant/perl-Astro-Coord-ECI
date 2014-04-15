@@ -1058,7 +1058,8 @@ functionality that would otherwise accept them.
 	    'HASH' eq ref $tbl
 		or croak 'magnitude_table magnitude needs a hash ref';
 	    my %mag;
-	    while ( my ( $key, $val ) = each %{ $tbl } ) {
+	    foreach my $key ( keys %{ $tbl } ) {
+		my $val = $tbl->{$key};
 		$key =~ m/ \A [0-9]+ \z /smx
 		    or croak "OID '$key' must be numeric";
 		looks_like_number( $val )
@@ -7409,10 +7410,11 @@ encoded with a four-digit year.
     # undef or '' will not appear in the output hash.
 
     sub __to_json {
-	my ( $self, $map, $rslt ) = @_;
+	my ( $self, $mapping, $rslt ) = @_;
 	$rslt ||= {};
 
-	while ( my ( $key, $map ) = each %{ $map } ) {
+	foreach my $key ( keys %{ $mapping } ) {
+	    my $map = $mapping->{$key};
 	    my $val = 'CODE' eq ref $map ?
 		$map->( $self, $key ) :
 		$self->get( $map );
