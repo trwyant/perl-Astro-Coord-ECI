@@ -31,7 +31,7 @@ require_ok 'File::Spec';
 }
 
 require_ok 'Astro::SpaceTrack';
-cmp_ok Astro::SpaceTrack->VERSION, '>=', 0.085,
+cmp_ok mung_version( Astro::SpaceTrack->VERSION ), '>=', 0.085,
     'Need at least Astro::SpaceTrack 0.085';
 require_ok 'Date::Manip';
 require_ok 'Test::CPAN::Changes';
@@ -41,6 +41,12 @@ require_ok 'Test::Without::Module';
 require_ok 'Time::Local';
 
 done_testing;
+
+sub mung_version {
+    my ( $vers ) = @_;
+    $vers =~ s/ _ //smxg;
+    return $vers;
+}
 
 1;
 
