@@ -43,6 +43,10 @@ use constant LINFMT => <<eod;
 %s %s %8.4f %9.4f %7.1f %-4s %s
 eod
 
+use constant LINFMT_MAG => <<eod;
+%s %s %8.4f %9.4f %7.1f %4s %-4s %-4s
+eod
+
 use constant BGFMT => <<eod;
 %s %s %8.4f %9.4f              %s
 eod
@@ -1514,7 +1518,7 @@ sub magnitude_table {
     BEGIN {
 	foreach my $code (PASS_EVENT_NONE, PASS_EVENT_SHADOWED,
 	    PASS_EVENT_LIT, PASS_EVENT_DAY, PASS_EVENT_RISE,
-	    PASS_EVENT_MAX, PASS_EVENT_SET) {
+	    PASS_EVENT_MAX, PASS_EVENT_SET, PASS_EVENT_BRIGHTEST ) {
 	    my $val = ucfirst $code;
 	    $event_name[$code] = sub {$val};
 	}
@@ -1523,7 +1527,7 @@ sub magnitude_table {
 		$_[0]{appulse}{body}->get ('name') ||
 		$_[0]{appulse}{body}->get ('id')};
 
-	$cmdlgl{pass} = [qw{choose=s@ dump flatten quiet}];
+	$cmdlgl{pass} = [qw{choose=s@ dump flatten magnitude quiet}];
     }
 
     sub pass {
@@ -1560,11 +1564,14 @@ eod
 
     my $model = $parm{model};
 
-#	Pick up horizon and appulse distance.
+#	Pick up horizon, appulse distance, etc.
 
     my $horizon = deg2rad ($parm{horizon});
     my $appulse = deg2rad ($parm{appulse});
     my $pass_threshold = deg2rad( $parm{pass_threshold} );
+    my $pass_variant = $cmdopt{magnitude} ? PASS_VARIANT_BRIGHTEST :
+    PASS_VARIANT_NONE;
+    my $line_format = $cmdopt{magnitude} ? LINFMT_MAG : LINFMT;
 
 #	Print the header
 
@@ -1601,6 +1608,7 @@ eod
 	    lazy_pass_position => 1,
 	    model => $model,
 	    pass_threshold => $pass_threshold,
+	    pass_variant => $pass_variant,
 	    station	=> $sta,
 	    twilight => $parm{_twilight},
 	    visible => $parm{visible},
@@ -1651,13 +1659,23 @@ eod
 			print Dumper ($event);
 		    }
 		} else {
-		    printf LINFMT, strftime ($parm{time_format}, _mytime (
-			    $displaytime)),
+		    my @data = (
+			strftime( $parm{time_format}, _mytime(
+				$displaytime ) ),
 			$lcfmt->( $tle ),
 			rad2deg ($lat), rad2deg ($long), $alt,
 			$event_name[$event->{illumination}]->($event),
 			$event_name[$event->{event}]->($event),
-			;
+		    );
+		    if ( $cmdopt{magnitude} ) {
+			my $mag = exists $event->{magnitude} ?
+			    $event->{magnitude} :
+			    $tle->magnitude( $sta );
+			splice @data, -2, 0, defined $mag ?
+			    sprintf '%4.1f', $mag :
+			    '';
+		    }
+		    printf $line_format, @data;
 		    if ($event->{appulse} && $parm{background}) {
 			my $body = $event->{appulse}{body}
 			    ->universal ($time);

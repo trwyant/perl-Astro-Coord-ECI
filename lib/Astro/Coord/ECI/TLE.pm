@@ -262,10 +262,12 @@ BEGIN {
 	PASS_EVENT_APPULSE
 	PASS_EVENT_START
 	PASS_EVENT_END
+	PASS_EVENT_BRIGHTEST
 	PASS_VARIANT_VISIBLE_EVENTS
 	PASS_VARIANT_FAKE_MAX
 	PASS_VARIANT_NO_ILLUMINATION
 	PASS_VARIANT_START_END
+	PASS_VARIANT_BRIGHTEST
 	PASS_VARIANT_NONE
 	BODY_TYPE_UNKNOWN
 	BODY_TYPE_DEBRIS
@@ -1429,6 +1431,7 @@ The events are coded by the following manifest constants:
   PASS_EVENT_APPULSE => dualvar (7, 'apls');
   PASS_EVENT_START => dualvar( 11, 'start' );
   PASS_EVENT_END => dualvar( 12, 'end' );
+  PASS_EVENT_BRIGHTEST => dualvar( 13, 'brgt' );
 
 The C<PASS_EVENT_START> and C<PASS_EVENT_END> events are not normally
 generated. You can get them in lieu of whatever events start and end the
@@ -1534,17 +1537,19 @@ use constant PASS_EVENT_SET => dualvar (6, 'set');
 use constant PASS_EVENT_APPULSE => dualvar (7, 'apls');
 use constant PASS_EVENT_START => dualvar( 11, 'start' );
 use constant PASS_EVENT_END => dualvar( 12, 'end' );
+use constant PASS_EVENT_BRIGHTEST => dualvar( 13, 'brgt' );
 
 use constant PASS_VARIANT_VISIBLE_EVENTS => 0x01;
 use constant PASS_VARIANT_FAKE_MAX	=> 0x02;
 use constant PASS_VARIANT_START_END	=> 0x04;
 use constant PASS_VARIANT_NO_ILLUMINATION => 0x08;
+use constant PASS_VARIANT_BRIGHTEST	=> 0x10;
 use constant PASS_VARIANT_NONE => 0x00;		# Must be 0.
 
 my @pass_variant_mask = (
     PASS_VARIANT_NO_ILLUMINATION | PASS_VARIANT_START_END,
     PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX |
-	PASS_VARIANT_START_END,
+	PASS_VARIANT_START_END | PASS_VARIANT_BRIGHTEST,
 );
 
 use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
@@ -1587,6 +1592,8 @@ eod
     my $debug = $tle->get ('debug');
     my $pass_variant = $tle->get( 'pass_variant' ) &
 	$pass_variant_mask[ $want_visible ? 1 : 0 ];
+    defined $tle->get( 'intrinsic_magnitude' )
+	or $pass_variant &= ~ PASS_VARIANT_BRIGHTEST;
     defined $pass_threshold
 	and $pass_threshold > $horizon
 	or $pass_threshold = $horizon;
@@ -1912,6 +1919,14 @@ eod
 
 	    @info = sort { $a->{time} <=> $b->{time} } @info;
 
+	    # Compute the brightest moment if desired.
+
+	    if ( $pass_variant & PASS_VARIANT_BRIGHTEST ) {
+
+		@info = sort { $a->{time} <=> $b->{time} } @info,
+		    _pass_compute_brightest( $tle, $sta, $sun, \@info );
+	    }
+
 	    # If we want visible events only
 
 	    if ( $pass_variant & PASS_VARIANT_VISIBLE_EVENTS ) {
@@ -2179,6 +2194,103 @@ eod
 # trying to find the time when the body rises.
 sub __pass_backup_earliest {
     return 0;
+}
+
+# Compute the position of the satellite at its brightest. We expect to
+# be called only if the computation makes sense -- that is, if the
+# intrinsic_magnitude attribute is set and we are calculating
+# visibility. We will return an event hash, or nothing if there are no
+# illuminated points. We will return nothing with a warning if there is
+# exactly one illuminated point, since we can't conveniently make the
+# calculation from this and it should not happen anyway.
+#
+# The arguments are:
+# $tle - The orbiting body
+# $sta - The observing body
+# $sun - The illuminating body (assumed defined)
+# $info - A reference to the array of events computed thus far, in order
+#         by time.
+#
+# The $info array is assumed to already have visibility and visibility
+# events calculated.
+sub _pass_compute_brightest {
+    my ( $tle, $sta, $sun, $info ) = @_;
+    my @wrk = @{ $info };
+
+    # We skip over all the un-illuminated events at the start.
+    while ( $wrk[0]{illumination} == PASS_EVENT_SHADOWED ) {
+	shift @wrk;
+	@wrk
+	    or return;
+    }
+    my $earliest = $wrk[0]{time};
+
+    # We want the time of the first shadowed event, since we're
+    # illuminated up to that point.
+    my $latest = $wrk[-1]{time};
+    while ( $wrk[-1]{illumination} == PASS_EVENT_SHADOWED ) {
+	$latest = $wrk[-1]{time};
+	pop @wrk;
+	@wrk
+	    or return;
+    }
+
+    # We back off a second from the time of the shadow (or set) event,
+    # to get a time when we are illuminated and above the horizon.
+    $latest -= 1;
+    @wrk > 1
+	or do {
+	carp 'No magnitude calculation done: only one illuminated position';
+	return;
+    };
+
+    # Because the behavior is non-linear, we step through the time at
+    # 30-second intervals, then at 1-second intervals to find the
+    # brightest.
+    my $twilight = $tle->get( 'twilight' );
+    foreach my $delta ( 30, 1 ) {
+	@wrk = ();
+	for ( my $time = $earliest; $time <= $latest; $time += $delta ) {
+	    push @wrk, [
+		$time,
+		$tle->universal( $time )->magnitude( $sta ),
+	    ];
+	}
+	# Because our time span is probably not a multiple of our step
+	# size, we slap the last time onto the end.
+	$wrk[-1][0] < $latest
+	    and push @wrk, [
+	    $latest,
+	    $tle->universal( $latest )->magnitude( $sta ),
+	];
+
+	# The next interval becomes the brightest and second-brightest
+	# time found.
+	@wrk = sort { $a->[1] <=> $b->[1] } @wrk;
+	( $earliest, $latest ) = sort { $a <=> $b }
+	    map { $wrk[$_][0] } 0, 1;
+    }
+
+    # Make up and return the event.
+    my $time = $wrk[0][0];
+    my ( $azm, $elev, $rng ) =
+	$sta->azel( $tle->universal( $time ) );
+    my ( undef, $sun_elev ) = $sta->azel( $sun->universal(
+	    $time ) );
+    my $illum = $sun_elev < $twilight ?
+	PASS_EVENT_LIT :
+	PASS_EVENT_DAY;
+    return {
+	azimuth		=> $azm,
+	body		=> $tle,
+	elevation	=> $elev,
+	event		=> PASS_EVENT_BRIGHTEST,
+	illumination	=> $illum,
+	magnitude	=> $wrk[0][1],
+	range		=> $rng,
+	station		=> $sta,
+	time		=> $time,
+    };
 }
 
 
@@ -9303,6 +9415,12 @@ that the C<illumination> key on other events will not be present. I find
 that setting this (with C<< visible => 0 >>) saves about 20% in wall
 clock time versus not setting it. Your mileage may, of course, vary.
 This has no effect unless the C<visible> attribute is false.
+
+* C<PASS_VARIANT_BRIGHTEST> - Specifies that the the moment the
+satellite is brightest be computed as part of the pass statistics. The
+computation is to the nearest second, and is not done if
+C<PASS_VARIANT_NO_ILLUMINATION> is set, or if the C<visible> attribute
+is false.
 
 * C<PASS_VARIANT_NONE> - Specifies that no pass variant processing take
 place.
