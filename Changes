@@ -1,3 +1,8 @@
+0.063		2014-05-02	T. R. Wyant
+  Allow PASS_VARIANT_BRIGHTEST event even if the 'visible' attribute is
+    false.
+  Document magnitude functionality in satpass script.
+
 0.062_01	2014-04-26	T. R. Wyant
   Add pass variant PASS_VARIANT_BRIGHTEST. If this is set, an event
     representing the time the satellite is brightest will be added to
@@ -5,6 +10,7 @@
     if 'visible' is false, or 'intrinsic_magnitude' is undefined).
   Clarify Astro::Coord::ECI::Moon phase() docs.
   Eliminate uses of each() built-in.
+  Add magnitude functionality to satpass script.
 
 0.062		2014-04-01	T. R. Wyant
   Update canned status for Iridium 29 (24944). Kelso says it's tumbling.
