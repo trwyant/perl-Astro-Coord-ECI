@@ -1548,7 +1548,8 @@ use constant PASS_VARIANT_BRIGHTEST	=> 0x10;
 use constant PASS_VARIANT_NONE => 0x00;		# Must be 0.
 
 my @pass_variant_mask = (
-    PASS_VARIANT_NO_ILLUMINATION | PASS_VARIANT_START_END,
+    PASS_VARIANT_NO_ILLUMINATION | PASS_VARIANT_START_END |
+	PASS_VARIANT_BRIGHTEST,
     PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX |
 	PASS_VARIANT_START_END | PASS_VARIANT_BRIGHTEST,
 );
@@ -9421,8 +9422,8 @@ This has no effect unless the C<visible> attribute is false.
 * C<PASS_VARIANT_BRIGHTEST> - Specifies that the the moment the
 satellite is brightest be computed as part of the pass statistics. The
 computation is to the nearest second, and is not done if
-C<PASS_VARIANT_NO_ILLUMINATION> is set, or if the C<visible> attribute
-is false.
+C<PASS_VARIANT_NO_ILLUMINATION> is set, the satellite has no intrinsic
+magnitude set, or the satellite is not illuminated during the pass.
 
 * C<PASS_VARIANT_NONE> - Specifies that no pass variant processing take
 place.
