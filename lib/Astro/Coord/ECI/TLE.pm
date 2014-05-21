@@ -769,6 +769,18 @@ L</Attributes> section for a description of the attributes.
     }
 }
 
+=item $illuminated = $tle->illuminated();
+
+This method returns a true value if the body is illuminated, and a false
+value if it is not.
+
+=cut
+
+sub illuminated {
+    my ( $self, $time ) = @_;
+    return $self->__sun_elev_from_sat( $time ) >= 0;
+}
+
 =item @events = $tle->intrinsic_events( $start, $end );
 
 This method returns any events that are intrinsic to the C<$tle> object.
@@ -893,8 +905,8 @@ sub magnitude {
     my $time = $self->universal();
 
     # If the illuminating body is below the horizon, we return undef.
-    $self->__sun_elev_from_sat( $time ) < 0
-	and return undef;	## no critic (ProhibitExplicitReturnUndef)
+    $self->illuminated()
+	or return undef;	## no critic (ProhibitExplicitReturnUndef)
 
     # Compute the range amd the elevation.
     my ( undef, $elev, $range ) = $sta->universal( $time )->azel( $self );
@@ -1713,7 +1725,7 @@ eod
 		last if $try_elev < $effective_horizon;
 		my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
 		1 == $litup
-		    and $tle->__sun_elev_from_sat( $time ) < 0
+		    and not $tle->illuminated( $time )
 		    and $litup = 0;
 		unshift @info, {
 		    azimuth => $try_azm,
@@ -1842,7 +1854,7 @@ eod
 			if !$suntim || $time >= $suntim;
 		    my $litup = $time < $suntim ? 2 - $dawn : 1 + $dawn;
 		    1 == $litup
-			and $tle->__sun_elev_from_sat( $time ) < 0
+			and not $tle->illuminated( $time )
 			and $litup = 0;
 		    push @illumination, illumination => $lighting[$litup];
 		}
@@ -1877,7 +1889,7 @@ eod
 			    my $litup = $_[0] < $suntim ?
 				2 - $dawn : 1 + $dawn;
 			    1 == $litup
-				and $tle->__sun_elev_from_sat( $_[0] ) < 0
+				and not $tle->illuminated( $_[0] )
 				and $litup = 0;
 			    $lighting[$litup] == $evt->{illumination}
 			    });
@@ -7199,6 +7211,11 @@ sub _r_dump {
 # given time.
 sub __sun_elev_from_sat {
     my ( $self, $time ) = @_;
+    if ( defined $time ) {
+	$self->universal( $time );
+    } else {
+	$time = $self->universal();
+    }
     return ( $self->azel_offset(
 	    $self->get( 'illum' )->universal( $time ),
 	    $self->get( 'edge_of_earths_shadow' ),

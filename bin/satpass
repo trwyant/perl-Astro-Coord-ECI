@@ -1790,10 +1790,11 @@ while ($time <= $endtm) {
 	my $name = $body->get ('name') || $body->get ('id') || 'body';
 	$name = substr $name, 0, 16;
 	if ($body->represents ('Astro::Coord::ECI::TLE')) {
-	    my $illum = ($sta->azel ($body))[1] < 0 ? 10 :
-		($sta->azel ($sun->universal ($time)))[1] > $twilight ? 2 :
-##		($body->azel ($sun))[1] > $body->dip() ? 1 : 0;
-		$body->__sun_elev_from_sat( $time ) >= 0 ? 1 : 0;
+	    my $illum = $body->illuminated() ? 1 : 0;
+	    $illum
+		and ( $sta->azel( $body ) )[1] >= 0
+		and ( $sta->azel($sun->universal( $time ) ) )[1] > $twilight
+		and $illum = 2;
 	    my $line;
 	    if ( $cmdopt{magnitude} ) {
 		my $mag = $body->magnitude( $sta );
