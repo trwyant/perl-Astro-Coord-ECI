@@ -1,3 +1,6 @@
+0.063_01	2014-05-21	T. R. Wyant
+  Add Astro::Coord::ECI::TLE method illuminated()
+
 0.063		2014-05-02	T. R. Wyant
   Allow PASS_VARIANT_BRIGHTEST event even if the 'visible' attribute is
     false.
