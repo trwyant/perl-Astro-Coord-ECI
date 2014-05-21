@@ -79,6 +79,11 @@ if ( $opt{merge} ) {
     $output =~ s/ [}] \s* \z /);\n/smx;
     $output =~ s/ ' ( -? \d+ [.] \d+ ) ' /$1/smxg;
     $output =~ s/ (?<= \d ) (?: (?= \n ) | \z ) /,/smxg;
+    print <<"EOD";
+# Last-Modified: @{[ time2str( $date ) ]}
+
+EOD
+
     print $output;
 } else {
     foreach my $oid ( sort { $a <=> $b } keys %found ) {
@@ -86,8 +91,8 @@ if ( $opt{merge} ) {
 	    and next;
 	say "$oid $sources[$found{$oid}]";
     }
+    say 'Last-Modified: ', time2str( $date );
 }
-say 'Last-Modified: ', time2str( $date );
 
 sub last_modified {
     my ( $resp ) = @_;
