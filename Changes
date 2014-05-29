@@ -1,3 +1,6 @@
+0.064		2014-05-29	T. R. Wyant
+  No changes from 0.063_01.
+
 0.063_01	2014-05-21	T. R. Wyant
   Add Astro::Coord::ECI::TLE method illuminated()
 
