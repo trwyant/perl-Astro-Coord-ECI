@@ -142,13 +142,13 @@ our @EXPORT_OK = ( qw{
 	SPEED_OF_LIGHT TWOPI acos add_magnitudes asin
 	atmospheric_extinction date2epoch date2jd deg2rad distsq
 	dynamical_delta embodies epoch2datetime equation_of_time
-	find_first_true fold_case intensity_to_magnitude jcent2000
-	jd2date jd2datetime jday2000 julianday keplers_equation
-	load_module looks_like_number max min mod2pi
-	nutation_in_longitude nutation_in_obliquity obliquity omega
-	rad2deg tan theta0 thetag vector_cross_product
-	vector_dot_product vector_magnitude vector_unitize
-       	__classisa __default_station __instance },
+	find_first_true fold_case format_space_track_json_time
+	intensity_to_magnitude jcent2000 jd2date jd2datetime jday2000
+	julianday keplers_equation load_module looks_like_number max min
+	mod2pi nutation_in_longitude nutation_in_obliquity obliquity
+	omega rad2deg tan theta0 thetag vector_cross_product
+	vector_dot_product vector_magnitude vector_unitize __classisa
+	__default_station __instance },
 	@time_routines );
 
 our %EXPORT_TAGS = (
@@ -589,10 +589,29 @@ C<CORE::fc> if that is available, otherwise it maps to C<CORE::lc>.
 
 *fold_case = CORE->can( 'fc' ) || sub ($) { return lc $_[0] };
 
+=item $fmtd = format_space_track_json_time( time() )
+
+This function takes as input a Perl time, and returns that time
+in a format consistent with the Space Track JSON data. This is
+ISO-8601-ish, in Universal time, but without the zone indicated.
+
+=cut
+
+sub format_space_track_json_time {
+    my ( $time ) = @_;
+    defined $time
+	and $time =~ m/ \S /smx
+	or return;
+    my @parts = gmtime floor( $time + .5 );
+    $parts[4] += 1;
+    $parts[5] += 1900;
+    return sprintf '%04d-%02d-%02d %02d:%02d:%02d', reverse
+	@parts[ 0 .. 5 ];
+}
 
 =item $difference = intensity_to_magnitude ($ratio)
 
-This method converts a ratio of light intensities to a difference in
+This function converts a ratio of light intensities to a difference in
 stellar magnitudes. The algorithm comes from Jean Meeus' "Astronomical
 Algorithms", Second Edition, Chapter 56, Page 395.
 

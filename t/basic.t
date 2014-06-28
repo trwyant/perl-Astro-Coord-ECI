@@ -290,6 +290,9 @@ u_cmp_eql find_first_true => [
     0, 1, sub{ sin( $_[0] ) >= sin( .5 ) }, .0001 ], .5, '%.4f',
     'find_first_true looking for sin( $x ) >= sin( .5 )';
 
+u_cmp_eql format_space_track_json_time => timegm( 0, 0, 0, 1, 3, 114 ),
+    '2014-04-01 00:00:00', '%s', 'Format Space Tracj JSON time';
+
 done_testing;
 
 sub instantiate ($) {
@@ -324,8 +327,13 @@ sub u_cmp_eql (@) {
 	} else {
 	    defined $tplt
 		and ( $want, $got ) = map { sprintf $tplt, $_ } ( $want, $got );
-	    @_ = ( $got, '==', $want, $title );
-	    goto &cmp_ok;
+	    if ( defined $tplt && '%s' eq $tplt ) {
+		@_ = ( $got, $want, $title );
+		goto &is;
+	    } else {
+		@_ = ( $got, '==', $want, $title );
+		goto &cmp_ok;
+	    }
 	}
     } else {
 	@_ = "Astro::Coord::ECI::Utils does not have subroutine $sub()";
