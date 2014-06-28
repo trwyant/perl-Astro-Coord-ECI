@@ -1518,7 +1518,8 @@ sub magnitude_table {
     BEGIN {
 	foreach my $code (PASS_EVENT_NONE, PASS_EVENT_SHADOWED,
 	    PASS_EVENT_LIT, PASS_EVENT_DAY, PASS_EVENT_RISE,
-	    PASS_EVENT_MAX, PASS_EVENT_SET, PASS_EVENT_BRIGHTEST ) {
+	    PASS_EVENT_MAX, PASS_EVENT_SET, PASS_EVENT_START,
+	    PASS_EVENT_END, PASS_EVENT_BRIGHTEST ) {
 	    my $val = ucfirst $code;
 	    $event_name[$code] = sub {$val};
 	}
@@ -1528,7 +1529,7 @@ sub magnitude_table {
 		$_[0]{appulse}{body}->get ('id')};
 
 	$cmdlgl{pass} = [ qw{ choose=s@ dump flatten
-	    magnitude|brightest quiet } ];
+	    magnitude|brightest quiet truncate! } ];
     }
 
     sub pass {
@@ -1571,7 +1572,9 @@ eod
     my $appulse = deg2rad ($parm{appulse});
     my $pass_threshold = deg2rad( $parm{pass_threshold} );
     my $pass_variant = $cmdopt{magnitude} ? PASS_VARIANT_BRIGHTEST :
-    PASS_VARIANT_NONE;
+	PASS_VARIANT_NONE;
+    $cmdopt{truncate}
+	and $pass_variant |= PASS_VARIANT_TRUNCATE;
     my $line_format = $cmdopt{magnitude} ? LINFMT_MAG : LINFMT;
 
 #	Print the header

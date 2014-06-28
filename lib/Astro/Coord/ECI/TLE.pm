@@ -268,6 +268,7 @@ BEGIN {
 	PASS_VARIANT_NO_ILLUMINATION
 	PASS_VARIANT_START_END
 	PASS_VARIANT_BRIGHTEST
+	PASS_VARIANT_TRUNCATE
 	PASS_VARIANT_NONE
 	BODY_TYPE_UNKNOWN
 	BODY_TYPE_DEBRIS
@@ -1397,7 +1398,8 @@ This method returns passes of the body over the given station between
 the given start end end times. The \@sky argument is background bodies
 to compute appulses with (see note 3).
 
-A pass is detected by this method when the body sets. This means that
+A pass is detected by this method when the body sets. Unless
+C<PASS_VARIANT_TRUNCATE> (see below) is in effect, this means that
 passes are not usefully detected for geosynchronous or
 near-geosynchronous bodies, and that passes where the body sets after
 the C<$end> time will not be detected.
@@ -1557,13 +1559,15 @@ use constant PASS_VARIANT_FAKE_MAX	=> 0x02;
 use constant PASS_VARIANT_START_END	=> 0x04;
 use constant PASS_VARIANT_NO_ILLUMINATION => 0x08;
 use constant PASS_VARIANT_BRIGHTEST	=> 0x10;
+use constant PASS_VARIANT_TRUNCATE	=> 0x20;
 use constant PASS_VARIANT_NONE => 0x00;		# Must be 0.
 
 my @pass_variant_mask = (
     PASS_VARIANT_NO_ILLUMINATION | PASS_VARIANT_START_END |
-	PASS_VARIANT_BRIGHTEST,
+	PASS_VARIANT_BRIGHTEST | PASS_VARIANT_TRUNCATE,
     PASS_VARIANT_VISIBLE_EVENTS | PASS_VARIANT_FAKE_MAX |
-	PASS_VARIANT_START_END | PASS_VARIANT_BRIGHTEST,
+	PASS_VARIANT_START_END | PASS_VARIANT_BRIGHTEST |
+	PASS_VARIANT_TRUNCATE,
 );
 
 use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
@@ -1575,14 +1579,35 @@ use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
 
 *_nodelegate_pass = \&pass;
 
+# The following method is not supported, and may be changed or retracted
+# at any time without notice. Its purpose in life is to provide a handle
+# by which the experimental and unreleased Astro::Coord::ECI::Points
+# objects can manipulate the the start and end times of the pass
+# calculation.
+sub __default_pass_times {
+    my ( $self, $start, $end ) = @_;
+    defined $start
+	or $start = time;
+    defined $end
+	or $end = $start + 7 * SECSPERDAY;
+    return ( $start, $end );
+}
+
 sub pass {
     my @args = __default_station( @_ );
     my @sky;
     ref $args[-1] eq 'ARRAY' and @sky = @{pop @args};
     my $tle = shift @args;
     my $sta = shift @args;
-    my $pass_start = shift @args || time ();
-    my $pass_end = shift @args || $pass_start + 7 * SECSPERDAY;
+
+    # We give subclasses a way of specifying their own default times. If
+    # an undefined end time is returned, the subclass is stating that
+    # there are no passes in the given range, and we simply return.
+    my ( $pass_start, $pass_end ) = $tle->__default_pass_times(
+	splice @args, 0, 2 );
+    defined $pass_start
+	or return;
+
     $pass_end >= $pass_start or croak <<eod;
 Error - End time must be after start time.
 eod
@@ -1608,10 +1633,10 @@ eod
 	$pass_variant_mask[ $want_visible ? 1 : 0 ];
     defined $tle->get( 'intrinsic_magnitude' )
 	or $pass_variant &= ~ PASS_VARIANT_BRIGHTEST;
+    my $truncate = $pass_variant & PASS_VARIANT_TRUNCATE;
     defined $pass_threshold
 	and $pass_threshold > $horizon
 	or $pass_threshold = $horizon;
-    my $pass_backup_earliest = $tle->__pass_backup_earliest();
 
     # We need the number of radians the satellite travels in a minute so
     # we can be slightly conservative determining whether the satellite
@@ -1656,6 +1681,8 @@ eod
     my $bigstep = 5 * $step;
     my $littlestep = $step;
     my $end = $pass_end;
+    $truncate
+	and $end += $littlestep;
     my @info;	# Information on an individual pass.
     my @passes;	# Accumulated informtion on all passes.
     my $visible;
@@ -1705,20 +1732,22 @@ eod
 #	but not the screening horizon before the end of the prediction
 #	period. Sigh.
 
-	if ( $elev < $screening_horizon ||
-	    @info && $elev < $effective_horizon &&
-	    $info[-1]{elevation} >= $effective_horizon
+	if ( $elev < $screening_horizon
+	    || @info && $elev < $effective_horizon &&
+		$info[-1]{elevation} >= $effective_horizon
+	    || $truncate && $time >= $pass_end
 	) {
 	    @info = () unless $visible;
 	    next unless @info;
-
 
 #	    We may have skipped part of the pass because it began in
 #	    daylight or before the official beginning of the prediction
 #	    period. Pick up that part now.
 
 	    {	# Single-iteration loop.
-		( my $time = $info[0]{time} - $step ) < $pass_backup_earliest
+		my $time = $info[0]{time} - $step;
+		$truncate
+		    and $time < $pass_start
 		    and last;
 		my ( $try_azm, $try_elev, $try_rng ) = $sta->azel (
 		    $tle->universal( $time ) );
@@ -1784,6 +1813,11 @@ eod
 		( $info[0]{time} - $pass_step,
 		    $info[-1]{time} + $pass_step
 		);
+	    $truncate
+		and ( $trial_start, $trial_finish ) = (
+		    max( $trial_start, $pass_start ),
+		    min( $trial_finish, $pass_end )
+		);
 	    my $culmination = find_first_true( $trial_start,
 		$trial_finish,
 		    sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] >
@@ -1794,14 +1828,17 @@ eod
 
 	    # Compute exact rise and set.
 
-	    my $sat_rise = find_first_true( $info[0]{time} - $step,
+	    $truncate
+		or ( $trial_start, $trial_finish ) = (
+		$info[0]{time} - $step, $info[-1]{time} + $step );
+	    my $sat_rise = find_first_true( $trial_start,
 		$culmination,
 		sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] >=
 		    $effective_horizon
 		},
 	    );
 	    my $sat_set = find_first_true ( $culmination,
-		$info[-1]{time} + $step,
+		$trial_finish,
 		sub { ( $sta->azel( $tle->universal( $_[0] ) ) )[1] <
 		    $effective_horizon
 		},
@@ -1984,6 +2021,26 @@ eod
 	    if ( $pass_variant & PASS_VARIANT_START_END ) {
 		$info[0]{event} = PASS_EVENT_START;
 		$info[-1]{event} = PASS_EVENT_END;
+	    }
+
+	    # If PASS_VARIANT_TRUNCATE is in effect, the first and last
+	    # events should be 'start' and 'end' IF AND ONLY IF the
+	    # satellite is above the horizon at that point AND the time
+	    # is at the start or end of the interval. Because the first
+	    # event is AFTER its exact time, we need to back up a bit
+	    # and recalculate.
+
+	    if ( $truncate ) {
+		my $prior = $info[0]{time} - 1;
+		if ( $prior <= $pass_start ) {
+		    my $elevation = ( $sta->azel(
+			    $tle->universal( $prior ) ) )[1];
+		    $elevation > $effective_horizon
+			and $info[0]{event} = PASS_EVENT_START;
+		}
+		$info[-1]{elevation} > $effective_horizon
+		    and $info[-1]{time} >= $pass_end
+		    and $info[-1]{event} = PASS_EVENT_END;
 	    }
 
 	    # Pick up the first and last event times, to use to bracket
@@ -2200,14 +2257,6 @@ eod
 	    min( $mark + APPULSE_CHECK_STEP, $last_time ),
 	);
     }
-}
-
-# Unpublished, and subject to retraction. The sole purpose of this is to
-# give the experimental Astro::Coord::ECI::Point class a way to prevent
-# the Astro::Coord::ECI::TLE pass() method from backing up ad infinitum
-# trying to find the time when the body rises.
-sub __pass_backup_earliest {
-    return 0;
 }
 
 # Compute the position of the satellite at its brightest. We expect to
@@ -9435,6 +9484,16 @@ that the C<illumination> key on other events will not be present. I find
 that setting this (with C<< visible => 0 >>) saves about 20% in wall
 clock time versus not setting it. Your mileage may, of course, vary.
 This has no effect unless the C<visible> attribute is false.
+
+* C<PASS_VARIANT_TRUNCATE> - Specifies that any pass in progress at the
+beginning or end of the calculation interval is to be truncated to the
+interval. If the calculation interval starts with the body already above
+the horizon, the initial event of that pass will be C<PASS_EVENT_START>
+rather than C<PASS_EVENT_RISE>. Similarly, if the calculation interval
+ends with the body still above the horizon, the final event of that pass
+will be C<PASS_EVENT_END>. With this variant in effect, 'passes' will be
+computed for synchronous satellites. This variant is to be considered
+B<experimental.>
 
 * C<PASS_VARIANT_BRIGHTEST> - Specifies that the the moment the
 satellite is brightest be computed as part of the pass statistics. The
