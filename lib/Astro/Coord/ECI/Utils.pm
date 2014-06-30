@@ -140,13 +140,14 @@ our @EXPORT_OK = ( qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
 	PERL2000 PI PIOVER2 SECSPERDAY SECS_PER_SIDERIAL_DAY
 	SPEED_OF_LIGHT TWOPI acos add_magnitudes asin
-	atmospheric_extinction date2epoch date2jd deg2rad distsq
-	dynamical_delta embodies epoch2datetime equation_of_time
-	find_first_true fold_case format_space_track_json_time
-	intensity_to_magnitude jcent2000 jd2date jd2datetime jday2000
-	julianday keplers_equation load_module looks_like_number max min
-	mod2pi nutation_in_longitude nutation_in_obliquity obliquity
-	omega rad2deg tan theta0 thetag vector_cross_product
+	atmospheric_extinction date2epoch date2jd
+	decode_space_track_json_time deg2rad distsq dynamical_delta
+	embodies epoch2datetime equation_of_time find_first_true
+	fold_case format_space_track_json_time intensity_to_magnitude
+	jcent2000 jd2date jd2datetime jday2000 julianday
+	keplers_equation load_module looks_like_number max min mod2pi
+	nutation_in_longitude nutation_in_obliquity obliquity omega
+	rad2deg tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize __classisa
 	__default_station __instance },
 	@time_routines );
@@ -336,6 +337,39 @@ sub date2epoch {
     return (date2jd ($day, $mon, $yr) - JD_OF_EPOCH) * SECSPERDAY +
     (($hr || 0) * 60 + ($min || 0)) * 60 + ($sec || 0);
 }
+
+=item $time = decode_space_track_json_time( $string )
+
+This subroutine decodes a time in the format Space Track uses in their
+JSON code. This is ISO-8601-ish, but with a possible fractional part and
+no zone.
+
+=cut
+
+sub decode_space_track_json_time {
+    my ( $string ) = @_;
+    $string =~ m{ \A \s*
+	( \d+ ) \D+ ( \d+ ) \D+ ( \d+ ) \D+
+	( \d+ ) \D+ ( \d+ ) \D+ ( \d+ ) (?: ( [.] \d* ) )? \s* \z }smx
+	or return;
+    my @time = ( $1, $2, $3, $4, $5, $6 );
+    my $frac = $7;
+    if ( $time[0] < 100 ) {
+	$time[0] < 57
+	    and $time[0] += 100;
+    } elsif ( $time[0] < 1900 ) {
+	return;
+    } else {
+	$time[0] -= 1900;
+    }
+    $time[1] -= 1;
+    my $rslt = timegm( reverse @time );
+    defined $frac
+	and $frac ne '.'
+	and $rslt += $frac;
+    return $rslt;
+}
+
 
 # my ( $self, $station, @args ) = __default_station( @_ )
 #

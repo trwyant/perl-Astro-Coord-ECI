@@ -7595,65 +7595,74 @@ encoded with a four-digit year.
 	foreach my $arg ( @args ) {
 	    my $decode = $json->decode( $arg );
 
-BODY_LOOP:
 	    foreach my $hash ( 'ARRAY' eq ref $decode ? @{ $decode } :
 		$decode ) {
 
-		if ( exists $hash->{SATNAME} ) {	# TODO Deprecated
-		    warnings::enabled( 'deprecated' )
-			and carp 'The SATNAME JSON key is deprecated ',
-			    'in favor of the OBJECT_NAME key';
-		    exists $hash->{OBJECT_NAME}
-			or $hash->{OBJECT_NAME} = $hash->{SATNAME};
-		    delete $hash->{SATNAME};
-		}
+		my $class = $hash->{astro_coord_eci_class} || __PACKAGE__;
+		load_module( $class );
+		push @rslt, $class->__from_json( $hash );
 
-		foreach my $key ( @required ) {
-		    defined $hash->{$key} and next;
-		    next BODY_LOOP;
-		}
-
-		defined $hash->{INTLDES}
-		    and $hash->{INTLDES} =~
-			s/ \A \d{2} ( \d{2} ) - /$1/smx;
-
-		foreach my $key ( qw{ EPOCH effective_date } ) {
-		    defined $hash->{$key}
-			and $hash->{$key} = _decode_json_time( $hash->{$key} );
-		}
-		defined $hash->{EPOCH_MICROSECONDS}
-		    and $hash->{EPOCH} += $hash->{EPOCH_MICROSECONDS} /
-			1_000_000;
-
-		foreach my $key ( qw{
-			ARG_OF_PERICENTER INCLINATION MEAN_ANOMALY
-			RA_OF_ASC_NODE
-		    } ) {
-		    $hash->{$key} *= SGP_DE2RA;
-		}
-
-		{
-		    my $temp = SGP_TWOPI;
-		    foreach my $key ( qw{
-			    MEAN_MOTION MEAN_MOTION_DOT MEAN_MOTION_DDOT
-			} ) {
-			$temp /= SGP_XMNPDA;
-			$hash->{$key} *= $temp;
-		    }
-		}
-
-		my %tle;
-		foreach my $key ( keys %{ $hash } ) {
-		    my $value = $hash->{$key};
-		    my $attr = $json_map{$key}
-			or next;
-		    $tle{$attr} = $value;
-		}
-		push @rslt, __PACKAGE__->new( %tle );
 	    }
 	}
 
 	return @rslt;
+    }
+
+    sub __from_json {
+	my ( $class, $hash ) = @_;
+
+	if ( exists $hash->{SATNAME} ) {	# TODO Deprecated
+	    warnings::enabled( 'deprecated' )
+		and carp 'The SATNAME JSON key is deprecated ',
+		    'in favor of the OBJECT_NAME key';
+	    exists $hash->{OBJECT_NAME}
+		or $hash->{OBJECT_NAME} = $hash->{SATNAME};
+	    delete $hash->{SATNAME};
+	}
+
+	foreach my $key ( @required ) {
+	    defined $hash->{$key}
+		or return;
+	}
+
+	defined $hash->{INTLDES}
+	    and $hash->{INTLDES} =~
+		s/ \A \d{2} ( \d{2} ) - /$1/smx;
+
+	foreach my $key ( qw{ EPOCH effective_date } ) {
+	    defined $hash->{$key}
+		and $hash->{$key} = _decode_json_time( $hash->{$key} );
+	}
+	defined $hash->{EPOCH_MICROSECONDS}
+	    and $hash->{EPOCH} += $hash->{EPOCH_MICROSECONDS} /
+		1_000_000;
+
+	foreach my $key ( qw{
+		ARG_OF_PERICENTER INCLINATION MEAN_ANOMALY
+		RA_OF_ASC_NODE
+	    } ) {
+	    $hash->{$key} *= SGP_DE2RA;
+	}
+
+	{
+	    my $temp = SGP_TWOPI;
+	    foreach my $key ( qw{
+		    MEAN_MOTION MEAN_MOTION_DOT MEAN_MOTION_DDOT
+		} ) {
+		$temp /= SGP_XMNPDA;
+		$hash->{$key} *= $temp;
+	    }
+	}
+
+	my %tle;
+	foreach my $key ( keys %{ $hash } ) {
+	    my $value = $hash->{$key};
+	    my $attr = $json_map{$key}
+		or next;
+	    $tle{$attr} = $value;
+	}
+
+	return $class->new( %tle );
     }
 }
 
