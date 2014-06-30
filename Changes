@@ -1,3 +1,14 @@
+0.064_01	2014-06-30	T. R. Wyant
+  Add TLE pass variant PASS_VARIANT_TRUNCATE, which truncates passes to
+    the beginning and end times given to pass(), rather then computing
+    complete passes (and therefore requiring the satellite to rise and
+    set).
+  Expose Space Track time formatting and decoding routines for possible
+    use by subclasses. The key routines __to_json() and __from_json()
+    are still undocumented and considered highly experimental, though.
+    Sorry.
+  Add OID 00694 to Astro::Coord::ECI::TLE canned magnitudes.
+
 0.064		2014-05-29	T. R. Wyant
   No changes from 0.063_01.
 
