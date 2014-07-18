@@ -1,3 +1,6 @@
+0.064_02	2014-07-18	T. R. Wyant
+  Prevent TLE manufacture for oddball objects -- or at least try to.
+
 0.064_01	2014-06-30	T. R. Wyant
   Add TLE pass variant PASS_VARIANT_TRUNCATE, which truncates passes to
     the beginning and end times given to pass(), rather then computing
