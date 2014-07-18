@@ -7846,12 +7846,16 @@ sub _looks_like_real {
 
     sub _make_tle {
 	my $self = shift;
+
+	'inertial' eq $self->__list_type()
+	    or return undef;	## no critic (ProhibitExplicitReturnUndef)
 	my $output;
 
 	my $oid = $self->get('id');
+	my $name = $self->get( 'name' );
 	my @line0;
 
-	if ( defined ( my $name = $self->get( 'name' ) ) ) {
+	if ( defined $name ) {
 	    $name =~ s/ \s+ \z //smx;
 	    $name ne ''
 		and push @line0, substr $name, 0, 24;
@@ -7873,9 +7877,12 @@ sub _looks_like_real {
 		inclination ascendingnode eccentricity
 		argumentofperigee meananomaly meanmotion
 		revolutionsatepoch}) {
-		defined ($ele{$_} = $self->get($_))
-		    or croak "OID $oid ", ucfirst $_,
-			"undefined; can not generate TLE";
+		defined( $ele{$_} = $self->get( $_ ) )
+		    and next;
+		my @ident = defined $oid ? ( OID => $oid ) : ( Name =>
+		    $name );
+		croak join ' ', @ident, ucfirst $_,
+		    'undefined; can not generate TLE';
 	    }
 	    my $temp = SGP_TWOPI;
 	    foreach (qw{meanmotion firstderivative secondderivative}) {
