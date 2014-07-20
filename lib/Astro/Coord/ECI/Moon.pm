@@ -483,7 +483,7 @@ eod
 
 # The moon is normally positioned in inertial coordinates.
 
-sub _initial_inertial { return 1 }
+sub __initial_inertial { return 1 }
 
 1;
 

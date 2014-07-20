@@ -7784,7 +7784,7 @@ sub _find_position {
 # Initial value of the 'inertial' attribute. TLEs are assumed to be
 # inertial until set otherwise.
 
-sub _initial_inertial{ return 1 };
+sub __initial_inertial{ return 1 };
 
 # Unsupported, experimental, and subject to change or retraction without
 # notice. The intent is to provide a way for the Astro::App::Satpass2

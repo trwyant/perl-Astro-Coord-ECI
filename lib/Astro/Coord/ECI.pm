@@ -186,7 +186,7 @@ to the set() method once the object has been instantiated.
 sub new {
     my ( $class, @args ) = @_;
     my $self = bless { %static }, ref $class || $class;
-    $self->{inertial} = $self->_initial_inertial();
+    $self->{inertial} = $self->__initial_inertial();
     @args and $self->set( @args );
     exists $self->{almanac_horizon}
 	or $self->set( almanac_horizon => 0 );
@@ -3374,7 +3374,7 @@ sub _expand_args_default_station {
     return @args;
 }
 
-#	$value = $self->_initial_inertial
+#	$value = $self->__initial_inertial
 #
 #	Return the initial setting of the inertial attribute. At this
 #	level we are assumed not inertial until we acquire a position.
@@ -3383,7 +3383,7 @@ sub _expand_args_default_station {
 #	Setting the coordinates explicitly will still set the {inertial}
 #	attribute appropriately.
 
-sub _initial_inertial{ return };
+sub __initial_inertial{ return };
 
 #	$value = _local_mean_delta ($coord)
 
