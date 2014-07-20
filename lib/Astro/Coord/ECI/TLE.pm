@@ -7844,11 +7844,14 @@ sub _looks_like_real {
 	},
     );
 
+    my @required_fields = qw{
+	firstderivative secondderivative bstardrag inclination
+	ascendingnode eccentricity argumentofperigee meananomaly
+	meanmotion revolutionsatepoch
+    };
+
     sub _make_tle {
 	my $self = shift;
-
-	'inertial' eq $self->__list_type()
-	    or return undef;	## no critic (ProhibitExplicitReturnUndef)
 	my $output;
 
 	my $oid = $self->get('id');
@@ -7873,16 +7876,23 @@ sub _looks_like_real {
 
 	my %ele;
 	{
-	    foreach (qw{firstderivative secondderivative bstardrag
-		inclination ascendingnode eccentricity
-		argumentofperigee meananomaly meanmotion
-		revolutionsatepoch}) {
+	    my @missing_fields;
+	    foreach ( @required_fields ) {
 		defined( $ele{$_} = $self->get( $_ ) )
 		    and next;
-		my @ident = defined $oid ? ( OID => $oid ) : ( Name =>
-		    $name );
-		croak join ' ', @ident, ucfirst $_,
-		    'undefined; can not generate TLE';
+		push @missing_fields, $_;
+	    }
+
+	    if ( @missing_fields ) {
+		# If all required fields are missing we presume it is
+		# deliberate, and return nothing.
+		@required_fields == @missing_fields
+		    and return undef;	## no critic (ProhibitExplicitReturnUndef)
+		# Otherwise we croak with an error
+		croak 'Can not generate TLE for ',
+		    defined $oid ? $oid : $name,
+		    '; undefined attribute(s) ',
+		    join ', ', @missing_fields;
 	    }
 	    my $temp = SGP_TWOPI;
 	    foreach (qw{meanmotion firstderivative secondderivative}) {
