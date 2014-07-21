@@ -1,3 +1,7 @@
+0.064_03	2014-07-20	T. R. Wyant
+  Another cut at preventing TLE manufacture for oddball objects --
+    hopefully one with fewer false negatives.
+
 0.064_02	2014-07-18	T. R. Wyant
   Prevent TLE manufacture for oddball objects -- or at least try to.
 
