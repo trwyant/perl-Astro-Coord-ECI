@@ -2,6 +2,7 @@ bin/satpass
 Build.PL
 Changes
 eg/almanac
+eg/Astro-Coord-ECI.yml
 eg/azimuth
 eg/closest
 eg/convert_tle

@@ -25,7 +25,7 @@ my @clean_files;
 
 Astro::Coord::ECI::Recommend->recommend();
 
-print <<eod;
+print <<"EOD";
 
 The following executable can be installed:
 
@@ -37,31 +37,22 @@ to install without being asked, run Makefile.PL with the -y option.
 
 >>>> NOTICE <<<<\a\a\a
 
-I plan to eliminate the question about whether to install the satpass
-script in the first release after August 1 2014. The default behavior
-will be NOT to install. At some time after this the name of the package
-will change to Astro-Coord-ECI, like it should have been all along.
+As of release [%% next_version %%], this script no longer asks whether
+the satpass script should be installed, since it is being deprecated
+(slowly) in favor of Astro::App::Satpass2. If you want the satpass
+script installed, you should run this script with the -y option. You can
+make this the default in your CPAN client by installing the preferences
+file eg/Astro-Coord-ECI.yml in .cpan/prefs.
 
-Unless you are running MSWin32 or VMS (which are special-cased), I will
-assume you are running some version of U*ix, and behave accordingly.
-
-eod
+EOD
 
 my @possible_exes = qw{satpass};
-if ($opt{n}) {
+if ( $opt{n} ) {
     print "Because you have asserted -n, the executables will not be installed.\n\n";
-    }
-  elsif ($opt{y}) {
+} elsif ( $opt{y} ) {
     print "Because you have asserted -y, the executables will be installed.\n\n";
     @exe_files = @possible_exes;
-    }
-  else {
-    foreach (@possible_exes) {
-	push @exe_files, $_
-	    if prompt ("Do you want to install $_?", 'n') =~ m/^y/i
-	    ;
-	}
-    }
+}
 
 if (@exe_files) {
     if ($^O eq 'MSWin32') {

@@ -10,6 +10,12 @@ almanac
     and height (meters) on the command. The option -help gets you
     brief help.
 
+Astro-Coord-ECI.yml
+    This CPAN client prefs file causes the satpass script to be
+    installed by default. To use this file, place a copy of it in your
+    CPAN client's preferences directory (e.g. .cpan/prefs for the 'cpan'
+    client and a Unix-like operating system.)
+
 azimuth
     This Perl script finds the next time the Sun passes a given azimuth
     (defaulting to 180 degrees) at Number 10 Downing Street.
