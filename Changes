@@ -1,3 +1,11 @@
+0.066		2014-10-16	T. R. Wyant
+  Update Iridium 42 (OID 25077) to failed, per Kelso.
+  Regenerate canned magnitude table.
+  Croak on encountering JSON key SATNAME. This was replaced by
+    OBJECT_NAME during the REST interface's beta.
+  Remove installer question about installing satpass, per documented
+    deprecation schedule.
+
 0.065		2014-07-27	T. R. Wyant
   No changes since 0.064_03.
 

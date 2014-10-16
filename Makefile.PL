@@ -37,7 +37,7 @@ to install without being asked, run Makefile.PL with the -y option.
 
 >>>> NOTICE <<<<\a\a\a
 
-As of release [%% next_version %%], this script no longer asks whether
+As of release 0.066, this script no longer asks whether
 the satpass script should be installed, since it is being deprecated
 (slowly) in favor of Astro::App::Satpass2. If you want the satpass
 script installed, you should run this script with the -y option. You can
