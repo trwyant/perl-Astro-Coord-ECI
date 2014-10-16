@@ -8548,7 +8548,7 @@ sub _next_elevation_screen {
              },
   '25077' => {
                'comment' => '',
-               'status' => 0,
+               'status' => 2,
                'name' => 'Iridium 42',
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'type' => 'iridium',
