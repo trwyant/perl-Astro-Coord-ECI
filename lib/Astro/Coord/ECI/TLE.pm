@@ -2699,11 +2699,18 @@ Error - The status ('drop') call requires a NORAD ID.
 eod
 	delete $status{$id};
     } elsif ($cmd eq 'dump') {	# <<<< Undocumented!!!
+	# This functionality is UNDOCUMENTED and UNSUPPORTED. It exists
+	# for the convenience of the author, who reserves the right to
+	# change or revoke it without notice.
+	# If called in void context, prints a Data::Dumper dump of the
+	# status information; otherwise returns the dump.
 	local $Data::Dumper::Terse = 1;
 	local $Data::Dumper::Sortkeys = 1;
 	my $data = @arg ?
 	    +{ map { $_ => $status{$_} } grep { $status{$_} } @arg } :
 	    \%status;
+	defined wantarray
+	    and return __PACKAGE__ . ' status = ', Dumper( $data );
 	print __PACKAGE__, " status = ", Dumper ( $data );
     } elsif ($cmd eq 'show') {
 	return (
@@ -2714,11 +2721,18 @@ eod
 	    @arg ? @arg : keys %status
 	);
     } elsif ($cmd eq 'yaml') {	# <<<< Undocumented!!!
+	# This functionality is UNDOCUMENTED and UNSUPPORTED. It exists
+	# for the convenience of the author, who reserves the right to
+	# change or revoke it without notice.
+	# If called in void context, prints a YAML dump of the status
+	# information; otherwise returns the YAML dump.
 	load_module( 'YAML' )
 	    or croak 'YAML not available';
 	my $data = @arg ?
 	    +{ map { $_ => $status{$_} } grep { $status{$_} } @arg } :
 	    \%status;
+	defined wantarray
+	    and return YAML::Dump( $data );
 	print YAML::Dump( $data );
     } else {
 	croak <<eod;

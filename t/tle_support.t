@@ -23,6 +23,27 @@ Astro::Coord::ECI::TLE->status( add => 22222, iridium => '' );
 cmp_ok elements( Astro::Coord::ECI::TLE->status( 'show' ) ), '==', 1,
     'Astro::Coord::ECI::TLE->status() items after adding 22222';
 
+note <<'EOD';
+
+The following tests UNDOCUMENTED AND UNSUPPORTED functionality. This
+means that the functionality exists solely for the convenience of the
+author, who reserves the right to change or revoke the functionality
+without notice.
+EOD
+
+is scalar Astro::Coord::ECI::TLE->status( 'dump' ), <<'EOD', 'Data::Dumper dump';
+{
+  '22222' => {
+               'class' => 'Astro::Coord::ECI::TLE::Iridium',
+               'comment' => '',
+               'id' => '22222',
+               'name' => '',
+               'status' => 0,
+               'type' => 'iridium'
+             }
+}
+EOD
+
 Astro::Coord::ECI::TLE->status( add => 33333, iridium => '?' );
 
 note <<'EOD';
@@ -131,3 +152,5 @@ sub elements {
 }
 
 1;
+
+# ex: set textwidth=72 :
