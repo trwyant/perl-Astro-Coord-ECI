@@ -1,3 +1,6 @@
+0.066_01	2014-10-28	T. R. Wyant
+  Add OID 15494 to canned magnitude table.
+
 0.066		2014-10-16	T. R. Wyant
   Update Iridium 42 (OID 25077) to failed, per Kelso.
   Regenerate canned magnitude table.
