@@ -7,6 +7,11 @@ use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Iridium;
 use Test::More 0.88;	# Because of done_testing().
 
+eval {
+    require Safe;
+    1;
+} or plan skip_all => 'Can not load module Safe';
+
 note <<'EOD';
 
 The following tests check manipulation of the canned statuses
@@ -31,17 +36,24 @@ author, who reserves the right to change or revoke the functionality
 without notice.
 EOD
 
-is scalar Astro::Coord::ECI::TLE->status( 'dump' ), <<'EOD', 'Data::Dumper dump';
-{
-  '22222' => {
-               'class' => 'Astro::Coord::ECI::TLE::Iridium',
-               'comment' => '',
-               'id' => '22222',
-               'name' => '',
-               'status' => 0,
-               'type' => 'iridium'
-             }
-}
+is_deeply( Safe->new()->reval(
+	scalar Astro::Coord::ECI::TLE->status( 'dump' )
+    ),
+    {
+	'22222' => {
+	    'class' => 'Astro::Coord::ECI::TLE::Iridium',
+	    'comment' => '',
+	    'id' => '22222',
+	    'name' => '',
+	    'status' => 0,
+	    'type' => 'iridium'
+	}
+    }, 'Data::Dumper dump',
+);
+
+note <<'EOD';
+
+OK, now we are back to testing supported stuff again.
 EOD
 
 Astro::Coord::ECI::TLE->status( add => 33333, iridium => '?' );
