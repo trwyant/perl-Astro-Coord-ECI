@@ -1,3 +1,6 @@
+0.066_02	2014-11-01	T. R. Wyant
+  Fix failure in t/tle_support.t. I hope.
+
 0.066_01	2014-10-28	T. R. Wyant
   Add OID 15494 to canned magnitude table.
 
