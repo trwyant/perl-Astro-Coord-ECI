@@ -24,11 +24,11 @@ is last_modified(
     'Celestrak visual.txt Last-Modified';
 
 is last_modified( mccants => 'vsnames' ),
-    'Fri, 19 Apr 2013 21:54:32 GMT',
+    'Fri, 19 Dec 2014 23:25:22 GMT',
     'McCants vsnames.mag Last-Modified';
 
 is last_modified( mccants => 'mcnames' ),
-    'Tue, 20 May 2014 23:28:07 GMT',
+    'Fri, 19 Dec 2014 23:21:00 GMT',
     'McCants mcnames.mag Last-Modified';
 
 done_testing;
