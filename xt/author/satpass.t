@@ -148,11 +148,12 @@ cd t
 -skip ''
 
 set tz GMT
-almanac '01-Jul-2006 midnight'
+set date_format '%Y-%m-%d'
+almanac '2006-07-01 00:00:00'
 -data <<eod
 Location: 1600 Pennsylvania Ave NW Washington DC 20502
           Latitude 38.8987, longitude -77.0377, height 17 m
-Sat 01-Jul-2006
+2006-07-01
 00:37:32 Sunset
 01:09:26 End civil twilight (-6 degrees)
 03:54:04 Moon set
