@@ -1,3 +1,7 @@
+0.067_02	2015-03-14	T. R. Wyant
+  Make the satpass script time zone functionality work with Date::Manip
+    versions 6.49 and greater.
+
 0.067_01	2015-01-16	T. R. Wyant
   Track changes in Mike McCants' magnitude data.
 
