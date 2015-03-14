@@ -3141,18 +3141,52 @@ BEGIN {
 
 	require Date::Manip;
 
-	my $tz_init = grep { m/ \A TZ= /smx } Date::Manip::Date_Init();
+	my $dm_ver = Date::Manip->VERSION();
+	$dm_ver =~ s/ _ //smxg;
 
-	*_parse_time_absolute_init = sub {
-	    my ( $tz ) = @_;
-	    Date::Manip::Date_Init( defined $tz ? "TZ=$tz" : $tz_init );
-	    return;
-	};
+	# At version 6.49, the TZ configuration variable was deprecated
+	# in favor of the SetDate or ForceTime variables. So we need to
+	# check the Date::Manip version and Do The Right Thing depending
+	# on what it is.
+	if ( $dm_ver >= 6.49 ) {
+	    my $tz_init = grep { m/ \A SetDate= /smx } Date::Manip::Date_Init();
 
-	*_parse_time_absolute_init_perltime = sub {
-	    Date::Manip::Date_Init( 'TZ=GMT' );
-	    return;
-	};
+	    my %tz_sub = (
+		GMT	=> 'UT',
+	    );
+
+	    *_parse_time_absolute_init = sub {
+		my ( $tz ) = @_;
+		if ( defined $tz ) {
+		    defined $tz_sub{$tz}
+			and $tz = $tz_sub{$tz};
+		    Date::Manip::Date_Init( "SetDate=now,$tz" );
+		} else {
+		    Date::Manip::Date_Init( $tz_init );
+		}
+		return;
+	    };
+
+	    *_parse_time_absolute_init_perltime = sub {
+		Date::Manip::Date_Init( 'SetDate=now,UT' );
+		return;
+	    };
+	} else {
+
+	    my $tz_init = grep { m/ \A TZ= /smx } Date::Manip::Date_Init();
+
+	    *_parse_time_absolute_init = sub {
+		my ( $tz ) = @_;
+		Date::Manip::Date_Init( defined $tz ? "TZ=$tz" : $tz_init );
+		return;
+	    };
+
+	    *_parse_time_absolute_init_perltime = sub {
+		Date::Manip::Date_Init( 'TZ=GMT' );
+		return;
+	    };
+
+	}
 
     #	The problem we're solving with the following is that
     #	Date::Manip assumes an epoch of midnight January 1 1970, but
@@ -3170,9 +3204,7 @@ BEGIN {
 	    return $time + $date_manip_fudge;
 	};
 
-	my $ver = Date::Manip->VERSION();
-	$ver =~ s/ _ //smxg;
-	*_parse_time_absolute_use_perltime = $ver < 6 ? sub { 1 } : sub { 0 };
+	*_parse_time_absolute_use_perltime = $dm_ver < 6 ? sub { 1 } : sub { 0 };
 
     } || do {
 
