@@ -4,9 +4,11 @@
 /cover_db
 /data
 /Debian_CPANTS.txt
+/foo
 /iridium.dat
 /Makefile
 /MANIFEST.bak
+/meta
 /META.json
 /META.yml
 /MYMETA.json
@@ -14,7 +16,9 @@
 /nytprof*
 /ref
 /scalps
+TODO
 /usual.dat
 /xt/author/generated/
 /*.expect
 /*.got
+.*.swp
