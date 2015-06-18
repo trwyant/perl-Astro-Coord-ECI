@@ -26,7 +26,7 @@ my %opt = (
 );
 
 GetOptions( \%opt,
-    qw{ format=s moon! sun! tomorrow! },
+    qw{ date=s format=s moon! sun! tomorrow! },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
@@ -48,8 +48,15 @@ my ( $lat, $lon, $hgt ) = @args;
 #	Start time is the previous midnight. Unless -tomorrow is
 #	set, in which case it's the next midnight.
 
-my $start = timelocal (0, 0, 0, (localtime)[3 .. 5]);
-$start += 86400 if $opt{tomorrow};
+my $start;
+if ( defined $opt{date} ) {
+    require Date::Manip;
+    $start = Date::Manip::UnixDate( $opt{date}, '%s' )
+	or die "Invalid date $opt{date}\n";
+} else {
+    $start = timelocal (0, 0, 0, (localtime)[3 .. 5]);
+    $start += 86400 if $opt{tomorrow};
+}
 
 #	The end time is the start time + 1 day.
 
@@ -96,6 +103,13 @@ almanac - Generate almanac data for a given location
  almanac -version
 
 =head1 OPTIONS
+
+=head2 -date=date_string
+
+This option specifies the date as a string that can be parsed by
+L<Date::Manip|Date::Manip>. If L<Date::Manip|Date::Manip> can not be
+loaded an error occurs. If this option is specified, C<-tomorrow> is
+ignored.
 
 =head2 -format=strftime_format
 
