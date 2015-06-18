@@ -314,13 +314,30 @@ the first argument (i.e. before C<$theta>). This is currently ignored.
 
 =item ($time, $quarter, $desc) = $sun->next_quarter($want);
 
-This method calculates the time of the next equinox or solstice
-after the current time setting of the $sun object. The return is the
-time, which equinox or solstice it is as a number from 0 (vernal
-equinox) to 3 (winter solstice), and a string describing the equinox
-or solstice. If called in scalar context, you just get the time.
+This method calculates the time of the next equinox or solstice after
+the current time setting of the $sun object. The return is the time,
+which equinox or solstice it is as a number from 0 (March equinox) to 3
+(December solstice), and a string describing the equinox or solstice. If
+called in scalar context, you just get the time.
 
-The optional $want argument says which equinox or solstice you want.
+If the C<station> attribute is not set or set to a location on or north
+of the Equator, the descriptor strings are
+
+ 0 - Spring equinox
+ 1 - Summer solstice
+ 2 - Fall equinox
+ 3 - Winter solstice
+
+If the C<station> attribute is set to a location south of the Equator,
+the descriptor strings are
+
+ 0 - Fall equinox
+ 1 - Winter solstice
+ 2 - Spring equinox
+ 3 - Summer solstice
+
+The optional $want argument says which equinox or solstice you want, as
+a number from 0 through 3.
 
 As a side effect, the time of the $sun object ends up set to the
 returned time.
@@ -379,8 +396,13 @@ sub period {return 31558149.7632}	# 365.256363 * 86400
 	'Fall equinox', 'Winter solstice');
 
     sub __quarter_name {
-	my ( $self, $quarter ) = @_;
-	return $quarters[$quarter];
+	my ( $self, $quarter, $name ) = @_;
+	$name ||= \@quarters;
+	my $station;
+	$station = $self->get( 'station' )
+	    and ( $station->geodetic() )[0] < 0
+	    and $quarter = ( $quarter + @{ $name } / 2 ) % @{ $name };
+	return $name->[$quarter];
     }
 }
 

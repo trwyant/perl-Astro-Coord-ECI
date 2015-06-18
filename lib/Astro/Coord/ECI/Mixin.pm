@@ -255,7 +255,9 @@ method is called in scalar context.
 
 =head3 __quarter_name
 
-This method calculates the name of a quarter given its number.
+This method calculates the name of a quarter given its number, and an
+optional reference to an array of quarter names. The optional argument
+is for the benefit of localization code.
 
 =head2 next_quarter_hash
 
