@@ -1,3 +1,11 @@
+0.069_01	2015-06-18	T. R. Wyant
+  The Astro::Coord::ECI::Sun almanac() method now returns the correct
+    quarter descriptions (equinox, solstice) when the 'station'
+    attribute is set to a location south of the Equator. The event
+    detail (which is encoded as a number) does not change, but is
+    documented to refer to 'March equinox', and so on.
+  Add -date option to eg/almanac
+
 0.069		2015-06-07	T. R. Wyant
   No changes since 0.068_01.
 
