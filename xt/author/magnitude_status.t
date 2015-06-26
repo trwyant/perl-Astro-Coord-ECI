@@ -28,7 +28,7 @@ is last_modified( mccants => 'vsnames' ),
     'McCants vsnames.mag Last-Modified';
 
 is last_modified( mccants => 'mcnames' ),
-    'Wed, 08 Apr 2015 20:01:21 GMT',
+    'Fri, 26 Jun 2015 00:41:36 GMT',
     'McCants mcnames.mag Last-Modified';
 
 done_testing;
