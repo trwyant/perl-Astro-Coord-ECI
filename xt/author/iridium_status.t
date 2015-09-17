@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = timegm( 0, 0, 2, 27, 4, 115 );
+my $asof = timegm( 0, 0, 14, 17, 8, 115 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -261,7 +261,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 10 December 2014 **</strong></p>
+<p align="center"><strong>** Updated 17 September 2015 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -270,6 +270,13 @@ Failures</a>.</p>
 
 <p><strong>Latest changes </strong>(see below for earlier
 changes): </p>
+
+<p>*** In the middle of 2015, Iridium 45 (25104, 1997-082A) which
+had been migrating from orbital plane 2 towards orbital plane 3
+for about 14 months, arrived in oribital plane 3. It appears to
+have already been in operational use as part of orbital plane 3
+for some months previously, even though it was not in its final
+orbital location. ***</p>
 
 <p>*** In early December 2014, Space-Track catalogued four items
 of debris (40324-40327, 2002-05G to 2002-05K) associated wth the
@@ -299,10 +306,10 @@ Iridium 42 has since been reported to be flashing.***</p>
 <p>*** By early 2014, Iridium 29 (24944, 1997-051A) ceased to
 maintain its position in the constellation, and has presumably
 failed. At that time, there was no spare available in plane 3 to
-replace it.. Iridium 45 (25104, 1997-082A) appears to be
-migrating from orbital plane 2 towards orbital plane 3, to
-replace Iridium 29. Its place in orbital plane 2 was taken by
-Iridium 23 (24906, 1997-043D) ***</p>
+replace it.. Iridium 45 (25104, 1997-082A) started migrating from
+orbital plane 2 towards orbital plane 3, to replace Iridium 29.
+Its place in orbital plane 2 was taken by Iridium 23 (24906,
+1997-043D) ***</p>
 
 <pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
 Plane
@@ -312,10 +319,10 @@ Plane 2:  22   <a href="iridium94.htm">94</a>   76   25   23   46   47   20   49
 href="iridium11and26.htm">11</a>    3          				(note: Iridium 23 is probably a partial failure)
 Plane 3:  55   <a href="iridium28and95.htm">95</a>   45   <a
 href="iridium30and31.htm">31</a>   <a href="iridium30and31.htm">30</a>   32   <a
-href="iridium33collision.htm">91</a>   57   58   59   60   (note that Iridium 45 is in the process of migrating from plane 2 to plane 3)
+href="iridium33collision.htm">91</a>   57   58   59   60   					(note that Iridium 45 migrated from plane 2 to plane 3)
 Plane 4:  19   34   35   <a href="iridium36and97.htm">97</a>    <a
 href="iridium5and51.htm">5</a>  6/51   <a
-href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6 and 7 are probably partial failures)
+href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
 Plane 6:  18   98   40   39   80   <a href="iridium17and77.htm">77</a>   15   81   <a
@@ -397,6 +404,13 @@ which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
 
+<p>In the middle of 2015, Iridium 45 (25104, 1997-082A) which had
+been migrating from orbital plane 2 towards orbital plane 3 for
+about 14 months, arrived in oribital plane 3. It appears to have
+already been in operational use as part of orbital plane 3 for
+some months previously, even though it was not in its final
+orbital location.</p>
+
 <p>In early December 2014, Space-Track catalogued four items of
 debris (40324-40327, 2002-05G to 2002-05K) associated wth the
 2002-05 launch .These are labelled by Space-Track as
@@ -421,10 +435,10 @@ whch had been spare in orbital plane 6 since migrating from plane
 Iridium 42 (25077. 1977-077)which had presumably failed. Iridium
 42 has since been reported to be flashing..</p>
 
-<p>By early 2014, Iridium 45 (25104, 1997-082A) is no longer
-maintaining its place in orbital plane 2. Iridium 45 appears to
-be migrating towards orbital plane 3. Its place in orbital plane
-2 has been taken by Iridium 23 (24906, 1997-043D).</p>
+<p>By early 2014, Iridium 45 (25104, 1997-082A) was no longer
+maintaining its place in orbital plane 2, and was
+evidentlymigrating towards orbital plane 3. Its place in orbital
+plane 2 has been taken by Iridium 23 (24906, 1997-043D).</p>
 
 <p>By early 2014, Iridium 29 (24944, 1997-051A) had ceased to
 maintain its position in the constellation, and had presumably
