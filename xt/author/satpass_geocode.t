@@ -9,46 +9,44 @@ use Astro::Coord::ECI::Satpass;
 use Test::More 0.88;
 
 eval {
-    require Geo::Coder::Geocoder::US;
+    require Geo::Coder::OSM;
     1;
 } or do {
-    plan skip_all => 'Geo::Coder::Geocoder::US not available';
+    plan skip_all => 'Geo::Coder::OSM not available';
     exit;
 };
 
 eval {
     require LWP::UserAgent;
     1;
-} or do {	# Shouldn't happen since Geo::Coder::Geocoder::US loaded.
-    plan skip_all => 'LWP::UserAgent not available';
-    exit;
-};
+} or plan skip_all => 'LWP::UserAgent not available';
 
 {
     my $ua = LWP::UserAgent->new ();
-    my $rslt = $ua->get ('http://rpc.geocoder.us/');
-    unless ($rslt->is_success) {
-	plan skip_all => 'http://rpc.geocoder.us/ not reachable';
-	exit;
-    }
+    no warnings qw{ once };
+    my $src = $Geo::Coder::OSM::SOURCES{osm}
+	or plan skip_all => 'Can not determine OSM URL';
+    my $rslt = $ua->get ( $src );
+    $rslt->is_success()
+	or plan skip_all => "$src not reachable";
 }
 
-Astro::Coord::ECI::Satpass::satpass (*DATA);
+Astro::Coord::ECI::Satpass::satpass( *DATA );
 
 1;
 __END__
 
-## -skip not_available ('Geo::Coder::Geocoder::US') || not_reachable ('http://rpc.geocoder.us/')
+## -skip not_available ('Geo::Coder::OSM') || not_reachable ('http://rpc.geocoder.us/')
 
 set country us
 set autoheight 0
-geocode '1600 pennsylvania ave washington dc'
+geocode '1600 Pennsylvania Ave NW, Washington DC'
 -data <<eod
-set location '1600 Pennsylvania Ave NW, Washington DC 20502'
-set latitude 38.898748
-set longitude -77.037684
+set location '1600 Pennsylvania Ave NW, Washington DC'
+set latitude 38.897699
+set longitude -77.036553
 eod
--test geocode U.S. location via http://rpc.geocoder.us/
+-test geocode U.S. location via OSM
 
 # BELOW HERE NOT TESTED BECAUSE GEOCODER.CA REQUIRES REGISTRATION FOR
 # THEIR FREE PORT.

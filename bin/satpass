@@ -1069,68 +1069,44 @@ eod
 
 #	The options are those documented with geocode().
 
-{
-    my %interface;
-
-    BEGIN {
-	%interface = (
-	    'Geo::Coder::Geocoder::US' => \&_geocode_us__geo_coder,
-	);
-    }
-
-    sub geocode_us {
-
-	my $class = _load_module(
-	    [ 'Geo::Coder::Geocoder::US' ],  'geocode_us' );
-	my $code = $interface{$class}
-	    or die "Programming error - Unexpected geocoding class $class";
-	goto &$code;
-
-    }
-}
-
-sub _geocode_us__geo_coder {
+sub geocode_us {
     my ( $loc ) = @_;
-    my $set_loc = defined $loc;
-    defined $loc or $loc = $parm{location};
-
-    my $gc = Geo::Coder::Geocoder::US->new();
-
-    if ( my @rslt = $gc->geocode( location => $loc ) ) {
-
+    my $set_loc;
+    if ( defined $loc ) {
+	$set_loc = 1;
+    } else {
+	$loc = $parm{location};
+    }
+    my $class = _load_module( [ 'Geo::Coder::OSM' ], 'geocode_us' );
+    my $gc = $class->new();
+    if ( my @rslt = sort { $b->{importance} <=> $a->{importance} }
+	$gc->geocode( location => $loc ) ) {
+	$rslt[0]{importance} > 0.5
+	    and @rslt = grep { $_->{importance} > 0.5 } @rslt;
 	if ( @rslt == 1 ) {
-	    $set_loc and $parm{location} = _geocode_us_format_address(
-		$rslt[0] );
-	    @parm{ qw{latitude longitude } } = @{ $rslt[0] }{ qw{ lat long } };
+	    $set_loc
+		and $parm{location} = $loc;
+	    @parm{ qw{latitude longitude } } =
+		map { sprintf '%.6f', $_ }
+		@{ $rslt[0] }{ qw{ lat lon } };
 	    show( ( $set_loc ? 'location' : () ), qw{ latitude longitude } );
 	    _geocode_height();
 	} else {
-	    foreach my $info ( @rslt ) {
-		print join( "\t", $info->{lat}, $info->{long},
-		    _geocode_us_format_address( $info ) );
+	    foreach my $addr ( @rslt ) {
+		( my $desc = $addr->{display_name} ) =~ s/ [^,]+ , \s* //smx;
+		$desc =~ s/ \A ( \d+ ) , /$1/smx;	# Oh, for 5.10 and \K
+		print join( "\t", $addr->{lat}, $addr->{lon}, $desc ), "\n";
 	    }
 	}
-
+    } elsif ( my $resp = $gc->response() ) {
+	if ( $resp->is_success() ) {
+	    die "No match found for location\n";
+	} else {
+	    die $resp->status_line(), "\n";
+	}
     } else {
-
-	my $resp = $gc->response()
-	    or die "No HTTP response found\n";
-	$resp->is_success()
-	    and die "No match found for location\n";
-	die $resp->status_line();
+	die "No HTTP response found\n";
     }
-}
-
-sub _geocode_us_format_address {
-    my ( $info ) = @_;
-    return join ', ',
-	_geocode_us_join( $info, qw{ number prefix street type suffix } ),
-	_geocode_us_join( $info, qw{ city state zip } );
-}
-
-sub _geocode_us_join {
-    my ( $info, @keys ) = @_;
-    return join ' ', grep { defined $_ && '' ne $_ } map { $info->{$_} } @keys;
 }
 
 #	We have the following synonyms, based on the fact that ISO 3166
@@ -1254,7 +1230,7 @@ sub height_us {
     $cmdopt{retry_on_zero} ||= 0;
 
     my $eq = Geo::WebService::Elevation::USGS->new (
-	source => $cmdopt{source_layer},
+#	source => $cmdopt{source_layer},
 	trace => $cmdopt{debug},
 	units => 'METERS',
 	croak => 0,	# Handle own errors
@@ -1268,7 +1244,7 @@ sub height_us {
 	} and $eq->is_valid($rslt)
 	    or do {
 	    $tries > 0 and next;
-	    my $msg = $eq->error() || 'No valid result found.';
+	    my $msg = $eq->get( 'error' ) || 'No valid result found.';
 	    $cmdopt{geocoding} or die "$msg\n";
 	    print "# Could not determine height. Setting to zero.\n";
 	    $rslt = { Elevation => 0 };
@@ -2069,13 +2045,16 @@ $st and $st->set (webcmd => $_[1]);
 #
 
 sub show {
-foreach my $name (@_) {
-    exists $accessor{$name} or die <<eod;
+    my @arg = @_;
+    @arg
+	or @arg = grep { m/ \A [[:alpha:]] /smx } sort keys %parm;
+    foreach my $name ( @arg ) {
+	exists $accessor{$name} or die <<"EOD";
 Error - '$name' is not a valid setting.
-eod
-    exists $parm{$name} or next;
-    my $val = _quoter ($accessor{$name}->($name));
-    print "set $name $val\n";
+EOD
+	exists $parm{$name} or next;
+	my $val = _quoter ($accessor{$name}->($name));
+	print "set $name $val\n";
     }
 }
 
