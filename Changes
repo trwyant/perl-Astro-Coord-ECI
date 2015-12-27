@@ -1,3 +1,15 @@
+0.070_01	2015-12-27	T. R. Wyant
+  Change satpass script to geocode using OSM.
+    Also fix apparent bit rot in show command.
+
+  Correct Astro::Coord::ECI->next_elevation(). Elevation was being
+    calculated inconsistently, resulting in incorrect rise/set and
+    begin/end twilight results inside the Arctic and Antarctic Circles
+    on days when the Sun did not rise or set. This error may have been
+    introduced in March 2012 with version 0.049_01, though it may go
+    back to the original release. Thanks to Adam Osuchowski for finding
+    this.
+
 0.070		2015-06-25	T. R. Wyant
   No changes since 0.069_01.
 
