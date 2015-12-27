@@ -2144,15 +2144,18 @@ EOD
 
     my $begin = $self->universal;
     my $original = $begin;
-    my $rise = (
-	$self->azel_offset( $body->universal( $begin ), $upper )
-    )[1] < $angle || 0;
+    my ( undef, $elev ) = $self->azel_offset(
+	$body->universal( $begin ), $upper );
+    my $rise = ( $elev < $angle ) || 0;
 
     my ($end, $above) = $self->next_meridian ($body, $rise);
 
     my $give_up = $body->NEVER_PASS_ELEV ();
 
-    while ((($self->azel($body))[1] < 0 || 0) == $rise) {
+    while ( 1 ) {
+	my ( undef, $elev ) = $self->azel_offset( $body, $upper );
+	( ( $elev < $angle ) || 0 ) == $rise
+	    or last;
 	return if $end - $original > $give_up;
 	$begin = $end;
 	($end, $above) = $self->next_meridian ($body, $rise);
@@ -2162,7 +2165,7 @@ EOD
 	my $mid = floor (($begin + $end) / 2);
 	my ( undef, $elev ) = $self->universal( $mid )->
 	    azel_offset( $body->universal( $mid ), $upper );
-	($begin, $end) =
+	( $begin, $end ) =
 	    ($elev < $angle || 0) == $rise ? ($mid, $end) : ($begin, $mid);
     }
 
