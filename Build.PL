@@ -32,15 +32,8 @@ my %attr = (
     add_to_cleanup => [ qw{ xt/author/generated } ],
 );
 
-$mbv >= 0.28 and $attr{meta_merge} = {
-    no_index => {
-	directory => [qw{ inc t xt }],
-    },
-    resources => {
-	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass',
-	license => [ 'http://dev.perl.org/licenses/' ],
-    },
-};
+$mbv >= 0.28
+    and $attr{meta_merge} = $meta->meta_merge();
 
 # Don't require Module::Build if we are making a distribution, since the
 # user may choose to use ExtUtils::MakeMaker.
