@@ -1,3 +1,6 @@
+0.070_02	2016-01-04	T. R. Wyant
+  Add GitHub repository to metadata.
+
 0.070_01	2015-12-27	T. R. Wyant
   Change satpass script to geocode using OSM.
     Also fix apparent bit rot in show command.
