@@ -1,4 +1,4 @@
-package Astro::Coord::ECI::Recommend;
+package My::Module::Recommend;
 
 use strict;
 use warnings;
@@ -80,7 +80,7 @@ sub _recommend_datetime {
 	and return;
     return <<'EOD';
     * DateTime and/or DateTime::TimeZone are not installed.
-      If you set the 'zone' attribute of Astro::Coord::ECI::TLE::Iridium
+      If you set the 'zone' attribute of My::Module::TLE::Iridium
       to a zone name, these modules will be used to determine if a flare
       occurred before or after midnight. If not available, $ENV{TZ} will
       be set to the zone name in the hope that the localtime() built-in
@@ -133,7 +133,7 @@ sub _recommend_json {
     return <<'EOD';
     * JSON is not installed, or can not be loaded.
       You need the JSON module only if you intend to pass JSON orbital
-      data obtained from Space Track to the Astro::Coord::ECI::TLE
+      data obtained from Space Track to the My::Module::TLE
       parse() method.
 EOD
 }
@@ -145,7 +145,7 @@ EOD
     # NOTE WELL
     #
     # The description here must match the actual time module loading and
-    # exporting logic in Astro::Coord::ECI::Utils.
+    # exporting logic in My::Module::Utils.
 
     sub _recommend_time_y2038 {
 	eval $] >= 5.012 and return;
@@ -177,13 +177,13 @@ EOD
 
 =head1 NAME
 
-Astro::Coord::ECI::Recommend - Recommend modules to install. 
+My::Module::Recommend - Recommend modules to install. 
 
 =head1 SYNOPSIS
 
  use lib qw{ inc };
- use Astro::Coord::ECI::Recommend;
- Astro::Coord::ECI::Recommend->recommend();
+ use My::Module::Recommend;
+ My::Module::Recommend->recommend();
 
 =head1 DETAILS
 
@@ -197,7 +197,7 @@ This class supports the following public methods:
 
 =head2 recommend
 
- Astro::Coord::ECI::Recommend->recommend();
+ My::Module::Recommend->recommend();
 
 This static method examines the current Perl to see which optional
 modules are installed. If any are not installed, a message is printed to

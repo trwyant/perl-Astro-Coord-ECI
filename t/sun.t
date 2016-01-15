@@ -7,8 +7,8 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Sun;
-use Astro::Coord::ECI::Test qw{ :tolerance format_time };
 use Astro::Coord::ECI::Utils qw{ :time deg2rad };
+use My::Module::Test qw{ :tolerance format_time };
 use Test::More 0.88;
 
 use constant EQUATORIALRADIUS => 6378.14;	# Meeus page 82.

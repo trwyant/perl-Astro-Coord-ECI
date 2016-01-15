@@ -1,4 +1,4 @@
-package Astro::Coord::ECI::Meta;
+package My::Module::Meta;
 
 use 5.006002;
 
@@ -82,21 +82,21 @@ __END__
 
 =head1 NAME
 
-Astro::Coord::ECI::Meta - Information needed to build Astro::Coord::ECI
+My::Module::Meta - Information needed to build My::Module
 
 =head1 SYNOPSIS
 
  use lib qw{ inc };
- use Astro::Coord::ECI::Meta;
- my $meta = Astro::Coord::ECI::Meta->new();
+ use My::Module::Meta;
+ my $meta = My::Module::Meta->new();
  use YAML;
  print "Required modules:\n", Dump(
      $meta->requires() );
 
 =head1 DETAILS
 
-This module centralizes information needed to build C<Astro::Coord::ECI>. It
-is private to the C<Astro::Coord::ECI> package, and may be changed or
+This module centralizes information needed to build C<My::Module>. It
+is private to the C<My::Module> package, and may be changed or
 retracted without notice.
 
 =head1 METHODS
@@ -115,7 +115,7 @@ This method instantiates the class.
  print Dump( $meta->build_requires() );
 
 This method computes and returns a reference to a hash describing the
-modules required to build the C<Astro::Coord::ECI> package, suitable for
+modules required to build the C<My::Module> package, suitable for
 use in a F<Build.PL> C<build_requires> key, or a F<Makefile.PL>
 C<< {META_MERGE}->{build_requires} >> key.
 
@@ -146,7 +146,7 @@ C<resources> data.
  print Dump( $meta->requires() );
 
 This method computes and returns a reference to a hash describing
-the modules required to run the C<Astro::Coord::ECI>
+the modules required to run the C<My::Module>
 package, suitable for use in a F<Build.PL> C<requires> key, or a
 F<Makefile.PL> C<PREREQ_PM> key. Any additional arguments will be
 appended to the generated hash. In addition, unless

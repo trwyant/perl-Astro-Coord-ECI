@@ -7,9 +7,9 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::TLE::Set;
-use Astro::Coord::ECI::Test qw{ :tolerance format_time };
-use Astro::Coord::ECI::SetDelegate;
 use Astro::Coord::ECI::Utils qw{ :time };
+use My::Module::Test qw{ :tolerance format_time };
+use My::Module::SetDelegate;
 use Test::More 0.88;
 
 sub choose_epoch (@);
@@ -199,7 +199,7 @@ sub insert (@);
 {	# Begin local symbol block.
 
     my $set1 = Astro::Coord::ECI::TLE::Set->new(
-	Astro::Coord::ECI::SetDelegate->new(
+	My::Module::SetDelegate->new(
 	    id => 99999,
 	    name => 'Anonymous',
 	    epoch => timegm (0, 0, 0, 1, 6, 106)
@@ -215,14 +215,14 @@ sub insert (@);
 
 {	# Begin local symbol block.
     my $set = Astro::Coord::ECI::TLE::Set->new(
-	Astro::Coord::ECI::SetDelegate->new(
+	My::Module::SetDelegate->new(
 	    id => 22222,
 	    name => 'Anonymous',
 	    epoch => timegm( 0, 0, 0, 2, 6, 106 ),
 	)
     );
 
-    is ref $set->delegate(), 'Astro::Coord::ECI::SetDelegate',
+    is ref $set->delegate(), 'My::Module::SetDelegate',
 	'Delegation of delegate() to the TLE object';
 
     is ref $set->nodelegate(), 'Astro::Coord::ECI::TLE::Set',
@@ -239,7 +239,7 @@ sub insert (@);
     ok ! $set->can( 'delegate' ),
 	'Empty set has no delegate() method';
 
-    $set->add( Astro::Coord::ECI::SetDelegate->new(
+    $set->add( My::Module::SetDelegate->new(
 	    id => 333333,
 	    name => 'Nobody',
 	    epoch => timegm( 0, 0, 0, 2, 6, 106 ),

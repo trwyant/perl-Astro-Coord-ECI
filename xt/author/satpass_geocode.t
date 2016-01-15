@@ -5,7 +5,7 @@ use warnings;
 
 use lib qw{ inc };
 
-use Astro::Coord::ECI::Satpass;
+use My::Module::Satpass;
 use Test::More 0.88;
 
 eval {
@@ -31,7 +31,7 @@ eval {
 	or plan skip_all => "$src not reachable";
 }
 
-Astro::Coord::ECI::Satpass::satpass( *DATA );
+My::Module::Satpass::satpass( *DATA );
 
 1;
 __END__

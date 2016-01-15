@@ -1,4 +1,4 @@
-package Astro::Coord::ECI::Test;
+package My::Module::Test;
 
 use 5.006002;
 
@@ -238,22 +238,22 @@ __END__
 
 =head1 NAME
 
-Astro::Coord::ECI::Test - Useful subroutines for testing
+My::Module::Test - Useful subroutines for testing
 
 =head1 SYNOPSIS
 
  use lib qw{ inc };
- use Astro::Coord::ECI::Test qw{ :all };
+ use My::Module::Test qw{ :all };
  
  say 'Time: ', format_time( time );
 
 =head1 DESCRIPTION
 
-This module is private to the Astro::Coord::ECI package. The author
+This module is private to the My::Module package. The author
 reserves the right to change or revoke it without notice.
 
 This module is a repository for subroutines used in testing
-L<Astro::Coord::ECI|Astro::Coord::ECI>.
+L<My::Module|My::Module>.
 
 
 =head1 SUBROUTINES
@@ -267,7 +267,7 @@ them.
  print format_pass( $pass, ... );
 
 This subroutine converts the given C<$pass>es (which are references to
-the hashes returned by the C<Astro::Coord::ECI::TLE> C<pass()>
+the hashes returned by the C<My::Module::TLE> C<pass()>
 method) to a string. The output contains the events of the passes one
 per line, with date and time (ISO-8601-ish, GMT), azimuth, elevation and
 range (or blanks if not present), illumination, and event name for each

@@ -7,8 +7,8 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
-use Astro::Coord::ECI::Test qw{ :tolerance format_time };
 use Astro::Coord::ECI::Utils qw{ :time deg2rad PI TWOPI };
+use My::Module::Test qw{ :tolerance format_time };
 use Test::More 0.88;
 
 # Moon position in ecliptic latitude/longitude and distance.

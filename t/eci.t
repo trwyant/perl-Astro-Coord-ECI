@@ -6,8 +6,8 @@ use warnings;
 use lib qw{ inc };
 
 use Astro::Coord::ECI;
-use Astro::Coord::ECI::Test qw{ :tolerance velocity_sanity };
 use Astro::Coord::ECI::Utils qw{ :time deg2rad PERL2000 rad2deg };
+use My::Module::Test qw{ :tolerance velocity_sanity };
 use POSIX qw{strftime floor};
 use Test::More 0.88;
 

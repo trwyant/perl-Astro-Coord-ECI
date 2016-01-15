@@ -5,7 +5,7 @@ use warnings;
 
 use lib qw{ inc };
 
-use Astro::Coord::ECI::Satpass;
+use My::Module::Satpass;
 
 eval {
     require Astro::SpaceTrack;
@@ -17,7 +17,7 @@ eval {
     exit;
 };
 
-Astro::Coord::ECI::Satpass::satpass (*DATA);
+My::Module::Satpass::satpass( *DATA );
 
 1;
 __END__

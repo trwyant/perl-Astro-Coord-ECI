@@ -1,9 +1,9 @@
-package Astro::Coord::ECI::SetDelegate;
+package My::Module::SetDelegate;
 
 use strict;
 use warnings;
 
-use base qw{Astro::Coord::ECI::TLE};
+use base qw{ Astro::Coord::ECI::TLE };
 
 sub new {
     my ($class, @args) = @_;

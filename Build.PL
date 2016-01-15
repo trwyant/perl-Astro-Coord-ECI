@@ -5,16 +5,16 @@ use warnings;
 
 use lib qw{ inc };
 
-use Astro::Coord::ECI::Build;
-use Astro::Coord::ECI::Meta;
-use Astro::Coord::ECI::Recommend;
+use My::Module::Build;
+use My::Module::Meta;
+use My::Module::Recommend;
 use Module::Build;
 use Config;
 use FileHandle;
 
 (my $mbv = Module::Build->VERSION) =~ s/_//g;
 
-my $meta = Astro::Coord::ECI::Meta->new();
+my $meta = My::Module::Meta->new();
 
 my %attr = (
     dist_author => 'Tom Wyant (wyant at cpan dot org)',
@@ -40,9 +40,9 @@ $mbv >= 0.28
 $mbv >= 0.34
     and $attr{auto_configure_requires} = !$meta->distribution();
 
-Astro::Coord::ECI::Recommend->recommend();
+My::Module::Recommend->recommend();
 
-my $bldr = Astro::Coord::ECI::Build->new (%attr);
+my $bldr = My::Module::Build->new (%attr);
 
 my %opt = $bldr->args ();
 

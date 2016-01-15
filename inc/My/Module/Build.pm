@@ -1,4 +1,4 @@
-package Astro::Coord::ECI::Build;
+package My::Module::Build;
 
 use strict;
 use warnings;
@@ -133,7 +133,7 @@ __END__
 
 =head1 NAME
 
-Astro::Coord::ECI::Build - Extend Module::Build for Astro::Coord::ECI
+My::Module::Build - Extend Module::Build for My::Module
 
 =head1 SYNOPSIS
 

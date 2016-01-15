@@ -25,7 +25,7 @@ use Astro::Coord::ECI::Utils qw{ deg2rad PARSEC rad2deg SECSPERDAY };
 
 use lib qw{ inc };
 
-use Astro::Coord::ECI::Test qw{ magnitude };
+use My::Module::Test qw{ magnitude };
 
 my $sta = Astro::Coord::ECI->new(
     name => 'Greenwich Observatory',

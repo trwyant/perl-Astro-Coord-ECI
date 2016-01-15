@@ -7,8 +7,8 @@ use lib qw{ inc };
 
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Star;
-use Astro::Coord::ECI::Test qw{ tolerance };
 use Astro::Coord::ECI::Utils qw{ :time deg2rad PI };
+use My::Module::Test qw{ tolerance };
 use POSIX qw{strftime floor};
 use Test::More 0.88;
 

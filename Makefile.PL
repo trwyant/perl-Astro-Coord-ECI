@@ -5,8 +5,8 @@ use warnings;
 
 use lib qw{ inc };
 
-use Astro::Coord::ECI::Meta;
-use Astro::Coord::ECI::Recommend;
+use My::Module::Meta;
+use My::Module::Recommend;
 use Config;
 use ExtUtils::MakeMaker qw{WriteMakefile prompt};
 use FileHandle;
@@ -23,7 +23,7 @@ eod
 my @exe_files;
 my @clean_files;
 
-Astro::Coord::ECI::Recommend->recommend();
+My::Module::Recommend->recommend();
 
 print <<"EOD";
 
@@ -85,7 +85,7 @@ my $vers = '';
 
 (my $mmv = ExtUtils::MakeMaker->VERSION) =~ s/_//g;
 
-my $meta = Astro::Coord::ECI::Meta->new();
+my $meta = My::Module::Meta->new();
 
 my %attr = (
     NAME => 'Astro::Coord::ECI',

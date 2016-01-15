@@ -69,11 +69,11 @@ BEGIN {
 
     eval {
 	use lib qw{ inc };
-	require Astro::Coord::ECI::Test;
-	Astro::Coord::ECI::Test->import( ':all' );
+	require My::Module::Test;
+	My::Module::Test->import( ':all' );
 	1;
     } or do {
-	plan skip_all => 'Can not load Astro::Coord::ECI::Test from inc';
+	plan skip_all => 'Can not load My::Module::Test from inc';
 	exit;
     };
 

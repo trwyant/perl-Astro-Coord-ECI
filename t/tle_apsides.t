@@ -8,7 +8,7 @@ use warnings;
 
 package Astro::Coord::ECI::TLE::Period;	## no critic (ProhibitMultiplePackages)
 
-use base qw{Astro::Coord::ECI::TLE};
+use base qw{ Astro::Coord::ECI::TLE };
 
 {
     my $pkg = __PACKAGE__;
@@ -34,7 +34,7 @@ package main;	## no critic (ProhibitMultiplePackages)
 use lib qw{ inc };
 
 use Astro::Coord::ECI::TLE;
-use Astro::Coord::ECI::Test qw{ tolerance };
+use My::Module::Test qw{ tolerance };
 use Test::More 0.88;
 
 sub new (@);

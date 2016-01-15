@@ -5,9 +5,9 @@ use warnings;
 
 use lib qw{ inc };
 
-use Astro::Coord::ECI::Test qw{ :tolerance };
 use Astro::Coord::ECI::TLE;
 use Astro::Coord::ECI::Utils qw{max};
+use My::Module::Test qw{ :tolerance };
 use Test::More 0.88;
 
 my %body;
