@@ -149,7 +149,8 @@ sub not_reachable {
 #	otherwise they are true if $output eq $data.
 
 sub tester {
-    my ($handle, $input, $output, $except) = @_;
+##  my ( $handle, $input, $output, $except ) = @_;
+    my ( $handle, undef, $output, $except ) = @_;	# Input unused
 ##  print "foo> $input" if $input;
 ##  print $output if $output;
     while (<$handle>) {

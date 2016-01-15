@@ -217,7 +217,7 @@ C<correct_for_refraction()> method is actually called by those methods.
 =cut
 
 sub correct_for_refraction {
-    my ( $self, $elevation ) = @_;
+    my ( undef, $elevation ) = @_;	# Invocant unused
     return $elevation;
 }
 

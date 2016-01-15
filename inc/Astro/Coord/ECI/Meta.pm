@@ -53,7 +53,7 @@ sub meta_merge {
 }
 
 sub requires {
-    my ( $self, @extra ) = @_;
+    my ( undef, @extra ) = @_;		# Invocant unused
 ##  if ( ! $self->distribution() ) {
 ##  }
     return +{

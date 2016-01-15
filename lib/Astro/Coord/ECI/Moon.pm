@@ -222,7 +222,7 @@ C<correct_for_refraction()> method is actually called by those methods.
 =cut
 
 sub correct_for_refraction {
-    my ( $self, $elevation ) = @_;
+    my ( undef, $elevation ) = @_;	# Invocant unused
     return $elevation;
 }
 
@@ -288,7 +288,7 @@ sub period {return 2360591.5968}	# 27.321662 * 86400
 	'Last quarter Moon');
 
     sub __quarter_name {
-	my ( $self, $quarter, $name ) = @_;
+	my ( undef, $quarter, $name ) = @_;	# Invocant unused
 	$name ||= \@quarters;
 	return $name->[$quarter];
     }

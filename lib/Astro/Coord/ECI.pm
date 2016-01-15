@@ -1552,7 +1552,8 @@ See L</Attributes> for a list of the attributes you can get.
 
     my %accessor = (
 	sun	=> sub {
-	    my ( $self, $name ) = @_;
+##	    my ( $self, $name ) = @_;
+	    my ( $self ) = @_;		# Name unused
 	    return ( $self->{sun} ||= $self->SUN_CLASS()->new() );
 	},
     );
@@ -2514,7 +2515,7 @@ foreach my $name (keys %known_ellipsoid) {
 }
 
 sub reference_ellipsoid {
-    my ($self, @args) = @_;
+    my ( undef, @args ) = @_;	# Invocant unused
     my $name = pop @args or croak <<eod;
 Error - You must specify the name of a reference ellipsoid.
 eod
@@ -2688,7 +2689,8 @@ sub _set_station {
 use constant SUN_CLASS => 'Astro::Coord::ECI::Sun';
 
 sub _set_sun {
-    my ( $self, $name, $value ) = @_;
+##  my ( $self, $name, $value ) = @_;
+    my ( $self, undef, $value ) = @_;	# Name unused
     embodies( $value, $self->SUN_CLASS() )
 	or croak 'The value of the sun attribute must represent the Sun';
     ref $value

@@ -338,7 +338,8 @@ of the selected C<Astro::Coord::ECI::TLE> object.
 {
     my %override = (
 	tle	=> sub {
-	    my ( $self, $name ) = @_;
+##	    my ( $self, $name ) = @_;
+	    my ( $self ) = @_;	# Name unused
 	    my $output;
 	    foreach my $body ( $self->members() ) {
 		$output .= $body->get( 'tle' );

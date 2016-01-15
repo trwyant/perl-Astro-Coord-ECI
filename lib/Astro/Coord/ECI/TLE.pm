@@ -704,7 +704,7 @@ C<correct_for_refraction()> method is actually called by those methods.
 =cut
 
 sub correct_for_refraction {
-    my ( $self, $elevation ) = @_;
+    my ( undef, $elevation ) = @_;	# Invocant unused
     return $elevation;
 }
 
@@ -1587,7 +1587,7 @@ use constant SCREENING_HORIZON_OFFSET => deg2rad( -3 );
 # objects can manipulate the the start and end times of the pass
 # calculation.
 sub __default_pass_times {
-    my ( $self, $start, $end ) = @_;
+    my ( undef, $start, $end ) = @_;	# Invocant unused
     defined $start
 	or $start = time;
     defined $end
@@ -2651,7 +2651,7 @@ Initially, the status table is populated with the status as of December
 =cut
 
 sub status {
-    my ( $class, $cmd, @arg ) = @_;
+    my ( undef, $cmd, @arg ) = @_;	# Invocant unused
     if ($cmd eq 'add') {
 	my ( $id, $type, $status, $name, $comment ) = @arg;
 	$id or croak <<eod;
@@ -7596,7 +7596,7 @@ encoded with a four-digit year.
     }
 
     sub _parse_json {
-	my ( $self, @args ) = @_;
+	my ( undef, @args ) = @_;	# Invocant unused
 	defined $have_json
 	    or $have_json = eval {
 	    require JSON;
@@ -7842,7 +7842,8 @@ sub _looks_like_real {
 
     my %hack = (
 	effective => sub {
-	    my ( $self, $name, $value ) = @_;
+##	    my ( $self, $name, $value ) = @_;
+	    my ( undef, undef, $value ) = @_;	# Invocant & name unused
 	    my $whole = floor($value);
 	    my ($sec, $min, $hr, undef, undef, $year, undef, $yday) =
 		gmtime $value;
@@ -7854,7 +7855,8 @@ sub _looks_like_real {
 	    return ( '--effective', $effective );
 	},
 	rcs => sub {
-	    my ( $self, $name, $value ) = @_;
+##	    my ( $self, $name, $value ) = @_;
+	    my ( undef, undef, $value ) = @_;	# Invocant & name unused
 	    return ( '--rcs', $value );
 	},
     );

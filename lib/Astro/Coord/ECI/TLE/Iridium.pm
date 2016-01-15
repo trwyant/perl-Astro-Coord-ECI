@@ -1606,7 +1606,8 @@ sub __parse_name {
     $encode_status[STATUS_TUMBLING]	= '-';
 
     sub __encode_operational_status {
-	my ( $self, $name, $status ) = @_;
+##	my ( $self, $name, $status ) = @_;
+	my ( $self, undef, $status ) = @_;	# Name unused
 	defined $status
 	    or $status = $self->get( 'status' );
 	defined $encode_status[ $status ]
