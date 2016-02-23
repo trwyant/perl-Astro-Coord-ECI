@@ -29,7 +29,7 @@ my %attr = (
     get_options => {y => {}, n => {}},
     dynamic_config => 1,
     license => 'perl',
-    add_to_cleanup => [ qw{ xt/author/generated } ],
+    add_to_cleanup => [ qw{ cover_db xt/author/optionals } ],
 );
 
 $mbv >= 0.28

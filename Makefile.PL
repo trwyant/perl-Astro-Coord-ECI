@@ -98,7 +98,8 @@ my %attr = (
     realclean => {FILES => join ' ', @clean_files},
     AUTHOR => 'Tom Wyant (wyant at cpan dot org)',
     ABSTRACT => 'Classes and app to compute satellite visibility',
-    BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
+#   BINARY_LOCATION => "$Config{archname}$vers/Astro-satpass.tar.gz",
+    realclean	=> { FILES => 'cover_db xt/author/optionals' },
 );
 
 $mmv >= 6.31 and $attr{LICENSE} = 'perl';
@@ -113,5 +114,27 @@ $mmv >= 6.5501
     and $attr{META_MERGE}{build_requires} = $meta->build_requires();
 
 WriteMakefile (%attr);
+
+sub MY::postamble {
+    my ( $self, @args ) = @_;
+
+    my $authortest = $self->test_via_harness(
+	'$(FULLPERLRUN)', '$(AUTHORTEST_FILES)' );
+    $authortest =~ s/ \s+ \z //smx;
+    $authortest =~ s/ \A \s+ //smx;
+    chomp $authortest;
+
+    return <<"EOD";
+
+AUTHORTEST_FILES = t/*.t xt/author/*.t xt/author/optionals/*.t
+
+authortest :: pure_all
+	\$(FULLPERLRUN) "-Iinc" "-MMy::Module::Recommend" "-e" "My::Module::Recommend->make_optional_modules_tests()"
+	AUTHOR_TESTING=1 $authortest
+
+testcover :: pure_all
+	cover -test -ignore_re=inc/
+EOD
+}
 
 # ex: set textwidth=72 :

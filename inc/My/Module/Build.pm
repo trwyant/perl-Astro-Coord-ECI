@@ -6,125 +6,36 @@ use warnings;
 use base qw{ Module::Build };
 
 use Carp;
-use File::Spec;
-
-my @generated_dir = qw{ xt author generated };
-my @hide = qw{
-    Astro::SIMBAD::Client Astro::SpaceTrack DateTime DateTime::TimeZone
-    Date::Manip Geo::Coder::Geocoder::US JSON Test::MockTime Time::y2038
-};
-
-{
-    my $done;
-    my $hider;
-
-    sub _get_hider {
-	$done and return $hider;
-	$done = 1;
-	foreach my $module ( qw{
-		Test::Without::Module
-		Devel::Hide
-	    } ) {
-	    eval "require $module; 1"
-		and return ( $hider = $module );
-	}
-	return $hider;
-    }
-}
-
-sub _get_tests_without_optional_modules {
-    my @args = @_;
-    _get_hider() or return;
-    my @cleanup;
-    @args or @args = _get_general_tests();
-    foreach my $path ( @args ) {
-	push @cleanup, File::Spec->catfile( @generated_dir,
-	    ( File::Spec->splitpath( $path ) )[2] );
-    }
-    return @cleanup;
-}
-
-{
-
-    my @general_tests;
-
-    sub _get_general_tests {
-	@general_tests and return @general_tests;
-	my $th;
-	opendir $th, 't'
-	    or die "Unable to open directory t: $!\n";
-	while ( defined( my $fn = readdir $th ) ) {
-	    '.' eq substr $fn, 0, 1 and next;
-	    my $path = File::Spec->catfile( 't', $fn );
-	    -f $path or next;
-	    push @general_tests, $path;
-	}
-	closedir $th;
-	return @general_tests;
-    }
-}
-
-
-sub ACTION_make_optional_modules_tests {
-##  my ( $self, @args ) = @_;		# Arguments unused
-
-    my $hider = _get_hider() or do {
-#	warn "Neither Devel::Hide nor Test::Without::Module available\n";
-	return;
-    };
-
-    my $gendir = File::Spec->catdir( @generated_dir );
-
-    -d $gendir
-	or mkdir $gendir
-	or die "Unable to create $gendir: $!\n";
-
-    foreach my $ip ( _get_general_tests() ) {
-	my ( $op ) = _get_tests_without_optional_modules( $ip );
-	-f $op and next;
-	my $content = <<"EOD";
-package main;
-
-use strict;
-use warnings;
-
-use $hider qw{ @hide };
-
-our \$SKIP_TEST = 'Skip requested for author testing';
-
-do '$ip';
-
-1;
-
-__END__
-
-# ex: set textwidth=72 :
-EOD
-	print "Creating $op\n";
-	open my $oh, '>', $op or die "Unable to open $op: $!\n";
-	print { $oh } $content;
-	close $oh;
-    }
-
-    return;
-}
+# use lib 'inc';	# Already done because this module is running.
+use My::Module::Recommend;
 
 sub ACTION_authortest {
-##  my ( $self, @args ) = @_;
-    my ( $self ) = @_;		# Arguments unused
+##  my ( $self, @args ) = @_;	# Arguments unused
+    my ( $self ) = @_;
 
     local $ENV{AUTHOR_TESTING} = 1;
 
-    my @depends_on = ( qw{ build make_optional_modules_tests } );
-    -e 'META.yml' or push @depends_on, 'distmeta';
+    my @depends_on = ( qw{ build } );
+    -e 'META.json' or push @depends_on, 'distmeta';
     $self->depends_on( @depends_on );
-    my @test_files = qw{ t xt/author };
-    my $gendir = File::Spec->catdir( @generated_dir );
-    -d $gendir and push @test_files, $gendir;
-    $self->test_files( @test_files );
+
+    $self->test_files( qw{ t xt/author },
+	My::Module::Recommend->make_optional_modules_tests() );
+
     $self->depends_on( 'test' );
 
     return;
+}
+
+sub harness_switches {
+    my ( $self ) = @_;
+    my @res = $self->SUPER::harness_switches();
+    foreach ( @res ) {
+	'-MDevel::Cover' eq $_
+	    or next;
+	$_ .= '=-db,cover_db,-ignore,inc/';
+    }
+    return @res;
 }
 
 1;
