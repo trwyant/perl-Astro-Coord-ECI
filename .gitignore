@@ -14,11 +14,12 @@
 /MYMETA.json
 /MYMETA.yml
 /nytprof*
+/pm_to_blib
 /ref
 /scalps
 TODO
 /usual.dat
-/xt/author/generated/
+/xt/author/optionals/
 /*.expect
 /*.got
 .*.swp
