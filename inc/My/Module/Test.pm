@@ -25,7 +25,8 @@ our %EXPORT_TAGS = (
     tolerance => [ qw{ tolerance tolerance_frac } ],
 );
 
-sub _dor {
+# Perl::Critic can't find interpolated sub calls
+sub _dor {	## no critic (ProhibitUnusedPrivateSubroutines)
     foreach ( @_ ) {
 	defined $_ and return $_;
     }

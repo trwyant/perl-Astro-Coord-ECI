@@ -1165,7 +1165,7 @@ sub __instance {
     return $object->isa( $class );
 }
 
-#	$epoch_time = _parse_time_iso_8601
+#	$epoch_time = __parse_time_iso_8601
 #
 #	Parse ISO 8601 date/time. I do not intend to expose this, since
 #	it will probably go away when the satpass script is dropped. It
@@ -1180,7 +1180,7 @@ sub __instance {
 	tomorrow => SECSPERDAY(),
     );
 
-    sub _parse_time_iso_8601 {
+    sub __parse_time_iso_8601 {
 	my ( $string ) = @_;
 
 	my @zone;

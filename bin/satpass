@@ -1064,7 +1064,7 @@ eod
 
 ########################################################################
 #
-#	geocode_us () get lat/long from rpc.geocoder.us
+#	geocode_us () get lat/long from Open Street Maps
 #
 
 #	The options are those documented with geocode().
@@ -1327,7 +1327,8 @@ eod
     }
 }
 
-sub _help_MacOS {
+# Called by __PACKAGE__->$os_specific(), above
+sub _help_MacOS {	## no critic (ProhibitUnusedPrivateSubroutines)
 print <<eod;
 
 Normally, we would display the documentation for the satpass
@@ -1951,8 +1952,6 @@ eod
 $parm{$_[0]} = $_[1];
 }
 
-sub _set_lowercase {$parm{$_[0]} = lc $_[1]}
-
 sub _set_perltime {
     $parm{$_[0]} = $_[1];
     if ( _parse_time_absolute_use_perltime() ) {
@@ -2056,12 +2055,6 @@ EOD
 	my $val = _quoter ($accessor{$name}->($name));
 	print "set $name $val\n";
     }
-}
-
-sub _show_time {
-defined $parm{$_[0]} ?
-    strftime ('%d-%b-%Y %H:%M:%S', _mytime($parm{$_[0]})) :
-    'undef'
 }
 
 sub _show_unmodified {
@@ -2597,7 +2590,8 @@ sub _find_first_tag {
 #	and 'height_*' subroutines are currently implemented. The
 #	package name defaults to the current package.
 
-sub _find_suffixes {
+# Perl::Critic can't find code interpolated into strings
+sub _find_suffixes {	## no critic (ProhibitUnusedPrivateSubroutines)
 my $prefix = shift;
 my $package = shift || __PACKAGE__;
 my $symtab = $package . '::';
@@ -2656,6 +2650,7 @@ sub _flatten {
 #	as seen from the station. If called with no arguments, it
 #	returns a suitable heading for this information.
 
+# Some calls are by code ref obtained by $self->can()
 sub _format_local_az_rng {
     my ( $body ) = @_
 	or return ' azim     range    ';
@@ -2673,7 +2668,8 @@ sub _format_local_az_rng {
 #	as seen from the station. If called with no arguments, it
 #	returns a suitable heading for this information.
 
-sub _format_local_azel {
+# Called by code ref obtained by $self->can()
+sub _format_local_azel {	## no critic (ProhibitUnusedPrivateSubroutines)
     my ( $body ) = @_
 	or return ' elev  azim   ';
     my ( $az, $el ) = $body->azel();
@@ -2689,7 +2685,8 @@ sub _format_local_azel {
 #	the body as seen from the station. If called with no arguments,
 #	it returns a suitable heading for this information.
 
-sub _format_local_azel_rng {
+# Called by code ref obtained by $self->can()
+sub _format_local_azel_rng {	## no critic (ProhibitUnusedPrivateSubroutines)
     my ( $body ) = @_
 	or return ' elev  azim     range    ';
     my ( $az, $el, $rng ) = $body->azel();
@@ -2705,7 +2702,8 @@ sub _format_local_azel_rng {
 #	the body as seen from the station. If called with no arguments,
 #	it returns a suitable heading for this information.
 
-sub _format_local_equatorial {
+# Called by code ref obtained by $self->can()
+sub _format_local_equatorial {	## no critic (ProhibitUnusedPrivateSubroutines)
     my ( $body ) = @_
 	or return 'right asc decl';
     my ( $ra, $dec ) = _get_equatorial_coordinates( $body );
@@ -2719,7 +2717,8 @@ sub _format_local_equatorial {
 #	range of the body as seen from the station. If called with no
 #	arguments, it returns a suitable heading for this information.
 
-sub _format_local_equatorial_rng {
+# Called by code ref obtained by $self->can()
+sub _format_local_equatorial_rng {	## no critic (ProhibitUnusedPrivateSubroutines)
     my ( $body ) = @_
 	or return 'right asc decl  range    ';
     my ( $ra, $dec, $rng ) = _get_equatorial_coordinates( $body );
@@ -3185,7 +3184,7 @@ BEGIN {
 	*_parse_time_absolute_init = sub {};
 	*_parse_time_absolute_init_perl = sub {};
 	*_parse_time_absolute =
-	    \&Astro::Coord::ECI::Utils::_parse_time_iso_8601;
+	    \&Astro::Coord::ECI::Utils::__parse_time_iso_8601;
 	*_parse_time_absolute_use_perltime = sub { 0 };
     };
 }
@@ -3383,7 +3382,8 @@ eod
 
 #	We die on any error.
 
-sub _simbad4 {
+# Called from _simbad() above by code reference
+sub _simbad4 {	## no critic (ProhibitUnusedPrivateSubroutines)
 _load_module ('Astro::SIMBAD::Client');
 my $query = shift;
 my $simbad = Astro::SIMBAD::Client->new (
@@ -3425,6 +3425,10 @@ $rslt[4] and $rslt[4] /= 1000;
 wantarray ? @rslt : join ' ', @rslt;
 }
 
+=begin comment
+
+Not used, as far as I can tell.
+
 #	@list = _sort_observing_list ()
 
 #	This subroutine sorts the observing list into ascending order
@@ -3437,6 +3441,10 @@ map {$_->[2]}
     sort {$a->[0] <=> $b->[0] || $a->[1] <=> $b->[1]}
     map {[$_->get ('id'), $_->get ('epoch'), $_]} @bodies;
 }
+
+=end comment
+
+=cut
 
 #	$fn = _storable ($file)
 
@@ -3751,59 +3759,6 @@ $attr->{loc} = length ${$attr->{data}};
 $attr->{last_line};
 }
 
-
-########################################################################
-
-#	Ugly hack to the geocoder.us results, to hide the ugliness of
-#	formatting them. I'm hoping this is fairly safe, since there
-#	is no mechanism that I know of to load methods into a namespace
-#	over a SOAP link. But I still confess the bad form of hammering
-#	stuff into someone else's namespace.
-
-package GeocoderResult;
-
-sub _format_city {
-    return join ' ', map { $_[0]{$_} ? $_[0]{$_} : () }
-	qw{ city state zip }
-}
-
-sub _format_list {
-    return ( map { $_[0]->can ($_) ? $_[0]->$_ : () }
-	qw{ _format_loc _format_city } )
-}
-
-sub format_line {
-    return join ' ', $_[0]->_format_list
-}
-
-sub format_multiline {
-    return join "\n", $_[0]->_format_list
-}
-
-package GeocoderAddressResult;
-
-BEGIN {	# We need the BEGIN block to get this executed "up front".
-our @ISA = qw{GeocoderResult};
-}
-
-sub _format_loc {
-    return join ' ', map { $_[0]{$_} || () }
-	qw{ number prefix street type suffix }
-}
-
-package GeocoderIntersectionResult;
-
-BEGIN {	# We need the BEGIN block to get this executed "up front".
-our @ISA = qw{GeocoderResult};
-}
-
-sub _format_loc {
-    return join ' ',
-	( map { $_[0]{$_} || () } qw{ prefix1 street1 type1 suffix1 } ),
-	'and',
-	( map { $_[0]{$_} || () } qw{ prefix2 street2 type2 suffix2 } )
-}
-
 __END__
 
 =head1 NAME
@@ -3851,11 +3806,6 @@ This release supports the new C<pass_threshold> attribute of
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>, which provides a way
 to decouple how high a pass need to be to be reported from how high the
 horizon is.
-
-The use of the L<SOAP::Lite|SOAP::Lite> interface to
-L<http://geocoder.us> is no longer supported.  As of version 0.056_01,
-attempting to geocode without
-L<Geo::Coder::Geocoder::US|Geo::Coder::Geocoder::US> is a fatal error.
 
 The C<status iridium> command is now fatal. It has been deprecated in
 favor of C<status show> for some time now, and has warned on every use
@@ -3908,12 +3858,12 @@ requires registration. You will need to install B<Astro::SpaceTrack>
 to get this functionality.
 
 * The ability to acquire the observer's latitude and longitude from
-L<http://geocoder.us/>, given a street address or intersection name,
+Open Street Maps, given a street address or intersection name,
 and provided the user has an Internet connection and the relevant site
 is functional and has the data required. This function may not be used
 for commercial purposes because of restrictions Geocoder.us places on
 the use of their data. You will need to install
-B<Geo::Coder::Geocoder::US> to get this functionality.
+B<Geo::Coder::OSM> to get this functionality.
 
 * The ability to acquire the observer's height above sea level from
 L<http://gisdata.usgs.gov/>, given the latitude and longitude
@@ -4376,14 +4326,14 @@ Palau is handled by L<geocode_us|/geocode_us>.
 =item geocode_us location
 
 This command attempts to look up the given location (either street
-address or street intersection) at L<http://geocoder.us/>. The results
+address or street intersection) in Open Street Maps. The results
 of the lookup are displayed. If no location is specified, it looks up
 the value of the L<location|/location> parameter.
 
 If exactly one valid result is returned, the latitude and longitude
 of the observer are set to the returned values, and the name of
 the location of the observer is set to the canonical name of the
-location as returned by geocoder.us. Also, the height command is
+location as returned by Open Street Maps. Also, the height command is
 implicitly invoked to attempt to acquire the height above sea level
 provided the L<autoheight|/autoheight> parameter is true.
 
@@ -4399,11 +4349,7 @@ Because of restrictions on the use of the Geocoder.us site, you may not
 use this command for commercial purposes.
 
 If you wish to use this command, you must install the
-B<Geo::Coder::Geocoder::US> module.
-
-B<Caveat:> The geocoder.us web site gets its data from the U.S. Census
-Bureau's TIGER/LineE<reg> database. They add their opinion that it tends to
-be buggy and not to cover rural areas well.
+B<Geo::Coder::OSM> module.
 
 =for html <a name="geocode_vi"></a>
 

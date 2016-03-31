@@ -134,7 +134,7 @@ sub gmt (@) {	## no critic (RequireArgUnpacking)
     my $want = timegm( @gmt );
     my $got;
     eval {
-	$got = Astro::Coord::ECI::Utils::_parse_time_iso_8601( $string );
+	$got = Astro::Coord::ECI::Utils::__parse_time_iso_8601( $string );
 	1;
     } or do {
 	$got = $@;
@@ -148,7 +148,7 @@ sub lcl (@) {	## no critic (RequireArgUnpacking)
     my $want = timelocal( @local );
     my $got;
     eval {
-	$got = Astro::Coord::ECI::Utils::_parse_time_iso_8601( $string );
+	$got = Astro::Coord::ECI::Utils::__parse_time_iso_8601( $string );
 	1;
     } or do {
 	$got = $@;

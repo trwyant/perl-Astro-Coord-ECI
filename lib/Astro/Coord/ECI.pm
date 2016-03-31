@@ -3358,6 +3358,7 @@ sub _local_mean_delta {
     return ($_[0]->geodetic ())[1] * SECSPERDAY / TWOPI;
 }
 
+=begin comment
 
 #	$string = _rad2dms ($angle)
 
@@ -3372,6 +3373,10 @@ sub _rad2dms {
     $angle = ($angle - $min) * 60;
     return "$deg degrees $min minutes $angle seconds of arc";
 }
+
+=end comment
+
+=cut
 
 
 #######################################################################

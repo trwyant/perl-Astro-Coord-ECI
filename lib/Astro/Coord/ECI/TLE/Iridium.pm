@@ -508,8 +508,8 @@ sub flare {
     return $self->$method (@args);
 }
 
-
-sub _flare_fixed {
+# Called as $self->$method()
+sub _flare_fixed {	## no critic (ProhibitUnusedPrivateSubroutines)
     my $self = shift;
     my $station = shift;
     {
@@ -1469,7 +1469,8 @@ sub reflection {
 }
 
 
-sub _reflection_fixed {
+# Called as $self->$method, above
+sub _reflection_fixed {	## no critic (ProhibitUnusedPrivateSubroutines)
     my ( $self, $station, $time ) = @_;
     defined $time
 	or $time = $self->universal();

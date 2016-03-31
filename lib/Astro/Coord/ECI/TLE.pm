@@ -7038,6 +7038,11 @@ sub sgp4r {
     return $self;
 }
 
+=begin comment
+
+The following code was converted from the Fortran reference
+implementation, but is not used by this code.
+
 #* -----------------------------------------------------------------------------
 #*
 #*                           FUNCTION GSTIME
@@ -7089,6 +7094,10 @@ sub _r_gstime {
     $gstime= $temp;
     return $gstime;
 }
+
+=end comment
+
+=cut
 
 #* -----------------------------------------------------------------------------
 #*
@@ -7161,6 +7170,10 @@ sub _r_getgravconst {
 }
 
 ##### end of sgp4unit.for
+
+=begin comment
+
+# Used for debugging
 
 sub _r_dump {
     my $self = shift;
@@ -7271,6 +7284,10 @@ sub _r_dump {
     print $fh ' Method = ', ($parm->{deep_space} ? 'd' : 'n'), "\n";
     return;
 }
+
+=end comment
+
+=cut
 
 # Elevation of the illuminating body as seen from the satellite at the
 # given time.
