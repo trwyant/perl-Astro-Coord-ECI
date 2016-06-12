@@ -1,6 +1,6 @@
 package My::Module::Recommend::All;
 
-use 5.008;
+use 5.006002;
 
 use strict;
 use warnings;

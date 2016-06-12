@@ -89,8 +89,10 @@ $iss->set(
 my @passes = $iss->pass( $start_time, $start_time + $days * 86400 );
 
 # Put the output into UTF-8 mode, since that is what we intend to use.
+# This gets eval'ed to hide it if we're using Perl 5.6.
 
-binmode STDOUT, ':encoding(utf-8)';
+$] ge '5.008'
+    and eval "binmode STDOUT, ':encoding(utf-8)'";
 
 # Now fire up the XML generator.
 
