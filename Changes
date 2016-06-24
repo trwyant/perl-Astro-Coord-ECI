@@ -1,3 +1,10 @@
+0.071_01	2016-06-24	T. R. Wyant
+  Make canned status for Iridium 57 (OID 25273) failed per Kelso.
+
+  Add Makefile targets authortest, testcover.
+
+  Rewrite and update the module recommendation system.
+
 0.071		2016-01-06	T. R. Wyant
   No changes since 0.070_02.
 
