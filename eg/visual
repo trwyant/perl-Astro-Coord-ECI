@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# use 5.010;
+use 5.006002;
 
 use strict;
 use warnings;
@@ -89,9 +89,9 @@ EOD
     foreach my $oid ( sort { $a <=> $b } keys %found ) {
 	$found{$oid} == $all
 	    and next;
-	say "$oid $sources[$found{$oid}]";
+	print "$oid $sources[$found{$oid}]\n";
     }
-    say 'Last-Modified: ', time2str( $date );
+    print 'Last-Modified: ', time2str( $date ), "\n";
 }
 
 sub dor {
