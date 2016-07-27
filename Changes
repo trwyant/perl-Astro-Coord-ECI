@@ -1,3 +1,11 @@
+0.072_01	2016-07-27	T. R. Wyant
+  Update canned Iridium statuses and magnitudes in
+    Astro::Coord::ECI::TLE.
+
+  Tweak satpass script geocoding heuristics.
+
+  Tweak eg/visual for Perl 5.6.2.
+
 0.072		2016-07-02	T. R. Wyant
   Set canned status for Iridium 57 (OID 25273) failed per Kelso.
 
