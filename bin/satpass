@@ -1081,8 +1081,7 @@ sub geocode_us {
     my $gc = $class->new();
     if ( my @rslt = sort { $b->{importance} <=> $a->{importance} }
 	$gc->geocode( location => $loc ) ) {
-	$rslt[0]{importance} > 0.5
-	    and @rslt = grep { $_->{importance} > 0.5 } @rslt;
+	splice @rslt, 1;	# I give up.
 	if ( @rslt == 1 ) {
 	    $set_loc
 		and $parm{location} = $loc;
