@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = timegm( 0, 0, 22, 23, 5, 116 );
+my $asof = timegm( 0, 0, 0, 19, 6, 116 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -170,7 +170,7 @@ EOD
 24903IRIDIUM 26 [-]
 24904IRIDIUM 25 [+]
 24905IRIDIUM 46 [+]
-24906IRIDIUM 23 [S]
+24906IRIDIUM 23 [+]
 24907IRIDIUM 22 [+]
 24925DUMMY MASS 1 [-]
 24926DUMMY MASS 2 [-]
@@ -188,7 +188,7 @@ EOD
 25039IRIDIUM 43 [+]
 25040IRIDIUM 41 [+]
 25041IRIDIUM 40 [+]
-25042IRIDIUM 39 [+]
+25042IRIDIUM 39 [B]
 25043IRIDIUM 38 [-]
 25077IRIDIUM 42 [-]
 25078IRIDIUM 44 [-]
@@ -234,15 +234,15 @@ EOD
 25531IRIDIUM 83 [+]
 25577IRIDIUM 20 [+]
 25578IRIDIUM 11 [+]
-25777IRIDIUM 14 [S]
+25777IRIDIUM 14 [+]
 25778IRIDIUM 21 [+]
 27372IRIDIUM 91 [+]
 27373IRIDIUM 90 [S]
-27374IRIDIUM 94 [S]
+27374IRIDIUM 94 [+]
 27375IRIDIUM 95 [+]
-27376IRIDIUM 96 [S]
+27376IRIDIUM 96 [+]
 27450IRIDIUM 97 [+]
-27451IRIDIUM 98 [S]
+27451IRIDIUM 98 [+]
 EOD
 	["Rod Sladen's Iridium Constellation Status",
 	'http://www.rod.sladen.org.uk/iridium.htm',
