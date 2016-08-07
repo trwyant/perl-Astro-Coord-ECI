@@ -1,4 +1,6 @@
-0.072_01	2016-07-27	T. R. Wyant
+0.073		2016-08-07	T. R. Wyant
+  Update Celestrak visual.txt date. No data change.
+
   Update canned Iridium statuses and magnitudes in
     Astro::Coord::ECI::TLE.
 
