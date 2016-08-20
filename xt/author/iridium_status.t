@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = timegm( 0, 0, 0, 19, 6, 116 );
+my $asof = timegm( 0, 0, 0, 20, 7, 116 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -261,7 +261,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 17 September 2015 **</strong></p>
+<p align="center"><strong>** Updated 19August 2016 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -271,45 +271,22 @@ Failures</a>.</p>
 <p><strong>Latest changes </strong>(see below for earlier
 changes): </p>
 
-<p>*** In the middle of 2015, Iridium 45 (25104, 1997-082A) which
-had been migrating from orbital plane 2 towards orbital plane 3
-for about 14 months, arrived in oribital plane 3. It appears to
-have already been in operational use as part of orbital plane 3
-for some months previously, even though it was not in its final
-orbital location. ***</p>
+<p>*** In their quarterly report dated 30 June, 2016, Iridium
+Satellite LLC acknowledged the failure of two satellites in the
+preceding quarter year. ***</p>
 
-<p>*** In early December 2014, Space-Track catalogued four items
-of debris (40324-40327, 2002-05G to 2002-05K) associated wth the
-2002-05 launch .These are labelled by Space-Track as
-&quot;IRIDIUM 91 DEB&quot;, and seem to be associated with
-Iridium 91 (27372, 2002-005A) which appears, however, to remain
-fully operational. ***</p>
+<p>*** In June 2016, Iridium 15 (24869, 1997-034A) was moved from
+Plane 6, Slot 7 to Plane 6, Slot 4, replacing Iridium 39 (25042,
+1997-069D). The intention may have been to swap over the two
+satellites but, in any case problems were experienced with with
+Iridium 39, which was then removed from the operational
+constellation, leaving a gap. No spare was available to replace
+it. ***</p>
 
-<p>*** In early October 2014, <a href="iridium7and51.htm">Iridium
-51 (25262, 1998-018A)</a>, which had been paired wth <a
-href="iridium7and51.htm">Iridium 7 (24793, 1997-020B)</a> was
-moved within orbital plane 4 to be paired with Iridium 6 (24794,
-1997-020C). This suggests that Iridium 6 must have a failure
-considered more serious that that of Iridium 7.***</p>
-
-<p>*** At the end of August 2014, Iridium 14 (25777, 1999-032A) ,
-which had been spare in orbital plane 1 since launch, was raised
-to operational altitude to replace Iridium 63 (25286. 1998-021B),
-which had presumably failed .***</p>
-
-<p>*** At the end of August 2014, Iridium 98 (27451, 2002-301B) ,
-which had been spare in orbital plane 6 since migrating from
-plane 4, was raised to operational altitude a few seconds behind
-Iridium 42 (25077. 1977-077), which had presumably failed.
-Iridium 42 has since been reported to be flashing.***</p>
-
-<p>*** By early 2014, Iridium 29 (24944, 1997-051A) ceased to
-maintain its position in the constellation, and has presumably
-failed. At that time, there was no spare available in plane 3 to
-replace it.. Iridium 45 (25104, 1997-082A) started migrating from
-orbital plane 2 towards orbital plane 3, to replace Iridium 29.
-Its place in orbital plane 2 was taken by Iridium 23 (24906,
-1997-043D) ***</p>
+<p>*** In May 2016, Iridium 57 (25273, 1998-019B) began to drift
+away slowly from its nominal position and has presumably failed.
+See<a href="http://www.satobs.org/seesat/May-2016/0069.html">
+Iridium 57 looks to have a bad attitude</a>. ***</p>
 
 <pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
 Plane
@@ -319,28 +296,28 @@ Plane 2:  22   <a href="iridium94.htm">94</a>   76   25   23   46   47   20   49
 href="iridium11and26.htm">11</a>    3          				(note: Iridium 23 is probably a partial failure)
 Plane 3:  55   <a href="iridium28and95.htm">95</a>   45   <a
 href="iridium30and31.htm">31</a>   <a href="iridium30and31.htm">30</a>   32   <a
-href="iridium33collision.htm">91</a>   57   58   59   60   					(note that Iridium 45 migrated from plane 2 to plane 3)
+href="iridium33collision.htm">91</a>   <em>57</em>   58   59   60   					(note: Iridium 57 has probably failed)
 Plane 4:  19   34   35   <a href="iridium36and97.htm">97</a>    <a
 href="iridium5and51.htm">5</a>  6/51   <a
 href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-Plane 6:  18   98   40   39   80   <a href="iridium17and77.htm">77</a>   15   81   <a
+Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>        81   <a
 href="iridium38and82.htm">82</a>   41   43  </pre>
 
 <pre>Original &lt;----- Failed -----&gt;       	&lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)       	 (decayed)
 Plane                                	          <em>     </em>
 Plane 1:  73t  63
-Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           	48d
+Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           	 	48d
 Plane 3:  <a href="iridium28and95.htm">28</a>   29<font
 color="#FF0000">   </font><a href="iridium33collision.htm"><font
-color="#FF0000">33</font></a>t               	27d           <em>Iridium 33 was fragmented by the collison with Cosmos 2251 on February 10, 2009</em>
+color="#FF0000">33</font></a>t               		27d           <em>Iridium 33 was fragmented by the collison with Cosmos 2251 on February 10, 2009</em>
 Plane 4:   4   <a href="iridium36and97.htm">36</a>t
-Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          	85d   <a
+Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          		85d   <a
 href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
 Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
-href="iridium17and77.htm">17</a>t 42t   79d           </pre>
+href="iridium17and77.htm">17</a>t 42t 39	79d           </pre>
 
 <p>t indicates satellites that have been reported as tumbling out
 of control. </p>
@@ -403,6 +380,23 @@ Spacecom as Iridium 20, and correctly tracked, but under 25577
 which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
+
+<p>In their quarterly report dated 30 June, 2016, Iridium
+Satellite LLC acknowledged the failure of two satellites in the
+preceding quarter year.</p>
+
+<p>In June 2016, Iridium 15 (24869, 1997-034A) was moved from
+Plane 6, Slot 7 to Plane 6, Slot 4, replacing Iridium 39 (25042,
+1997-069D). The intention may have been to swap over the two
+satellites but, in any case problems were experienced with with
+Iridium 39, which was then removed from the operational
+constellation, leaving a gap. No spare was available to replace
+it.</p>
+
+<p>In May 2016, Iridium 57 (25273, 1998-019B) began to drift away
+slowly from its nominal position and has presumably failed. See<a
+href="http://www.satobs.org/seesat/May-2016/0069.html"> Iridium
+57 looks to have a bad attitude</a>.</p>
 
 <p>In the middle of 2015, Iridium 45 (25104, 1997-082A) which had
 been migrating from orbital plane 2 towards orbital plane 3 for
