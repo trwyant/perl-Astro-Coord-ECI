@@ -71,6 +71,12 @@ sh_script
     visibility at the current time from 1600 Pennsylvania Avenue,
     Washington DC, USA.
 
+solstice
+    This Perl script calculates equinoxes and solstices for the given
+    year, defaulting to the current year, in either UTC or local time.
+    If DateTime::Calendar::Christian is available, dates will be given
+    in the Julian or Gregorian calendars as appropriate.
+
 tle_period.t
     This is not really a test, since I have no canonical data to test
     against. It is really a demonstration of the effect the model chosen
