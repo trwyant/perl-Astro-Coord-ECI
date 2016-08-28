@@ -1,3 +1,9 @@
+0.073_01	2016-08-28	T. R. Wyant
+  Correct almanac_hash() methods when station is defaulted to the body's
+    station attribute rather than explicitly passed.
+
+  Add eg/solstice
+
 0.073		2016-08-07	T. R. Wyant
   Update Celestrak visual.txt date. No data change.
 
