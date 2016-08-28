@@ -57,16 +57,17 @@ sub almanac {
 }
 
 sub almanac_hash {
+    my ( $self, $station, $start, $end ) = __default_station( @_ );
     return map {
-	body => $_[0],
-	station => $_[1],
+	body => $self,
+	station => $station,
 	time => $_->[0],
 	almanac => {
 	    event => $_->[1],
 	    detail => $_->[2],
 	    description => $_->[3],
 	}
-    }, almanac(@_);
+    }, $self->almanac( $station, $start, $end );
 }
 
 sub next_quarter {
