@@ -277,7 +277,7 @@ SKIP: {
 	q{First event description is 'local midnight'};
 
     note <<'EOD';
-The Noval Observatory does not provide a time for local midnight.
+The Naval Observatory does not provide a time for local midnight.
 EOD
 
     @almanac > 1
