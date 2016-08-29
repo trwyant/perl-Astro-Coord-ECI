@@ -58,6 +58,7 @@ Brodowski
 bstardrag
 CA
 ca
+CalSky
 CelesTrak
 Chalpront
 cmd
@@ -269,6 +270,7 @@ specular
 STDERR
 Steele's
 Steffen
+Stellarium
 Storable
 strasbg
 subclasses

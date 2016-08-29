@@ -542,7 +542,7 @@ also carry data from classified satellites (which Space Track does not).
 You can create an account for yourself, but this is not necessary to use
 the site. Astro::SpaceTrack does not retrieve data from this site.
 
-=head2 COMPARISON TO HEAVENS ABOVE
+=head1 COMPARISON TO HEAVENS ABOVE
 
 Because Heavens Above (L<http://www.heavens-above.com/>) is a good
 source of local satellite visibility predictions, you may wish to try to
@@ -570,6 +570,113 @@ brightness. The same may be true for Iridium flares. If you are trying
 to validate this software against Heavens Above, you will want to make
 its settings a little more permissive, to make sure you pick up
 everything Heavens Above picks up.
+
+=head1 HISTORICAL CALCULATIONS
+
+This package was written with the intent of tracking artificial
+satellites. Modules that represent astronomical objects (in particular
+the Sun and Moon) were implemented using the fastest and least-accurate
+algorithm in Jean Meeus' book, because the stated accuracy of that
+algorithm was sufficient for my purposes, which were generally telling
+whether a satellite was illuminated.
+
+I am not an expert in historical astronomical calculations, nor do I
+play one on television. I do not know the behavior of the algorithm used
+in this module when well away from the present, nor do I know how
+authoritative other resources are. But for the curious, I present
+comparisons of my results with resources that are available to me.
+
+The modules in this package do calculations in terms of epoch time (i.e.
+the kind returned by C<time()>). With the usual C<0> being midnight
+January 1 1970 UTC, you will need a fairly modern Perl with 64-bit times
+to go back before about 1902.
+
+If you go far enough back, there are problems converting between
+internal and external representations. The only documented restrictions
+on the built-ins C<gmtime()> and C<localtime()> are the ones on the size
+of the time representation, discussed above. Going the other way (from
+year/month/day to epoch) can be done with core module
+L<Time::Local|Time::Local>, but once the year becomes less than 1000, it
+means something other than a literal Gregorian year. The
+C<DateTime|DateTime> module does not have this limitation, but you need
+to be aware that the L<DateTime::TimeZone|DateTime::TimeZone> modules
+representing Olson zones (at least the ones I investigated) represent
+time before standard time was adopted as local mean time in the zone's
+city. C<UTC> does not have this problem, and I believe that offsets and
+the C<'floating'> "zone" do not either.
+
+The other problem is that of what calendar is in use. Strictly speaking,
+the Julian calendar was in use before the Gregorian calendar was
+adopted, at various times ranging from October 15 1542 to April 4 1919,
+depending on where you are. If you want Julian-calendar dates,
+L<DateTime::Calendar::Christian|DateTime::Calendar::Christian> will
+provide dates in the Julian calendar before the reform date (whichever
+one you choose to use) and Gregorian dates after. But you need to be a
+little careful with it, because it does not implement the full
+L<DateTime|DateTime> interface.
+
+One of the resources for comparison data is CalSky
+(L<http://calsky.com/>). This does astronomical calculations back to
+2999 BC, but there are problems if you go too far back. In particular I
+got no Sunrise time for any location I tried before about 1508 BC, and
+only one phase of the Moon for the entire month of July 2999 BC. Times
+appear to be presented in the Julian calendar before 1543, but I have
+not investigated whether they convert on October 15, and I have not yet
+found documentation where they say what they are doing. I also have no
+idea how they extend time zones back before there were time zones, so I
+have asked for times in UTC.
+
+Another resource is Stellarium (L<http://www.stellarium.org/>, which is
+open source planetarium software. I could not figure out how to get
+things like equinox/solstice and Moon phases out of it, but rise times
+and locations can be obtained just by setting the time appropriately and
+then running it. Because resetting the time zone is fairly dodgy, I
+simply added five hours to my computed times in UT-5 and reported them.
+It does report that times are Gregorian or Julian when you set them. But
+instead of setting the year to (e.g.) 2999BC you have to set it to
+-2998. The calculations were done with Stellarium 0.15.0.
+
+=head2 Sun
+
+For the Sun I present calculations for the northern solstice in 1508 BC,
+that being the earliest one I could find that with sunrise data. Times
+are UTC on July 7 1508 BC in the Julian calendar, and sunrise data are
+as observed from the Royal Observatory in Greenwich England.
+
+                          Solstice     Sunrise    Azimuth
+ Astro::Coord::ECI::Sun   00:15:46     03:32:32   48.1
+                 CalSky   21h53.8m (1)  3h33.0m   48.1
+             Stellarium   16:36:57 (2) 03:35:16   48.5
+
+=over
+
+=item 1) The CalSky solstice was on the previous day, July 6. I reported
+the sunrise data for July 7 because CalSky did not report a Sunrise or
+sunset on July 6.
+
+=item 2) The Stellarium solstice was the moment at which the ecliptic
+longitude on the date was 90 degrees, and was also on the previous day
+(i.e. the July 6).
+
+=back
+
+=head2 Moon
+
+For the Moon I present calculations for the first quarter in July 2999
+BC, which took place on July 22 Julian. Moon rise data are as observed
+from the Royal Observatory in Greenwich England.
+
+                          First Quarter  Moon rise  Azimuth
+ Astro::Coord::ECI::Moon  18:04:46       11:55:07   96.8
+                  CalSky  13h13.0m       12h12m     99
+              Stellarium  11:07:50 (1)   12:14:16   99.3
+
+=over
+
+=item 1) The Stellarium first quarter was the moment at which the phase
+angle was 90 degrees.
+
+=back
 
 =head1 AUTHOR
 
