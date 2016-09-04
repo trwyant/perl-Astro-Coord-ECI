@@ -1,4 +1,7 @@
-0.073_01	2016-08-28	T. R. Wyant
+0.074		2016-09-04	T. R. Wyant
+
+  Add HISTORICAL CALCULATIONS section to OVERVIEW.
+
   Correct almanac_hash() methods when station is defaulted to the body's
     station attribute rather than explicitly passed.
 
