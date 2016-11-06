@@ -43,7 +43,7 @@ set autoheight 0
 geocode '1600 Pennsylvania Ave NW, Washington DC'
 -data <<eod
 set location '1600 Pennsylvania Ave NW, Washington DC'
-set latitude 38.897699
+set latitude 38.897700
 set longitude -77.036553
 eod
 -test geocode U.S. location via OSM
