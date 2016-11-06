@@ -1,3 +1,19 @@
+0.075		2016-11-06	T. R. Wyant
+commit e7a30709085b1b5e00035131464f4e407892a516
+Author: Tom Wyant <wyant@cpan.org>
+Date:   Sun Nov 6 00:07:37 2016 -0400
+
+    Add estimated magnitude for Tiangong 2
+    
+    Since I believe (per Wikipedia) that it is the same size as Tiangong 1,
+    I am estimating the same absolute magnitude (4.0).
+
+commit 2d85c8d967124150143db46a8f66b0b5258e40ab
+Author: Tom Wyant <wyant@cpan.org>
+Date:   Sun Nov 6 00:06:41 2016 -0400
+
+    Track OSM location of White House in author test
+
 0.074		2016-09-04	T. R. Wyant
 
   Add HISTORICAL CALCULATIONS section to OVERVIEW.
