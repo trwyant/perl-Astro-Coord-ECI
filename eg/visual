@@ -72,6 +72,18 @@ if ( $opt{merge} ) {
 	defined( $found{$oid} = dor( $vsnames{$oid}, $mcnames{$oid} ) )
 	    or delete $found{$oid};
     }
+    # Unless we have a number for Tiangong 2, make it the same as
+    # Tiangong 1.
+    my $tiangong2;
+    unless ( defined $found{41765} ) {
+	if ( defined $found{37820} ) {
+	    $found{41765} = $found{37820};
+	    $tiangong2 = ' # Assumed same as Tiangong 1';
+	} else {
+	    $found{41765} = 4.0;
+	    $tiangong2 = ' # Assumed 4.0 (old Tiangong 1 value)';
+	}
+    }
     local $Data::Dumper::Terse = 1;
     local $Data::Dumper::Sortkeys = 1;
     my $output = Dumper ( \%found );
@@ -79,6 +91,8 @@ if ( $opt{merge} ) {
     $output =~ s/ [}] \s* \z /);\n/smx;
     $output =~ s/ ' ( -? \d+ [.] \d+ ) ' /$1/smxg;
     $output =~ s/ (?<= \d ) (?: (?= \n ) | \z ) /,/smxg;
+    defined $tiangong2
+	and $output =~ s/ \b ( 41765 \b [^\n]* ) /$1$tiangong2/smx;
     print <<"EOD";
 # Last-Modified: @{[ time2str( $date ) ]}
 

@@ -9212,6 +9212,7 @@ sub _next_elevation_screen {
   '39063' => 4.0,
   '39203' => 4.5,
   '39364' => 4.5,
+  '41765' => 4.0, # Assumed same as Tiangong 1
 );
 
 1;
