@@ -1,3 +1,7 @@
+0.076		2016-11-06	T. R. Wyant
+  Clean up Changes file. Version 0.075 had raw Git log for changes.
+    Oops.
+
 0.075		2016-11-06	T. R. Wyant
   Add estimated magnitude for Tiangong 2.
     Since I believe (per Wikipedia) that it is the same size as Tiangong 1,

@@ -10,7 +10,7 @@ use base qw{ My::Module::Recommend::Any };
 use Carp;
 use Exporter qw{ import };
 
-our $VERSION = '0.075';
+our $VERSION = '0.076';
 
 our @EXPORT_OK = qw{ __all };
 
