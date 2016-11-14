@@ -109,7 +109,7 @@ our @ISA = qw{Exporter};
 
 use Carp;
 ## use Config;
-use Data::Dumper;
+## use Data::Dumper;
 use POSIX qw{floor strftime};
 use Scalar::Util qw{ blessed };
 
