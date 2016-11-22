@@ -39,10 +39,10 @@ C<__instance>.
 
 This imports the time routines into your name space. If
 L<Time::y2038|Time::y2038> is available, it will be loaded, and both
-this tag and C<:all> will import C<gmtime>, C<localtime>, C<timegm>, and
-C<timelocal> into your name space. Otherwise, C<Time::Local|Time::Local>
-will be loaded, and both this tag and C<:all> will import C<timegm> and
-C<timelocal> into your name space.
+this tag and C<:all> will import C<gmtime>, C<localtime>, C<time_gm>,
+and C<time_local> into your name space. Otherwise,
+C<Time::Local|Time::Local> will be loaded, and both this tag and C<:all>
+will import C<time_gm> and C<time_local> into your name space.
 
 =item :vector
 
@@ -122,16 +122,40 @@ BEGIN {
     # The logic here should be consistent with the optional-module text
     # emitted by inc/Astro/Coord/ECI/Recommend.pm.
     #
+
     eval {
-##	$Config{use64bitint} and return 0;
 	require Time::y2038;
-	Time::y2038->import();
-	@time_routines = ( qw{ gmtime localtime timegm timelocal } );
+	Time::y2038->import( qw{ gmtime localtime } );
+
+	# sub time_gm
+	*time_gm = sub {
+	    my @date = @_;
+	    $date[5] = _year_adjust( $date[5] );
+	    return Time::y2038::timegm( @date );
+	};
+
+	# sub time_local
+	*time_local = sub {
+	    my @date = @_;
+	    $date[5] = _year_adjust( $date[5] );
+	    return Time::y2038::timelocal( @date );
+	};
+
+	@time_routines = ( qw{ gmtime localtime time_gm time_local
+	    __tle_year_to_Gregorian_year } );
+
 	1;
     } or do {
 	require Time::Local;
-	Time::Local->import();
-	@time_routines = ( qw{ timegm timelocal } );
+
+	# sub time_gm
+	*time_gm = Time::Local->can( 'timegm' );
+
+	# sub time_local
+	*time_local = Time::Local->can( 'timelocal' );
+
+	@time_routines = ( qw{ time_gm time_local __tle_year_to_Gregorian_year } );
+
     };
 }
 
@@ -165,7 +189,7 @@ use constant LIGHTYEAR => 9.4607e12;	# 1 light-year, per Meeus,
 					# Appendix I pg 407.
 use constant PARSEC => 30.8568e12;	# 1 parsec, per Meeus,
 					# Appendix I pg 407.
-use constant PERL2000 => timegm (0, 0, 12, 1, 0, 100);
+use constant PERL2000 => time_gm( 0, 0, 12, 1, 0, 2000 );
 use constant PI => atan2 (0, -1);
 use constant PIOVER2 => PI / 2;
 use constant SECSPERDAY => 86400;
@@ -354,16 +378,9 @@ sub decode_space_track_json_time {
 	or return;
     my @time = ( $1, $2, $3, $4, $5, $6 );
     my $frac = $7;
-    if ( $time[0] < 100 ) {
-	$time[0] < 57
-	    and $time[0] += 100;
-    } elsif ( $time[0] < 1900 ) {
-	return;
-    } else {
-	$time[0] -= 1900;
-    }
+    $time[0] = __tle_year_to_Gregorian_year( $time[0] );
     $time[1] -= 1;
-    my $rslt = timegm( reverse @time );
+    my $rslt = time_gm( reverse @time );
     defined $frac
 	and $frac ne '.'
 	and $rslt += $frac;
@@ -1037,7 +1054,9 @@ a standard Perl time).
 
 sub theta0 {
     my ($time) = @_;
-    return thetag (timegm (0, 0, 0, (gmtime $time)[3 .. 5]));
+    my @t = gmtime $time;
+    $t[5] += 1900;
+    return thetag( time_gm( 0, 0, 0, @t[3 .. 5] ) );
 }
 
 
@@ -1061,6 +1080,29 @@ sub thetag {
 	    jday2000 ($time))
 	    + (6.77070812713916e-06 - 4.5087296615715e-10 * $T) * $T * $T;
 }
+
+# time_gm and time_local are actually created at the top of the module.
+
+=item $epoch = time_gm( $yr, $mon, $day, $hr, $min, $sec );
+
+This exportable subroutine is a wrapper for either
+C<Time::y2038::timegm()> (if that module is installed) or
+C<Time::Local::timegm()> (if not.)
+
+This wrapper is needed because the two modules have subtly different
+signatures; L<Time::y2038|Time::y2038> interprets years strictly as Perl
+years, whereas L<Time::Local|Time::Local> interprets them differently
+depending on the value of the year, and in particular interprets years
+greater than 999 as Gregorian years.
+
+=item $epoch = time_local( $yr, $mon, $day, $hr, $min, $sec );
+
+This exportable subroutine is a wrapper for either
+C<Time::y2038::timelocal()> (if that module is installed) or
+C<Time::Local::timelocal()> (if not.)
+
+This wrapper is needed for the same reason L<time_gm()|/time_gm> is
+needed.
 
 =item $a = vector_cross_product( $b, $c );
 
@@ -1239,11 +1281,8 @@ sub __instance {
 	    defined $_ and s/ \D+ //smxg;
 	}
 
-	if ( $date[0] < 70 ) {
-	    $date[0] += 100;
-	} elsif ( $date[0] >= 100 ) {
-	    $date[0] -= 1900;
-	}
+	$date[0] = __tle_year_to_Gregorian_year( $date[0] );
+
 	defined $date[1] and --$date[1];
 	defined $date[2] or $date[2] = 1;
 	my $frc = pop @date;
@@ -1254,9 +1293,9 @@ sub __instance {
 
 	my $time;
 	if ( @zone ) {
-	    $time = timegm( reverse @date );
+	    $time = time_gm( reverse @date );
 	} else {
-	    $time = timelocal( reverse @date );
+	    $time = time_local( reverse @date );
 	}
 
 	if ( defined $frc  && $frc ne '') {
@@ -1267,6 +1306,62 @@ sub __instance {
 	return $time + $offset;
     }
 
+}
+
+# This subroutine is used to convert year numbers to Perl years in
+# accordance with the documentation in the 5.24.0 version of
+# Time::Local. It is intended to be called by the Time::y2038 code,
+# which expects Perl years.
+
+{
+    # The following code is lifted verbatim from Time::Local 1.25.
+    # Because that code bases the window used for expanding two-digit
+    # years on the local year as of the time the module was loaded, I do
+    # too.
+
+    my $ThisYear    = ( localtime() )[5];
+    my $Breakpoint  = ( $ThisYear + 50 ) % 100;
+    my $NextCentury = $ThisYear - $ThisYear % 100;
+    $NextCentury += 100 if $Breakpoint < 50;
+    my $Century = $NextCentury - 100;
+
+    # The above code is lifted verbatim from Time::Local 1.25.
+
+    sub _year_adjust {
+	my ( $year ) = @_;
+
+	$year < 0
+	    and return $year;
+
+	$year >= 1000
+	    and return $year - 1900;
+
+	# The following line of code is lifted verbatim from Time::Local
+	# 1.25.
+	$year += ( $year > $Breakpoint ) ? $Century : $NextCentury;
+
+	return $year;
+    }
+}
+
+=item $year = __tle_year_to_Gregorian_year( $year )
+
+The TLE data contain the year in two-digit form. NORAD decided to deal
+with Y2K by decreeing that year numbers lower than 57 (the launch of
+Sputnik 1) are converted to Gregorian by adding 2000. Years numbers of
+57 or greater are still converted to Gregorian by adding 1900. This
+subroutine encapsulates this logic. Years of 100 or greater are returned
+unmodified.
+
+This subroutine is B<private> to this package, and can be changed or
+revoked without notice.
+
+=cut
+
+sub __tle_year_to_Gregorian_year {
+    my ( $year ) = @_;
+    return $year < 57 ? $year + 2000 :
+	$year < 100 ? $year + 1900 : $year;
 }
 
 1;

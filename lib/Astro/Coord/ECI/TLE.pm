@@ -361,7 +361,8 @@ my %attrib = (
 	if ( defined $value && ! looks_like_number( $value ) ) {
 	    if ( $value =~ m{ \A (\d+) / (\d+) / (\d+) : (\d+) :
 		    (\d+ (?: [.] \d* )? ) \z }smx ) {
-		$value = timegm (0, 0, 0, 1, 0, $1 - 1900) + (
+		$value = time_gm( 0, 0, 0, 1, 0,
+		    __tle_year_to_Gregorian_year( $1 + 0 ) ) + (
 		    (($2 - 1) * 24 + $3) * 60 + $4) * 60 + $5;
 	    } else {
 		carp "Invalid effective date '$value'";
@@ -731,7 +732,7 @@ be defaulted, and no attempt has been made to make this a pretty error.
 #	days since Y2K, and then add the magic number needed to get
 #	us to days since 1950 Jan 0 0h UT.
 
-    my $y2k = timegm (0, 0, 0, 1, 0, 100);	# Calc. time of 2000 Jan 1 0h UT
+    my $y2k = time_gm( 0, 0, 0, 1, 0, 2000 );	# Calc. time of 2000 Jan 1 0h UT
 
     sub ds50 {
 	my ($self, $epoch) = @_;
@@ -1333,8 +1334,9 @@ eod
 	}
 	foreach (qw{epoch}) {
 	    my ($yr, $day) = $ele{$_} =~ m/(..)(.*)/;
-	    $yr += 100 if $yr < 57;
-	    $ele{$_} = timegm (0, 0, 0, 1, 0, $yr) + ($day - 1) * SECSPERDAY;
+	    $yr = __tle_year_to_Gregorian_year( $yr );
+	    $ele{$_} = time_gm( 0, 0, 0, 1, 0, $yr ) +
+		( $day - 1 ) * SECSPERDAY;
 	}
 
 #	From here is conversion to the units expected by the
@@ -7596,16 +7598,9 @@ encoded with a four-digit year.
 	    or return;
 	my @time = ( $1, $2, $3, $4, $5, $6 );
 	my $frac = $7;
-	if ( $time[0] < 100 ) {
-	    $time[0] < 57
-		and $time[0] += 100;
-	} elsif ( $time[0] < 1900 ) {
-	    return;
-	} else {
-	    $time[0] -= 1900;
-	}
+	$time[0] = __tle_year_to_Gregorian_year( $time[0] );
 	$time[1] -= 1;
-	my $rslt = timegm( reverse @time );
+	my $rslt = time_gm( reverse @time );
 	defined $frac
 	    and $frac ne '.'
 	    and $rslt += $frac;

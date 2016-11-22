@@ -3086,10 +3086,18 @@ BEGIN {	# Begin local symbol block.
 Error - Invalid time '$time'
 eod
 	$last_time_set = $parsed_time;
-	$parm{perltime} and _parse_time_absolute_use_perltime()
-	    and $last_time_set = timelocal gmtime $last_time_set;
+	$parm{perltime}
+	    and _parse_time_absolute_use_perltime()
+	    and $last_time_set = _apply_perltime( $last_time_set );
 	$initial_time_set = $last_time_set;
 	}
+    }
+
+    sub _apply_perltime {
+	my ( $time ) = @_;
+	my @t = gmtime $time;
+	$t[5] += 1900;
+	return time_local( @t );
     }
 
 
@@ -3167,7 +3175,7 @@ BEGIN {
     #	results where needed.
 
 	my $date_manip_fudge = 
-	    $^O eq 'MacOS' ? timegm (0, 0, 0, 1, 0, 1970) : 0;
+	    $^O eq 'MacOS' ? time_gm( 0, 0, 0, 1, 0, 1970 ) : 0;
 
 	*_parse_time_absolute = sub {
 	    my ( $string ) = @_;

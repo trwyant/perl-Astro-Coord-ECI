@@ -19,36 +19,36 @@ sub insert (@);
 {
     my $set = Astro::Coord::ECI::TLE::Set->new();
 
-    insert $set, timegm( 0, 0, 0, 2, 6, 106 ), 99999, 'Anonymous',
+    insert $set, time_gm( 0, 0, 0, 2, 6, 2006 ), 99999, 'Anonymous',
 	'Add first member';
 
-    insert $set, timegm( 0, 0, 0, 4, 6, 106 ), 99999, 'Anonymous',
+    insert $set, time_gm( 0, 0, 0, 4, 6, 2006 ), 99999, 'Anonymous',
 	'Add second member';
 
-    choose_epoch $set, select => timegm( 0, 0, 0, 1, 6, 106 ),
-	timegm ( 0, 0, 0, 2, 6, 106 ),
+    choose_epoch $set, select => time_gm( 0, 0, 0, 1, 6, 2006 ),
+	time_gm( 0, 0, 0, 2, 6, 2006 ),
 	'Select epoch before first member';
 
-    choose_epoch $set, select => timegm( 0, 0, 0, 2, 6, 106 ),
-	timegm ( 0, 0, 0, 2, 6, 106 ),
+    choose_epoch $set, select => time_gm( 0, 0, 0, 2, 6, 2006 ),
+	time_gm( 0, 0, 0, 2, 6, 2006 ),
 	'Select epoch of first member';
 
-    choose_epoch $set, select => timegm( 0, 0, 0, 3, 6, 106 ),
-	timegm ( 0, 0, 0, 2, 6, 106 ),
+    choose_epoch $set, select => time_gm( 0, 0, 0, 3, 6, 2006 ),
+	time_gm( 0, 0, 0, 2, 6, 2006 ),
 	'Select epoch between first and second member';
 
-    choose_epoch $set, select => timegm( 0, 0, 0, 4, 6, 106 ),
-	timegm ( 0, 0, 0, 4, 6, 106 ),
+    choose_epoch $set, select => time_gm( 0, 0, 0, 4, 6, 2006 ),
+	time_gm( 0, 0, 0, 4, 6, 2006 ),
 	'Select epoch of second member';
 
-    choose_epoch $set, select => timegm( 0, 0, 0, 5, 6, 106 ),
-	timegm ( 0, 0, 0, 4, 6, 106 ),
+    choose_epoch $set, select => time_gm( 0, 0, 0, 5, 6, 2006 ),
+	time_gm( 0, 0, 0, 4, 6, 2006 ),
 	'Select epoch after second member';
 
-    my $time = timegm( 0, 0, 0, 1, 6, 106 );
+    my $time = time_gm( 0, 0, 0, 1, 6, 2006 );
     my $tle = $set->universal( $time );
 
-    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 2, 6, 106 ),
+    compare_times $tle->get( 'epoch' ), time_gm( 0, 0, 0, 2, 6, 2006 ),
 	'Setting time before first member returns first member';
 
     compare_times $tle->universal(), $time,
@@ -57,10 +57,10 @@ sub insert (@);
     compare_times $set->universal(), $time,
 	q{Set's time is original time set};
 
-    $time = timegm( 0, 0, 0, 2, 6, 106 );
+    $time = time_gm( 0, 0, 0, 2, 6, 2006 );
     $tle = $set->universal( $time );
 
-    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 2, 6, 106 ),
+    compare_times $tle->get( 'epoch' ), time_gm( 0, 0, 0, 2, 6, 2006 ),
 	'Setting time of first member returns first member';
 
     compare_times $tle->universal(), $time,
@@ -69,10 +69,10 @@ sub insert (@);
     compare_times $set->universal(), $time,
 	q{Set's time is original time set};
 
-    $time = timegm( 0, 0, 0, 3, 6, 106 );
+    $time = time_gm( 0, 0, 0, 3, 6, 2006 );
     $tle = $set->universal( $time );
 
-    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 2, 6, 106 ),
+    compare_times $tle->get( 'epoch' ), time_gm( 0, 0, 0, 2, 6, 2006 ),
 	'Setting time between members returns first member';
 
     compare_times $tle->universal(), $time,
@@ -81,10 +81,10 @@ sub insert (@);
     compare_times $set->universal(), $time,
 	q{Set's time is original time set};
 
-    $time = timegm( 0, 0, 0, 4, 6, 106 );
+    $time = time_gm( 0, 0, 0, 4, 6, 2006 );
     $tle = $set->universal( $time );
 
-    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 4, 6, 106 ),
+    compare_times $tle->get( 'epoch' ), time_gm( 0, 0, 0, 4, 6, 2006 ),
 	'Setting time of second member returns second member';
 
     compare_times $tle->universal(), $time,
@@ -93,10 +93,10 @@ sub insert (@);
     compare_times $set->universal(), $time,
 	q{Set's time is original time set};
 
-    $time = timegm( 0, 0, 0, 5, 6, 106 );
+    $time = time_gm( 0, 0, 0, 5, 6, 2006 );
     $tle = $set->universal( $time );
 
-    compare_times $tle->get( 'epoch' ), timegm ( 0, 0, 0, 4, 6, 106 ),
+    compare_times $tle->get( 'epoch' ), time_gm( 0, 0, 0, 4, 6, 2006 ),
 	'Setting time after second member returns second member';
 
     compare_times $tle->universal(), $time,
@@ -124,7 +124,7 @@ sub insert (@);
 	    q{First member's name should be 'Nemo'};
 
 	compare_times $members[0]->get( 'epoch' ),
-	    timegm( 0, 0, 0, 2, 6, 106 ),
+	    time_gm( 0, 0, 0, 2, 6, 2006 ),
 	    q{First member's epoch should be July 2 2006};
 
 	@members > 1
@@ -134,7 +134,7 @@ sub insert (@);
 	    q{Second member's name should be 'Nemo'};
 
 	compare_times $members[1]->get( 'epoch' ),
-	    timegm( 0, 0, 0, 4, 6, 106 ),
+	    time_gm( 0, 0, 0, 4, 6, 2006 ),
 	    q{Second member's epoch should be July 4 2006};
     }
 
@@ -151,9 +151,9 @@ sub insert (@);
     my @set;
     eval {
 	@set = Astro::Coord::ECI::TLE::Set->aggregate(
-	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 99999 ),
-	    dummy( timegm( 0, 0, 0, 2, 6, 106 ) ),
-	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 11111 ),
+	    dummy( time_gm( 0, 0, 0, 1, 6, 2006 ), 99999 ),
+	    dummy( time_gm( 0, 0, 0, 2, 6, 2006 ) ),
+	    dummy( time_gm( 0, 0, 0, 1, 6, 2006 ), 11111 ),
 	);
 	pass 'Aggregate TLEs without singletons';
 	1;
@@ -177,9 +177,9 @@ sub insert (@);
     my @set;
     eval {
 	@set = Astro::Coord::ECI::TLE::Set->aggregate(
-	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 99999 ),
-	    dummy( timegm( 0, 0, 0, 2, 6, 106 ) ),
-	    dummy( timegm( 0, 0, 0, 1, 6, 106 ), 11111 ),
+	    dummy( time_gm( 0, 0, 0, 1, 6, 2006 ), 99999 ),
+	    dummy( time_gm( 0, 0, 0, 2, 6, 2006 ) ),
+	    dummy( time_gm( 0, 0, 0, 1, 6, 2006 ), 11111 ),
 	);
 	pass 'Aggregate TLEs with singletons';
 	1;
@@ -202,7 +202,7 @@ sub insert (@);
 	My::Module::SetDelegate->new(
 	    id => 99999,
 	    name => 'Anonymous',
-	    epoch => timegm (0, 0, 0, 1, 6, 106)
+	    epoch => time_gm( 0, 0, 0, 1, 6, 2006 )
 	)
     );
     my $set2 = Astro::Coord::ECI::TLE::Set->new();
@@ -218,7 +218,7 @@ sub insert (@);
 	My::Module::SetDelegate->new(
 	    id => 22222,
 	    name => 'Anonymous',
-	    epoch => timegm( 0, 0, 0, 2, 6, 106 ),
+	    epoch => time_gm( 0, 0, 0, 2, 6, 2006 ),
 	)
     );
 
@@ -242,7 +242,7 @@ sub insert (@);
     $set->add( My::Module::SetDelegate->new(
 	    id => 333333,
 	    name => 'Nobody',
-	    epoch => timegm( 0, 0, 0, 2, 6, 106 ),
+	    epoch => time_gm( 0, 0, 0, 2, 6, 2006 ),
 	)
     );
 
@@ -278,7 +278,7 @@ sub insert (@);
     ok ! $ok,
     q{$set->represents( 'Astro::Coord::ECI' ) on empty set throws exception};
 
-    $set->add( dummy( timegm( 0, 0, 0, 6, 1, 106 ), 99999, 'Nobody' ) );
+    $set->add( dummy( time_gm( 0, 0, 0, 6, 1, 2006 ), 99999, 'Nobody' ) );
 
     is $set->represents(), 'Astro::Coord::ECI::TLE',
     q{$set->represents() on non-empty set returns 'Astro::Coord::ECI::TLE'};

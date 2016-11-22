@@ -5,7 +5,7 @@ use warnings;
 
 use POSIX qw{strftime};
 use Test::More 0.88;
-use Time::Local;
+use Astro::Coord::ECI::Utils qw{ time_gm };
 
 eval {
     require LWP::UserAgent;
@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = timegm( 0, 0, 0, 20, 7, 116 );
+my $asof = time_gm( 0, 0, 0, 20, 7, 2016 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -699,12 +699,12 @@ sub parse_date {
 	or return ($rslt->status_line);
     my $got = $rslt->header ('Last-Modified')
 	or return ('Last-Modified header not returned', $rslt);
-    my ($day, $mon, $yr, $hr, $min, $sec) =
+    my ( $day, $mon, $yr, $hr, $min, $sec ) =
 	$got =~ m/,\s*(\d+)\s+(\w+)\s+(\d+)\s+(\d+):(\d+):(\d+)/
 	or return ('Unable to parse Last-Modified header', $rslt);
-    defined (my $mn = $mth{lc $mon})
+    defined( my $mn = $mth{lc $mon} )
 	or return ('Invalid month in Last-Modified header', $rslt);
-    return (undef, $rslt, $got, timegm ($sec, $min, $hr, $day, $mn, $yr));
+    return ( undef, $rslt, $got, time_gm( $sec, $min, $hr, $day, $mn, $yr ) );
 }
 
 1;
