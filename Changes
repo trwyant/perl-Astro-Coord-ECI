@@ -1,3 +1,17 @@
+0.076_02	2016-11-23	T. R. Wyant
+  Fix load failure when Time::y2038 is in use.
+
+    The problem was that when Time::y2038 was in use the attempt to
+    define manifest constant PERL2000 in Astro::Coord::ECI::Utils failed
+    because a helper routine had not yet been compiled. The fix was to
+    move the definition of the helper routine to above the definition of
+    the helper routine above the relevant 'use constant' statement.
+
+    Thanks to Slaven Rezic for finding this, which was introduced in
+    0.076_01 when I attempted to fix a subtle misuse of timegm() and
+    timelocal(), which are defined slightly differently in Time::Local
+    versus Time::y2038.
+
 0.076_01	2016-11-22	T. R. Wyant
   Handle year incompatibility between Time::Local and Time::y2038
     This is the same problem as RT #118861 on Astro-App-Satpass2, and I
