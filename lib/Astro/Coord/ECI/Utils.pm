@@ -159,6 +159,42 @@ BEGIN {
     };
 }
 
+# This subroutine is used to convert year numbers to Perl years in
+# accordance with the documentation in the 5.24.0 version of
+# Time::Local. It is intended to be called by the Time::y2038 code,
+# which expects Perl years.
+
+{
+    # The following code is lifted verbatim from Time::Local 1.25.
+    # Because that code bases the window used for expanding two-digit
+    # years on the local year as of the time the module was loaded, I do
+    # too.
+
+    my $ThisYear    = ( localtime() )[5];
+    my $Breakpoint  = ( $ThisYear + 50 ) % 100;
+    my $NextCentury = $ThisYear - $ThisYear % 100;
+    $NextCentury += 100 if $Breakpoint < 50;
+    my $Century = $NextCentury - 100;
+
+    # The above code is lifted verbatim from Time::Local 1.25.
+
+    sub _year_adjust {
+	my ( $year ) = @_;
+
+	$year < 0
+	    and return $year;
+
+	$year >= 1000
+	    and return $year - 1900;
+
+	# The following line of code is lifted verbatim from Time::Local
+	# 1.25.
+	$year += ( $year > $Breakpoint ) ? $Century : $NextCentury;
+
+	return $year;
+    }
+}
+
 our @EXPORT;
 our @EXPORT_OK = ( qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
@@ -1306,42 +1342,6 @@ sub __instance {
 	return $time + $offset;
     }
 
-}
-
-# This subroutine is used to convert year numbers to Perl years in
-# accordance with the documentation in the 5.24.0 version of
-# Time::Local. It is intended to be called by the Time::y2038 code,
-# which expects Perl years.
-
-{
-    # The following code is lifted verbatim from Time::Local 1.25.
-    # Because that code bases the window used for expanding two-digit
-    # years on the local year as of the time the module was loaded, I do
-    # too.
-
-    my $ThisYear    = ( localtime() )[5];
-    my $Breakpoint  = ( $ThisYear + 50 ) % 100;
-    my $NextCentury = $ThisYear - $ThisYear % 100;
-    $NextCentury += 100 if $Breakpoint < 50;
-    my $Century = $NextCentury - 100;
-
-    # The above code is lifted verbatim from Time::Local 1.25.
-
-    sub _year_adjust {
-	my ( $year ) = @_;
-
-	$year < 0
-	    and return $year;
-
-	$year >= 1000
-	    and return $year - 1900;
-
-	# The following line of code is lifted verbatim from Time::Local
-	# 1.25.
-	$year += ( $year > $Breakpoint ) ? $Century : $NextCentury;
-
-	return $year;
-    }
 }
 
 =item $year = __tle_year_to_Gregorian_year( $year )
