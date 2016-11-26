@@ -1286,7 +1286,7 @@ eod
 	$line =~ s/\s+$//;
 	my $tle = "$line\n";
 	$line =~ m{ \A 1 (\s* \d+) }smx and length $1 == 6 or do {
-	    $name = $line;
+	    ( $name = $line ) =~ s/ \A 0 \s+ //smx;	# SpaceTrack 3le
 	    $line = shift @data;
 	    $tle .= "$line\n";
 	};

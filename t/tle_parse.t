@@ -39,9 +39,39 @@ is $got->get( 'international' ), ' 8  2B',
 foreach my $attr ( qw{ id epoch firstderivative secondderivative
     bstardrag ephemeristype elementnumber inclination ascendingnode
     eccentricity argumentofperigee meananomaly meanmotion
-    revolutionsatepoch }
+    revolutionsatepoch launch_year launch_num }
 ) {
     cmp_ok $got->get( $attr ), '==', $want->get( $attr ),
+	"Got expected '$attr' value";
+}
+
+foreach my $attr ( qw{ name launch_piece } ) {
+    cmp_ok $got->get( $attr ), 'eq', $want->get( $attr ),
+	"Got expected '$attr' value";
+}
+
+ok eval { ( $got ) = Astro::Coord::ECI::TLE->parse( <<'EOD' ); 1 },
+0 VANGUARD 1
+1     5U  8  2B    0  9.78495062  .00000023      0-0     98-4 0    53
+2     5   4.2682   8.7242      67   1.7664   9.3264  1.82419157413667
+EOD
+    'Parse TLE with leading spaces, Space Track format.'
+    or diag $@;
+
+is $got->get( 'international' ), ' 8  2B',
+    q{Got expected 'international' value};
+
+foreach my $attr ( qw{ id epoch firstderivative secondderivative
+    bstardrag ephemeristype elementnumber inclination ascendingnode
+    eccentricity argumentofperigee meananomaly meanmotion
+    revolutionsatepoch launch_year launch_num }
+) {
+    cmp_ok $got->get( $attr ), '==', $want->get( $attr ),
+	"Got expected '$attr' value";
+}
+
+foreach my $attr ( qw{ name launch_piece } ) {
+    cmp_ok $got->get( $attr ), 'eq', $want->get( $attr ),
 	"Got expected '$attr' value";
 }
 
