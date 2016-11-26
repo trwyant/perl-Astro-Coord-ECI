@@ -1,3 +1,6 @@
+0.076_03	2016-11-26	T. R. Wyant
+  Remove leading 0 from Space Track 3le names
+
 0.076_02	2016-11-23	T. R. Wyant
   Fix load failure when Time::y2038 is in use.
 
