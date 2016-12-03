@@ -1,24 +1,10 @@
-0.076_03	2016-11-26	T. R. Wyant
+0.077		2016-12-03	T. R. Wyant
   Remove leading 0 from Space Track 3le names
 
-0.076_02	2016-11-23	T. R. Wyant
-  Fix load failure when Time::y2038 is in use.
-
-    The problem was that when Time::y2038 was in use the attempt to
-    define manifest constant PERL2000 in Astro::Coord::ECI::Utils failed
-    because a helper routine had not yet been compiled. The fix was to
-    move the definition of the helper routine to above the definition of
-    the helper routine above the relevant 'use constant' statement.
-
-    Thanks to Slaven Rezic for finding this, which was introduced in
-    0.076_01 when I attempted to fix a subtle misuse of timegm() and
-    timelocal(), which are defined slightly differently in Time::Local
-    versus Time::y2038.
-
-0.076_01	2016-11-22	T. R. Wyant
   Handle year incompatibility between Time::Local and Time::y2038
     This is the same problem as RT #118861 on Astro-App-Satpass2, and I
-    applied the same solution.
+    applied the same solution. As a result of this,
+    Astro::App::Satpass2::Utils now exports time_gm() and time_local().
 
 0.076		2016-11-06	T. R. Wyant
   Clean up Changes file. Version 0.075 had raw Git log for changes.
