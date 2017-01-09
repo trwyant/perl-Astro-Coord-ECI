@@ -64,6 +64,7 @@ sub requires {
 	'POSIX'		=> 0,
 	'Scalar::Util'	=> 0,
 	'Storable'	=> 0,
+	'base'		=> 0,
 	'constant'	=> 0,
 	'strict'	=> 0,
 	'warnings'	=> 0,
