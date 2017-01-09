@@ -16,6 +16,7 @@ eg/solstice
 eg/tle_period.t
 eg/visual
 eg/xml
+inc/Astro/Coord/ECI/TLE/Period.pm
 inc/My/Module/Build.pm
 inc/My/Module/Meta.pm
 inc/My/Module/Recommend.pm

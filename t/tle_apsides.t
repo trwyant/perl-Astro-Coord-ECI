@@ -3,37 +3,9 @@ package main;	# To make Perl::Critic happy.
 use strict;
 use warnings;
 
-# The following is a quick ad-hoc way to get an object with a specified
-# eccentricity and period.
-
-package Astro::Coord::ECI::TLE::Period;	## no critic (ProhibitMultiplePackages)
-
-use base qw{ Astro::Coord::ECI::TLE };
-
-{
-    my $pkg = __PACKAGE__;
-
-    sub new {
-	my ($class, %args) = @_;
-	my $self = $class->SUPER::new();
-	$self->{$pkg}{period} = delete $args{period};
-	$self->set(%args);
-	return $self;
-    }
-
-    sub period {
-	my ($self) = @_;
-	return $self->{$pkg}{period};
-    }
-}
-
-# And now, back to our regularly-scheduled test.
-
-package main;	## no critic (ProhibitMultiplePackages)
-
 use lib qw{ inc };
 
-use Astro::Coord::ECI::TLE;
+use Astro::Coord::ECI::TLE::Period;
 use My::Module::Test qw{ tolerance };
 use Test::More 0.88;
 
