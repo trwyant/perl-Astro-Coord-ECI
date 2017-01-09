@@ -7,7 +7,7 @@ use warnings;
 
 our $VERSION = '0.077';
 
-use base qw{ Exporter };
+use Exporter qw{ import };
 
 use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::Utils qw{ rad2deg };

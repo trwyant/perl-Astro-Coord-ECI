@@ -3,7 +3,8 @@ package My::Module::SetDelegate;
 use strict;
 use warnings;
 
-use base qw{ Astro::Coord::ECI::TLE };
+use Astro::Coord::ECI::TLE;
+our @ISA = qw{ Astro::Coord::ECI::TLE };
 
 sub new {
     my ($class, @args) = @_;

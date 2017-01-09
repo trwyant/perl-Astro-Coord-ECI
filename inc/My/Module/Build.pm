@@ -3,7 +3,8 @@ package My::Module::Build;
 use strict;
 use warnings;
 
-use base qw{ Module::Build };
+use Module::Build;
+our @ISA = qw{ Module::Build };
 
 use Carp;
 # use lib 'inc';	# Already done because this module is running.
