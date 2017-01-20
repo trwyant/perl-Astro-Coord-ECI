@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 0, 20, 7, 2016 );
+my $asof = time_gm( 0, 0, 0, 17, 0, 2017 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -261,7 +261,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 19August 2016 **</strong></p>
+<p align="center"><strong>** Updated 16 January 2017 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -269,24 +269,17 @@ There is now also a summary of <a href="iridfail.htm">Iridium
 Failures</a>.</p>
 
 <p><strong>Latest changes </strong>(see below for earlier
-changes): </p>
+changes)</p>
 
-<p>*** In their quarterly report dated 30 June, 2016, Iridium
-Satellite LLC acknowledged the failure of two satellites in the
-preceding quarter year. ***</p>
-
-<p>*** In June 2016, Iridium 15 (24869, 1997-034A) was moved from
-Plane 6, Slot 7 to Plane 6, Slot 4, replacing Iridium 39 (25042,
-1997-069D). The intention may have been to swap over the two
-satellites but, in any case problems were experienced with with
-Iridium 39, which was then removed from the operational
-constellation, leaving a gap. No spare was available to replace
-it. ***</p>
-
-<p>*** In May 2016, Iridium 57 (25273, 1998-019B) began to drift
-away slowly from its nominal position and has presumably failed.
-See<a href="http://www.satobs.org/seesat/May-2016/0069.html">
-Iridium 57 looks to have a bad attitude</a>. ***</p>
+<p><strong>*** The first Iridium Next launch (2017-003) took
+place on 14 January 2017, lifting the first ten Iridium Next
+satellites to Orbital Plane 6 ***<br>
+</strong>The official Iridium numbering for the new satellites is
+not yet known.<br>
+It should become clear over the next few days or weeks how these
+satellites are to be brought into service<strong>.<br>
+</strong>At this point, 64 of the original Iridium satellites
+still remained operational.</p>
 
 <pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
 Plane
@@ -303,7 +296,7 @@ href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 a
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
 Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>        81   <a
-href="iridium38and82.htm">82</a>   41   43  </pre>
+href="iridium38and82.htm">82</a>   41   43  <em><strong>(see also Iridium Next launch)</strong></em></pre>
 
 <pre>Original &lt;----- Failed -----&gt;       	&lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)       	 (decayed)
