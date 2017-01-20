@@ -29,6 +29,7 @@ sub distribution {
 }
 
 sub meta_merge {
+    my ( undef, @extra ) = @_;
     return {
 	'meta-spec'	=> {
 	    version	=> 2,
@@ -48,8 +49,20 @@ sub meta_merge {
 		url	=> 'git://github.com/trwyant/perl-Astro-Coord-ECI.git',
 		web	=> 'https://github.com/trwyant/perl-Astro-Coord-ECI',
 	    },
-	}
+	},
+	@extra,
     };
+}
+
+sub provides {
+    -d 'lib'
+	or return;
+    local $@ = undef;
+    my $provides = eval {
+	require Module::Metadata;
+	Module::Metadata->provides( version => 2, dir => 'lib' );
+    } or return;
+    return ( provides => $provides );
 }
 
 sub requires {
@@ -140,6 +153,18 @@ This method returns a reference to a hash describing the meta-data which
 has to be provided by making use of the builder's C<meta_merge>
 functionality. This includes the C<dynamic_config>, C<no_index> and
 C<resources> data.
+
+Any arguments will be appended to the generated array.
+
+=head2 provides
+
+ use YAML;
+ print Dump( [ $meta->provides() ] );
+
+This method attempts to load L<Module::Metadata|Module::Metadata>. If
+this succeeds, it returns a C<provides> entry suitable for inclusion in
+L<meta_merge()|/meta_merge> data (i.e. C<'provides'> followed by a hash
+reference). If it can not load the required module, it returns nothing.
 
 =head2 requires
 
