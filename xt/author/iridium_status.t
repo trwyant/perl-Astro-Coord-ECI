@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 0, 17, 0, 2017 );
+my $asof = time_gm( 0, 0, 18, 27, 0, 2017 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -261,7 +261,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 16 January 2017 **</strong></p>
+<p align="center"><strong>** Updated 26 January 2017 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -274,12 +274,30 @@ changes)</p>
 <p><strong>*** The first Iridium Next launch (2017-003) took
 place on 14 January 2017, lifting the first ten Iridium Next
 satellites to Orbital Plane 6 ***<br>
-</strong>The official Iridium numbering for the new satellites is
-not yet known.<br>
-It should become clear over the next few days or weeks how these
-satellites are to be brought into service<strong>.<br>
-</strong>At this point, 64 of the original Iridium satellites
-still remained operational.</p>
+</strong>(At this time, it was reported that 64 of the original
+Iridium satellites still remained operational)<br>
+<br>
+Initially all 10 Iridium Next satellites were in a 609km * 623km
+orbit.<br>
+On 22 January 2017, Iridium 106 (2017-003A) was the first to have
+its orbit raised by about 10km, presumably following a successful
+initial check-out.<br>
+On 24 January 2017, Iridium 103 (2017-003B) had its orbit raised
+by about 10km.<br>
+On 25 January 2017, Iridium 106 (2017-003A) was raised
+significantly to a 700km * 705km storage orbit.<br>
+It looks as though <strong>Iridium 106</strong> is likely to be
+raised to the operational orbit to fill the gap at Plane 6, Slot
+7, which has been vacant since the failure of Iridium 39 (25042,
+1997-069D) in June 2016.</p>
+
+<p>It seems unlikely that any of the Iridium Next satellites
+launched to Oribital Plane 6 will be moved to other orbital
+planes, as any gaps in those planes can be filled more quickly by
+the launches direct to those planes that are expected to take
+place in the coming months.</p>
+
+<pre><em>Note that the Iridium Next satellites are not expected to produce flares from the Main Mission Antenna in the same way as the original Iridum satllites.</em></pre>
 
 <pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
 Plane
@@ -289,14 +307,14 @@ Plane 2:  22   <a href="iridium94.htm">94</a>   76   25   23   46   47   20   49
 href="iridium11and26.htm">11</a>    3          				(note: Iridium 23 is probably a partial failure)
 Plane 3:  55   <a href="iridium28and95.htm">95</a>   45   <a
 href="iridium30and31.htm">31</a>   <a href="iridium30and31.htm">30</a>   32   <a
-href="iridium33collision.htm">91</a>   <em>57</em>   58   59   60   					(note: Iridium 57 has probably failed)
+href="iridium33collision.htm">91</a>   <em>  </em>   58   59   60   					
 Plane 4:  19   34   35   <a href="iridium36and97.htm">97</a>    <a
 href="iridium5and51.htm">5</a>  6/51   <a
 href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>        81   <a
-href="iridium38and82.htm">82</a>   41   43  <em><strong>(see also Iridium Next launch)</strong></em></pre>
+Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>    <strong>*</strong>   81   <a
+href="iridium38and82.htm">82</a>   41   43  <em><strong>(</strong></em><strong>*</strong><em><strong> see Iridium Next launch above)</strong></em></pre>
 
 <pre>Original &lt;----- Failed -----&gt;       	&lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)       	 (decayed)
@@ -305,7 +323,7 @@ Plane 1:  73t  63
 Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           	 	48d
 Plane 3:  <a href="iridium28and95.htm">28</a>   29<font
 color="#FF0000">   </font><a href="iridium33collision.htm"><font
-color="#FF0000">33</font></a>t               		27d           <em>Iridium 33 was fragmented by the collison with Cosmos 2251 on February 10, 2009</em>
+color="#FF0000">33</font></a>t  57           		27d           <em>Iridium 33 was fragmented by the collison with Cosmos 2251 on February 10, 2009</em>
 Plane 4:   4   <a href="iridium36and97.htm">36</a>t
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          		85d   <a
 href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
@@ -423,13 +441,13 @@ Iridium 42 (25077. 1977-077)which had presumably failed. Iridium
 42 has since been reported to be flashing..</p>
 
 <p>By early 2014, Iridium 45 (25104, 1997-082A) was no longer
-maintaining its place in orbital plane 2, and was
-evidentlymigrating towards orbital plane 3. Its place in orbital
-plane 2 has been taken by Iridium 23 (24906, 1997-043D).</p>
+maintaining its place in orbital plane 2, and was evidently
+migrating towards orbital plane 3. Its place in orbital plane 2
+was taken by Iridium 23 (24906, 1997-043D).</p>
 
 <p>By early 2014, Iridium 29 (24944, 1997-051A) had ceased to
 maintain its position in the constellation, and had presumably
-failed. At that tme, there was no spare available in plane 3 to
+failed. At that time, there was no spare available in plane 3 to
 replace it..</p>
 
 <p>On 20 November, 2012, Iridium 96 (27376, 2002-005E),
@@ -459,7 +477,7 @@ on-orbit spare</p>
 constellation for many years, was moved in the position
 previously occupied by Iridium 7 (24793, 1997-020B)</a>, while
 Iridum 7 was moved to follow slightly behind it. The two
-satellites are each providing some of the functionality for the
+satellites were each providing some of the functionality for the
 given slot. Orbital Plane 4 has no other spare satellite.</p>
 
 <p>In early August 2011, Iridium 11 (originally 25577, 1998-074A,
