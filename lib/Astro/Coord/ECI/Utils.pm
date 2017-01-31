@@ -11,7 +11,7 @@ Astro::Coord::ECI::Utils - Utility routines for astronomical calculations
 =head1 DESCRIPTION
 
 This module was written to provide a home for all the constants and
-utility subroutines used by B<Astro::Coord::ECI> and its descendents.
+utility subroutines used by B<Astro::Coord::ECI> and its descendants.
 What ended up here was anything that was essentially a subroutine, not
 a method.
 
