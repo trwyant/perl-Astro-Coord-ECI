@@ -26,7 +26,7 @@ Astro::Coord::ECI::Moon - Compute the position of the Moon.
 
 This module implements the position of the Moon as a function of time,
 as described in Jean Meeus' "Astronomical Algorithms," second edition.
-It is a subclass of B<Astro::Coord::ECI>, with the id, name, and diameter
+It is a subclass of L<Astro::Coord::ECI>, with the id, name, and diameter
 attributes initialized appropriately, and the time_set() method
 overridden to compute the position of the Moon at the given time.
 
@@ -497,11 +497,11 @@ Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
 
-The C<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
+The L<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
 documentation for a discussion of how the pieces/parts of this
 distribution go together and how to use them.
 
-The B<Astro-MoonPhase> package by Brett Hamilton, which contains a
+The L<Astro-MoonPhase> package by Brett Hamilton, which contains a
 function-based module to compute the current phase, distance and
 angular diameter of the Moon, as well as the angular diameter and
 distance of the Sun.
