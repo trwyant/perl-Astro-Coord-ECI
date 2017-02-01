@@ -26,9 +26,10 @@ Astro::Coord::ECI::Moon - Compute the position of the Moon.
 
 This module implements the position of the Moon as a function of time,
 as described in Jean Meeus' "Astronomical Algorithms," second edition.
-It is a subclass of L<Astro::Coord::ECI>, with the id, name, and diameter
-attributes initialized appropriately, and the time_set() method
-overridden to compute the position of the Moon at the given time.
+It is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>, with the id,
+name, and diameter attributes initialized appropriately, and the
+time_set() method overridden to compute the position of the Moon at the
+given time.
 
 =head2 Methods
 

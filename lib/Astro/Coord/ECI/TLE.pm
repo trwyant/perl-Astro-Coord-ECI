@@ -168,10 +168,11 @@ accomplished with this model:
 
 The models do not return the coordinates directly, they simply set the
 coordinates represented by the object (by virtue of being a subclass of
-Astro::Coord::ECI) and return the object itself. You can then call the
-appropriate inherited method to get the coordinates of the body in
-whatever coordinate system is convenient. For example, to find the
-latitude, longitude, and altitude of a body at a given time, you do
+L<Astro::Coord::ECI|Astro::Coord::ECI>) and return the object itself.
+You can then call the appropriate inherited method to get the
+coordinates of the body in whatever coordinate system is convenient. For
+example, to find the latitude, longitude, and altitude of a body at a
+given time, you do
 
   my ($lat, $long, $alt) = $body->model ($time)->geodetic;
 
@@ -478,7 +479,7 @@ use constant TLE_INIT => '_init';
 
 This method instantiates an object to represent a NORAD two- or
 three-line orbital element set. This is a subclass of
-B<Astro::Coord::ECI>.
+L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 Any arguments get passed to the set() method.
 
@@ -2465,12 +2466,13 @@ sub _period_r {
 =item $tle = $tle->rebless ($class, \%possible_attributes)
 
 This method reblesses a TLE object. The class must be either
-Astro::Coord::TLE or a subclass thereof, as must the object passed in to
-be reblessed. If the $tle object has its L<reblessable|/reblessable>
-attribute false, it will not be reblessed, but will be returned
-unmodified. Before reblessing, the before_reblessing() method is called.
-After reblessing, the after_reblessing() method is called with the
-\%possible_attributes hash reference as argument.
+L<Astro::Coord::ECI|Astro::Coord::ECI> or a subclass thereof, as must
+the object passed in to be reblessed. If the $tle object has its
+L<reblessable|/reblessable> attribute false, it will not be reblessed,
+but will be returned unmodified. Before reblessing, the
+before_reblessing() method is called.  After reblessing, the
+after_reblessing() method is called with the \%possible_attributes hash
+reference as argument.
 
 It is possible to omit the $class argument if the \%possible_attributes
 argument contains the keys {class} or {type}, taken in that order. If
@@ -2585,8 +2587,8 @@ attributes actually used by the orbital models will cause the models to
 be reinitialized. This happens transparently, and is no big deal. For
 a description of the attributes, see L</Attributes>.
 
-Because this is a subclass of Astro::Coord::ECI, any attributes of that
-class can also be set.
+Because this is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>,
+any attributes of that class can also be set.
 
 =cut
 
@@ -9369,18 +9371,19 @@ This attribute contains the NORAD SATCAT catalog ID.
 =item illum (string, static)
 
 This attribute specifies the source of illumination for the body.  You
-may specify the class name 'Astro::Coord::ECI' or the name of any
-subclass (though in practice only 'Astro::Coord::ECI::Sun' or
-'Astro::Coord::ECI::Moon' will do anything useful), or an alias()
+may specify the class name C<'Astro::Coord::ECI'> or the name of any
+subclass (though in practice only C<'Astro::Coord::ECI::Sun'> or
+C<'Astro::Coord::ECI::Moon'> will do anything useful), or an alias()
 thereof, or you may specify an object of the appropriate class. When you
 access this attribute, you get an object.
 
 In addition to the full class names, 'sun' and 'moon' are set up as
-aliases for Astro::Coord::ECI::Sun and Astro::Coord::ECI::Moon
-respectively. Other aliases can be set up using the alias() mechanism.
-The value 'sun' (or something equivalent) is probably the only useful
-value, but I know people have looked into Iridium 'Moon flares', so I
-exposed the attribute.
+aliases for L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> and
+L<Astro::Coord::ECI::Moon|Astro::Coord::ECI::Moon> respectively. Other
+aliases can be set up using the alias() mechanism.  The value 'sun' (or
+something equivalent) is probably the only useful value, but I know
+people have looked into Iridium 'Moon flares', so I exposed the
+attribute.
 
 The default is 'sun'.
 
@@ -9648,7 +9651,7 @@ above), and are used with the kind permission of Dr. Kelso.
 =head1 SEE ALSO
 
 I am aware of no other modules that perform calculations with NORAD
-orbital element sets. The Astro-Coords package by Tim Jenness
+orbital element sets. The L<Astro-Coords> package by Tim Jenness
 provides calculations using orbital elements, but the NORAD elements
 are tweaked for use by the models implemented in this package.
 

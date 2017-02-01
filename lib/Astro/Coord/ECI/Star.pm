@@ -32,10 +32,10 @@ Astro::Coord::ECI::Star - Compute the position of a star.
 This module implements the position of a star (or any other object
 which can be regarded as fixed on the celestial sphere) as a function
 of time, as described in Jean Meeus' "Astronomical Algorithms," second
-edition. It is a subclass of B<Astro::Coord::ECI>, with a position()
-method to set the catalog position (and optionally proper motion as
-well), and the time_set() method overridden to compute the position
-of the star at the given time.
+edition. It is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>,
+with a position() method to set the catalog position (and optionally
+proper motion as well), and the time_set() method overridden to compute
+the position of the star at the given time.
 
 =head2 Methods
 
@@ -317,15 +317,15 @@ Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
 
-The C<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
+The L<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
 documentation for a discussion of how the pieces/parts of this
 distribution go together and how to use them.
 
-The B<Astro-Catalog> package by Alasdair Allan, which accommodates a
+The L<Astro-Catalog> package by Alasdair Allan, which accommodates a
 much more fulsome description of a star. The star's coordinates are
 represented by an B<Astro::Coords> object.
 
-The B<Astro-Coords> package by Tim Jenness can also be used to find
+The L<Astro-Coords> package by Tim Jenness can also be used to find
 the position of a star at a given time given a catalog entry for the
 star. A wide variety of coordinate representations is accommodated.
 This package requires B<Astro::SLA>, which in its turn requires the

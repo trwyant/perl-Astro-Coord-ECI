@@ -77,10 +77,10 @@ our $Singleton = $weaken;
 =item $sun = Astro::Coord::ECI::Sun->new();
 
 This method instantiates an object to represent the coordinates of the
-Sun. This is a subclass of B<Astro::Coord::ECI>, with the id and name
-attributes set to 'Sun', and the diameter attribute set to 1392000 km
-per Jean Meeus' "Astronomical Algorithms", 2nd Edition, Appendix I,
-page 407.
+Sun. This is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>, with
+the id and name attributes set to 'Sun', and the diameter attribute set
+to 1392000 km per Jean Meeus' "Astronomical Algorithms", 2nd Edition,
+Appendix I, page 407.
 
 Any arguments are passed to the set() method once the object has been
 instantiated. Yes, you can override the "hard-wired" id, name, and so
@@ -492,19 +492,19 @@ Algorithms" (second edition) formed the basis for this module.
 
 =head1 SEE ALSO
 
-The C<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
+The L<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
 documentation for a discussion of how the pieces/parts of this
 distribution go together and how to use them.
 
-The B<Astro-MoonPhase> package by Brett Hamilton, which contains a
+The L<Astro-MoonPhase> package by Brett Hamilton, which contains a
 function-based module to compute the current phase, distance and
 angular diameter of the Moon, as well as the angular diameter and
 distance of the Sun.
 
-The B<Astro-Sunrise> package by Ron Hill, which contains a function-based
+The L<Astro-Sunrise> package by Ron Hill, which contains a function-based
 module to compute sunrise and sunset for the given day and location.
 
-The B<Astro-SunTime> package by Rob Fugina, which provides functionality
+The L<Astro-SunTime> package by Rob Fugina, which provides functionality
 similar to B<Astro-Sunrise>.
 
 =head1 AUTHOR

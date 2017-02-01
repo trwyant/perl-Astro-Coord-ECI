@@ -140,10 +140,10 @@ that wish to make use of the methods simply import them. Some of the
 methods require manifest constants to be defined; these are specified
 with the method.
 
-This package is B<private> to the C<Astro::Coord::ECI> package.
-Documentation is for the benefit of the author only. I am not opposed to
-making the interface public, but in the early going would like the
-liberty of being able to modify it without prior notice.
+This package is B<private> to the L<Astro::Coord::ECI|Astro::Coord::ECI>
+package.  Documentation is for the benefit of the author only. I am not
+opposed to making the interface public, but in the early going would
+like the liberty of being able to modify it without prior notice.
 
 =head1 METHODS
 
@@ -291,7 +291,7 @@ This package can not define any public attributes.
 
 =head1 SEE ALSO
 
-The C<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
+The L<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
 documentation for a discussion of how the pieces/parts of this
 distribution go together and how to use them.
 

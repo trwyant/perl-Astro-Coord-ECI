@@ -501,8 +501,8 @@ L<Astro::SpaceTrack|Astro::SpaceTrack> gained this functionality.
 As of about July 16 2013, you will need
 L<Astro::SpaceTrack|Astro::SpaceTrack> version C<0.054> or higher to
 access Space Track. On or about that date they will retire the version 1
-interface, so you will need an C<Astro::SpaceTrack> that adequately
-supports the new interface.
+interface, so you will need an L<Astro::SpaceTrack|Astro::SpaceTrack>
+that adequately supports the new interface.
 
 =head2 CelesTrak
 
@@ -562,7 +562,7 @@ following settings seem to duplicate Heavens Above fairly well:
 The C<edge_of_earths_shadow> attribute is so new I have no firm idea
 what setting would best duplicate Heavens Above, but there is some
 evidence that, for satellite passes at least, C<-1> gives results more
-like those of Heavens Above than the default if C<1>.
+like those of Heavens Above than the default of C<1>.
 
 Since Heavens Above only predicts one pass at a time, it may actually
 choose a different twilight for each satellite, based on the satellite's
@@ -581,8 +581,8 @@ algorithm was sufficient for my purposes, which were generally telling
 whether a satellite was illuminated.
 
 I am not an expert in historical astronomical calculations, nor do I
-play one on television. I do not know the behavior of the algorithm used
-in this module when well away from the present, nor do I know how
+play one on television. I do not know the behavior of the algorithms
+used in this module when well away from the present, nor do I know how
 authoritative other resources are. But for the curious, I present
 comparisons of my results with resources that are available to me.
 
@@ -598,7 +598,7 @@ of the time representation, discussed above. Going the other way (from
 year/month/day to epoch) can be done with core module
 L<Time::Local|Time::Local>, but once the year becomes less than 1000, it
 means something other than a literal Gregorian year. The
-C<DateTime|DateTime> module does not have this limitation, but you need
+L<DateTime|DateTime> module does not have this limitation, but you need
 to be aware that the L<DateTime::TimeZone|DateTime::TimeZone> modules
 representing Olson zones (at least the ones I investigated) represent
 time before standard time was adopted as local mean time in the zone's

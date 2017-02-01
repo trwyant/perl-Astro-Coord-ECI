@@ -80,12 +80,13 @@ will need to substitute your own location where indicated.
 
 =head1 DESCRIPTION
 
-This class is a subclass of Astro::Coord::ECI::TLE, representing
+This class is a subclass of
+L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE>, representing
 original-design Iridium satellites. This class will probably B<not> work
-for the Iridium Next satellites, which are anticipated to be launched
-starting about 2015.
+for the Iridium Next satellites, which are being launched starting early
+2017.
 
-The Astro::Coord::ECI::TLE->parse method makes use of
+The C<< Astro::Coord::ECI::TLE->parse() >> method makes use of
 built-in data to determine which satellites to rebless into this class,
 based on the object's NORAD SATCAT ID. This internal data can be
 modified using the Astro::Coord::ECI::TLE->status method to correct
