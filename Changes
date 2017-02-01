@@ -1,3 +1,11 @@
+0.077_01	2017-02-01	T. R. Wyant
+  Fix L<> links, and things that should have been L<> but were not.
+    Thanks to Ben Bullock for the pull request.
+
+  Add 'provides' data to ExtUtils::MakeMaker output
+
+  Add 'base' to dependencies.
+
 0.077		2016-12-03	T. R. Wyant
   Remove leading 0 from Space Track 3le names
 
