@@ -502,10 +502,10 @@ The L<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
 documentation for a discussion of how the pieces/parts of this
 distribution go together and how to use them.
 
-The L<Astro-MoonPhase> package by Brett Hamilton, which contains a
-function-based module to compute the current phase, distance and
-angular diameter of the Moon, as well as the angular diameter and
-distance of the Sun.
+L<Astro::MoonPhase|Astro::MoonPhase> by Brett Hamilton, which contains a
+function-based module to compute the current phase, distance and angular
+diameter of the Moon, as well as the angular diameter and distance of
+the Sun.
 
 =head1 AUTHOR
 

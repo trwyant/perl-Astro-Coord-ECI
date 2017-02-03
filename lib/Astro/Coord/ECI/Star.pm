@@ -321,11 +321,11 @@ The L<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
 documentation for a discussion of how the pieces/parts of this
 distribution go together and how to use them.
 
-The L<Astro-Catalog> package by Alasdair Allan, which accommodates a
+L<Astro::Catalog|Astro::Catalog> by Alasdair Allan, which accommodates a
 much more fulsome description of a star. The star's coordinates are
 represented by an B<Astro::Coords> object.
 
-The L<Astro-Coords> package by Tim Jenness can also be used to find
+L<Astro::Coords|Astro::Coords> by Tim Jenness can also be used to find
 the position of a star at a given time given a catalog entry for the
 star. A wide variety of coordinate representations is accommodated.
 This package requires B<Astro::SLA>, which in its turn requires the

@@ -496,16 +496,17 @@ The L<Astro::Coord::ECI::OVERVIEW|Astro::Coord::ECI::OVERVIEW>
 documentation for a discussion of how the pieces/parts of this
 distribution go together and how to use them.
 
-The L<Astro-MoonPhase> package by Brett Hamilton, which contains a
-function-based module to compute the current phase, distance and
-angular diameter of the Moon, as well as the angular diameter and
-distance of the Sun.
+L<Astro::MoonPhase|Astro::MoonPhase> by Brett Hamilton, which contains a
+function-based module to compute the current phase, distance and angular
+diameter of the Moon, as well as the angular diameter and distance of
+the Sun.
 
-The L<Astro-Sunrise> package by Ron Hill, which contains a function-based
-module to compute sunrise and sunset for the given day and location.
+L<Astro::Sunrise|Astro::Sunrise> by Ron Hill and Jean Forget, which
+contains a function-based module to compute sunrise and sunset for the
+given day and location.
 
-The L<Astro-SunTime> package by Rob Fugina, which provides functionality
-similar to B<Astro-Sunrise>.
+L<Astro::SunTime|Astro::SunTime> by Rob Fugina, which provides
+functionality similar to B<Astro-Sunrise>.
 
 =head1 AUTHOR
 

@@ -9651,9 +9651,9 @@ above), and are used with the kind permission of Dr. Kelso.
 =head1 SEE ALSO
 
 I am aware of no other modules that perform calculations with NORAD
-orbital element sets. The L<Astro-Coords> package by Tim Jenness
-provides calculations using orbital elements, but the NORAD elements
-are tweaked for use by the models implemented in this package.
+orbital element sets. The L<Astro::Coords|Astro::Coords> package by Tim
+Jenness provides calculations using orbital elements, but the NORAD
+elements are tweaked for use by the models implemented in this package.
 
 =head1 AUTHOR
 
