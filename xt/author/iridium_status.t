@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 20, 28, 0, 2017 );
+my $asof = time_gm( 0, 0, 20, 6, 1, 2017 );
 
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
@@ -261,7 +261,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 28 January 2017 **</strong></p>
+<p align="center"><strong>** Updated 06 February 2017 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -289,11 +289,14 @@ significantly to a 700km * 705km storage orbit.<br>
 By 28 January 2017, Iridium 103 (2017-003B) and Iridium 109
 (2017-003C) had also been raised to the 700km * 705km storage
 orbit., and Iridium 102 (2017-003D) was in the process of being
-raised<br>
-It looks as though <strong>Iridium 106</strong> is likely to be
-raised to the operational orbit to fill the gap at Plane 6, Slot
-7, which has been vacant since the failure of Iridium 39 (25042,
-1997-069D) in June 2016.</p>
+raised.<br>
+On the next few days, Iridium 102 (2017-003D), Iridium 104
+(2017-003F), and Iridium 114 (2017-003G) were also raised to the
+700km * 705km storage orbit.</p>
+
+<p>One of the above is likely to be raised to the operational
+orbit to fill the gap at Plane 6, Slot 7, which has been vacant
+since the failure of Iridium 39 (25042, 1997-069D) in June 2016.</p>
 
 <p>It seems unlikely that any of the Iridium Next satellites
 launched to Oribital Plane 6 will be moved to other orbital
