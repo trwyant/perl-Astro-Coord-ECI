@@ -1,9 +1,4 @@
-0.077_02	2017-02-03	T. R. Wyant
-  Convert attempted distro links to module links.
-    It seems that L<Distro-Name> does not work as one would hope, at
-    least as implemented by Meta::CPAN.
-
-0.077_01	2017-02-01	T. R. Wyant
+0.078		2017-02-10	T. R. Wyant
   Fix L<> links, and things that should have been L<> but were not.
     Thanks to Ben Bullock for the pull request.
 
