@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 20, 14, 1, 2017 );
+my $asof = time_gm( 0, 0, 20, 19, 1, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -260,7 +260,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 14 February 2017 **</strong></p>
+<p align="center"><strong>** Updated 19 February 2017 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -270,10 +270,22 @@ Failures</a>.</p>
 <p><strong>Latest changes </strong>(see below for earlier
 changes)</p>
 
-<p><strong>*** By 14 February 2017, Iridium 106 (2017-003A) has
+<p><strong>*** Iridium 109 (2017-003C) has recently been raised
+to the operational orbit at Plane 6. Slot 6, a few seconds behind
+Iridium 77 (25471, 1998-051E) ***</strong></p>
+
+<p>On 17 February 2017, Iridium Communications announced that the
+launch of the second batch of 10 Iridium Next satellites was now
+delayed until mid-June, 2017</p>
+
+<p>It was also announced on 17 February 2017 that the first of
+the Iridium Next satellites (i.e. Iridium 106) was expected to
+begin providing service to customers in the next few days.</p>
+
+<p><strong>** By 14 February 2017, Iridium 106 (2017-003A) had
 been raised to the operational orbit to fill the gap at Plane 6,
-Slot 7, which has been vacant since the failure of Iridium 39
-(25042, 1997-069D) in June 2016 ***<br>
+Slot 7, which had been vacant since the failure of Iridium 39
+(25042, 1997-069D) in June 2016 **<br>
 </strong>Iridium 103 (2017-003B), Iridium 109 (2017-003C),
 Iridium 102 (2017-003D), Iridium 104 (2017-003F), Iridium 114
 (2017-003G), Iridium 112 (2017-003J), and Iridium 111 (2017-003K)
@@ -281,9 +293,9 @@ are all in the 700km * 705km storage orbit.<br>
 Iridium 105 (2017-003E) and Iridium 108 (2017-003H) still remain
 in the 605km * 625km insertion orbit.</p>
 
-<p><strong>** The first Iridium Next launch (2017-003) took place
+<p><strong>**The first Iridium Next launch (2017-003) took place
 on 14 January 2017, lifting the first ten Iridium Next satellites
-to Orbital Plane 6 **<br>
+to Orbital Plane 6 *<br>
 </strong>(At this time, it was reported that 64 of the original
 Iridium satellites still remained operational)<br>
 Initially all 10 Iridium Next satellites were in a 605km * 625km
