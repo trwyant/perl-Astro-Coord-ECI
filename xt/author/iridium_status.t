@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 20, 19, 1, 2017 );
+my $asof = time_gm( 0, 0, 22, 25, 1, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -260,7 +260,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 19 February 2017 **</strong></p>
+<p align="center"><strong>** Updated 25 February 2017 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -269,6 +269,10 @@ Failures</a>.</p>
 
 <p><strong>Latest changes </strong>(see below for earlier
 changes)</p>
+
+<p><strong>*** Iridium 103 (2017-003B) has recently been raised
+to the operational orbit at Plane 6. Slot 5, a few seconds behind
+Iridium 80 (25469, 1998-051C) ***</strong></p>
 
 <p><strong>*** Iridium 109 (2017-003C) has recently been raised
 to the operational orbit at Plane 6. Slot 6, a few seconds behind
@@ -337,8 +341,9 @@ href="iridium5and51.htm">5</a>  6/51   <a
 href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>  <strong>106</strong>   81   <a
-href="iridium38and82.htm">82</a>   41   43  <strong> 109, 102, 103, 111, 114, 104, 112; 108, 105</strong></pre>
+Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>        81   <a
+href="iridium38and82.htm">82</a>   41   43  <strong> 102, 111, 114, 104, 112; 108, 105
+                             103  109  106 </strong></pre>
 
 <pre>Original &lt;----- Failed -----&gt;       	&lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)       	 (decayed)
