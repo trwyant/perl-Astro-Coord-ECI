@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 22, 25, 1, 2017 );
+my $asof = time_gm( 0, 0, 10, 10, 2, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -260,7 +260,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 25 February 2017 **</strong></p>
+<p align="center"><strong>** Updated 10 March 2017 **</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -269,6 +269,18 @@ Failures</a>.</p>
 
 <p><strong>Latest changes </strong>(see below for earlier
 changes)</p>
+
+<p><strong>*** Iridium 112 (2017-003J) is being raised to the
+operational orbit at Plane 6. Slot 2, close to Iridium 98 (27451,
+2002-031B) ***</strong></p>
+
+<p><strong>*** Iridium 104 (2017-003F) has recently been raised
+to the operational orbit at Plane 6. Slot 3, a few seconds behind
+Iridium 40 (25041, 1997-069C) ***</strong></p>
+
+<p><strong>*** Iridium 114 (2017-003G) has recently been raised
+to the operational orbit at Plane 6. Slot 4, a few seconds behind
+Iridium 15 (24869, 1997-034A) ***</strong></p>
 
 <p><strong>*** Iridium 103 (2017-003B) has recently been raised
 to the operational orbit at Plane 6. Slot 5, a few seconds behind
@@ -325,7 +337,7 @@ planes, as any gaps in those planes can be filled more quickly by
 the launches direct to those planes that are expected to take
 place in the coming months.</p>
 
-<pre><em>Note that the Iridium Next satellites are not expected to produce flares from the Main Mission Antenna in the same way as the original Iridum satellites.</em></pre>
+<pre><em>Note that the Iridium Next satellites are not expected to produce flares from the Main Mission Antenna in the same way as the original Iridium satellites.</em></pre>
 
 <pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
 Plane
@@ -342,8 +354,8 @@ href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 a
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
 Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>        81   <a
-href="iridium38and82.htm">82</a>   41   43  <strong> 102, 111, 114, 104, 112; 108, 105
-                             103  109  106 </strong></pre>
+href="iridium38and82.htm">82</a>   41   43  <strong> 
+              112  104   114  103  109  106                       102, 111; 108, 105</strong></pre>
 
 <pre>Original &lt;----- Failed -----&gt;       	&lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)       	 (decayed)
