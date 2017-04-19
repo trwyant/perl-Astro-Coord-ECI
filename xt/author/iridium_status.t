@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 12, 23, 2, 2017 );
+my $asof = time_gm( 0, 0, 12, 19, 3, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -186,7 +186,7 @@ EOD
 24969IRIDIUM 34 [+]
 25039IRIDIUM 43 [+]
 25040IRIDIUM 41 [+]
-25041IRIDIUM 40 [+]
+25041IRIDIUM 40 [-]
 25042IRIDIUM 39 [B]
 25043IRIDIUM 38 [-]
 25077IRIDIUM 42 [-]
