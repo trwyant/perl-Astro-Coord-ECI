@@ -1,4 +1,3 @@
-bin/satpass
 Build.PL
 Changes
 eg/almanac
@@ -44,6 +43,7 @@ META.json
 META.yml
 README
 README.MacOS
+script/satpass
 t/basic.t
 t/eci.t
 t/eci_maidenhead.t

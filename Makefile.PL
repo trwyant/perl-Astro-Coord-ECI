@@ -56,12 +56,12 @@ if ( $opt{n} ) {
 
 if (@exe_files) {
     if ($^O eq 'MSWin32') {
-	@exe_files = map {"bin/$_"} @exe_files;
+	@exe_files = map {"script/$_"} @exe_files;
 	foreach (@exe_files) {`pl2bat $_`}
 	@clean_files = @exe_files =
 	    grep {-e $_} map {"$_.bat"} @exe_files;
     } elsif ($^O eq 'VMS') {
-	foreach my $fni (map {"[.bin]$_"} @exe_files) {
+	foreach my $fni (map {"[.script]$_"} @exe_files) {
 	    my $fno = "$fni.com";
 	    my $fhi = FileHandle->new ("<$fni") or die <<eod;
 Error - Unable to open $fni
@@ -74,9 +74,9 @@ eod
 	    print $fho "$Config{startperl}\n";
 	    while (<$fhi>) {print $fho $_}
 	    }
-	@clean_files = @exe_files = map {"[.bin]$_.com"} @exe_files;
+	@clean_files = @exe_files = map {"[.script]$_.com"} @exe_files;
     } else {
-	@exe_files = map {"bin/$_"} @exe_files;
+	@exe_files = map {"script/$_"} @exe_files;
     }
 }
 
