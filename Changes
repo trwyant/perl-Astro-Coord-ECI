@@ -1,3 +1,12 @@
+0.078_01	2017-04-19	T. R. Wyant
+    Move satpass script from bin/ to script/
+
+    Mark OID 25041 (Iridium 40) tumbling, and 25042 (Iridium 41) spare
+    per Kelso. The latter appears to have actually been declared spare
+    in July 2016, but somehow I missed updating the canned status table.
+
+    Kelso added OID 16719 (COSMOS 1743) to magnitudes
+
 0.078		2017-02-10	T. R. Wyant
   Fix L<> links, and things that should have been L<> but were not.
     Thanks to Ben Bullock for the pull request.
