@@ -30,11 +30,11 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 12, 19, 3, 2017 );
+my $asof = time_gm( 0, 0, 0, 24, 3, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
-	mccants => <<'EOD'],
+	mccants => <<'MCCANTS'],
 <html>
 <head>
 <title>
@@ -145,11 +145,11 @@ Iridium Constellation Status information by Rod Sladen:
 </pre>
 </body>
 </html>
-EOD
+MCCANTS
 	["T. S. Kelso's Iridium list",
 	'http://celestrak.com/SpaceTrack/query/iridium.txt',
 	$asof,
-	kelso => <<'EOD'],
+	kelso => <<'KELSO'],
 24792IRIDIUM 8 [+]
 24793IRIDIUM 7 [+]
 24794IRIDIUM 6 [+]
@@ -242,11 +242,11 @@ EOD
 27376IRIDIUM 96 [+]
 27450IRIDIUM 97 [+]
 27451IRIDIUM 98 [+]
-EOD
+KELSO
 	["Rod Sladen's Iridium Constellation Status",
 	'http://www.rod.sladen.org.uk/iridium.htm',
 	$asof,
-	sladen => <<'EOD'],
+	sladen => <<'SLADEN'],
 <html>
 
 <head>
@@ -260,92 +260,56 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 23 March 2017 **</strong></p>
+<p align="center"><strong>** Updated 23 April 2017 **</strong></p>
+
+<p align="left"><strong>Latest changes </strong>(see below for
+earlier changes):</p>
+
+<p align="left"><strong>*** The first eight Iridium Next
+satellites are now in service ***<br>
+</strong><em><strong>Note that the Iridium Next satellites are
+not expected to produce flares from the Main Mission Antenna in
+the same way as the original Iridium satellites.</strong></em></p>
+
+<p>Iridium 111 (2017-003K) is <strong>in service</strong> at
+Plane 6. Slot 11, replacing Iridium 43 (25039, 1997-069A).
+Iridium 43 currently remains near its previous orbital position<br>
+Iridium 102 (2017-003D) is <strong>in service</strong> at Plane
+6. Slot 1, replacing Iridium 18 (24872, 1997-034D). Iridium 18
+currently remains near its previous orbital position.<br>
+Iridium 112 (2017-003J) is <strong>in service</strong> at Plane
+6. Slot 2, replacing Iridium 98 (27451, 2002-031B). <strong>The
+orbit of Iridium 98 has been lowered by 5km </strong>and it may
+be moving to another slot in plane 6.<br>
+Iridium 104 (2017-003F) is <strong>in service</strong> at Plane
+6. Slot 3, replacing Iridium 40 (25041, 1997-069C). <strong><u>Iridium
+40 is being de-orbited</u></strong><strong>.<br>
+</strong>Iridium 114 (2017-003G) is <strong>in service</strong>
+at Plane 6. Slot 4, replacing Iridium 15 (24869, 1997-034A). <strong>The
+orbit of Iridium 15 has been lowered by 15km</strong> and it may
+be being retained as a spare for plane 6.<br>
+Iridium 103 (2017-003B) is <strong>in service</strong> at Plane
+6. Slot 5, replacing Iridium 80 (25469, 1998-051C). <strong>The
+orbit of Iridium 80 has been raised by 10km</strong> and it may
+be being retained as a spare for plane 6.<br>
+Iridium 109 (2017-003C) is <strong>in service</strong> at Plane
+6. Slot 6, replacing Iridium 77 (25471, 1998-051E). Iridium 77
+currently remains near its previous orbital position<br>
+Iridium 106 (2017-003A) is <strong>in service</strong> at Plane
+6, Slot 7.<br>
+(First generation Iridium satellites remain active in Slot 8,
+Slot 9 and Slot 10 of Plane 6)</p>
+
+<p><strong>Iridium 105 (2017-003E) and Iridium 108 (2017-003H)
+remain in the insertion orbit, but have now started migrating
+from Orbital Plane 6 towards Orbital Plane 5</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
 There is now also a summary of <a href="iridfail.htm">Iridium
 Failures</a>.</p>
 
-<p><strong>Latest changes </strong>(see below for earlier
-changes):</p>
-
-<p><strong>*** Iridium 111 (2017-003K) has recently been raised
-to the operational orbit at Plane 6. Slot 11, a few seconds
-behind Iridium 43 (25039, 1997-069A) ***</strong></p>
-
-<p><strong>*** Iridium 102 (2017-003D) has recently been raised
-to the operational orbit at Plane 6. Slot 1, a few seconds behind
-Iridium 18 (24872, 1997-034D) ***</strong></p>
-
-<p><strong>*** Iridium 112 (2017-003J) has recently been raised
-to the operational orbit at Plane 6. Slot 2, a few seconds behind
-Iridium 98 (27451, 2002-031B) ***</strong></p>
-
-<p><strong>*** Iridium 104 (2017-003F) has recently been raised
-to the operational orbit at Plane 6. Slot 3, a few seconds behind
-Iridium 40 (25041, 1997-069C) ***</strong></p>
-
-<p><strong>*** Iridium 114 (2017-003G) has recently been raised
-to the operational orbit at Plane 6. Slot 4, a few seconds behind
-Iridium 15 (24869, 1997-034A) ***</strong></p>
-
-<p><strong>*** Iridium 103 (2017-003B) has recently been raised
-to the operational orbit at Plane 6. Slot 5, a few seconds behind
-Iridium 80 (25469, 1998-051C) ***</strong></p>
-
-<p><strong>*** Iridium 109 (2017-003C) has recently been raised
-to the operational orbit at Plane 6. Slot 6, a few seconds behind
-Iridium 77 (25471, 1998-051E) ***</strong></p>
-
-<p>On 17 February 2017, Iridium Communications announced that the
-launch of the second batch of 10 Iridium Next satellites was now
-delayed until mid-June, 2017</p>
-
-<p>It was also announced on 17 February 2017 that the first of
-the Iridium Next satellites (i.e. Iridium 106) was expected to
-begin providing service to customers in the next few days.</p>
-
-<p><strong>** By 14 February 2017, Iridium 106 (2017-003A) had
-been raised to the operational orbit to fill the gap at Plane 6,
-Slot 7, which had been vacant since the failure of Iridium 39
-(25042, 1997-069D) in June 2016 **<br>
-</strong>Iridium 103 (2017-003B), Iridium 109 (2017-003C),
-Iridium 102 (2017-003D), Iridium 104 (2017-003F), Iridium 114
-(2017-003G), Iridium 112 (2017-003J), and Iridium 111 (2017-003K)
-are all in the 700km * 705km storage orbit.<br>
-Iridium 105 (2017-003E) and Iridium 108 (2017-003H) still remain
-in the 605km * 625km insertion orbit.</p>
-
-<p><strong>**The first Iridium Next launch (2017-003) took place
-on 14 January 2017, lifting the first ten Iridium Next satellites
-to Orbital Plane 6 *<br>
-</strong>(At this time, it was reported that 64 of the original
-Iridium satellites still remained operational)<br>
-Initially all 10 Iridium Next satellites were in a 605km * 625km
-insertion orbit.<br>
-On 22 January 2017, Iridium 106 (2017-003A) was the first to have
-its orbit raised by about 10km, presumably following a successful
-initial check-out.<br>
-On 24 January 2017, Iridium 103 (2017-003B) had its orbit raised
-by about 10km.<br>
-On 25 January 2017, Iridium 106 (2017-003A) was raised
-significantly to a 700km * 705km storage orbit.<br>
-By 28 January 2017, Iridium 103 (2017-003B) and Iridium 109
-(2017-003C) had also been raised to the 700km * 705km storage
-orbit., and Iridium 102 (2017-003D) was in the process of being
-raised.<br>
-Over the next few days, Iridium 102 (2017-003D), Iridium 104
-(2017-003F), and Iridium 114 (2017-003G) were also raised to the
-700km * 705km storage orbit.</p>
-
-<p>It seems unlikely that any of the Iridium Next satellites
-launched to Oribital Plane 6 will be moved to other orbital
-planes, as any gaps in those planes can be filled more quickly by
-the launches direct to those planes that are expected to take
-place in the coming months.</p>
-
-<pre><em>Note that the Iridium Next satellites are not expected to produce flares from the Main Mission Antenna in the same way as the original Iridium satellites.</em></pre>
+<pre><em><strong>Note that the Iridium Next satellites are not expected to produce flares from the Main Mission Antenna in the same way as the original Iridium satellites.</strong></em></pre>
 
 <pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
 Plane
@@ -361,12 +325,13 @@ href="iridium5and51.htm">5</a>  6/51   <a
 href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>        81   <a
-href="iridium38and82.htm">82</a>   41   43  <strong> 
-Plane 6:</strong> <strong>102  112  104   114  103  109  106                111   108, 105</strong></pre>
+Plane 6: <strong>102  112  104   114  103  109  106</strong>  81   <a
+href="iridium38and82.htm">82</a>   41 <strong> 111</strong>  <strong> </strong>98; 80; 15; (18, <a
+href="iridium17and77.htm">77</a>, 43) <strong>(plus 108, 105 now migrating from Plane 6 towards plane 5)
+</strong></pre>
 
-<pre>Original &lt;----- Failed -----&gt;       	&lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
-Orbital  (but still in orbit)       	 (decayed)
+<pre>Original &lt;----- Failed -----&gt;                   &lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
+Orbital  (but still in orbit)                    (decayed)
 Plane                                	          <em>     </em>
 Plane 1:  73t  63
 Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           	 	48d
@@ -377,7 +342,7 @@ Plane 4:   4   <a href="iridium36and97.htm">36</a>t
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          		85d   <a
 href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
 Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
-href="iridium17and77.htm">17</a>t 42t 39	79d           </pre>
+href="iridium17and77.htm">17</a>t 42t 39  40    79d           (Iridium 40 is being deliberatly de-orbited)</pre>
 
 <p>t indicates satellites that have been reported as tumbling out
 of control. </p>
@@ -440,6 +405,115 @@ Spacecom as Iridium 20, and correctly tracked, but under 25577
 which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
+
+<p>Iridium 111 (2017-003K) was raised to the operational orbit at
+Plane 6. Slot 11, a few seconds behind Iridium 43 (25039,
+1997-069A)<br>
+Iridium 102 (2017-003D) was raised to the operational orbit at
+Plane 6. Slot 1, a few seconds behind Iridium 18 (24872,
+1997-034D)<br>
+Iridium 112 (2017-003J) was raised to the operational orbit at
+Plane 6. Slot 2, a few seconds behind Iridium 98 (27451,
+2002-031B)<br>
+Iridium 104 (2017-003F) was raised to the operational orbit at
+Plane 6. Slot 3, a few seconds behind Iridium 40 (25041,
+1997-069C)<br>
+Iridium 114 (2017-003G) was raised to the operational orbit at
+Plane 6. Slot 4, a few seconds behind Iridium 15 (24869,
+1997-034A)<br>
+Iridium 103 (2017-003B) was raised to the operational orbit at
+Plane 6. Slot 5, a few seconds behind Iridium 80 (25469,
+1998-051C)<br>
+Iridium 109 (2017-003C) was raised to the operational orbit at
+Plane 6. Slot 6, a few seconds behind Iridium 77 (25471,
+1998-051E)</p>
+
+<p>On 17 February 2017, Iridium Communications announced that the
+launch of the second batch of 10 Iridium Next satellites was now
+delayed until mid-June, 2017</p>
+
+<p>It was also announced on 17 February 2017 that the first of
+the Iridium Next satellites (i.e. Iridium 106) was expected to
+begin providing service to customers in the next few days.</p>
+
+<p>By 14 February 2017, Iridium 106 (2017-003A) had been raised
+to the operational orbit to fill the gap at Plane 6, Slot 7,
+which had been vacant since the failure of Iridium 39 (25042,
+1997-069D) in June 2016<br>
+Iridium 103 (2017-003B), Iridium 109 (2017-003C), Iridium 102
+(2017-003D), Iridium 104 (2017-003F), Iridium 114 (2017-003G),
+Iridium 112 (2017-003J), and Iridium 111 (2017-003K) were all in
+the 700km * 705km storage orbit.<br>
+Iridium 105 (2017-003E) and Iridium 108 (2017-003H) still
+remained in the 605km * 625km insertion orbit.</p>
+
+<p>The first Iridium Next launch (2017-003) took place on 14
+January 2017, lifting the first ten Iridium Next satellites to
+Orbital Plane 6.<br>
+Initially all 10 Iridium Next satellites were in a 605km * 625km
+insertion orbit.<br>
+On 22 January 2017, Iridium 106 (2017-003A) was the first to have
+its orbit raised by about 10km, presumably following a successful
+initial check-out.<br>
+On 24 January 2017, Iridium 103 (2017-003B) had its orbit raised
+by about 10km.<br>
+On 25 January 2017, Iridium 106 (2017-003A) was raised
+significantly to a 700km * 705km storage orbit.<br>
+By 28 January 2017, Iridium 103 (2017-003B) and Iridium 109
+(2017-003C) had also been raised to the 700km * 705km storage
+orbit., and Iridium 102 (2017-003D) was in the process of being
+raised.<br>
+Over the next few days, Iridium 102 (2017-003D), Iridium 104
+(2017-003F), and Iridium 114 (2017-003G) were also raised to the
+700km * 705km storage orbit.</p>
+
+<p>It initially seemed unlikely that any of the Iridium Next
+satellites launched to Oribital Plane 6 would be moved to other
+orbital planes, as any gaps in those planes caould be filled more
+quickly by the launches direct to those planes that are expected
+to take place in the coming months.</p>
+
+<p><strong>The status of the Iridium constellation </strong><strong><u>immediately
+prior to the first Iridium Next launch</u></strong><strong>
+appears to have been as follows:</strong></p>
+
+<p>(At this time, it was reported that 64 of the original Iridium
+satellites still remained operational)</p>
+
+<pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
+Plane
+Plane 1:  <a href="iridium74and21.htm">21</a>   72   75   70   62   14   64   65   66   67   68   <a
+href="iridium74and21.htm">74</a> 					(note: Iridium 74 is probably a partial failure)
+Plane 2:  22   <a href="iridium94.htm">94</a>   76   25   23   46   47   20   49   <a
+href="iridium11and26.htm">11</a>    3          				(note: Iridium 23 is probably a partial failure)
+Plane 3:  55   <a href="iridium28and95.htm">95</a>   45   <a
+href="iridium30and31.htm">31</a>   <a href="iridium30and31.htm">30</a>   32   <a
+href="iridium33collision.htm">91</a>   <em>  </em>   58   59   60   					
+Plane 4:  19   34   35   <a href="iridium36and97.htm">97</a>    <a
+href="iridium5and51.htm">5</a>  6/51   <a
+href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
+Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
+href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
+Plane 6:  18   98   40   15   80   <a href="iridium17and77.htm">77</a>        81   <a
+href="iridium38and82.htm">82</a>   41   43  <strong> 
+</strong></pre>
+
+<pre>Original &lt;----- Failed -----&gt;       	   &lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
+Orbital  (but still in orbit)       	    (decayed)
+Plane                                	          <em>     </em>
+Plane 1:  73t  63
+Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           	 	48d
+Plane 3:  <a href="iridium28and95.htm">28</a>   29<font
+color="#FF0000">   </font><a href="iridium33collision.htm"><font
+color="#FF0000">33</font></a>t  57           		27d           <em>Iridium 33 was fragmented by the collison with Cosmos 2251 on February 10, 2009</em>
+Plane 4:   4   <a href="iridium36and97.htm">36</a>t
+Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          		85d   <a
+href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
+Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
+href="iridium17and77.htm">17</a>t 42t 39	79d           </pre>
+
+<p>t indicates satellites that have been reported as tumbling out
+of control. </p>
 
 <p>In their quarterly report dated 30 June, 2016, Iridium
 Satellite LLC acknowledged the failure of two satellites in the
@@ -679,7 +753,7 @@ that will give us the life that we believe is there&quot;<br>
 href="index.htm">Rod Sladen's Home Page</a>]</h6>
 </body>
 </html>
-EOD
+SLADEN
 ) {
 
     SKIP: {
