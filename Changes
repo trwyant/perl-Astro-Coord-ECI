@@ -1,4 +1,4 @@
-0.078_01	2017-04-19	T. R. Wyant
+0.079		2017-04-26	T. R. Wyant
     Move satpass script from bin/ to script/
 
     Mark OID 25041 (Iridium 40) tumbling, and 25042 (Iridium 41) spare
