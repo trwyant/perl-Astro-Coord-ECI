@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 0, 24, 3, 2017 );
+my $asof = time_gm( 0, 0, 14, 4, 4, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -260,13 +260,23 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 23 April 2017 **</strong></p>
+<p align="center"><strong>** Updated 04 May 2017 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
 
-<p align="left"><strong>*** The first eight Iridium Next
-satellites are now in service ***<br>
+<p align="left">Iridium 98 (27451, 2002-031B), previously at
+Plane 6, Slot 2 has <strong>moved around the plane</strong> to
+Plane 6. Slot 9, just ahead of Iridium 82. It is unclear whether
+the two satellites are sharing the functionality in this slot</p>
+
+<p align="left">Iridium 80 (25469, 1998-051C), previously at
+Plane 6, Slot 5 has <strong>moved around the plane</strong> to
+Plane 6. Slot 8, just ahead of Iridium 81. It is unclear whether
+the two satellites are sharing the functionality in this slot</p>
+
+<p align="left"><strong>** The first eight Iridium Next
+satellites are now in service **<br>
 </strong><em><strong>Note that the Iridium Next satellites are
 not expected to produce flares from the Main Mission Antenna in
 the same way as the original Iridium satellites.</strong></em></p>
@@ -279,8 +289,8 @@ Iridium 102 (2017-003D) is <strong>in service</strong> at Plane
 currently remains near its previous orbital position.<br>
 Iridium 112 (2017-003J) is <strong>in service</strong> at Plane
 6. Slot 2, replacing Iridium 98 (27451, 2002-031B). <strong>The
-orbit of Iridium 98 has been lowered by 5km </strong>and it may
-be moving to another slot in plane 6.<br>
+orbit of Iridium 98 has been lowered by 5km </strong>and was
+probably moving to another slot in plane 6.<br>
 Iridium 104 (2017-003F) is <strong>in service</strong> at Plane
 6. Slot 3, replacing Iridium 40 (25041, 1997-069C). <strong><u>Iridium
 40 is being de-orbited</u></strong><strong>.<br>
@@ -325,10 +335,9 @@ href="iridium5and51.htm">5</a>  6/51   <a
 href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-Plane 6: <strong>102  112  104   114  103  109  106</strong>  81   <a
-href="iridium38and82.htm">82</a>   41 <strong> 111</strong>  <strong> </strong>98; 80; 15; (18, <a
-href="iridium17and77.htm">77</a>, 43) <strong>(plus 108, 105 now migrating from Plane 6 towards plane 5)
-</strong></pre>
+Plane 6: <strong>102  112  104  114  103  109  106</strong>   81   <a
+href="iridium38and82.htm">82</a>   41 <strong> 111</strong>  <strong> (plus 108, 105 now migrating from Plane 6 towards plane 5)
+</strong>         (18)                     (77)      (80) (98)      (43)  (15) </pre>
 
 <pre>Original &lt;----- Failed -----&gt;                   &lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)                    (decayed)
@@ -342,7 +351,7 @@ Plane 4:   4   <a href="iridium36and97.htm">36</a>t
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          		85d   <a
 href="iridium9and84.htm">9</a>d      <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
 Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
-href="iridium17and77.htm">17</a>t 42t 39  40    79d           (Iridium 40 is being deliberatly de-orbited)</pre>
+href="iridium17and77.htm">17</a>t 42t 39  40    79d           (Iridium 40 is being deliberately de-orbited)</pre>
 
 <p>t indicates satellites that have been reported as tumbling out
 of control. </p>
@@ -524,11 +533,12 @@ Plane 6, Slot 7 to Plane 6, Slot 4, replacing Iridium 39 (25042,
 1997-069D). The intention may have been to swap over the two
 satellites but, in any case problems were experienced with with
 Iridium 39, which was then removed from the operational
-constellation, leaving a gap. No spare was available to replace
-it.</p>
+constellation, leaving a gap at Plane 6, Slot 7. No spare was
+available to replace it.</p>
 
 <p>In May 2016, Iridium 57 (25273, 1998-019B) began to drift away
-slowly from its nominal position and has presumably failed. See<a
+slowly from its nominal position (Plane 3, Slot 8) and has
+presumably failed. See<a
 href="http://www.satobs.org/seesat/May-2016/0069.html"> Iridium
 57 looks to have a bad attitude</a>.</p>
 
@@ -537,7 +547,7 @@ been migrating from orbital plane 2 towards orbital plane 3 for
 about 14 months, arrived in oribital plane 3. It appears to have
 already been in operational use as part of orbital plane 3 for
 some months previously, even though it was not in its final
-orbital location.</p>
+orbital location (Plane 3, Slot 3).</p>
 
 <p>In early December 2014, Space-Track catalogued four items of
 debris (40324-40327, 2002-05G to 2002-05K) associated wth the
@@ -560,13 +570,13 @@ which had presumably failed.</p>
 <p>At the end of August 2014, Iridium 98 (27451, 2002-301B) ,
 whch had been spare in orbital plane 6 since migrating from plane
 4, was raised to operational altitude a few seconds behind
-Iridium 42 (25077. 1977-077)which had presumably failed. Iridium
-42 has since been reported to be flashing..</p>
+Iridium 42 (25077. 1977-077) which had presumably failed. Iridium
+42 has since been reported to be flashing.</p>
 
 <p>By early 2014, Iridium 45 (25104, 1997-082A) was no longer
 maintaining its place in orbital plane 2, and was evidently
-migrating towards orbital plane 3. Its place in orbital plane 2
-was taken by Iridium 23 (24906, 1997-043D).</p>
+migrating towards orbital plane 3. Its place in orbital plane 2,
+slot 5 was taken by Iridium 23 (24906, 1997-043D).</p>
 
 <p>By early 2014, Iridium 29 (24944, 1997-051A) had ceased to
 maintain its position in the constellation, and had presumably
