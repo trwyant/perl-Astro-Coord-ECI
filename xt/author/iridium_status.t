@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 22, 16, 4, 2017 );
+my $asof = time_gm( 0, 0, 20, 19, 4, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -260,10 +260,14 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 13 May 2017 **</strong></p>
+<p align="center"><strong>** Updated 19 May 2017 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(17 May 2017) The orbit of Iridium 18 (24872,
+1997-034D has been lowered by 15km and it is presumably being
+retained as a spare for plane 6.</p>
 
 <p align="left">(12 May 2017) The orbit of Iridium 77 (25471,
 1998-051E) has been lowered by 15km and it is presumably being
@@ -348,8 +352,8 @@ href="iridium5and51.htm">5</a>  6/51   <a
 href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-Plane 6: <strong>102  112  104  114  103  109  106</strong>   80   98   41 <strong> 111</strong>  <strong> </strong>(15) (81) (77) <strong>(plus 108, 105 now migrating from Plane 6 towards plane 5)
-</strong>         (18)                                                    </pre>
+Plane 6: <strong>102  112  104  114  103  109  106</strong>   80   98   41 <strong> 111</strong>   (18)<strong> </strong>(15) (81) (77) <strong>(plus 108, 105 now migrating from Plane 6 towards plane 5)
+</strong>                                                            </pre>
 
 <pre>Original &lt;----- Failed -----&gt;                           &lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)                            (decayed)
