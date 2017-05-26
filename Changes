@@ -1,5 +1,8 @@
-0.079_01	2017-05-17	T. R. Wyant
-    Deprecate McCants' status.
+0.081		2017-05-26	T. R. Wyant
+    Update canned magnitude table.
+
+    Deprecate McCants' status. His web page notes itself as no longer
+    maintained.
 
     Document impending changes in Iridium support.
 
