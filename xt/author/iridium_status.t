@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 20, 19, 4, 2017 );
+my $asof = time_gm( 0, 0, 2, 25, 4, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -45,7 +45,9 @@ Status for Iridium payloads
 <body>
 <h2><center>Status for Iridium payloads</center></h2>
 <p>
+Note: this page is no longer maintained.
 <pre>
+
 Iridium status as of Novenber, 2012
 ===================================
 

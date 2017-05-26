@@ -1768,11 +1768,11 @@ Technically, the default is 0. But if the object is manufactured by
 Astro::Coord::ECI::TLE->parse(), the status will be set based on the
 internal status table in Astro::Coord::ECI::TLE.
 
-B<Note> that Mike McCants' Iridium statuses appear to be no longer
-maintained, so his status codes (C<''> and C<'?'>) are being put through
-a deprecation cycle. In 6 months they will warn on the first use; 6
-months after that they will warn on every use, and 6 months after that
-they will become fatal.
+B<Note> that Mike McCants' Iridium statuses are no longer maintained, so
+his status codes (C<''> and C<'?'>) are being put through a deprecation
+cycle. In 6 months they will warn on the first use; 6 months after that
+they will warn on every use, and 6 months after that they will become
+fatal.
 
 =item zone (number or string)
 
