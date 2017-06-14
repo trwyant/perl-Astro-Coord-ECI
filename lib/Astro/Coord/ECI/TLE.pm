@@ -8786,7 +8786,7 @@ sub _next_elevation_screen {
                'comment' => '',
                'id' => '25345',
                'name' => 'Iridium 74',
-               'status' => 1,
+               'status' => 2,
                'type' => 'iridium'
              },
   '25346' => {
