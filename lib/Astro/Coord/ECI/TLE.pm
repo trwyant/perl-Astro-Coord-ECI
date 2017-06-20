@@ -8781,14 +8781,6 @@ sub _next_elevation_screen {
                'status' => 2,
                'type' => 'iridium'
              },
-  '25345' => {
-               'class' => 'Astro::Coord::ECI::TLE::Iridium',
-               'comment' => '',
-               'id' => '25345',
-               'name' => 'Iridium 74',
-               'status' => 2,
-               'type' => 'iridium'
-             },
   '25346' => {
                'class' => 'Astro::Coord::ECI::TLE::Iridium',
                'comment' => '',
@@ -8964,7 +8956,7 @@ sub _next_elevation_screen {
                'name' => 'Iridium 98',
                'status' => 0,
                'type' => 'iridium'
-             }
+             },
 );
 
 # The following is all the Celestrak visual list that have magnitudes in
