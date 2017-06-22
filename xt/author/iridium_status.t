@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 19, 19, 5, 2017 );
+my $asof = time_gm( 0, 0, 0, 22, 5, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -261,10 +261,17 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 19 May 2017 **</strong></p>
+<p align="center"><strong>** Updated 21 June 2017 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(11 June 2017) <strong>The orbit of Iridium 74
+(25345, 1998-032D) was lowered rapidly starting at the beginning
+of June 2017, and it decayed on 11 June 2017.<br>
+</strong>Iridium 74 had been &quot;spare&quot; in orbital place 1
+for many years, evidently fully controllable, but operationally
+unusable.</p>
 
 <p align="left">(17 May 2017) The orbit of Iridium 18 (24872,
 1997-034D has been lowered by 15km and it is presumably being
@@ -341,8 +348,7 @@ Failures</a>.</p>
 
 <pre>Orbital  &lt;-------------- Operational satellites --------------&gt;  Spares
 Plane
-Plane 1:  <a href="iridium74and21.htm">21</a>   72   75   70   62   14   64   65   66   67   68   <a
-href="iridium74and21.htm">74</a> 					(note: Iridium 74 is probably a partial failure)
+Plane 1:  <a href="iridium74and21.htm">21</a>   72   75   70   62   14   64   65   66   67   68      					
 Plane 2:  22   <a href="iridium94.htm">94</a>   76   25   23   46   47   20   49   <a
 href="iridium11and26.htm">11</a>    3          				(note: Iridium 23 is probably a partial failure)
 Plane 3:  55   <a href="iridium28and95.htm">95</a>   45   <a
@@ -359,7 +365,7 @@ Plane 6: <strong>102  112  104  114  103  109  106</strong>   80   98   41 <stro
 <pre>Original &lt;----- Failed -----&gt;                           &lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
 Orbital  (but still in orbit)                            (decayed)
 Plane                                	          <em>     </em>
-Plane 1:  73t  63
+Plane 1:  73t  63                                       74d           (Iridium 74 was deliberately de-orbited. It was probably already a partial failure))
 Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           	 	        48d
 Plane 3:  <a href="iridium28and95.htm">28</a>   29<font
 color="#FF0000">   </font><a href="iridium33collision.htm"><font
