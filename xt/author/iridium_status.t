@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 0, 22, 5, 2017 );
+my $asof = time_gm( 0, 0, 12, 29, 5, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -261,83 +261,29 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 21 June 2017 **</strong></p>
+<p align="center"><strong>** Updated 29 June 2017 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
 
+<p align="left">(25 June 2017) The second batch of 10 Iridium
+Next satellites were successfully launched to orbital plane 3.
+Apparently 5 satellites are to remain in orbital plane 3, while
+the remaining 5 will be drifted to adjacent planes.</p>
+
+<p align="left">(mid-June 2017) <a href="iridium7and51.htm">Iridium
+51 (25262, 1998-018A)</a>, which had been paired wth Iridium 6
+(24794. 1997-020C) since October 2014, was moved within orbital
+plane 4 to be paired once again with <a href="iridium7and51.htm">Iridium
+7 (24793, 1997-020B)</a>. This is possibly a consequence of a
+further significant failure of either Iridium 6 or Iridium 7.</p>
+
 <p align="left">(11 June 2017) <strong>The orbit of Iridium 74
 (25345, 1998-032D) was lowered rapidly starting at the beginning
 of June 2017, and it decayed on 11 June 2017.<br>
-</strong>Iridium 74 had been &quot;spare&quot; in orbital place 1
+</strong>Iridium 74 had been &quot;spare&quot; in orbital plane 1
 for many years, evidently fully controllable, but operationally
 unusable.</p>
-
-<p align="left">(17 May 2017) The orbit of Iridium 18 (24872,
-1997-034D has been lowered by 15km and it is presumably being
-retained as a spare for plane 6.</p>
-
-<p align="left">(12 May 2017) The orbit of Iridium 77 (25471,
-1998-051E) has been lowered by 15km and it is presumably being
-retained as a spare for plane 6.<br>
-(11 May 2017) <strong>Iridium 43 (25039, 1997-069A) is being
-de-orbited.</strong></p>
-
-<p align="left">(04 May 2017) It is now clear that Iridium 98
-(27451, 2002-031B), previously at Plane 6, Slot 2, which was
-moved around the plane to Plane 6, Slot 9. has now taken over
-from Iridum 82 (25467, 1998-051A).<br>
-(04 May 2017) <strong>Iridium 82 (25467, 1998-051A) is being
-de-orbited.<br>
-</strong>It is now clear that Iridium 80 (25469, 1998-051C),
-previously at Plane 6, Slot 5 which was moved around the plane to
-Plane 6. Slot 8, has now taken over from Iridum 81 (25468,
-1998-051B) .<strong> <br>
-</strong>- The orbit of Iridium 81 has been lowered by 15km and
-it is presumably being retained as a spare for plane 6.</p>
-
-<p align="left"><strong>** The first eight Iridium Next
-satellites are now in service **<br>
-</strong><em><strong>Note that the Iridium Next satellites are
-not expected to produce flares from the Main Mission Antenna in
-the same way as the original Iridium satellites.</strong></em></p>
-
-<p>Iridium 111 (2017-003K) is <strong>in service</strong> at
-Plane 6. Slot 11, replacing Iridium 43 (25039, 1997-069A).<br>
-- Iridium 43 initially remained near its previous orbital
-position<br>
-Iridium 102 (2017-003D) is <strong>in service</strong> at Plane
-6. Slot 1, replacing Iridium 18 (24872, 1997-034D).<br>
-- Iridium 18 initially remained near its previous orbital
-position.<br>
-Iridium 112 (2017-003J) is <strong>in service</strong> at Plane
-6. Slot 2, replacing Iridium 98 (27451, 2002-031B). <br>
-- The orbit of Iridium 98 was lowered by 5km allowing it to move
-to another slot in plane 6.<br>
-Iridium 104 (2017-003F) is <strong>in service</strong> at Plane
-6. Slot 3, replacing Iridium 40 (25041, 1997-069C). <strong><u><br>
-</u></strong>(07 April 2017) <strong>Iridium 40 (25041,
-1997-069C) is being de-orbited.<br>
-</strong>Iridium 114 (2017-003G) is <strong>in service</strong>
-at Plane 6. Slot 4, replacing Iridium 15 (24869, 1997-034A). <strong><br>
-</strong>- The orbit of Iridium 15 has been lowered by 15km and
-it is presumably being retained as a spare for plane 6.<br>
-Iridium 103 (2017-003B) is <strong>in service</strong> at Plane
-6. Slot 5, replacing Iridium 80 (25469, 1998-051C). <strong><br>
-</strong>- The orbit of Iridium 80 has been raised by 10km
-allowing it to move to another slot in plane 6..<br>
-Iridium 109 (2017-003C) is <strong>in service</strong> at Plane
-6. Slot 6, replacing Iridium 77 (25471, 1998-051E).<br>
-- Iridium 77 initially remained near its previous orbital
-position<br>
-Iridium 106 (2017-003A) is <strong>in service</strong> at Plane
-6, Slot 7.<br>
-(First generation Iridium satellites remain active in Slot 8,
-Slot 9 and Slot 10 of Plane 6)</p>
-
-<p><strong>Iridium 105 (2017-003E) and Iridium 108 (2017-003H)
-remain in the insertion orbit, but have now started migrating
-from Orbital Plane 6 towards Orbital Plane 5</strong></p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
 my <a href="iridium_launch.htm">Iridium Launch Chronology</a>.
@@ -353,10 +299,10 @@ Plane 2:  22   <a href="iridium94.htm">94</a>   76   25   23   46   47   20   49
 href="iridium11and26.htm">11</a>    3          				(note: Iridium 23 is probably a partial failure)
 Plane 3:  55   <a href="iridium28and95.htm">95</a>   45   <a
 href="iridium30and31.htm">31</a>   <a href="iridium30and31.htm">30</a>   32   <a
-href="iridium33collision.htm">91</a>   <em>  </em>   58   59   60   					
+href="iridium33collision.htm">91</a>   <em>  </em>   58   59   60  <strong>(117, 126, 115, 123, 113, 120, 124, 118, 121, 118)</strong> 					
 Plane 4:  19   34   35   <a href="iridium36and97.htm">97</a>    <a
-href="iridium5and51.htm">5</a>  6/51   <a
-href="iridium7and51.htm">7</a>    8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
+href="iridium5and51.htm">5</a>    <em>6</em>  <a
+href="iridium7and51.htm">7</a>/51   8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
 Plane 5:  50   56   52   53   <a href="iridium9and84.htm">84</a>   10   54   12   13   83   <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
 Plane 6: <strong>102  112  104  114  103  109  106</strong>   80   98   41 <strong> 111</strong>   (18)<strong> </strong>(15) (81) (77) <strong>(plus 108, 105 now migrating from Plane 6 towards plane 5)
@@ -437,6 +383,72 @@ Spacecom as Iridium 20, and correctly tracked, but under 25577
 which originally belonged to (the second) Iridium 11. </p>
 
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
+
+<p align="left">(17 May 2017) The orbit of Iridium 18 (24872,
+1997-034D has been lowered by 15km and it is presumably being
+retained as a spare for plane 6.</p>
+
+<p align="left">(12 May 2017) The orbit of Iridium 77 (25471,
+1998-051E) has been lowered by 15km and it is presumably being
+retained as a spare for plane 6.<br>
+(11 May 2017) <strong>Iridium 43 (25039, 1997-069A) is being
+de-orbited.</strong></p>
+
+<p align="left">(04 May 2017) It is now clear that Iridium 98
+(27451, 2002-031B), previously at Plane 6, Slot 2, which was
+moved around the plane to Plane 6, Slot 9. has now taken over
+from Iridum 82 (25467, 1998-051A).<br>
+(04 May 2017) <strong>Iridium 82 (25467, 1998-051A) is being
+de-orbited.<br>
+</strong>It is now clear that Iridium 80 (25469, 1998-051C),
+previously at Plane 6, Slot 5 which was moved around the plane to
+Plane 6. Slot 8, has now taken over from Iridum 81 (25468,
+1998-051B) .<strong> <br>
+</strong>- The orbit of Iridium 81 has been lowered by 15km and
+it is presumably being retained as a spare for plane 6.</p>
+
+<p align="left"><strong>** The first eight Iridium Next
+satellites are now in service **<br>
+</strong><em><strong>Note that the Iridium Next satellites are
+not expected to produce flares from the Main Mission Antenna in
+the same way as the original Iridium satellites.</strong></em></p>
+
+<p>Iridium 111 (2017-003K) is <strong>in service</strong> at
+Plane 6. Slot 11, replacing Iridium 43 (25039, 1997-069A).<br>
+- Iridium 43 initially remained near its previous orbital
+position<br>
+Iridium 102 (2017-003D) is <strong>in service</strong> at Plane
+6. Slot 1, replacing Iridium 18 (24872, 1997-034D).<br>
+- Iridium 18 initially remained near its previous orbital
+position.<br>
+Iridium 112 (2017-003J) is <strong>in service</strong> at Plane
+6. Slot 2, replacing Iridium 98 (27451, 2002-031B). <br>
+- The orbit of Iridium 98 was lowered by 5km allowing it to move
+to another slot in plane 6.<br>
+Iridium 104 (2017-003F) is <strong>in service</strong> at Plane
+6. Slot 3, replacing Iridium 40 (25041, 1997-069C). <strong><u><br>
+</u></strong>(07 April 2017) <strong>Iridium 40 (25041,
+1997-069C) is being de-orbited.<br>
+</strong>Iridium 114 (2017-003G) is <strong>in service</strong>
+at Plane 6. Slot 4, replacing Iridium 15 (24869, 1997-034A). <strong><br>
+</strong>- The orbit of Iridium 15 has been lowered by 15km and
+it is presumably being retained as a spare for plane 6.<br>
+Iridium 103 (2017-003B) is <strong>in service</strong> at Plane
+6. Slot 5, replacing Iridium 80 (25469, 1998-051C). <strong><br>
+</strong>- The orbit of Iridium 80 has been raised by 10km
+allowing it to move to another slot in plane 6..<br>
+Iridium 109 (2017-003C) is <strong>in service</strong> at Plane
+6. Slot 6, replacing Iridium 77 (25471, 1998-051E).<br>
+- Iridium 77 initially remained near its previous orbital
+position<br>
+Iridium 106 (2017-003A) is <strong>in service</strong> at Plane
+6, Slot 7.<br>
+(First generation Iridium satellites remain active in Slot 8,
+Slot 9 and Slot 10 of Plane 6)</p>
+
+<p><strong>Iridium 105 (2017-003E) and Iridium 108 (2017-003H)
+remain in the insertion orbit, but have now started migrating
+from Orbital Plane 6 towards Orbital Plane 5</strong></p>
 
 <p>Iridium 111 (2017-003K) was raised to the operational orbit at
 Plane 6. Slot 11, a few seconds behind Iridium 43 (25039,
