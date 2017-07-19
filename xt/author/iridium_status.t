@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
     ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 12, 29, 5, 2017 );
+my $asof = time_gm( 0, 0, 22, 15, 6, 2017 );
 foreach (["Mike McCants' Iridium status",
 	'http://www.prismnet.com/~mmccants/tles/iridium.html',
 	$asof,
@@ -261,10 +261,21 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 29 June 2017 **</strong></p>
+<p align="center"><strong>** Updated 15 July 2017 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(15 July 2017) Iridium 123 (42804, 2017-039B) has
+been raised to the operational orbit at Plane 3, Slot 5, a few
+seconds behind Iridium 31 (24950, 1997-051G).<br>
+(13 July 2017) Iridium 121 (42812, 2017-039K) has been raised to
+the operational orbit to fill the gap at Plane 3, Slot 8, which
+had been vacant since the failure of Iridium 57 (25273,
+1998-019B) in May 2016.<br>
+Iridium 128 (42811, 2017-039J) has had its orbit raised, and
+appears to have started migrating towards operational plane 4.<br>
+Other satellites are in process of having their orbits raised.</p>
 
 <p align="left">(25 June 2017) The second batch of 10 Iridium
 Next satellites were successfully launched to orbital plane 3.
@@ -297,9 +308,10 @@ Plane
 Plane 1:  <a href="iridium74and21.htm">21</a>   72   75   70   62   14   64   65   66   67   68      					
 Plane 2:  22   <a href="iridium94.htm">94</a>   76   25   23   46   47   20   49   <a
 href="iridium11and26.htm">11</a>    3          				(note: Iridium 23 is probably a partial failure)
-Plane 3:  55   <a href="iridium28and95.htm">95</a>   45   <a
-href="iridium30and31.htm">31</a>   <a href="iridium30and31.htm">30</a>   32   <a
-href="iridium33collision.htm">91</a>   <em>  </em>   58   59   60  <strong>(117, 126, 115, 123, 113, 120, 124, 118, 121, 118)</strong> 					
+Plane 3:  55   <a href="iridium28and95.htm">95</a>   45 <a
+href="iridium30and31.htm">31</a>/<strong>123</strong> <a
+href="iridium30and31.htm">30</a>   32   <a
+href="iridium33collision.htm">91</a>  <strong>121</strong>   58   59   60  <strong>(117, 126, 115, 113, 120, 124, 118, 128)</strong> 					
 Plane 4:  19   34   35   <a href="iridium36and97.htm">97</a>    <a
 href="iridium5and51.htm">5</a>    <em>6</em>  <a
 href="iridium7and51.htm">7</a>/51   8   96   37   61   					(note: Iridiums 6, 7 and 51 are probably partial failures)
