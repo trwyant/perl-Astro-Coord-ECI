@@ -8967,7 +8967,7 @@ sub _next_elevation_screen {
 #
 #   $ eg/visual -merge
 #
-# Last-Modified: Wed, 12 Jul 2017 18:14:30 GMT
+# Last-Modified: Mon, 31 Jul 2017 17:37:35 GMT
 
 %magnitude_table = (
   '00694' => 3.5,
