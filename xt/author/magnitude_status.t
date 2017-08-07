@@ -27,9 +27,19 @@ is last_modified( mccants => 'vsnames' ),
     'Thu, 25 May 2017 00:30:11 GMT',
     'McCants vsnames.mag Last-Modified';
 
+=begin comment
+
 is last_modified( mccants => 'mcnames' ),
     'Thu, 25 May 2017 00:09:56 GMT',
     'McCants mcnames.mag Last-Modified';
+
+=end comment
+
+=cut
+
+is last_modified( mccants => 'quicksat' ),
+    'Thu, 25 May 2017 00:00:55 GMT',
+    'McCants qs.mag Last-Modified';
 
 done_testing;
 
