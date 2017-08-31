@@ -1,3 +1,19 @@
+0.082_01	2017-08-31	T. R. Wyant
+    Kelso marks 24949 Iridium 30 failed
+
+    Kelso adds 33411 to visual.txt.
+
+    Kelso adds 11251 METEOR 1-29 to visual.txt
+
+    Use qsmag instead of mcnames to suppliment magnitudes in the canned
+    magnitude table.  As of July 24 2017 mcnames appeared to be
+    double-compressed and corrupt besides. Both are maintained by Mike
+    McCants, but the former is input to his QuickSat program and so
+    likely to be less fragile. I hope. The mcnames file was eventually
+    corrected, but I am sticking with qsmag for now.
+
+    Kelso reports decay of Iridium 74.
+
 0.082		2017-06-14	T. R. Wyant
     Kelso reports Iridium 79 out of service.
 
