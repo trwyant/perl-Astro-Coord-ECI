@@ -20,7 +20,7 @@ EOD
 
 is last_modified(
     'http://celestrak.com/SpaceTrack/query/visual.txt' ),
-    'Mon, 04 Sep 2017 18:56:59 GMT',
+    'Fri, 08 Sep 2017 16:30:18 GMT',
     'Celestrak visual.txt Last-Modified';
 
 is last_modified( mccants => 'vsnames' ),
