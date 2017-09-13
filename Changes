@@ -1,10 +1,14 @@
-0.082_03	2017-09-05	T. R. Wyant
-    Kelso removed 38253 from visual.txt. Decayed 2017-08-18.
+0.083		2017-09-13	T. R. Wyant
 
-0.082_02	2017-09-04	T. R. Wyant
+    Add -decayed to eg/visual.
+    
+    This eliminates decayed bodies. I decided not to remove these from
+    the magnitude table because of historical interest.
+
+    Kelso removes 38253 from visual.txt. Decayed 2017-08-18.
+
     Kelso marks 25471 Iridium 77 failed
 
-0.082_01	2017-08-31	T. R. Wyant
     Kelso marks 24949 Iridium 30 failed
 
     Kelso adds 33411 to visual.txt.
