@@ -2309,11 +2309,8 @@ if (!$rslt->is_success) {
 #	status () - Show satellite status, fetching if necessary.
 #
 
-my @status_code_map;
-
 BEGIN {
     $cmdlgl{status} = [qw{name reload}];
-    @status_code_map = qw{ + S - D };
 }
 
 sub status {
@@ -2339,10 +2336,13 @@ if ($verb eq 'add' || $verb eq 'drop') {
   elsif ( $verb eq 'show' ) {
     my @data = Astro::Coord::ECI::TLE->status( 'show', @_ );
     @data = sort {$a->[3] cmp $b->[3]} @data if $cmdopt{name};
+    my $encoder = Astro::Coord::ECI::TLE::Iridium->can(
+	'__encode_operational_status' ) || sub { return $_[2] };
     foreach my $tle (@data) {
-	print <<eod;
-status add $tle->[0] $tle->[1] $status_code_map[$tle->[2]] '$tle->[3]' '$tle->[4]'
-eod
+	my $status = $encoder->( undef, status => $tle->[2] );
+	print <<"EOD";
+status add $tle->[0] $tle->[1] $status '$tle->[3]' '$tle->[4]'
+EOD
 	}
     }
   else {
