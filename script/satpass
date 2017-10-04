@@ -2312,8 +2312,8 @@ if (!$rslt->is_success) {
 my @status_code_map;
 
 BEGIN {
-$cmdlgl{status} = [qw{name reload}];
-@status_code_map = qw{+ S -};
+    $cmdlgl{status} = [qw{name reload}];
+    @status_code_map = qw{ + S - D };
 }
 
 sub status {

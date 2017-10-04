@@ -333,13 +333,16 @@ sub before_reblessing {
 This method returns true (in the Perl sense) if the object is capable
 of producing flares, and false otherwise. If the optional $spare
 argument is true, spares are considered capable of flaring, otherwise
-not.
+not. If C<$spare> is C<'all'>, then all objects are considered capable
+of flaring.
 
 =cut
 
 sub can_flare {
-    my $self = shift;
-    my $spare = shift;
+    my ( $self, $spare ) = @_;
+    defined $spare
+	and 'all' eq $spare
+	and return 1;
     my $status = $self->get ('status');
     return !$status || $spare && $status == $self->BODY_STATUS_IS_SPARE;
 }
@@ -1756,7 +1759,8 @@ able to produce predictable flares. The possible values are:
 
  0 => in service;
  1 => spare, or maneuvering;
- 2 => out of service, tumbling, et cetera.
+ 2 => out of service, tumbling, et cetera;
+ 3 => decayed.
 
 By default, the can_flare() method returns true only if the status is 0.
 But if given a true argument (e.g. can_flare(1)) it will also return true
