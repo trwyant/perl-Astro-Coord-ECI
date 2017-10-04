@@ -154,9 +154,10 @@ use constant MMAPHI => deg2rad (-130);	# The MMAs are at an angle of
 					# them "flat".
 use constant TWOPIOVER3 => TWOPI / 3;	# 120 degrees, in radians.
 
-use constant STATUS_IN_SERVICE => 0;
-use constant STATUS_SPARE => 1;
-use constant STATUS_TUMBLING => 2;
+use constant STATUS_IN_SERVICE	=> 0;
+use constant STATUS_SPARE	=> 1;
+use constant STATUS_TUMBLING	=> 2;
+use constant STATUS_DECAYED	=> 3;
 
 my %mutator = (
     algorithm => sub {
@@ -1621,6 +1622,7 @@ sub __parse_name {
     $encode_status[STATUS_IN_SERVICE]	= '+';
     $encode_status[STATUS_SPARE]	= 'S';
     $encode_status[STATUS_TUMBLING]	= '-';
+    $encode_status[STATUS_DECAYED]	= 'D';
 
     sub __encode_operational_status {
 ##	my ( $self, $name, $status ) = @_;
@@ -1644,6 +1646,9 @@ sub __parse_name {
 	'?'			=> STATUS_SPARE,
 	'S'			=> STATUS_SPARE,
 	's'			=> STATUS_SPARE,
+	'D'			=> STATUS_DECAYED,
+	STATUS_TUMBLING()	=> STATUS_TUMBLING,
+	STATUS_DECAYED()	=> STATUS_DECAYED,
     );
 
     sub __decode_operational_status {
