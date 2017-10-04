@@ -2917,7 +2917,7 @@ if (@_ && ref $_[0] eq 'ARRAY') {
     Astro::Coord::ECI::TLE->status (clear => 'iridium');
     foreach (@{$_[0]}) {
 	Astro::Coord::ECI::TLE->status (add => $_->[0], iridium =>
-	    $_->[4], $_->[1], $_->[5]);
+	    $_->[4], $_->[1], $_->[3]);
     }
 } else {
     confess <<eod;
