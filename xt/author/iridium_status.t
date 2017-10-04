@@ -28,126 +28,10 @@ my %mth;
 my $fail = 0;
 my $test = 0;
 my $ua = LWP::UserAgent->new(
-    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
+#    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 19, 3, 8, 2017 );
-foreach (["Mike McCants' Iridium status",
-	'http://www.prismnet.com/~mmccants/tles/iridium.html',
-	$asof,
-	mccants => <<'MCCANTS'],
-<html>
-<head>
-<title>
-Status for Iridium payloads
-</title>
-</head>
-
-<body>
-<h2><center>Status for Iridium payloads</center></h2>
-<p>
-Note: this page is no longer maintained.
-<pre>
-
-Iridium status as of Novenber, 2012
-===================================
-
-Iridiums not listed in the following table are thought to be stable
-in orbit and capable of generating flares.
-
-Nov. 29, 2000: Iridium 79 (NCat 25470) decayed.
-Dec. 30, 2000: Iridium 85 (NCat 25529) decayed.
-May 5, 2001:   Iridium 48 (NCat 25107) decayed.
-Jan. 31, 2002: Iridium 27 (NCat 24947) decayed.
-Mar. 11, 2003: Iridium 9 (NCat 24838) decayed.
-Jan. 29, 2004: Spacecom exchanged the names for objects 25577
-               (now Iridium 20) and 25578 (now Iridium 11).
-Aug. 2003:     Iridium 38 failed.
-June 2004:     Iridiums 2, 38, 69 and 73 were changed to "failed".
-Apr. 24, 2005: Iridium 16 has been replaced by Iridium 86.
-June 14, 2005: Iridium 16 has been seen tumbling - changed to "tum".
-June 2005:     Iridium 98 has changed its inclination so that it will
-               drift between planes.
-Aug. 2005:     Iridium 77 has been maneuvered into the orbital spot
-               for Iridium 17.  Presumably, Iridium 17 has failed.
-Oct. 2005:     Iridium 90 has changed its inclination so that it will
-               drift between planes.
-Jan. 2006:     Spacecom has switched the names for Iridium 91 and Iridium 90
-Jan. 10, 2006: Iridium 74 has been moved into a lower orbit and Iridium 21
-               was moved to take its place.
-Jan. 10, 2007: From January 5 to January 9, 2007, Iridium 97 was moved from
-               its lower orbit to an orbit "next to" Iridium 36.
-Mar. 6, 2007:  Iridium 36 has not had an orbit maintenance maneuver since
-               January and was observed to flash, so I assume it has failed.
-May 4, 2007:   Iridium 98 has changed its inclination so that it is now
-               a spare in its new plane.
-Jan. 22, 2008: Iridium 90 has changed its inclination so that it is now
-               a spare in its new plane.
-Jul. 19, 2008: Unusual changes in mean motion by Iridium 28
-Jul. 26, 2008: Iridium 95 moved to replace Iridium 28
-Dec. 22, 2008: It is clear that Iridium 28 was no longer being controlled
-               as of about Sep. 20, 2008 - probably since July 2008
-Feb. 10, 2009: Collision between Iridium 33 and Cosmos 2251
-Mar. 2, 2009:  Iridium 91 was placed into service to replace Iridium 33
-Nov. 3, 2010:  Iridium 11 was placed into service next to Iridium 23
-Aug. 8, 2011:  Iridium 26 apparently failed.  Replaced by Iridium 11.
-July, 2012:    Iridium 51 was moved next to Iridium 7
-July 20, 2012: Iridium 4 is no longer station keeping
-Nov. 13, 2012: Iridium 94 was placed into service next to Iridium 23.
-
- NCat    Name           Status   Comment
- 24796   Iridium 4      unc      Failed? No longer station keeping after July 20, 2012
- 24836   Iridium 914    tum      Failed; was called Iridium 14
- 24841   Iridium 16     tum      Removed from operation about April 7, 2005
- 24842   Iridium 911    tum      Failed; was called Iridium 11
- 24870   Iridium 17     tum      Failed in August 2005
- 24871   Iridium 920    tum      Failed; was called Iridium 20
- 24873   Iridium 921    tum      Failed; was called Iridium 21
- 24906   Iridium 23              Partial failure? in November 2010
- 24903   Iridium 26     unc      Apparently failed in August 2011.
- 24946   Iridium 33     tum      Destroyed by a collision on Feb. 10, 2009
- 24948   Iridium 28     unc      Assumed failed about July 19, 2008
- 24967   Iridium 36     tum      Failed in January 2007
- 25043   Iridium 38     tum      Failed in August 2003
- 25078   Iridium 44     tum      Failed
- 25105   Iridium 24     tum      Failed
- 25262   Iridium 51              Moved next to Iridium 7 in July, 2012
- 25319   Iridium 69     tum      Failed
- 25320   Iridium 71     tum      Failed
- 25344   Iridium 73     tum      Failed
- 25345   Iridium 74     ?        Removed from operation about January 8, 2006
- 25527   Iridium 2      tum      Failed
- 25577   Iridium 20              was called Iridium 11
- 25578   Iridium 11              was called Iridium 20
- 25777   Iridium 14     ?        Spare   was called Iridium 14A
- 25778   Iridium 21              Replaced Iridium 74   was called Iridium 21A
- 27372   Iridium 91              Replaced Iridium 33 about Mar. 2, 2009   was called Iridium 90
- 27373   Iridium 90     ?        Spare (new plane Jan. 2008)   was called Iridium 91
- 27374   Iridium 94              Next to Iridium 23
- 27375   Iridium 95              Replaced Iridium 28 about July 26, 2008
- 27376   Iridium 96     ?        Inclination 87.2 - migrating between planes
- 27450   Iridium 97              Replaced Iridium 36 on Jan. 10, 2007
- 27451   Iridium 98     ?        Spare (new plane May 2007)
-
-Status  Meaning
-------  -------
-blank   Object is operational
-
-tum     tumbling - no flares, but flashes seen on favorable transits.
-
-unc     uncontrolled
-
-?       controlled, but not at operational altitude - flares may be unreliable.
-
-===================================
-
-Iridium Constellation Status information by Rod Sladen:
-<a href="http://www.rod.sladen.org.uk/iridium.htm">Iridium Status</a>
-
-===================================
-</pre>
-</body>
-</html>
-MCCANTS
+my $asof = time_gm( 0, 0, 23, 2, 9, 2017 );
+foreach (
 	["T. S. Kelso's Iridium list",
 	'http://celestrak.com/SpaceTrack/query/iridium.txt',
 	$asof,
@@ -227,7 +111,6 @@ MCCANTS
 25467IRIDIUM 82 [-]
 25468IRIDIUM 81 [+]
 25469IRIDIUM 80 [+]
-25471IRIDIUM 77 [-]
 25527IRIDIUM 2 [-]
 25528IRIDIUM 86 [+]
 25530IRIDIUM 84 [+]
