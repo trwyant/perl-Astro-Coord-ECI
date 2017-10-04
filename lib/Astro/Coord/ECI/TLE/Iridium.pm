@@ -154,10 +154,10 @@ use constant MMAPHI => deg2rad (-130);	# The MMAs are at an angle of
 					# them "flat".
 use constant TWOPIOVER3 => TWOPI / 3;	# 120 degrees, in radians.
 
-use constant STATUS_IN_SERVICE	=> 0;
-use constant STATUS_SPARE	=> 1;
-use constant STATUS_TUMBLING	=> 2;
-use constant STATUS_DECAYED	=> 3;
+use constant BODY_STATUS_IS_OPERATIONAL	=> 0;
+use constant BODY_STATUS_IS_SPARE	=> 1;
+use constant BODY_STATUS_IS_TUMBLING	=> 2;
+use constant BODY_STATUS_IS_DECAYED	=> 3;
 
 my %mutator = (
     algorithm => sub {
@@ -341,7 +341,7 @@ sub can_flare {
     my $self = shift;
     my $spare = shift;
     my $status = $self->get ('status');
-    return !$status || $spare && $status == $self->STATUS_SPARE;
+    return !$status || $spare && $status == $self->BODY_STATUS_IS_SPARE;
 }
 
 
@@ -1619,10 +1619,10 @@ sub __parse_name {
 
 {
     my @encode_status;
-    $encode_status[STATUS_IN_SERVICE]	= '+';
-    $encode_status[STATUS_SPARE]	= 'S';
-    $encode_status[STATUS_TUMBLING]	= '-';
-    $encode_status[STATUS_DECAYED]	= 'D';
+    $encode_status[BODY_STATUS_IS_OPERATIONAL]	= '+';
+    $encode_status[BODY_STATUS_IS_SPARE]	= 'S';
+    $encode_status[BODY_STATUS_IS_TUMBLING]	= '-';
+    $encode_status[BODY_STATUS_IS_DECAYED]	= 'D';
 
     sub __encode_operational_status {
 ##	my ( $self, $name, $status ) = @_;
@@ -1630,7 +1630,7 @@ sub __parse_name {
 	defined $status
 	    or $status = $self->get( 'status' );
 	defined $encode_status[ $status ]
-	    or return STATUS_TUMBLING;
+	    or return BODY_STATUS_IS_TUMBLING;
 	return $encode_status[ $status ];
     }
 }
@@ -1639,24 +1639,24 @@ sub __parse_name {
 {
 
     my %status_map = (
-	STATUS_IN_SERVICE()	=> STATUS_IN_SERVICE,
-	''			=> STATUS_IN_SERVICE,
-	'+'			=> STATUS_IN_SERVICE,
-	STATUS_SPARE()		=> STATUS_SPARE,
-	'?'			=> STATUS_SPARE,
-	'S'			=> STATUS_SPARE,
-	's'			=> STATUS_SPARE,
-	'D'			=> STATUS_DECAYED,
-	STATUS_TUMBLING()	=> STATUS_TUMBLING,
-	STATUS_DECAYED()	=> STATUS_DECAYED,
+	BODY_STATUS_IS_OPERATIONAL()	=> BODY_STATUS_IS_OPERATIONAL,
+	''			=> BODY_STATUS_IS_OPERATIONAL,
+	'+'			=> BODY_STATUS_IS_OPERATIONAL,
+	BODY_STATUS_IS_SPARE()		=> BODY_STATUS_IS_SPARE,
+	'?'			=> BODY_STATUS_IS_SPARE,
+	'S'			=> BODY_STATUS_IS_SPARE,
+	's'			=> BODY_STATUS_IS_SPARE,
+	'D'			=> BODY_STATUS_IS_DECAYED,
+	BODY_STATUS_IS_TUMBLING()	=> BODY_STATUS_IS_TUMBLING,
+	BODY_STATUS_IS_DECAYED()	=> BODY_STATUS_IS_DECAYED,
     );
 
     sub __decode_operational_status {
 	my ( $value ) = @_;
 	defined $value
-	    or return STATUS_IN_SERVICE;;
+	    or return BODY_STATUS_IS_OPERATIONAL;;
 	defined $status_map{$value}
-	    or return STATUS_TUMBLING;
+	    or return BODY_STATUS_IS_TUMBLING;
 	return $status_map{$value};
     }
 }
