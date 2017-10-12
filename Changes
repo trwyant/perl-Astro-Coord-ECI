@@ -1,4 +1,5 @@
-0.083_01	2017-10-04	T. R. Wyant
+0.084		2017-10-12	T. R. Wyant
+
     Add support for decayed Iridium satellites:
 
     * Carry them in canned status table
