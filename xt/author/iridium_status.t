@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 0, 29, 9, 2017 );
+my $asof = time_gm( 0, 0, 16, 2, 10, 2017 );
 foreach (
 	["T. S. Kelso's Iridium list",
 	'http://celestrak.com/SpaceTrack/query/iridium.txt',
@@ -144,10 +144,19 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 28 October 2017 **</strong></p>
+<p align="center"><strong>** Updated 2 November 2017 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(1 November 2017) Iridium 127 (42956, 2017-061B)
+has entered the operational constellation at Plane 4, Slot 7, a
+few seconds behind Iridium 51 (25262, 1998-018A)<br>
+Note: Iridium 7 (24793, 1997-020B), which was paired with Iridium
+51, appears to be drifting away from Plane 4, Slot 7.</p>
+
+<p align="left">(1 November 2017): <strong>The process of
+de-orbiting Iridium 8 (24792, 1997-020A) has started.</strong></p>
 
 <p align="left">(28 October 2017) Iridium 133 (42955, 2017-061A)
 has entered the operational constellation at Plane 4, Slot 8, a
@@ -184,8 +193,7 @@ href="iridium11and26.htm">11</a>     3          				(note: Iridium 23 is probabl
 Plane 3: <strong>117</strong>    <a href="iridium28and95.htm">95</a>    45   <strong>123</strong>   <strong>126</strong>    32    <a
 href="iridium33collision.htm">91</a>   <strong>121</strong>   <strong>118</strong>    59    60  <strong> </strong>(31) (55) (58) <strong>(plus 113, 120 and 115, 124 migrating towards plane 2 and/or plane 1; 128 migrating towards plane 4)</strong>					
 Plane 4:  19  34/<strong>122</strong>  35    <a
-href="iridium36and97.htm">97</a>     <a href="iridium5and51.htm">5</a>     <em>6</em>   <a
-href="iridium7and51.htm">7</a>/51 8/<strong>133</strong>   96    37    61   <strong>(107, 119, 125, 127, 129, 132, 136, 139)</strong> (note: Iridiums 6, 7 and 51 probably partial failures)
+href="iridium36and97.htm">97</a>     <a href="iridium5and51.htm">5</a>     <em>6</em>  51/<strong>127</strong> <strong>133</strong>    96    37    61   <strong>(107, 119, 125, 129, 132, 136, 139)</strong> (note: Iridiums 6 and 51 probably partial failures)
 Plane 5:  50    56    52    53    <a href="iridium9and84.htm">84</a>    10    54    12    13    83    <a
 href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
 Plane 6: <strong>102   112   104   114   103   109   106</strong>    80    98    41  <strong> 111</strong>   (18)<strong> </strong>(15) (81) <strong>(plus 108, 105 now migrating from Plane 6 towards plane 5)
@@ -199,7 +207,7 @@ Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>           	 	      
 Plane 3:  <a href="iridium28and95.htm">28</a>   29<font
 color="#FF0000">   </font><a href="iridium33collision.htm"><font
 color="#FF0000">33</font></a>t  57           		            27d  30d      (Iridium 30 deliberately de-orbited.)
-Plane 4:   4   <a href="iridium36and97.htm">36</a>t
+Plane 4:   4   <a href="iridium36and97.htm">36</a>t   7    8                                               (Iridium  8 deliberately de-orbited.)
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          		            85d   <a
 href="iridium9and84.htm">9</a>d      (Iridium  9 deliberately de-orbited.) <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
 Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
