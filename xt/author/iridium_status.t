@@ -30,7 +30,7 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 22, 17, 10, 2017 );
+my $asof = time_gm( 0, 0, 13, 23, 10, 2017 );
 foreach (
 	["T. S. Kelso's Iridium list",
 	'http://celestrak.com/SpaceTrack/query/iridium.txt',
@@ -143,10 +143,18 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 17 November 2017 **</strong></p>
+<p align="center"><strong>** Updated 23 November 2017 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(20 November 2017) The orbit of Iridium 6 (24794,
+1997-020C) has been lowered by 25km to the Engineering Orbit.</p>
+
+<p align="left">(18 November 2017) Iridium 97 (27450, 2002-031A)
+has been moved from Plane 4, Slot 4 (now covered by Iridium 107)
+to Plane 4, Slot 8, a few seconds ahead of Iridium 133 (42955,
+2017-061A)</p>
 
 <p align="left">(16 November 2017) <strong>The process of
 de-orbiting Iridium 5 (24795, 1997-020D) has started.</strong></p>
@@ -221,21 +229,21 @@ Failures</a>.</p>
 <pre>Orbital  &lt;------------------- Operational satellites -------------------&gt;  Spares
 Plane
 
-Plane 1:  <a href="iridium74and21.htm">21</a>    72    75    70    62    14    64    65    66    67    68   
+Plane 1:  <a href="iridium74and21.htm">21</a>    72    75    70    62    14    64    65    66    67    68     
 
 Plane 2:  22    <a href="iridium94.htm">94</a>    76    25    23    46    47    20    49    <a
-href="iridium11and26.htm">11</a>     3   (note: Iridium 23 is probably a partial failure)
-                                                                          <strong> (Iridiums 113, 120 and Iridiums 115, 124 migrating from Plane 3 towards plane 2 and/or plane 1</strong>
+href="iridium11and26.htm">11</a>     3     (note: Iridium 23 is probably a partial failure)
+                                                                          <strong>   (Iridiums 113, 120 and Iridiums 115, 124 migrating from Plane 3 towards plane 2 and/or plane 1</strong>
 Plane 3: <strong>117</strong>    <a href="iridium28and95.htm">95</a>    45   <strong>123</strong>   <strong>126</strong>    32    <a
-href="iridium33collision.htm">91</a>   <strong>121</strong>   <strong>118</strong>    59    60  <strong> </strong>(31) (55) (58)
-                                                                           <strong>(Iridium 128 migrating from Plane 3 towards plane 4)</strong>
-Plane 4:19/<strong>119</strong> 34/<strong>122</strong> 35 <a
-href="iridium36and97.htm">97</a>/<strong>107</strong>  <strong>132</strong>  6/<strong>129</strong>  <strong>127</strong>   <strong>133</strong> 96/<strong>125</strong> 37/<strong>136</strong> 61/<strong>139</strong> (note: Iridium 6 probably partial failure)
+href="iridium33collision.htm">91</a>   <strong>121</strong>   <strong>118</strong>    59    60  <strong> </strong>  (31) (55) (58)
+                                                                           <strong>  (Iridium 128 migrating from Plane 3 towards plane 4)</strong>
+Plane 4:19/<strong>119</strong> 34/<strong>122</strong> 35 <strong>  107</strong>   <strong>132</strong>   <strong>129</strong>   <strong>127</strong> <a
+href="iridium36and97.htm">97</a>/<strong>133</strong> 96/<strong>125</strong> 37/<strong>136</strong> 61/<strong>139</strong> ((6)) (note: Iridium 6 probably partial failure)
 
 Plane 5:  50    56    52    53    <a href="iridium9and84.htm">84</a>    10    54    12    13    83    <a
-href="iridium16and86.htm">86</a>   <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-                                                                           <strong>(Iridium 108 and Iridium 105 now migrating from Plane 6 towards plane 5)</strong>
-Plane 6: <strong>102   112   104   114   103   109   106</strong>    80    98    41  <strong> 111</strong>   (18)<strong> </strong>(15) (81) <strong>
+href="iridium16and86.htm">86</a>     <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
+                                                                           <strong>  (Iridium 108 and Iridium 105 migrating from Plane 6 towards plane 5)</strong>
+Plane 6: <strong>102   112   104   114   103   109   106</strong>    80    98    41  <strong> 111</strong>     (18)<strong> </strong>(15) (81) <strong>
 </strong>                                                            </pre>
 
 <pre>Original &lt;----- Failed -----&gt;                             &lt;- Failed -&gt;    <em>Note that some of the failed</em> <em>satellites have drifted from the original orbital planes</em>
