@@ -30,7 +30,9 @@ my $test = 0;
 my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
-my $asof = time_gm( 0, 0, 13, 13, 0, 2018 );
+
+my $asof = time_gm( 0, 0, 13, 16, 0, 2018 );
+
 foreach (
 	["T. S. Kelso's Iridium list",
 	'http://celestrak.com/SpaceTrack/query/iridium.txt',
@@ -142,16 +144,25 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 13 January 2018 **</strong></p>
+<p align="center"><strong>** Updated 16 January 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
 
-<p align="left">(12 January 2018): <strong>The process of
-de-orbiting Iridium 37 (24968, 1997-056D) has started.</strong><br>
+<p align="left">(early January 2018): Iridium 128 (42811,
+2017-039J), which is still migrating from orbital plane 3, into
+which it was launched, towards orbital plane 4, has been raised
+to the operational altitude, and is presumably intended to cover
+Plane 4, Slot 3, currently occupied by Iridium 35 (24966,
+1997-056B).<br>
+(15 January 2018): Iridium 138 (43071, 2017-083B) has entered the
+operational constellation at Plane 2, Slot 9, a few seconds
+behind Iridium 49 (25108, 1997-082E).<br>
+(12 January 2018): <strong>The process of de-orbiting Iridium 37
+(24968, 1997-056D) has started.</strong><br>
 (12 January 2018): Iridium 130 (43073, 2017-083D) has entered the
 operational constellation at Plane 2, Slot 10, a few seconds
-behind Iridium 11 ( tracked as 25578, 1998-074B).<br>
+behind Iridium 11 (tracked as 25578, 1998-074B).<br>
 (11 January 2018): Iridium 131 (43079, 2017-083K) has entered the
 operational constellation at Plane 2, Slot 11, a few seconds
 behind Iridium 3 (25431, 1998-048A).<br>
@@ -185,14 +196,14 @@ Plane
 
 Plane 1:  <a href="iridium74and21.htm">21</a>    72    75    70    62    14    64    65    66    67    68     
                                                                              <strong>(Iridium 153 migrating from Plane 2 towards plane 1)</strong>
-Plane 2:22/<strong>134</strong>  <a href="iridium94.htm">94</a>    76    25    23    46    47    20    49  <a
-href="iridium11and26.htm">11</a>/<strong>130</strong> 3/<strong>131</strong>   (<strong>116, 135, 137, 138, 141, 151)</strong> (note: Iridium 23 is probably a partial failure)
+Plane 2:22/<strong>134</strong>  <a href="iridium94.htm">94</a>    76    25    23    46    47    20  49/<strong>138</strong> <a
+href="iridium11and26.htm">11</a>/<strong>130</strong> 3/<strong>131</strong>  (<strong>116, 135, 137, 141, 151)</strong> (note: Iridium 23 is probably a partial failure)
                                                                           <strong>   (Iridiums 113, 120 and Iridiums 115, 124 migrating from Plane 3 towards plane 2 and/or plane 1</strong>
 Plane 3: <strong>117</strong>    <a href="iridium28and95.htm">95</a>    45   <strong>123</strong>   <strong>126</strong>    32    <a
 href="iridium33collision.htm">91</a>   <strong>121</strong>   <strong>118</strong>    59    60  <strong> </strong>  (31) (55) (58)
-                                                                           <strong>  (Iridium 128 migrating from Plane 3 towards plane 4)</strong>
-Plane 4: <strong>119</strong>   <strong>122</strong>    35 <strong>  107</strong>   <strong>132</strong>   <strong>129</strong>   <strong>127</strong> <a
-href="iridium36and97.htm">97</a>/<strong>133</strong>  <strong>125</strong>   <strong>136</strong>   <strong>139</strong>     (61)
+                                                                           <strong>  </strong>
+Plane 4: <strong>119</strong>   <strong>122</strong> 35/<strong>128  107</strong>   <strong>132</strong>   <strong>129</strong>   <strong>127</strong> <a
+href="iridium36and97.htm">97</a>/<strong>133</strong>  <strong>125</strong>   <strong>136</strong>   <strong>139</strong>     (61) <strong>(Note that Iridium 128 is still in process of migrating from Plane 3 towards plane 4)</strong>
 
 Plane 5:  50    56    52    53    <a href="iridium9and84.htm">84</a>    10    54    12    13    83    <a
 href="iridium16and86.htm">86</a>     <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
