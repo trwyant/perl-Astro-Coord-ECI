@@ -453,7 +453,7 @@ sub time_set {
 	    + (SUN_C2_1 * $T + SUN_C2_0) * sin (2 * $M)
 	    + SUN_C3_0 * sin (3 * $M);
     my $O = $self->{_sun_geometric_longitude} = $L0 + $C;
-    my $omega = mod2pi (deg2rad (125.04 - 1934.156 * $T));
+    my $omega = mod2pi (deg2rad (125.04 - 1934.136 * $T));
     my $lambda = mod2pi ($O - deg2rad (0.00569 + 0.00478 * sin ($omega)));
     my $nu = $M + $C;
     my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
