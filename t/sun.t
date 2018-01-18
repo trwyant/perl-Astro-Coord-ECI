@@ -204,21 +204,21 @@ use constant ASTRONOMICAL_UNIT => 149_597_870; # Meeus, Appendix 1, pg 407
     my $sun = Astro::Coord::ECI::Sun->universal( $time );
     my $tolerance = 16 * 60 + 40;
 
-    my $hash = $sun->next_quarter_hash();
+    $sun->next_quarter();
     tolerance $sun->dynamical(), time_gm( 29, 34, 12, 20, 2, 2005 ),
-	$tolerance, "$hash->{almanac}{description} 2005", \&format_dyn;
+	$tolerance, 'March equinox 2005', \&format_dyn;
 
-    $hash = $sun->next_quarter_hash();
+    $sun->next_quarter();
     tolerance $sun->dynamical(), time_gm( 12, 47, 6, 21, 5, 2005 ),
-	$tolerance, "$hash->{almanac}{description} 2005", \&format_dyn;
+	$tolerance, 'June solstice 2005', \&format_dyn;
 
-    $hash = $sun->next_quarter_hash();
+    $sun->next_quarter();
     tolerance $sun->dynamical(), time_gm( 14, 24, 22, 22, 8, 2005 ),
-	$tolerance, "$hash->{almanac}{description} 2005", \&format_dyn;
+	$tolerance, 'September equinox 2005', \&format_dyn;
 
-    $hash = $sun->next_quarter_hash();
+    $sun->next_quarter();
     tolerance $sun->dynamical(), time_gm( 1, 36, 18, 21, 11, 2005 ),
-	$tolerance, "$hash->{almanac}{description} 2005", \&format_dyn;
+	$tolerance, 'December solstice 2005', \&format_dyn;
 }
 
 
