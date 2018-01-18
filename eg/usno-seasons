@@ -59,7 +59,7 @@ foreach my $usno ( @{ $data->{data} } ) {
     sayx '     Astro::Coord::ECI::Sun time ', format_time( $time ),
 	'; longitude ', format_lon( $lon );
     my ( $hr, $min ) = split qr<:>smx, $usno->{time};
-    $time = timegm( 30, $min, $hr, $usno->{day}, $usno->{month}-1,
+    $time = timegm( 0, $min, $hr, $usno->{day}, $usno->{month}-1,
 	$usno->{year} );
     ( undef, $lon ) = $sun->ecliptic( $time );
     sayx '    U. S. Naval Observatory time ', format_time( $time ),
@@ -118,9 +118,8 @@ longitude calculated by L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>
 for that time.
 
 B<Note> that the U. S. Naval Observatory only gives the times to the
-nearest minute. Because L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>
-carries the calculation to the nearest second, we arbitrarily set the
-seconds to C<30> when interpreting USNO times.
+nearest minute. We arbitrarily set the seconds to C<0> when interpreting
+USNO times.
 
 This script assumes the U. S. Naval Observatory's API returns the
 seasons in order by the time they occur. If this assumption is wrong,
