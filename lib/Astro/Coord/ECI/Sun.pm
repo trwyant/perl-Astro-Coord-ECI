@@ -50,7 +50,7 @@ package Astro::Coord::ECI::Sun;
 use strict;
 use warnings;
 
-our $VERSION = '0.088';
+our $VERSION = '0.088_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -678,14 +678,14 @@ the data type.
 =item iterate_for_quarters (Boolean)
 
 If this attribute is true, the C<next_quarter()> method uses the old
-(pre-[%% next_version %%]) algorithm.
+(pre-0.088_01) algorithm.
 
 If this attribute is false, the new algorithm is used.
 
 The default is C<undef>, i.e. false, because I believe the new algorithm
 to be more accurate for reasonably-current times.
 
-This attribute is new with version [%% next_version %%].
+This attribute is new with version 0.088_01.
 
 =back
 

@@ -1,3 +1,24 @@
+0.088_01	2018-01-22	T. R. Wyant
+    New algorithm for equinoxes and solstices.
+    
+    The previous algorithm was an iterative solution based on finding the
+    time at which the ecliptic longitude of the Sun has the correct value.
+    
+    The new algorithm is from Jean Meeus' "Astronomical Algorithms." 2nd
+    edition, chapter 27 ("Equinoxes and Solstices"), and should be more
+    accurate, at least for reasonably current times.
+    
+    If you want the old algorithm back, you can set new attribute
+    'iterate_for_quarters' to a true value.
+
+    Correct typo in calculation of Sun's postion. The correction
+    produced no change in the equinoxes and solstices calculated by
+    iteration.
+
+    Add eg/usno-seasons. This displays equinoxes and solstices for a
+    given year, both as computed by Astro::Coord::ECI::Sun and as
+    downloaded from the United States Naval Observatory.
+
 0.088		2018-01-16	T. R. Wyant
     Iridium 34 decayed January 8 2017. So marked in canned status.
 
