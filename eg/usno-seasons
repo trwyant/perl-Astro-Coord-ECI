@@ -25,6 +25,7 @@ sub sayx (@) {
 my %opt;
 
 GetOptions( \%opt,
+    qw{ iterate_for_quarters|iterate-for-quarters! },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
@@ -48,7 +49,9 @@ $resp->is_success()
 my $json = JSON->new()->utf8();
 my $data = $json->decode( $resp->content() );
 
-my $my_sun = Astro::Coord::ECI::Sun->new();
+my $my_sun = Astro::Coord::ECI::Sun->new(
+    iterate_for_quarters	=> $opt{iterate_for_quarters},
+);
 my $usno_sun = Astro::Coord::ECI::Sun->new();
 my $jan1 = timegm( 0, 0, 0, 1, 0, $year );
 $my_sun->universal( $jan1 );
