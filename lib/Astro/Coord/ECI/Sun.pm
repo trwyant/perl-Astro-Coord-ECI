@@ -391,7 +391,7 @@ sub next_quarter {
     $self->{iterate_for_quarters}
 	and goto &Astro::Coord::ECI::Mixin::next_quarter;
     my $time = $self->universal();
-    my $year = ( gmtime $time )[5] + 1900;
+    my $year = ( gmtime( $time ) )[5] + 1900;
     my $season;
     if ( defined $quarter ) {
 	# I can't think of an edge case that makes the first calculation
@@ -566,8 +566,11 @@ sub season {
     $self->{debug}
 	and print "Debug - JDE = $JDE\n";
     my $time = ( $JDE - JD_OF_EPOCH ) * SECSPERDAY;
+    # Note that gmtime() in the following needs the parens because it
+    # might have come from Time::y2038, which appears to take more than
+    # one argument -- even though, as I read it, its prototype is (;$).
     $self->{debug}
-	and print "Debug - dynamical date is ", scalar gmtime $time, "\n";
+	and print "Debug - dynamical date is ", scalar gmtime( $time ), "\n";
     return $time - dynamical_delta( $time );	# Not quite right.
 }
 
@@ -642,7 +645,7 @@ sub time_set {
     my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
 	    * AU;
     $self->{debug} and print <<eod;
-Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime $time]}
+Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime( $time )]}
     T  = $T
     L0 = @{[_rad2deg ($L0)]} degrees
     M  = @{[_rad2deg ($M)]} degrees
