@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 14, 27, 0, 2018 );
+my $asof = time_gm( 0, 0, 12, 30, 0, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -142,13 +142,16 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 26 January 2018 **</strong></p>
+<p align="center"><strong>** Updated 30 January 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
 
-<p align="left">(26 January 2018): <strong>The process of
-de-orbiting Iridium 49 (25108, 1997-082E) has started.</strong><br>
+<p align="left">(29 January 2018): Iridium 141 (43077, 2017-083H)
+has entered the operational constellation at Plane 2, Slot 2, a
+few seconds behind Iridium 94 (27374, 2002-005C).<br>
+(26 January 2018): <strong>The process of de-orbiting Iridium 49
+(25108, 1997-082E) has started.</strong><br>
 (26 January 2018): Iridium 116 (43072, 2017-083C) has entered the
 operational constellation at Plane 2, Slot 4, a few seconds
 behind Iridium 25 (24904, 1997-043B).<br>
@@ -209,8 +212,8 @@ Plane
 
 Plane 1:  <a href="iridium74and21.htm">21</a>    72    75    70    62    14    64    65    66    67    68     
                                                                              <strong>(Iridium 153 migrating from Plane 2 towards plane 1)</strong>
-Plane 2: <strong>134</strong>    <a href="iridium94.htm">94</a>    76 25/<strong>116</strong> 23/<strong>135</strong> 46/<strong>151</strong> 47    20   <strong>138</strong>  <a
-href="iridium11and26.htm">11</a>/<strong>130</strong> <strong>131</strong>     (<strong>137, 141)</strong> (note: Iridium 23 is probably a partial failure)
+Plane 2: <strong>134</strong>  <a href="iridium94.htm">94</a>/<strong>141</strong>  76 25/<strong>116</strong> 23/<strong>135</strong> 46/<strong>151</strong> 47    20   <strong>138</strong>  <a
+href="iridium11and26.htm">11</a>/<strong>130</strong> <strong>131</strong>     (<strong>137)</strong> (note: Iridium 23 is probably a partial failure)
                                                                           <strong>   (Iridiums 113, 120 and Iridiums 115, 124 migrating from Plane 3 towards plane 2 and/or plane 1</strong>
 Plane 3: <strong>117</strong>    <a href="iridium28and95.htm">95</a>    45   <strong>123</strong>   <strong>126</strong>    32    <a
 href="iridium33collision.htm">91</a>   <strong>121</strong>   <strong>118</strong>    59    60  <strong> </strong>  (31) (55) (58)
@@ -228,7 +231,7 @@ Plane 6: <strong>102   112   104   114   103   109   106</strong>    80    98   
 Orbital  (but still in orbit)                              (decayed)
 Plane                                	          <em>     </em>
 Plane 1:  73t  63                                           74d           (Iridium 74 deliberately de-orbited. It was probably already a partial failure.)
-Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>   22    3  49   	 	       48d           (Iridium 48 and Iridium 3 deliberately de-orbited.)
+Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>   22    3  49   	 	    48d           (Iridium 48, Iridium 3 and Iridium 49 deliberately de-orbited.)
 Plane 3:  <a href="iridium28and95.htm">28</a>   29<font
 color="#FF0000">   </font><a href="iridium33collision.htm"><font
 color="#FF0000">33</font></a>t  57           		            27d  30d      (Iridium 30 deliberately de-orbited.)
@@ -301,7 +304,7 @@ which originally belonged to (the second) Iridium 11. </p>
 <p><a name="Recent changes"><strong>Recent changes</strong></a>: </p>
 
 <p align="left">(14 December 2017): <strong>The process of
-de-orbiting Iridium 96 (27376, 2002-005E has started.</strong></p>
+de-orbiting Iridium 96 (27376, 2002-005E) has started.</strong></p>
 
 <p align="left">(by early December 2017): <br>
 The orbit of Iridium 61 (25263, 1998-018B) has been lowered by
