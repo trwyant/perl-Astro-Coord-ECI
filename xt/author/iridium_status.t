@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 0, 10, 1, 2018 );
+my $asof = time_gm( 0, 0, 1, 14, 1, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -142,13 +142,22 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 9 February 2018 **</strong></p>
+<p align="center"><strong>** Updated 13 February 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
 
-<p align="left">(8 February 2018): <strong>Iridium 3 (25431,
-1998-048A) decayed on 8 February 2018.</strong><br>
+<p align="left">(13 February 2018): <strong>Iridium 49 (25108,
+1997-082E) decayed on 13 February 2018.</strong><br>
+(11 February 2018): <strong>Iridium 43 (25039, 1997-069A) decayed
+on 11 February 2018.</strong><br>
+(10 February 2018): The orbit of Iridium 25 (24904, 1997-043B)
+has been lowered by 15km and it is presumably being retained as a
+spare for plane 2.<br>
+(10 February 2018): <strong>The process of de-orbiting Iridium 23
+(24906, 1997-043D) has started.</strong><br>
+(8 February 2018): <strong>Iridium 3 (25431, 1998-048A) decayed
+on 8 February 2018.</strong><br>
 (7 February 2018): <strong>The process of de-orbiting Iridium 46
 (tracked as 24905, 1997-043C) has started.</strong><br>
 (5 February 2018): It has been reported that 32 Iridium Next
@@ -223,7 +232,7 @@ Plane
 Plane 1:  <a href="iridium74and21.htm">21</a>     72     75     70     62     14     64     65     66     67     68     
                                                                              <strong>          (Iridium 153 migrating from Plane 2 towards plane 1)</strong>
 Plane 2: <strong>134</strong>/<a href="iridium11and26.htm">11</a> <a
-href="iridium94.htm">94</a>/<strong>141</strong> 76/<strong>137</strong> 25/<strong>116</strong> 23/<strong>135</strong> <strong>151</strong>     47     20    <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     
+href="iridium94.htm">94</a>/<strong>141</strong> 76/<strong>137</strong> <strong>116</strong>    <strong>135</strong>    <strong>151</strong>     47     20    <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     (25)
                                                                           <strong>             (Iridiums 113, 120 and Iridiums 115, 124 migrating from Plane 3 towards plane 2 and/or plane 1</strong>
 Plane 3: <strong>117</strong>     <a href="iridium28and95.htm">95</a>     45    <strong>123</strong>    <strong>126</strong>     32     <a
 href="iridium33collision.htm">91</a>    <strong>121</strong>    <strong>118</strong>     59     60  <strong> </strong>  (31) (55) (58)
@@ -241,7 +250,7 @@ Plane 6: <strong>102    112    104    114    103    109    106</strong>     80  
 Orbital  (but still in orbit)                                   (decayed)
 Plane                                	          <em>     </em>
 Plane 1:  73t  63                                               74d           (Iridium 74 deliberately de-orbited. It was probably already a partial failure.)
-Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>   22   49   46                      48d   3d      (Iridium 48, Iridium 3, Iridium 49 and Iridium 46 deliberately de-orbited.)
+Plane 2:  69t  24t  71t  <a href="iridium11and26.htm">26</a>   22   46   23                      48d   3d  49d (Iridium 48, Iridium 3, Iridium 4, Iridium 46 and Iridium 23 deliberately de-orbited.)
 Plane 3:  <a href="iridium28and95.htm">28</a>   29<font
 color="#FF0000">   </font><a href="iridium33collision.htm"><font
 color="#FF0000">33</font></a>t  57           		                27d  30d      (Iridium 30 deliberately de-orbited.)
@@ -249,7 +258,7 @@ Plane 4:   4   <a href="iridium36and97.htm">36</a>t   7   51    5   19   96   37
 Plane 5:   2t 914t 911t  <a href="iridium16and86.htm">16</a>t          		                85d   <a
 href="iridium9and84.htm">9</a>d      (Iridium  9 deliberately de-orbited.) <em>Iridium 2 has drifted far from</em> <em>its original launch plane, and continues to drift</em>
 Plane 6: 920t 921t  44t  <a href="iridium38and82.htm">38</a>t  <a
-href="iridium17and77.htm">17</a>t  42t  39   40   82   43       79d  77d      (Iridium 40, Iridium 82, Iridium 43, and Iridium 77 deliberately de-orbited.)</pre>
+href="iridium17and77.htm">17</a>t  42t  39   40   82            79d  77d  43d (Iridium 40, Iridium 82, Iridium 43, and Iridium 77 deliberately de-orbited.)</pre>
 
 <p>t indicates satellites that have been reported as tumbling out
 of control. </p>
