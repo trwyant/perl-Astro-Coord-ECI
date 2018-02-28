@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 2, 16, 1, 2018 );
+my $asof = time_gm( 0, 0, 22, 25, 1, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -139,10 +139,15 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 13 February 2018 **</strong></p>
+<p align="center"><strong>** Updated 25 February 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(20 February 2018): Iridium 105 (2017-003E) and
+Iridium 108 (2017-003H) have completed migration from Orbital
+Plane 6 to Orbital Plane 5, and are slowly being raised towards
+the operational orbit.</p>
 
 <p align="left">(13 February 2018): <strong>Iridium 49 (25108,
 1997-082E) decayed on 13 February 2018.</strong><br>
@@ -238,8 +243,9 @@ Plane 4: <strong>119</strong>    <strong>122</strong>  35/<strong>128   107</str
 href="iridium36and97.htm">97</a>/<strong>133</strong>   <strong>125</strong>    <strong>136</strong>    <strong>139</strong>     (61) <strong>(Note that Iridium 128 is still in process of migrating from Plane 3 towards plane 4)</strong>
 
 Plane 5:  50     56     52     53     <a href="iridium9and84.htm">84</a>     10     54     12     13     83     <a
-href="iridium16and86.htm">86</a>     <a href="iridium91.htm">90 (launched to plane 3, but has been migrated to plane 5)</a>
-                                                                           <strong>            (Iridium 108 and Iridium 105 migrating from Plane 6 towards plane 5)</strong>
+href="iridium16and86.htm">86</a>     <strong>(108, 105 migrated from Plane 6 to plane 5), </strong><a
+href="iridium91.htm">90 (launched to plane 3, but migrated to plane 5)</a>
+                                                                           <strong>           </strong>
 Plane 6: <strong>102    112    104    114    103    109    106</strong>     80     98     41   <strong> 111</strong>     (18)<strong> </strong>(15) (81) <strong>
 </strong>                                                            </pre>
 
