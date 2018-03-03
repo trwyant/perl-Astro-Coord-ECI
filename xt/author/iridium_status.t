@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 12, 1, 2, 2018 );
+my $asof = time_gm( 0, 0, 18, 2, 2, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -116,7 +116,7 @@ foreach (
 25778IRIDIUM 21 [+]
 27372IRIDIUM 91 [+]
 27373IRIDIUM 90 [B]
-27374IRIDIUM 94 [+]
+27374IRIDIUM 94 [P]
 27375IRIDIUM 95 [+]
 27376IRIDIUM 96 [P]
 27450IRIDIUM 97 [+]
