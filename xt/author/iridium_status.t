@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 17, 17, 2, 2018 );
+my $asof = time_gm( 0, 0, 10, 24, 2, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -42,9 +42,9 @@ foreach (
 24795IRIDIUM 5 [-]
 24796IRIDIUM 4 [-]
 24836IRIDIUM 914 [-]
-24837IRIDIUM 12 [+]
+24837IRIDIUM 12 [P]
 24839IRIDIUM 10 [+]
-24840IRIDIUM 13 [+]
+24840IRIDIUM 13 [P]
 24841IRIDIUM 16 [-]
 24842IRIDIUM 911 [-]
 24869IRIDIUM 15 [+]
@@ -102,7 +102,7 @@ foreach (
 25343IRIDIUM 72 [+]
 25344IRIDIUM 73 [-]
 25346IRIDIUM 75 [+]
-25432IRIDIUM 76 [+]
+25432IRIDIUM 76 [P]
 25467IRIDIUM 82 [-]
 25468IRIDIUM 81 [+]
 25469IRIDIUM 80 [+]
@@ -139,18 +139,35 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 17 March 2018 **</strong></p>
+<p align="center"><strong>** Updated 24 March 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
 
+<p align="left">(23 March 2018): The orbit of Iridium 12 (24837,
+1997-030B) has been lowered by 15km and it is presumably being
+retained as a spare for plane 5.</p>
+
+<p align="left">(22 March 2018) Iridium 128 (42811, 2017-039J) is
+reported as having entered service at Plane 4, Slot 3, replacing
+Iridium 35 (24966, 1997-056B). It has probably been in service
+for several weeks while still migrating.</p>
+
+<p align="left">(19 March 2018): Iridium 113 (42803, 2017-039A)
+and Iridium 120 (42805, 2017-039C) have completed migration from
+Orbital Plane 3 to Orbital Plane 2, and have been raised to the
+operational orbit as follows:<br>
+Iridium 120 (42805, 2017-039C) has entered the operational
+constellation at Plane 2, Slot 7, a few seconds behind Iridium 47
+(25106, 1997-082C).<br>
+Iridium 113 (42803, 2017-039A) has entered the operational
+constellation at Plane 2, Slot 8, a few seconds behind Iridium 20
+(25577, 1998-047A).<br>
+Iridiums 120 and 113 are reported as having entered service on 23
+March 2018.</p>
+
 <p align="left">(17 March 2018): <strong>The process of
 de-orbiting Iridium 13 (24840, 1997-030E) has started.</strong></p>
-
-<p align="left">(11 March 2018): Iridium 113 (42803, 2017-039A)
-and Iridium 120 (42805, 2017-039C) have completed migration from
-Orbital Plane 3 to Orbital Plane 2, and are been raised towards
-the operational orbit..</p>
 
 <p align="left">(10 March 2018): The orbit of Iridium 76 (25432,
 1998-048B) has been lowered by 15km and it is presumably being
@@ -176,7 +193,7 @@ constellation at Plane 5, Slot 8, a few seconds behind Iridium 12
 Iridium 108 (41924, 2017-003H) has entered the operational
 constellation at Plane 5, Slot 9, a few seconds behind Iridium 13
 (24840, 1997-030E).<br>
-Iridium 105 and 108 are reported as having entered service on 5
+Iridiums 105 and 108 are reported as having entered service on 5
 March 2018.</p>
 
 <p align="left">For a summary of the Iridium launch sequence, see
@@ -190,16 +207,16 @@ Failures</a>.</p>
 Plane
 
 Plane 1:  <a href="iridium74and21.htm">21</a>     72     75     70     62     14     64     65     66     67     68     
-                                                                             <strong>          (Iridium 153 migrating from Plane 2 towards Plane 1)</strong>
-Plane 2: <strong>134</strong>/<a href="iridium11and26.htm">11</a> <strong>141</strong>    <strong>137   </strong> <strong>116</strong>    <strong>135</strong>    <strong>151</strong>     47     20    <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     (25) (76) <strong>(Iridiums 113 and 120 have migrated from Plane 3 to Plane 2)</strong>
+                                                                             <strong>          (Iridium 153 is migrating from Plane 2 towards Plane 1)</strong>
+Plane 2: <strong>134</strong>/<a href="iridium11and26.htm">11</a> <strong>141</strong>    <strong>137   </strong> <strong>116</strong>    <strong>135</strong>    <strong>151</strong>  47/<strong>120</strong>  20/<strong>113</strong>  <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     (25) (76)<em> Note that Iridiums 113 and 120 were migrated from Plane 3 to Plane 2.</em>
                                                                           <strong>             (Iridiums 115 and 124 are migrating from Plane 3 towards Plane 2 and/or Plane 1</strong>)
 Plane 3: <strong>117</strong>     <a href="iridium28and95.htm">95</a>     45    <strong>123</strong>    <strong>126</strong>     32     <a
 href="iridium33collision.htm">91</a>    <strong>121</strong>    <strong>118</strong>     59     60  <strong> </strong>  (31) (55) (58)
 
-Plane 4: <strong>119</strong>    <strong>122</strong>  35/<strong>128   107</strong>   <strong> 132</strong>    <strong>129</strong>    <strong>127</strong>    <strong>133 </strong>   <strong>125</strong>    <strong>136</strong>    <strong>139</strong>     (97) (61) <strong>(Note that Iridium 128 is still in process of migrating from Plane 3 to Plane 4)</strong>
-
-Plane 5:  50     56     52     53     <a href="iridium9and84.htm">84</a>     10     54  12/<strong>105</strong>   <strong>108</strong>     83     <a
-href="iridium16and86.htm">86</a>     Note that Iridiums 108 and 105 were migrated from Plane 6 to Plane 5)<strong> </strong>
+Plane 4: <strong>119</strong>    <strong>122</strong>  35/<strong>128   107</strong>   <strong> 132</strong>    <strong>129</strong>    <strong>127</strong>    <strong>133 </strong>   <strong>125</strong>    <strong>136</strong>    <strong>139</strong>     (97) (61) <em>Note that Iridium 128 was migrated from Plane 3 to Plane 4.
+</em>
+Plane 5:  50     56     52     53     <a href="iridium9and84.htm">84</a>     10     54    <strong>105</strong>    <strong>108</strong>     83     <a
+href="iridium16and86.htm">86</a>     (12) <em>Note that Iridiums 108 and 105 were migrated from Plane 6 to Plane 5. </em>
                                                                            <strong>           </strong>
 Plane 6: <strong>102    112    104    114    103    109    106</strong>     80     98     41   <strong> 111</strong>     (18)<strong> </strong>(15) (81) <strong>
 </strong>                                                            </pre>
