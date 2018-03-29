@@ -1,3 +1,7 @@
+0.091_02	2018-03-29	T. R. Wyant
+    Iridium 23 decayed March 28 2018. This necessitates updating all the
+    canned Iridium status tables.
+
 0.091_01	2018-03-25	T. R. Wyant
     Kelso marks Iridiums 12, 13 & 76 partly operational. This translates
     to "SPARE" in the Iridium status table.
