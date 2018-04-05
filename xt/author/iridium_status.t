@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 20, 1, 3, 2018 );
+my $asof = time_gm( 0, 0, 17, 4, 3, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -139,7 +139,7 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 1 April 2018 **</strong></p>
+<p align="center"><strong>** Updated 4 April 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
