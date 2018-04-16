@@ -9020,7 +9020,7 @@ sub _next_elevation_screen {
 #
 #   $ eg/visual -merge
 #
-# Last-Modified: Fri, 09 Feb 2018 19:52:19 GMT
+# Last-Modified: Thu, 12 Apr 2018 22:44:11 GMT
 
 %magnitude_table = (
   '00694' => 3.5,
@@ -9239,7 +9239,6 @@ sub _next_elevation_screen {
   '37766' => 4.5,
   '37782' => 4.0,
   '37814' => 4.2,
-  '37820' => 3.9,
   '37932' => 5.0,
   '37942' => 4.0,
   '37955' => 4.2,
@@ -9260,7 +9259,7 @@ sub _next_elevation_screen {
   '39203' => 4.5,
   '39364' => 4.5,
   '40354' => 4.9,
-  '41765' => 3.9, # Assumed same as Tiangong 1
+  '41765' => 3.9, # Assumed 3.9 (old Tiangong 1 value)
 );
 
 1;
