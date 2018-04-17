@@ -285,7 +285,7 @@ BEGIN {
     );
 }
 
-
+use constant RE_ALL_DIGITS	=> qr{ \A [0-9]+ \z }smx;
 
 # The following constants are from section 12 (Users Guide, Constants,
 # and Symbols) of SpaceTrack Report No. 3, Models for Propagation of
@@ -360,8 +360,8 @@ my %attrib = (
     effective => sub {
 	my ($self, $name, $value) = @_;
 	if ( defined $value && ! looks_like_number( $value ) ) {
-	    if ( $value =~ m{ \A (\d+) / (\d+) / (\d+) : (\d+) :
-		    (\d+ (?: [.] \d* )? ) \z }smx ) {
+	    if ( $value =~ m{ \A ([0-9]+) / ([0-9]+) / ([0-9]+) : ([0-9]+) :
+		    ([0-9]+ (?: [.] [0-9]* )? ) \z }smx ) {
 		$value = time_gm( 0, 0, 0, 1, 0,
 		    __tle_year_to_Gregorian_year( $1 + 0 ) ) + (
 		    (($2 - 1) * 24 + $3) * 60 + $4) * 60 + $5;
@@ -415,7 +415,7 @@ eod
     lazy_pass_position => 0,	# Position optional if true.
     pass_variant => sub {
 	my ( $self, $name, $val ) = @_;
-	$val =~ m/ \A \d+ \z /smx
+	$val =~ RE_ALL_DIGITS
 	    or croak 'The pass_variant attribute must be an unsigned number';
 	$self->{$name} = $val;
 	return 0;
@@ -1286,7 +1286,7 @@ eod
 	my $line = shift @data;
 	$line =~ s/\s+$//;
 	my $tle = "$line\n";
-	$line =~ m{ \A 1 (\s* \d+) }smx and length $1 == 6 or do {
+	$line =~ m{ \A 1 (\s* [0-9]+) }smx and length $1 == 6 or do {
 	    ( $name = $line ) =~ s/ \A 0 \s+ //smx;	# SpaceTrack 3le
 	    $line = shift @data;
 	    $tle .= "$line\n";
@@ -1294,7 +1294,7 @@ eod
 	if (length ($line) > 79 && substr ($line, 79, 1) eq 'G') {
 	    croak "G (internal) format data not supported";
 	} else {
-	    ($line =~ m/^1(\s*\d+)/ && length ($1) == 6)
+	    ($line =~ m/^1(\s*[0-9]+)/ && length ($1) == 6)
 		or croak "Invalid line 1 '$line'";
 	    length ($line) < 80 and $line .= ' ' x (80 - length ($line));
 
@@ -1305,7 +1305,7 @@ eod
 
 	    $line = shift @data;
 	    $tle .= "$line\n";
-	    ($line =~ m/^2(\s*\d+)/ && length ($1) == 6)
+	    ($line =~ m/^2(\s*[0-9]+)/ && length ($1) == 6)
 		or croak "Invalid line 2 '$line'";
 	    length ($line) < 80 and $line .= ' ' x (80 - length ($line));
 	    @ele{qw{id_2 inclination ascendingnode eccentricity
@@ -2507,7 +2507,7 @@ eod
     $tle->get ('reblessable') or return $tle;
     @args or do {
 	my $id = $tle->get ('id') or return $tle;
-	$id =~ m/ \D /smx
+	$id =~ m/ [^0-9] /smx
 	    or $id = sprintf '%05d', $id;
 	@args = $status{$id} || 'tle';
     };
@@ -2662,7 +2662,7 @@ sub status {
 	$id or croak <<eod;
 Error - The status ('add') call requires a NORAD ID.
 eod
-	$id =~ m/ \D /smx
+	$id =~ m/ [^0-9] /smx
 	    or $id = sprintf '%05d', $id;
 	$type or croak <<eod;
 Error - The status (add => $id) call requires a type.
@@ -7596,8 +7596,10 @@ encoded with a four-digit year.
     sub _decode_json_time {
 	my ( $string ) = @_;
 	$string =~ m{ \A \s*
-	    ( \d+ ) \D+ ( \d+ ) \D+ ( \d+ ) \D+
-	    ( \d+ ) \D+ ( \d+ ) \D+ ( \d+ ) (?: ( [.] \d* ) )? \s* \z }smx
+	    ( [0-9]+ ) [^0-9]+ ( [0-9]+ ) [^0-9]+ ( [0-9]+ ) [^0-9]+
+	    ( [0-9]+ ) [^0-9]+ ( [0-9]+ ) [^0-9]+ ( [0-9]+ )
+		(?: ( [.] [0-9]* ) )?
+	    \s* \z }smx
 	    or return;
 	my @time = ( $1, $2, $3, $4, $5, $6 );
 	my $frac = $7;
@@ -7657,7 +7659,7 @@ encoded with a four-digit year.
 
 	defined $hash->{INTLDES}
 	    and $hash->{INTLDES} =~
-		s/ \A \d{2} ( \d{2} ) - /$1/smx;
+		s/ \A [0-9]{2} ( [0-9]{2} ) - /$1/smx;
 
 	foreach my $key ( qw{ EPOCH effective_date } ) {
 	    defined $hash->{$key}
@@ -7993,7 +7995,7 @@ sub _make_tle_checksum {
     foreach (split '', $buffer) {
 	if ($_ eq '-') {
 	    $sum++;
-	} elsif (m/\d/) {
+	} elsif ( m/ [0-9] /smx ) {
 	    $sum += $_;
 	}
     }
@@ -8049,8 +8051,8 @@ sub _set_intldes {
 	$working =~ s/ \s /0/smxg;
 
 	foreach my $re (
-	    qr< ( \d+ ) - ( \d+ ) ( .+ ) >smx,
-	    qr< ( \d{2} ) ( \d{3} ) ( .+ ) >smx,
+	    qr< ( [0-9]+ ) - ( [0-9]+ ) ( .+ ) >smx,
+	    qr< ( [0-9]{2} ) ( [0-9]{3} ) ( .+ ) >smx,
 	) {
 	    $working =~ m/ \A $re \z /smx
 		or next;
@@ -8085,7 +8087,7 @@ sub _set_intldes {
     my %intldes_valid = (
 	launch_year	=> sub {
 	    my ( $val ) = @_;
-	    $val =~ m/ \A \d+ \z /smx
+	    $val =~ RE_ALL_DIGITS
 		and $val <= 9999
 		or croak 'Invalid launch_year';
 	    $val < 100
@@ -8094,7 +8096,7 @@ sub _set_intldes {
 	},
 	launch_num	=> sub {
 	    my ( $val ) = @_;
-	    $val =~ m/ \A \d+ \z /smx
+	    $val =~ RE_ALL_DIGITS
 		and $val < 1000
 		or croak 'Invalid launch_num';
 	    return $val + 0;
@@ -8156,7 +8158,7 @@ sub _set_intldes {
     sub _set_object_type {
 	my ( $self, $name, $value ) = @_;
 	if ( defined $value ) {
-	    if ( $value =~ m/ \A \d+ \z /smx ) {
+	    if ( $value =~ RE_ALL_DIGITS ) {
 		$self->{$name} = $number_to_type[$value];
 	    } else {
 		$self->{$name} = $name_to_type{ fold_case( $value ) };

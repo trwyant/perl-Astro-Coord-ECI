@@ -1904,7 +1904,7 @@ The object itself is returned, to allow call chaining.
 
     sub maidenhead {
 	my ( $self, @args ) = @_;
-	if ( @args > 1 || defined $args[0] && $args[0] =~ m/ \D /smx ) {
+	if ( @args > 1 || defined $args[0] && $args[0] =~ m/ [^0-9] /smx ) {
 	    my ( $loc, $alt ) = @args;
 	    defined $alt or $alt = 0;
 
@@ -1931,7 +1931,7 @@ The object itself is returned, to allow call chaining.
 			$_ += $inx;
 			$_ /= $base;
 		    } else {
-			$chr =~ m/ \D /
+			$chr =~ m/ [^0-9] /smx
 			    and croak 'Invalid Maidenhead locator; ',
 				"'$chr' is not a digit";
 			$_ += $chr;
