@@ -1,3 +1,9 @@
+0.093_03	2018-04-18	T. R. Wyant
+    Prefer /[0-9]/ to /\d/ for matching digits. The latter matches
+    non-ASCII digits as well as ASCII ones, but the former is what I
+    want, because usually once there is a match numeric conversion
+    happens.
+
 0.093_02	2018-04-16	T. R. Wyant
     Kelso drops Tiangong 1 from visual.txt. This results in a change to
     the canned magnitude table.
