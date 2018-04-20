@@ -1,3 +1,6 @@
+0.093_04	2018-04-20	T. R. Wyant
+    Update canned status for decay of Iridium 94.
+
 0.093_03	2018-04-18	T. R. Wyant
     Prefer /[0-9]/ to /\d/ for matching digits. The latter matches
     non-ASCII digits as well as ASCII ones, but the former is what I
