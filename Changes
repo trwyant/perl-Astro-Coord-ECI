@@ -1,21 +1,15 @@
-0.093_04	2018-04-20	T. R. Wyant
-    Update canned status for decay of Iridium 94.
+0.094		2018-04-27	T. R. Wyant
+    Kelso drops Tiangong 1 from visual.txt. This results in a change to
+    the canned magnitude table.
 
-0.093_03	2018-04-18	T. R. Wyant
+    Update canned Iridium status table for:
+    - Decay of Iridium 19 and 94;
+    - Mark Iridiums 29, 33, and 72 spare per Kelso.
+
     Prefer /[0-9]/ to /\d/ for matching digits. The latter matches
     non-ASCII digits as well as ASCII ones, but the former is what I
     want, because usually once there is a match numeric conversion
     happens.
-
-0.093_02	2018-04-16	T. R. Wyant
-    Kelso drops Tiangong 1 from visual.txt. This results in a change to
-    the canned magnitude table.
-
-    Kelso marks Iridiums 25 & 33 spare, drops 19. This results in a
-    change to the canned Iridium status table.
-
-0.093_01	2018-04-08	T. R. Wyant
-    Iridium 19 decayed April 7 2018. Canned status update.
 
 0.093		2018-04-05	T. R. Wyant
     Iridium 23 decayed March 28 2018. This necessitates updating all the
