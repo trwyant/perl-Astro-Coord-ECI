@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 16, 22, 3, 2018 );
+my $asof = time_gm( 0, 0, 4, 27, 3, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -97,7 +97,7 @@ foreach (
 25319IRIDIUM 69 [-]
 25320IRIDIUM 71 [-]
 25342IRIDIUM 70 [+]
-25343IRIDIUM 72 [+]
+25343IRIDIUM 72 [P]
 25344IRIDIUM 73 [-]
 25346IRIDIUM 75 [+]
 25432IRIDIUM 76 [P]
@@ -114,7 +114,6 @@ foreach (
 25778IRIDIUM 21 [+]
 27372IRIDIUM 91 [+]
 27373IRIDIUM 90 [B]
-27374IRIDIUM 94 [P]
 27375IRIDIUM 95 [+]
 27376IRIDIUM 96 [P]
 27450IRIDIUM 97 [+]
@@ -137,10 +136,18 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 22 April 2018 **</strong></p>
+<p align="center"><strong>** Updated 26 April 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(26 April 2018): Iridium 146 (43254, 2018-030F)
+has entered the operational constellation at Plane 1, Slot 9, a
+few seconds behind Iridium 66 (25289, 1998-021E).</p>
+
+<p align="left">(25 April 2018): The orbit of Iridium 11 (tracked
+as 25578, 1998-047B) has been lowered by 15km and it is
+presumably being retained as a spare for plane 2.</p>
 
 <p align="left">(21 April 2018): Iridium 150 (43256, 2018-030H)
 has entered the operational constellation at Plane 1, Slot 10, a
@@ -188,9 +195,9 @@ Failures</a>.</p>
 <pre>Orbital  &lt;----------------------- Operational satellites ------------------------&gt;    Spares
 Plane
 
-Plane 1: <a href="iridium74and21.htm">21</a>/<strong>145</strong> 72/<strong>143</strong>  75     70     62     14     64     65     66  67/<strong>150</strong> 68/<strong>157</strong>    <strong>(Iridiums 140, 142, 144, 146, 148, 149 launched 30 March 2018)</strong>
+Plane 1: <a href="iridium74and21.htm">21</a>/<strong>145</strong> 72/<strong>143</strong>  75     70     62     14     64     65  66/<strong>146</strong> 67/<strong>150</strong> 68/<strong>157</strong>    <strong>(Iridiums 140, 142, 144, 148, 149 launched 30 March 2018)</strong>
                                                                              <strong>          (Iridium 153 is migrating from Plane 2 towards Plane 1)</strong>
-Plane 2: <strong>134</strong>/<a href="iridium11and26.htm">11</a> <strong>141</strong>    <strong>137   </strong> <strong>116</strong>    <strong>135</strong>    <strong>151</strong>  47/<strong>120</strong>   <strong>113</strong>    <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     (20) (76)<em> Note that Iridiums 113 and 120 were migrated from Plane 3 to Plane 2.</em>
+Plane 2: <strong>134</strong>    <strong>141</strong>    <strong>137   </strong> <strong>116</strong>    <strong>135</strong>    <strong>151</strong>  47/<strong>120</strong>   <strong>113</strong>    <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     (20) (11) (76)<em> Note that Iridiums 113 and 120 were migrated from Plane 3 to Plane 2.</em>
                                                                           <strong>             (Iridiums 115 and 124 are migrating from Plane 3 towards Plane 2 and/or Plane 1</strong>)
 Plane 3: <strong>117</strong>     <a href="iridium28and95.htm">95</a>     45    <strong>123</strong>    <strong>126</strong>     32     <a
 href="iridium33collision.htm">91</a>    <strong>121</strong>    <strong>118</strong>     59     60  <strong> </strong>  (31) (55) (58)
