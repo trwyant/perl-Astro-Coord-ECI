@@ -31,7 +31,7 @@ my $ua = LWP::UserAgent->new(
 #    ssl_opts	=> { verify_hostname	=> 0 },	# Necessary until Perl recognizes McCants' cert.
 );
 
-my $asof = time_gm( 0, 0, 17, 4, 4, 2018 );
+my $asof = time_gm( 0, 0, 22, 6, 4, 2018 );
 
 foreach (
 	["T. S. Kelso's Iridium list",
@@ -136,10 +136,14 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">Iridium Constellation Status</h1>
 
-<p align="center"><strong>** Updated 04 May 2018 **</strong></p>
+<p align="center"><strong>** Updated 06 May 2018 **</strong></p>
 
 <p align="left"><strong>Latest changes </strong>(see below for
 earlier changes):</p>
+
+<p align="left">(06 May 2018): The orbit of Iridium 47 (25106,
+1997-082C) has been lowered by 15km and it is presumably being
+retained as a spare for plane 2.</p>
 
 <p align="left">(04 May 2018): Iridium 148 (43255, 2018-030G) <em>(previously
 labelled as Iridium 144) </em>has entered the operational
@@ -229,7 +233,7 @@ Plane
 
 Plane 1: <strong>145</strong>    <strong>143</strong>     75  70/<strong>148</strong> 62/<strong>150</strong>    14  64/<strong>144</strong> 65/<strong>149</strong> 66/<strong>146</strong> 67/<strong>142</strong> 68/<strong>157</strong>  <strong>  (Iridium 140 launched 30 March 2018)</strong>
                                                                              <strong>          (Iridius 124 is migrating from Plane 3 towards Plane 1</strong>)<strong>(Iridium 153 is migrating from Plane 2 towards Plane 1)</strong>
-Plane 2: <strong>134</strong>    <strong>141</strong>    <strong>137   </strong> <strong>116</strong>    <strong>135</strong>    <strong>151</strong>  47/<strong>120</strong>   <strong>113</strong>    <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     (20) (11) (76)<em> Note that Iridiums 113 and 120 were migrated from Plane 3 to Plane 2.</em>
+Plane 2: <strong>134</strong>    <strong>141</strong>    <strong>137   </strong> <strong>116</strong>    <strong>135</strong>    <strong>151</strong>    <strong>120</strong>    <strong>113</strong>    <strong>138</strong>    <strong>130</strong> <strong>   131</strong>     (20) (11) (47) (76)<em> Note that Iridiums 113 and 120 were migrated from Plane 3 to Plane 2.</em>
                                                                           <strong>             (Iridium 115 is migrating from Plane 3 towards Plane 2</strong>)
 Plane 3: <strong>117</strong>     <a href="iridium28and95.htm">95</a>     45    <strong>123</strong>    <strong>126</strong>     32     <a
 href="iridium33collision.htm">91</a>    <strong>121</strong>    <strong>118</strong>     59     60  <strong> </strong>  (31) (55) (58)
