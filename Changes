@@ -1,11 +1,13 @@
-0.095_03	2018-05-16	T. R. Wyant
-    Iridium 25 decayed May 14 2018. Canned status tables updated.
+0.096		2018-05-23	T. R. Wyant
+    Link to metacpan.org rather than search.cpan.org.
 
-0.095_02	2018-05-15	T. R. Wyant
-    Iridium 72 decayed May 14 2018. Canned status tables updated.
-
-0.095_01	2018-05-11	T. R. Wyant
-    Kelso marks Iridiums 64, 66, 68, 71 spare. Canned status update.
+    Canned status updates:
+    - Decay of Iridium 25
+    - Decay of Iridium 72
+    - Iridium 64 now spare per Kelso
+    - Iridium 66 now spare per Kelso
+    - Iridium 68 now spare per Kelso
+    - Iridium 71 now spare per Kelso
 
 0.095		2018-05-08	T. R. Wyant
     Iridium 13 decayed. Canned status update.
