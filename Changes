@@ -1,3 +1,12 @@
+0.096_03	2018-05-30	T. R. Wyant
+    Canned status update:
+    - Iridium 7 now spare per Kelso (partly operational)
+
+    Kelso also marks Iridiums 39 and 90 partly operational.  I have been
+    translating this to "spare". Iridiums 39 and 90 were already
+    "backup/standby", but 7 was in service, so its canned status
+    changes.
+
 0.096_02	2018-05-28	T. R. Wyant
     Canned status updates:
     - Decay of Iridium 37
