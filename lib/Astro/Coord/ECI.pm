@@ -101,7 +101,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.096_03';
+our $VERSION = '0.096_04';
 
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;

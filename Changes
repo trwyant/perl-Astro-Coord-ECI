@@ -1,3 +1,29 @@
+0.096_04	2018-05-31	T. R. Wyant
+    Large canned status update from Kelso
+    
+    - Iridium 7 failed
+    - Iridium 11 spare
+    - Iridium 15 spare
+    - Iridium 18 spare
+    - Iridium 31 spare
+    - Iridium 39 failed
+    - Iridium 46 failed
+    - Iridium 47 spare
+    - Iridium 55 spare
+    - Iridium 58 spare
+    - Iridium 61 spare
+    - Iridium 62 spare
+    - Iridium 68 failed
+    - Iridium 81 spare
+    - Iridium 90 failed
+    - Iridium 96 failed
+    - Iridium 97 spare
+    
+    There were actually more changes than this, but the remainder were
+    between states that I do not distinguish -- typically [P] (partly
+    operational) to [B] (backup), both of which I carry as 'spare'.
+    -
+
 0.096_03	2018-05-30	T. R. Wyant
     Canned status update:
     - Iridium 7 now spare per Kelso (partly operational)
