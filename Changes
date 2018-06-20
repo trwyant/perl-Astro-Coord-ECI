@@ -1,3 +1,11 @@
+0.098_01	2018-06-20	T. R. Wyant
+    Canned status update:
+
+    - Iridium 81 failed
+
+    Move iridium status setup to Astro::Coord::ECI::TLE::Iridium. This
+    is in preparation for spinning off that module into its own package.
+
 0.098		2018-06-16	T. R. Wyant
     Canned status update:
 
