@@ -2487,8 +2487,13 @@ table.
 For convenience, you can pass an alias instead of the full class name. The
 following aliases are recognized:
 
- iridium => 'Astro::Coord::ECI::TLE::Iridium'
  tle => 'Astro::Coord::ECI::TLE'
+
+If you install
+L<Astro::Coord::ECI::TLE::Iridium|Astro::Coord::ECI::TLE::Iridium> it
+will define alias
+
+ iridium => 'Astro::Coord::ECI::TLE::Iridium'
 
 Other aliases may be defined with the alias() static method.
 
@@ -2631,13 +2636,16 @@ commands and arguments are:
 
 status (add => $id, $type => $status, $name, $comment) adds an item to
 the status table or modifies an existing item. The $id is the NORAD ID
-of the body. The only currently-supported $type is
-'Astro::Coord::ECI::TLE::Iridium', but any alias to this will also work
-(see alias(); 'iridium' is defined by default). The $status is 0, 1, 2,
-or 3 representing in-service, spare, failed, or decayed respectively.
-The strings '+' or '' will be interpreted as 0, 'S', 's', or '?' as 1,
-'D' as 3, and any other non-numeric string as 2. The  $name and $comment
-arguments default to empty.
+of the body.
+
+No types are supported out of the box, but if you have installed
+L<Astro::Coord::ECI::TLE::Iridium|Astro::Coord::ECI::TLE::Iridium> that
+or C<'iridium'> will work.
+
+The $status is 0, 1, 2, or 3 representing in-service, spare, failed, or
+decayed respectively.  The strings '+' or '' will be interpreted as 0,
+'S', 's', or '?' as 1, 'D' as 3, and any other non-numeric string as 2.
+The  $name and $comment arguments default to empty.
 
 status ('clear') clears the status table.
 
@@ -8227,7 +8235,9 @@ sub _next_elevation_screen {
 {
     # The following classes initialize themselves on load.
     local $@ = undef;
-    require Astro::Coord::ECI::TLE::Iridium;
+    eval {	## no critic (RequireCheckingReturnValueOfEval)
+	require Astro::Coord::ECI::TLE::Iridium;
+    };
 }
 
 # The following is all the Celestrak visual list that have magnitudes in

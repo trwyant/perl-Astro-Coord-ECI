@@ -4,21 +4,25 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::TLE;
-use Astro::Coord::ECI::TLE::Iridium;
 use Test::More 0.88;	# Because of done_testing().
 
 eval {
     require Safe;
     1;
-} or plan skip_all => 'Can not load module Safe';
+} or plan skip_all => 'Test needs module Safe';
+
+eval {
+    require Astro::Coord::ECI::TLE::Iridium;
+    1;
+} or plan skip_all => 'Test needs Astro::Coord::ECI::TLE::Iridium';
 
 note <<'EOD';
 
-The following tests check manipulation of the canned statuses
+The following tests check manipulation of the canned statuses. They
+really pertain to Astro::Coord::ECI::TLE::Iridium, and appear in that
+distribution, but are duplicated here to ensure the support required by
+that module does not break.
 EOD
-
-cmp_ok elements( Astro::Coord::ECI::TLE->status( 'show' ) ), '==', 97,
-    'Astro::Coord::ECI::TLE->status() items initially';
 
 Astro::Coord::ECI::TLE->status( 'clear' );
 cmp_ok elements( Astro::Coord::ECI::TLE->status( 'show' ) ), '==', 0,

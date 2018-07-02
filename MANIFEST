@@ -5,7 +5,6 @@ eg/Astro-Coord-ECI.yml
 eg/azimuth
 eg/closest
 eg/convert_tle
-eg/iridium
 eg/iss
 eg/passes
 eg/positions
@@ -32,14 +31,12 @@ lib/Astro/Coord/ECI/OVERVIEW.pod
 lib/Astro/Coord/ECI/Star.pm
 lib/Astro/Coord/ECI/Sun.pm
 lib/Astro/Coord/ECI/TLE.pm
-lib/Astro/Coord/ECI/TLE/Iridium.pm
 lib/Astro/Coord/ECI/TLE/Set.pm
 lib/Astro/Coord/ECI/Utils.pm
 LICENSES/Artistic
 LICENSES/Copying
 Makefile.PL
 MANIFEST
-MANIFEST.SKIP
 META.json
 META.yml
 README
@@ -60,7 +57,6 @@ t/tle.t
 t/tle_apsides.t
 t/tle_effective.t
 t/tle_exception.t
-t/tle_flare.t
 t/tle_json.t
 t/tle_mag.t
 t/tle_misc.t
@@ -72,10 +68,8 @@ xt/author/basic.t
 xt/author/changes.t
 xt/author/critic.t
 xt/author/executable.t
-xt/author/iridium_status.t
-xt/author/iridium_manifest_constants.t
-xt/author/magnitude_status.t
 xt/author/kwalitee.t
+xt/author/magnitude_status.t
 xt/author/manifest.t
 xt/author/minimum_perl.t
 xt/author/perlcriticrc

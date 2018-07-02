@@ -11,11 +11,14 @@ Astro::Coord::ECI::Moon - Predict location of the Moon.
 Astro::Coord::ECI::Star - Predict location of a star.
 Astro::Coord::ECI::Sun - Predict location of the Sun.
 Astro::Coord::ECI::TLE - Predict location of a satellite.
-Astro::Coord::ECI::TLE::Iridium - Subclass of TLE, with the ability
-    to predict flares.
 Astro::Coord::ECI::TLE::Set - Aggregation of TLEs, with ability
     to use the correct TLE depending on time.
 Astro::Coord::ECI::Utils - Constants and utility subroutines.
+
+The following has been moved to its own package:
+
+Astro::Coord::ECI::TLE::Iridium - Subclass of TLE, with the ability
+    to predict flares.
 
 INSTALLATION
 

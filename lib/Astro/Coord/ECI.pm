@@ -66,7 +66,8 @@ the celestial sphere, B<Astro::Coord::ECI::Sun> to predict the position
 of the Sun, B<Astro::Coord::ECI::TLE> to predict the position of a
 satellite given the NORAD orbital parameters, and
 B<Astro::Coord::ECI::TLE::Iridium> (a subclass of
-Astro::Coord::ECI::TLE) to predict Iridium flares.
+Astro::Coord::ECI::TLE, and as of 0.099_01 moved to its own package) to
+predict Iridium flares.
 
 B<Note> that in version 0.022_01 the velocity code got a substantial
 rework, which is still in progress. I am attempting give useful
@@ -3510,8 +3511,9 @@ The default is C<undef>.
 
 This attribute represents the distance the effective horizon is above
 the geometric horizon. It was added for the
-B<Astro::Coord::ECI::TLE::Iridium> class, on the same dubious logic
-that the L<twilight|/twilight> attribute was added.
+L<Astro::Coord::ECI::TLE::Iridium|Astro::Coord::ECI::TLE::Iridium>
+class, on the same dubious logic that the L<twilight|/twilight>
+attribute was added.
 
 The default is the equivalent of 20 degrees.
 

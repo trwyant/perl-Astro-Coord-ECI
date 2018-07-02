@@ -21,8 +21,6 @@ CVS/
 ^kelso\.got$
 ^Makefile$
 ^MANIFEST\.
-^mccants\.expect$
-^mccants\.got$
 ^meta/
 ^MYMETA.json$
 ^MYMETA.yml$
@@ -34,8 +32,6 @@ CVS/
 ^sgp4r/
 ^sladen\.expect$
 ^sladen\.got$
-^t/iridium\.dat$
-^t/tle_make\.t$
 ^tags$
 ^USED_BY$
 ^usual\.dat$
