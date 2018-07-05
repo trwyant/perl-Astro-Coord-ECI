@@ -16,6 +16,8 @@ eval {
     1;
 } or plan skip_all => 'Test needs Astro::Coord::ECI::TLE::Iridium';
 
+( my $i_ver = Astro::Coord::ECI::TLE::Iridium->VERSION() ) =~ s/ _ //smxg;
+
 note <<'EOD';
 
 The following tests check manipulation of the canned statuses. They
@@ -106,7 +108,12 @@ ok ! $tle->can_flare(), 'Now OID 33333 can not flare.';
 
 ok ! $tle->can_flare( 1 ), 'and OID 33333 can not flare if we accept spares';
 
-ok $tle->can_flare( 'all' ), 'but OID 33333 can flare if we accept all';
+SKIP: {
+    $i_ver ge '0.084'
+	or skip 'Test requires version 0.084 or above', 1;
+
+    ok $tle->can_flare( 'all' ), 'but OID 33333 can flare if we accept all';
+}
 
 $tle = Astro::Coord::ECI::TLE->new( id => 22222 );
 is ref $tle, 'Astro::Coord::ECI::TLE::Iridium',
