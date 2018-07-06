@@ -63,7 +63,6 @@ t/tle_misc.t
 t/tle_parse.t
 t/tle_pass.t
 t/tle_pass_extra.t
-t/tle_support.t
 xt/author/basic.t
 xt/author/changes.t
 xt/author/critic.t
@@ -78,3 +77,4 @@ xt/author/pod_coverage.t
 xt/author/pod_spelling.t
 xt/author/satpass.t
 xt/author/satpass_geocode.t
+xt/author/tle_support.t
