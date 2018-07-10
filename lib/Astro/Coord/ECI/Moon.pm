@@ -85,9 +85,10 @@ my $weaken = eval {
     require Scalar::Util;
     Scalar::Util->can('weaken');
 };
-my $object;
 
 our $Singleton = $weaken;
+
+my %object;	# By class
 
 
 =item $moon = Astro::Coord::ECI::Moon->new ();
@@ -102,13 +103,16 @@ Any arguments are passed to the set() method once the object has been
 instantiated. Yes, you can override the "hard-wired" id and name in
 this way.
 
-If $Astro::Coord::ECI::Moon::Singleton is true, you get a singleton
-object; that is, only one object is instantiated and subsequent calls
-to new() just return that object. This only works if Scalar::Util
-exports weaken(). If it does not, the setting of
-$Astro::Coord::ECI::Moon::Singleton is silently ignored. The default
-is true if Scalar::Util can be loaded and exports weaken(), and false
-otherwise.
+If C<$Astro::Coord::ECI::Moon::Singleton> is true, you get a singleton
+object; that is, only one object is instantiated and subsequent calls to
+C<new()> just return that object. If higher-accuracy subclasses are ever
+implemented, there will be one singleton for each class.
+
+The singleton logic only works if L<Scalar::Util|Scalar::Util> exports
+C<weaken()>. If it does not, the setting of
+C<$Astro::Coord::ECI::Moon::Singleton> is silently ignored. The default
+is true if L<Scalar::Util|Scalar::Util> can be loaded and exports
+C<weaken()>, and false otherwise.
 
 =cut
 
@@ -116,12 +120,13 @@ sub new {
     my ($class, @args) = @_;
     ref $class and $class = ref $class;
     if ( $Singleton && $weaken && __classisa( $class, __PACKAGE__ ) ) {
-	if ($object) {
-	    $object->set (@args) if @args;
-	    return $object;
+	my $self;
+	if ( $self = $object{$class} ) {
+	    $self->set( @args ) if @args;
+	    return $self;
 	} else {
-	    my $self = $object = $class->SUPER::new (%static, @args);
-	    $weaken->($object);
+	    $self = $object{$class} = $class->SUPER::new (%static, @args);
+	    $weaken->( $object{$class} );
 	    return $self;
 	}
     } else {
