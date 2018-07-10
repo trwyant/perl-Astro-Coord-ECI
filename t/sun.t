@@ -471,6 +471,28 @@ EOD
 	'Time twilight ends', \&format_gmt;
 }
 
+# Test ability to set Sun
+{
+    my $eci = Astro::Coord::ECI->new();
+
+    is ref $eci->get( 'sun' ), 'Astro::Coord::ECI::Sun',
+	'ECI object has default Sun object';
+
+    $eci->set( sun => 'Astro::Coord::ECI::Mock::Sun' );
+
+    is ref $eci->get( 'sun' ), 'Astro::Coord::ECI::Mock::Sun',
+	'ECI object now has non-default Sun object';
+
+    package	# Cargo cult to prevent CPAN indexing
+    Astro::Coord::ECI::Mock::Sun;
+
+    our @ISA;
+
+    BEGIN {
+	@ISA = qw{ Astro::Coord::ECI::Sun };
+    }
+}
+
 done_testing;
 
 sub format_dyn {

@@ -146,6 +146,8 @@ sub new {
     my ( $class, @args ) = @_;
     my $self = bless { %static }, ref $class || $class;
     $self->{inertial} = $self->__initial_inertial();
+    ref $static{sun}
+	and $self->set( sun => $static{sun}->clone() );
     @args and $self->set( @args );
     exists $self->{almanac_horizon}
 	or $self->set( almanac_horizon => 0 );
@@ -2689,12 +2691,12 @@ sub _set_station {
 use constant SUN_CLASS => 'Astro::Coord::ECI::Sun';
 
 sub _set_sun {
-##  my ( $self, $name, $value ) = @_;
-    my ( $self, undef, $value ) = @_;	# Name unused
-    embodies( $value, $self->SUN_CLASS() )
+    my ( $self, $name, $value ) = @_;
+    embodies( $value, SUN_CLASS() )
 	or croak 'The value of the sun attribute must represent the Sun';
     ref $value
 	or $value = $value->new();
+    $self->{$name} = $value;
     return SET_ACTION_NONE;
 }
 

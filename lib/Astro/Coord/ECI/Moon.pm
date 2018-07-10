@@ -215,6 +215,26 @@ elements 0 through 3 of the list returned by almanac().
 
 use Astro::Coord::ECI::Mixin qw{ almanac_hash };
 
+=item $coord2 = $coord->clone ();
+
+If singleton objects are enabled, this override of the superclass'
+method simply returns the invocant. Otherwise it does a deep clone of an
+object, producing a different but identical object.
+
+Prior to version [%% next_version %%] it always returned a clone. Yes,
+this is a change in long-standing functionality, but a long-standing bug
+is still a bug.
+
+=cut
+
+sub clone {
+    my ( $self ) = @_;
+    $Singleton
+	and $weaken
+	and return $self;
+    return $self->SUPER::clone();
+}
+
 =item $elevation = $moon->correct_for_refraction( $elevation )
 
 This override of the superclass' method simply returns the elevation
