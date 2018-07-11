@@ -1682,7 +1682,7 @@ eod
 	$suntim = $sun_screen = $sun_limit = $pass_end + SECSPERDAY;
 	$dawn = 1;
     } else {
-	$sun = Astro::Coord::ECI::Sun->new ();
+	$sun = $tle->get( 'sun' );
 	( $suntim, $dawn, $sun_screen, $sun_limit ) =
 	    _next_elevation_screen( $sta->universal( $pass_start ),
 		$pass_step, $sun, $twilight );
@@ -8659,8 +8659,12 @@ This attribute contains the NORAD SATCAT catalog ID.
 
 =item illum (string, static)
 
-This attribute specifies the source of illumination for the body.  You
-may specify the class name C<'Astro::Coord::ECI'> or the name of any
+This attribute specifies the source of illumination for the body, for
+the purpose of detecting things like Iridium flares. This is
+distinguished from the parent class' C<'sun'> attribute, which is used
+to determine night or day.
+
+You may specify the class name C<'Astro::Coord::ECI'> or the name of any
 subclass (though in practice only C<'Astro::Coord::ECI::Sun'> or
 C<'Astro::Coord::ECI::Moon'> will do anything useful), or an alias()
 thereof, or you may specify an object of the appropriate class. When you
