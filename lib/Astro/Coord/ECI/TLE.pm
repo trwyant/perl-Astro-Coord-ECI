@@ -1245,17 +1245,25 @@ sub null {}
 
 =item @elements = Astro::Coord::ECI::TLE->parse( @data );
 
-This method parses a NORAD two- or three-line element set (or a
-mixture), returning a list of Astro::Coord::ECI::TLE objects. The
-L</Attributes> section identifies those attributes which will be filled
-in by this method.
+This method parses NORAD two- or three-line element sets, JSON element
+sets, or a mixture, returning a list of Astro::Coord::ECI::TLE objects.
+The L</Attributes> section identifies those attributes which will be
+filled in by this method.
 
-The input will be split into individual lines, and all blank lines and
+TLE input will be split into individual lines, and all blank lines and
 lines beginning with '#' will be eliminated. The remaining lines are
 assumed to represent two- or three-line element sets, in so-called
 external format. Internal format (denoted by a 'G' in column 79 of line
 1 of the set, not counting the common name if any) is not supported,
 and the presence of such data will result in an exception being thrown.
+
+Input beginning with C<[{> (with optional spaces) is presumed to be
+NORAD JSON element sets and parsed accordingly.
+
+Optionally, the first argument (after the invocant) can be a reference
+to a hash of default attribute values. These are preferred over the
+static values, but attributes provided by the TLE or JSON input override
+both.
 
 =cut
 
@@ -1270,7 +1278,7 @@ sub parse {
 Error - Arguments to parse() must be scalar.
 eod
 	if ( $datum =~ m/ \A \s* \[? \s* \{ /smx ) {
-	    push @rslt, $self->_parse_json( $datum );
+	    push @rslt, $self->_parse_json( $attrs, $datum );
 	} else {
 	    foreach my $line (split qr{\n}, $datum) {
 		$line =~ s/ \s+ \z //smx;
@@ -7630,6 +7638,7 @@ encoded with a four-digit year.
 	$have_json
 	    or croak 'Can not load JSON';
 	my $json = JSON->new()->utf8( 1 );
+	my $attrs = HASH_REF eq ref $args[0] ? shift @args : {};
 	my @rslt;
 
 	foreach my $arg ( @args ) {
@@ -7640,7 +7649,7 @@ encoded with a four-digit year.
 
 		my $class = $hash->{astro_coord_eci_class} || __PACKAGE__;
 		load_module( $class );
-		push @rslt, $class->__from_json( $hash );
+		push @rslt, $class->__from_json( $hash, $attrs );
 
 	    }
 	}
@@ -7649,7 +7658,9 @@ encoded with a four-digit year.
     }
 
     sub __from_json {
-	my ( $class, $hash ) = @_;
+	my ( $class, $hash, $attrs ) = @_;
+
+	$attrs ||= {};
 
 	if ( exists $hash->{SATNAME} ) {	# TODO Deprecated
 	    warnings::enabled( 'deprecated' )
@@ -7694,7 +7705,7 @@ encoded with a four-digit year.
 	    }
 	}
 
-	my %tle;
+	my %tle = %{ $attrs };
 	foreach my $key ( keys %{ $hash } ) {
 	    my $value = $hash->{$key};
 	    my $attr = $json_map{$key}

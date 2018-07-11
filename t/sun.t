@@ -8,6 +8,7 @@ use lib qw{ inc };
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Utils qw{ :time deg2rad };
+use My::Module::Sun;
 use My::Module::Test qw{ :tolerance format_time };
 use Test::More 0.88;
 
@@ -478,19 +479,10 @@ EOD
     is ref $eci->get( 'sun' ), 'Astro::Coord::ECI::Sun',
 	'ECI object has default Sun object';
 
-    $eci->set( sun => 'Astro::Coord::ECI::Mock::Sun' );
+    $eci->set( sun => 'My::Module::Sun' );
 
-    is ref $eci->get( 'sun' ), 'Astro::Coord::ECI::Mock::Sun',
+    is ref $eci->get( 'sun' ), 'My::Module::Sun',
 	'ECI object now has non-default Sun object';
-
-    package	# Cargo cult to prevent CPAN indexing
-    Astro::Coord::ECI::Mock::Sun;
-
-    our @ISA;
-
-    BEGIN {
-	@ISA = qw{ Astro::Coord::ECI::Sun };
-    }
 }
 
 done_testing;

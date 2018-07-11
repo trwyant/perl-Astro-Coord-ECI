@@ -5,7 +5,10 @@ use 5.006002;
 use strict;
 use warnings;
 
+use lib qw{ inc };
+
 use Astro::Coord::ECI::TLE qw{ BODY_TYPE_DEBRIS BODY_TYPE_PAYLOAD };
+use My::Module::Sun;
 use Test::More 0.88;	# Because of done_testing();
 
 eval {
@@ -162,9 +165,11 @@ my $json = JSON->new()->utf8()->convert_blessed()->canonical();
     };
     setlocale( LC_NUMERIC, $locale );
 
+    my $attrs = { sun => 'My::Module::Sun' };
+
     my $tle2;
     eval {
-	( $tle2 ) = Astro::Coord::ECI::TLE->parse( $data );
+	( $tle2 ) = Astro::Coord::ECI::TLE->parse( $attrs, $data );
 	1;
     } or do {
 	fail "$name failed to parse JSON: $@";
@@ -175,6 +180,8 @@ my $json = JSON->new()->utf8()->convert_blessed()->canonical();
 
     is $tle2->get( 'tle' ), $vanguard, $name
 	or diag _json_config();
+
+    isa_ok $tle2->get( 'sun' ), 'My::Module::Sun';
 }
 
 SKIP: {
