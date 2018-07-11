@@ -782,11 +782,24 @@ foreach my $tle (@bodies) {
 #
 
 sub dump {
-use Data::Dumper;
-local $Data::Dumper::Terse = 1;
-foreach my $body (@bodies, @sky) {
-    print "\n", $body->get ('name') || $body->get ('id'), ' = ' , Dumper ($body);
+    use Data::Dumper;
+    local $Data::Dumper::Terse = 1;
+    local $Data::Dumper::Sortkeys = 1;
+    my @dump_list;
+    if ( @_ ) {
+	$cmdopt{choose} = [@_];
+	@dump_list = (
+	    _select_observing_list(),
+	    _select_matching_bodies( \@sky, $cmdopt{choose} ),
+	);
+    } else {
+	@dump_list = ( @bodies, @sky );
     }
+    foreach my $body ( @dump_list ) {
+	print "\n", $body->get ('name') || $body->get ('id'), ' = ',
+	    Dumper ($body);
+    }
+    return;
 }
 
 ########################################################################
@@ -1393,7 +1406,10 @@ foreach my $fn (@_) {
 Error - Cannot open $expand.
         $!
 eod
-    my $attrs = { sun => $parm{sun} };
+    my $attrs = {
+	illum	=> $parm{illum},
+	sun	=> $parm{sun},
+    };
     local $/ = undef;
     push @bodies, Astro::Coord::ECI::TLE->parse ( $attrs, <$fh>);
     }
