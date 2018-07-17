@@ -44,7 +44,7 @@ package Astro::Coord::ECI::Moon;
 use strict;
 use warnings;
 
-our $VERSION = '0.099';
+our $VERSION = '0.099_01';
 
 use base qw{Astro::Coord::ECI};
 
@@ -221,7 +221,7 @@ If singleton objects are enabled, this override of the superclass'
 method simply returns the invocant. Otherwise it does a deep clone of an
 object, producing a different but identical object.
 
-Prior to version [%% next_version %%] it always returned a clone. Yes,
+Prior to version 0.099_01 it always returned a clone. Yes,
 this is a change in long-standing functionality, but a long-standing bug
 is still a bug.
 
