@@ -1,4 +1,4 @@
-0.099_01	2018-07-16	T. R. Wyant
+0.100		2018-07-22	T. R. Wyant
     Add non-TLE attributes as optional hash reference to parse().
     Actually, this already worked for traditional TLEs, it just needed
     to be documented. But it needed to be added to the JSON code.
