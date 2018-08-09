@@ -13,6 +13,7 @@ use Time::Local;
 use constant TIMFMT => '%d-%b-%Y %H:%M:%S';
 
 use constant ARRAY_REF	=> ref [];
+use constant HASH_REF	=> ref {};
 
 sub instantiate ($);
 sub u_cmp_eql (@);
@@ -52,6 +53,19 @@ u_cmp_eql deg2rad => undef, undef, undef, 'deg2rad( undef )';
 u_cmp_eql rad2deg => 1, 57.295779513, '%.9f', 'rad2deg( 1 )';
 
 u_cmp_eql rad2deg => undef, undef, undef, 'rad2deg( undef )';
+
+SKIP: {
+
+    $] ge '5.008001'
+	or skip "Perl $] has insufficient Unicode support", 1;
+    u_cmp_eql rad2dms => 1, q<57°17'44".806>, { test => 'is' }, 'rad2dms( 1 )';
+}
+
+u_cmp_eql rad2dms => undef, undef, undef, 'rad2dms( undef )';
+
+u_cmp_eql rad2hms => 1, '3h49m10s.987', { test => 'is' }, 'rad2hms( 1 )';
+
+u_cmp_eql rad2hms => undef, undef, undef, 'rad2hms( undef )';
 
 u_cmp_eql acos => 1, 0, '%.6f', 'acos( 1 )';
 
@@ -301,6 +315,14 @@ sub instantiate ($) {
 
 sub u_cmp_eql (@) {
     my ( $sub, $arg, $want, $tplt, $title ) = @_;
+    my $opt;
+    if ( HASH_REF eq ref $tplt ) {
+	$opt = { %{ $tplt } };	# Shallow clone
+	$tplt = $opt->{template};
+    } else {
+	$opt = {};
+    }
+    $opt->{test} ||= ( defined $tplt && '%s' eq $tplt ) ? 'is' : 'numeric';
     ARRAY_REF eq ref $arg
 	or $arg = [ $arg ];
     if ( my $code = Astro::Coord::ECI::Utils->can( $sub ) ) {
@@ -322,12 +344,14 @@ sub u_cmp_eql (@) {
 	} else {
 	    defined $tplt
 		and ( $want, $got ) = map { sprintf $tplt, $_ } ( $want, $got );
-	    if ( defined $tplt && '%s' eq $tplt ) {
+	    if ( 'is' eq $opt->{test} ) {
 		@_ = ( $got, $want, $title );
 		goto &is;
-	    } else {
+	    } elsif ( 'numeric' eq $opt->{test} ) {
 		@_ = ( $got, '==', $want, $title );
 		goto &cmp_ok;
+	    } else {
+		die "Unknown test type '$opt->{test}'";
 	    }
 	}
     } else {

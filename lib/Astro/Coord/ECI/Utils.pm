@@ -218,7 +218,7 @@ our @EXPORT_OK = ( qw{
 	jcent2000 jd2date jd2datetime jday2000 julianday
 	keplers_equation load_module looks_like_number max min mod2pi
 	nutation_in_longitude nutation_in_obliquity obliquity omega
-	rad2deg tan theta0 thetag vector_cross_product
+	rad2deg rad2dms rad2hms tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize __classisa
 	__default_station __instance },
 	@time_routines );
@@ -1088,6 +1088,81 @@ in degrees. If the argument is C<undef>, C<undef> will be returned.
 =cut
 
 sub rad2deg { return defined $_[0] ? $_[0] / PI * 180 : undef }
+
+=item $deg_min_sec = rad2dms( $radians, $decimals )
+
+This subroutine converts the given angle in radians to its equivalent in
+degrees, minutes and seconds, represented as a string. Degrees will be
+suppressed if zero, and minutes will be suppressed if both degrees and
+minutes are zero. If degrees are present the delimiter will be a degree
+sign (C<"\N{DEGREE SIGN}>, a.k.a. C<"\N{U+00B0}">). The delimiters for
+minutes and seconds are C<'> and C<"> respectively, with the C<">
+appearing before the decimal point.
+
+The optional C<$decimals> argument specifies the number of decimal
+places in the seconds value, and defaults to C<3>.
+
+=cut
+
+sub rad2dms {
+    my ( $rad, $dp ) = @_;
+    defined $rad
+	or return $rad;
+    defined $dp
+	or $dp = 3;
+    my $sec = rad2deg( $rad ) * 3600;
+    ( $sec, my $sgn ) = $sec < 0 ? ( - $sec, '-' ) : ( $sec, '' );
+    my $frc = sprintf "%.${dp}f", $sec;
+    $frc =~ s/ [^.]* //smx;
+    $sec = floor( $sec );
+    my $min = floor( $sec / 60 );
+    $sec %= 60;
+    my $deg = floor( $min / 60 );
+    $min %= 60;
+    $deg or $min
+	or return sprintf q<%s%d"%s>, $sgn, $sec, $frc;
+    $deg
+	or return sprintf q<%s%d'%02d"%s>, $sgn, $sec, $frc;
+    return sprintf qq<%s%d°%02d'%02d"%s>,
+	$sgn, $deg, $min, $sec, $frc;
+}
+
+=item $hr_min_sec = rad2hms( $radians, $decimals )
+
+This subroutine converts the given angle in radians to its equivalent in
+hours, minutes and seconds (presumably of right ascension), represented
+as a string. Hours will be suppressed if zero, and minutes will be
+suppressed if both hours and minutes are zero. The delimiters for hours,
+minutes, and seconds are C<'h'>, C<'m'>, and C<'s'> respectively, with
+the C<'s'> appearing before the decimal point.
+
+The optional C<$decimals> argument specifies the number of decimal
+places in the seconds value, and defaults to C<3>.
+
+=cut
+
+sub rad2hms {
+    my ( $rad, $dp ) = @_;
+    defined $rad
+	or return $rad;
+    defined $dp
+	or $dp = 3;
+    my $sec = $rad * 12 / PI * 3600;
+    ( $sec, my $sgn ) = $sec < 0 ? ( - $sec, '-' ) : ( $sec, '' );
+    my $frc = sprintf "%.${dp}f", $sec;
+    $frc =~ s/ [^.]* //smx;
+    $sec = floor( $sec );
+    my $min = floor( $sec / 60 );
+    $sec %= 60;
+    my $hr = floor( $min / 60 );
+    $min %= 60;
+    $hr or $min
+	or return sprintf q<%s%ds%s>, $sgn, $sec, $frc;
+    $hr
+	or return sprintf q<%s%dm%02ds%s>, $sgn, $sec, $frc;
+    return sprintf qq<%s%dh%02dm%02ds%s>,
+	$sgn, $hr, $min, $sec, $frc;
+}
 
 =item $value = tan ($angle)
 
