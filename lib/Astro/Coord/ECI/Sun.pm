@@ -268,11 +268,19 @@ eod
     return $self->{_sun_geometric_longitude};
 }
 
+=item $sun->get( ... )
+
+This method has been overridden to return the invocant as the C<'sun'>
+attribute.
+
+=cut
+
 sub get {
     my ( $self, @args ) = @_;
     my @rslt;
     foreach my $name ( @args ) {
-	push @rslt, $attrib{$name} ?
+	push @rslt, 'sun' eq $name ? $self :
+	    $attrib{$name} ?
 	    ref $self ? $self->{$name} : $static{$name} :
 	    $self->SUPER::get( $name );
     }
@@ -598,11 +606,19 @@ sub season {
     return $time - dynamical_delta( $time );	# Not quite right.
 }
 
+=item $sun->set( ... )
+
+This method has been overridden to silently ignore any attempt to set
+the C<'sun'> attribute.
+
+=cut
+
 sub set {
     my ( $self, @args ) = @_;
     while ( @args ) {
 	my ( $name, $val ) = splice @args, 0, 2;
-	if ( $attrib{$name} ) {
+	if ( 'sun' eq $name ) {
+	} elsif ( $attrib{$name} ) {
 	    if ( ref $self ) {
 		$self->{$name} = $val;
 	    } else {
