@@ -1,15 +1,24 @@
+0.100_002	2018-08-10	T. R. Wyant
+    NOT RELEASED TO CPAN
+
+    Have the Sun's 'sun' attribute be itself.
+
+    * get( 'sun' ) returns the invocant
+
+    * set( 'sun' => ... ) is ignored
+
 0.100_001	2018-08-09	T. R. Wyant
     NOT RELEASED TO CPAN
 
     Add Utils functions rad2dms() and rad2hms()
 
     In the script/satpass script:
-    
+
     * Modify already-loaded bodies when the 'illum' or 'sun' settings are
       changed.
-    
+
     * Modify the sky if appropriate when the 'sun' setting is changed.
-    
+
     * Use the 'sun' setting when adding the Sun to the sky.
 
 0.100		2018-07-22	T. R. Wyant
