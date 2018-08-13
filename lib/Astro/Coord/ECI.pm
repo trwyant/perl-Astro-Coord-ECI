@@ -151,11 +151,19 @@ sub new {
     @args and $self->set( @args );
     exists $self->{almanac_horizon}
 	or $self->set( almanac_horizon => 0 );
+    $self->__init();
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
 	print "Debug - Instantiated ", Dumper ($self);
     };
     return $self;
+}
+
+# Package private, kinda sorta. Subclasses can override this to do
+# whatever initialization they need. At this level of the hierarchy the
+# method MUST be empty so that subclasses are NOT required to call
+# SUPER::__init().
+sub __init {
 }
 
 
@@ -1566,9 +1574,13 @@ See L</Attributes> for a list of the attributes you can get.
 	ref $self or $self = \%static;
 	my @rslt;
 	foreach my $name (@args) {
-	    exists $mutator{$name} or croak <<eod;
-Error - Attribute '$name' does not exist.
-eod
+	    unless ( exists $mutator{$name} ) {
+		# For code that, for whatever reason, can not override get()
+		my $code = $self->can( "__access_$name" )
+		    or croak " Error - Attribute '$name' does not exist";
+		push @rslt, $code->( $self, $name );
+		next;
+	    }
 	    if ($accessor{$name}) {
 		push @rslt, $accessor{$name}->($self, $name);
 	    } else {
@@ -2593,8 +2605,13 @@ sub set {
     my $action = 0;
     while (@args) {
 	my $name = shift @args;
-	exists $mutator{$name}
-	    or croak "Error - Attribute '$name' does not exist.";
+	unless( exists $mutator{$name} ) {
+	    # For code that, for whatever reason, can not override set()
+	    my $code = $self->can( "__mutate_$name" )
+		or croak "Error - Attribute '$name' does not exist.";
+	    $code->( $self, $name, shift @args );
+	    next;
+	}
 	CODE_REF eq ref $mutator{$name}
 	    or croak "Error - Attribute '$name' is read-only";
 	$action |= $mutator{$name}->($self, $name, shift @args);
@@ -3607,6 +3624,41 @@ documentation, and removed the relevant text as of version 0.051_01.
 The default is -6 degrees (or, actually, the equivalent in radians).
 
 =back
+
+=head1 SUBCLASSING
+
+This class is and will remain based on a hash reference.
+
+It is recommended that subclasses store their attributes in a separate
+hash hung off the main object in a key named after the subclass. That
+is, something like
+
+ sub subclass_method {
+     my ( $self ) = @_;
+     my $attr = $self->{ ref $self };
+     ...
+ }
+
+From outside the subclass, these attributes can be made accessible in
+one of two ways:
+
+=over
+
+=item Override get() and set()
+
+=item Provide __access_xxxx and __mutate_xxxx methods named after the
+attribute
+
+=back
+
+The second method can be used anywhere, but is provided for cases where,
+for whatever reason, C<< $self->SUPER::... >> will not work.
+
+Subclasses may (but need not) initialize themselves by providing an
+C<__init()> method. This is called in void context with no arguments as
+the last action of the C<new()> method. At this level of the hierarchy
+C<__init()> does nothing, so the subclass need not call
+C<< $self->SUPER::__init() >>.
 
 =head1 A NOTE ON VELOCITIES
 
