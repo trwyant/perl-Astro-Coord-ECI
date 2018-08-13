@@ -3652,7 +3652,9 @@ attribute
 =back
 
 The second method can be used anywhere, but is provided for cases where,
-for whatever reason, C<< $self->SUPER::... >> will not work.
+for whatever reason, C<< $self->SUPER::... >> will not work. It is used
+as a fallback mechanism, so you can not override superclass attributes
+using this mechanism.
 
 Subclasses may (but need not) initialize themselves by providing an
 C<__init()> method. This is called in void context with no arguments as
