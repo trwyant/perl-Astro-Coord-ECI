@@ -1,3 +1,24 @@
+0.100_003	2018-08-13	T. R. Wyant
+    NOT RELEASED TO CPAN
+
+    Provide hooks for mixin methods. The problem I am trying to solve
+    here is that SUPER:: is relative to the name space making the call,
+    not the class of the invocant. I am specifically addressing that
+    problem with new(), get(), and set().
+
+    The solution was to provide the following hooks:
+
+    * __init() is called by new(), last thing. It is empty, so the subclass
+      need not call SUPER::__init().
+
+    * __access_xxxx() to access attribute xxxx. This is only called after
+      the normal mechanism is exhausted, so you can not override superclass
+      attributes this way.
+
+    * __mutate_xxxx() to mutate attribute xxxx. This is only called after
+      the normal mechanism is exhausted, so you can not override superclass
+      attributes this way.
+
 0.100_002	2018-08-10	T. R. Wyant
     NOT RELEASED TO CPAN
 
