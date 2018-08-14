@@ -2040,8 +2040,11 @@ eod
 
 
 sub _set_sun_class {
-    $_[2] = SUN_CLASS_DEFAULT;
-    goto &_set_eci_class;
+    my ( $name, $val ) = @_;
+    _set_eci_class( $name, $val, SUN_CLASS_DEFAULT );
+    foreach my $body ( @sky ) {
+	$body->set( sun => $val );
+    }
 }
 
 sub _set_time {

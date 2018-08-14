@@ -54,7 +54,6 @@ our $VERSION = '0.100_003';
 
 use base qw{Astro::Coord::ECI};
 
-use Astro::Coord::ECI::Sun;	# Need for abberation calc.
 use Astro::Coord::ECI::Utils qw{:all};
 use Carp;
 use Data::Dumper;
@@ -225,9 +224,10 @@ time is set.
 The computation comes from Jean Meeus' "Astronomical Algorithms", 2nd
 Edition, Chapter 23, pages 149ff.
 
-B<Note>, however, that for consistency with the Astro::Coord::ECI::Sun
-and ::Moon classes, the position is precessed to the current time
-setting.
+B<Note>, however, that for consistency with the
+L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> and
+L<Astro::Coord::ECI::Moon|Astro::Coord::ECI::Moon> classes, the position
+is precessed to the current time setting.
 
 =cut
 
@@ -279,7 +279,7 @@ eod
     my $T = jcent2000 ($time);			# Meeus (22.1)
     my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;# Meeus (25.4)
     my $pi = deg2rad ((0.00046 * $T + 1.71946) * $T + 102.93735);
-    my $sun = $self->{_star_sun} ||= Astro::Coord::ECI::Sun->new ();
+    my $sun = $self->get( 'sun' );
     $sun->universal ($time);
 
     my $geoterm = $sun->geometric_longitude () - $lambda;

@@ -48,7 +48,6 @@ our $VERSION = '0.100_003';
 
 use base qw{Astro::Coord::ECI};
 
-use Astro::Coord::ECI::Sun;	# Need for phase of moon calc.
 use Astro::Coord::ECI::Utils qw{ :all };
 use Carp;
 use POSIX qw{floor strftime};
@@ -364,7 +363,7 @@ eod
 
     $self->universal ($time) if $time;
 
-    my $sun = Astro::Coord::ECI::Sun->universal ($self->universal);
+    my $sun = $self->get( 'sun' )->universal( $self->universal() );
 
     my (undef, $longs) = $sun->ecliptic ();
     my (undef, $longm) = $self->ecliptic ();
