@@ -1,3 +1,11 @@
+0.100_004	2018-08-14	T. R. Wyant
+    NOT RELEASED TO CPAN
+
+    Have Moon and Star use right Sun for phase, abberation
+
+    Also have script/satpass set the 'sun' attribute for everything in the
+    sky when the 'sun' setting changes.
+
 0.100_003	2018-08-13	T. R. Wyant
     NOT RELEASED TO CPAN
 
