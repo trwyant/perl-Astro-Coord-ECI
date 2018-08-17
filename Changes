@@ -1,7 +1,16 @@
+0.100_005	2018-08-17	T. R. Wyant
+    NOT RELEASED TO CPAN
+
+    Move nutation, obliquity, equation_of_time to Astro::Coord::ECI.
+    They become methods rather than subroutines so that they can be
+    overridden when higher accuracy is needed.
+
+    Install @CARP_NOT in all modules.
+
 0.100_004	2018-08-14	T. R. Wyant
     NOT RELEASED TO CPAN
 
-    Have Moon and Star use right Sun for phase, aberration
+    Have Moon and Star use correct Sun object for phase, aberration
 
     Also have script/satpass set the 'sun' attribute for everything in the
     sky when the 'sun' setting changes.
