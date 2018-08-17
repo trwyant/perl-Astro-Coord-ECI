@@ -48,7 +48,7 @@ our $VERSION = '0.100_004';
 
 use base qw{Astro::Coord::ECI};
 
-use Astro::Coord::ECI::Utils qw{ :all };
+use Astro::Coord::ECI::Utils qw{ @CARP_NOT :all };
 use Carp;
 use POSIX qw{floor strftime};
 

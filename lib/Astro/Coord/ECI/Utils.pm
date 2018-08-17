@@ -4,7 +4,7 @@ Astro::Coord::ECI::Utils - Utility routines for astronomical calculations
 
 =head1 SYNOPSIS
 
- use Astro::Coord::ECI::Utils qw{:all};
+ use Astro::Coord::ECI::Utils qw{ :all };
  my $now = time ();
  print "The current Julian day is ", julianday ($now);
 
@@ -204,8 +204,19 @@ BEGIN {
     }
 }
 
+our @CARP_NOT = qw{
+    Astro::Coord::ECI
+    Astro::Coord::ECI::Mixin
+    Astro::Coord::ECI::Moon
+    Astro::Coord::ECI::Star
+    Astro::Coord::ECI::Sun
+    Astro::Coord::ECI::TLE
+    Astro::Coord::ECI::TLE::Set
+    Astro::Coord::ECI::Utils
+};
+
 our @EXPORT;
-our @EXPORT_OK = ( qw{
+my @all_external = ( qw{
 	AU $DATETIMEFORMAT $JD_GREGORIAN JD_OF_EPOCH LIGHTYEAR PARSEC
 	PERL2000 PI PIOVER2 SECSPERDAY SECS_PER_SIDERIAL_DAY
 	SPEED_OF_LIGHT TWOPI
@@ -222,9 +233,13 @@ our @EXPORT_OK = ( qw{
 	vector_dot_product vector_magnitude vector_unitize __classisa
 	__default_station __instance },
 	@time_routines );
+our @EXPORT_OK = (
+    qw{ @CARP_NOT },	# Package-private, undocumented
+    @all_external,
+);
 
 our %EXPORT_TAGS = (
-    all => \@EXPORT_OK,
+    all => \@all_external,
     params => [ qw{ __classisa __instance } ],
     ref	=> [ grep { m/ [[:upper:]]+ _REF \z /smx } @EXPORT_OK ],
     time => \@time_routines,

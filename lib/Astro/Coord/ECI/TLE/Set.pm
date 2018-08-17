@@ -131,7 +131,7 @@ package Astro::Coord::ECI::TLE::Set;
 use strict;
 use warnings;
 
-use Astro::Coord::ECI::Utils qw{ :params :ref max };
+use Astro::Coord::ECI::Utils qw{ :params :ref max @CARP_NOT };
 use Carp;
 
 our @CARP_NOT = qw{

@@ -239,6 +239,7 @@ use Astro::Coord::ECI::Utils qw{ :params :ref :time deg2rad distsq
     dynamical_delta embodies find_first_true fold_case
     format_space_track_json_time load_module looks_like_number max min
     mod2pi PI PIOVER2 rad2deg SECSPERDAY TWOPI thetag __default_station
+    @CARP_NOT
     };
 
 use Carp qw{carp croak confess};

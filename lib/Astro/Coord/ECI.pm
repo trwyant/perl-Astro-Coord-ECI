@@ -104,7 +104,7 @@ use warnings;
 
 our $VERSION = '0.100_004';
 
-use Astro::Coord::ECI::Utils qw{:all};
+use Astro::Coord::ECI::Utils qw{ @CARP_NOT :all };
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};

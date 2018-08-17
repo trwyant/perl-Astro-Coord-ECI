@@ -8,7 +8,9 @@ use warnings;
 use Carp;
 
 use Astro::Coord::ECI::Utils qw{ __default_station
-    ARRAY_REF PIOVER2 SECSPERDAY };
+    ARRAY_REF PIOVER2 SECSPERDAY
+    @CARP_NOT
+};
 use Exporter ();
 use POSIX qw{ floor };
 
