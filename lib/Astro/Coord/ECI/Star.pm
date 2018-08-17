@@ -54,7 +54,7 @@ our $VERSION = '0.100_004';
 
 use base qw{Astro::Coord::ECI};
 
-use Astro::Coord::ECI::Utils qw{ @CARP_NOT :all };
+use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
 use Data::Dumper;
 use POSIX qw{floor strftime};
@@ -270,11 +270,11 @@ eod
 #	Get ecliptic coordinates, and correct for nutation.
 
     my ($beta, $lambda) = $self->ecliptic ();
-    my $delta_psi = nutation_in_longitude ($self->dynamical);
+    my ( $delta_psi ) = $self->nutation();
     $lambda += $delta_psi;
 
 
-#	Calculate and add in the abberation terms (Meeus 23.2);
+#	Calculate and add in the aberration terms (Meeus 23.2);
 
     my $T = jcent2000 ($time);			# Meeus (22.1)
     my $e = (-0.0000001267 * $T - 0.000042037) * $T + 0.016708634;# Meeus (25.4)

@@ -48,7 +48,7 @@ our $VERSION = '0.100_004';
 
 use base qw{Astro::Coord::ECI};
 
-use Astro::Coord::ECI::Utils qw{ @CARP_NOT :all };
+use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
 use POSIX qw{floor strftime};
 
@@ -499,7 +499,7 @@ eod
 
 #	Correct longitude for nutation (from Chapter 22, pg 144).
 
-    $lambda += nutation_in_longitude ($time);
+    $lambda += ( $self->nutation( $time ) )[0];
 
     $self->ecliptic ($beta, mod2pi( $lambda ), $delta);
     ## $self->set (equinox_dynamical => $time);

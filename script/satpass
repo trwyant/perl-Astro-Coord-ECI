@@ -9,10 +9,10 @@ use Astro::Coord::ECI;
 use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Star;
-use Astro::Coord::ECI::TLE qw{:constants};
+use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::TLE::Iridium;
 use Astro::Coord::ECI::TLE::Set;
-use Astro::Coord::ECI::Utils qw{:all};
+use Astro::Coord::ECI::Utils qw{ :mainstream };
 
 use Carp qw{confess};
 use Config;

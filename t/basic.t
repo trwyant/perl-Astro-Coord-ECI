@@ -105,6 +105,8 @@ u_cmp_eql theta0 => timegm( 0, 21, 19, 10, 3, 87 ), 3.450397,
 u_cmp_eql omega => timegm( 0, 0, 0, 10, 3, 87 ), .19640,
     '%.5f', 'omega: Midnight Nov 3 1987: Meeus ex 22.a';
 
+# TODO drop the following
+
 u_cmp_eql nutation_in_longitude => timegm( 0, 0, 0, 10, 3, 87 ),
     -1.8364e-5, '%.5f',	# Tolerance .5 seconds of arc
     'nutation_in_longitude: Midnight Nov 3 1987: Meeus ex 22.a';
@@ -113,12 +115,14 @@ u_cmp_eql nutation_in_obliquity => timegm( 0, 0, 0, 10, 3, 87 ),
     4.5781e-5, '%.6f',	# Tolerance .1 seconds of arc
     'nutation_in_obliquity: Midnight Nov 3 1987: Meeus ex 22.a';
 
+u_cmp_eql obliquity => timegm( 0, 0, 0, 10, 3, 87 ), 0.409167475225493,
+    '%.5f', 'obliquity: Midnight Nov 3 1987: Meeus ex 22.a';
+
 u_cmp_eql equation_of_time => timegm( 0, 0, 0, 13, 9, 92 ),
     13 * 60 + 42.7, '%.1f',	# Tolerance .1 second
     'equation_of_time: Midnight Oct 13 1992: Meeus ex 28b';
 
-u_cmp_eql obliquity => timegm( 0, 0, 0, 10, 3, 87 ), 0.409167475225493,
-    '%.5f', 'obliquity: Midnight Nov 3 1987: Meeus ex 22.a';
+# TODO drop the preceding
 
 u_cmp_eql add_magnitudes => [ 4.73, 5.22, 5.60 ], 3.93, '%.2f',
     'add_magnitudes: Meeus ex 56.b';
