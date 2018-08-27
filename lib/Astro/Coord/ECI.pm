@@ -1619,13 +1619,8 @@ See L</Attributes> for a list of the attributes you can get.
 	ref $self or $self = \%static;
 	my @rslt;
 	foreach my $name (@args) {
-	    unless ( exists $mutator{$name} ) {
-		# For code that, for whatever reason, can not override get()
-		my $code = $self->can( "__access_$name" )
-		    or croak " Error - Attribute '$name' does not exist";
-		push @rslt, $code->( $self, $name );
-		next;
-	    }
+	    exists $mutator{$name}
+		or croak " Error - Attribute '$name' does not exist";
 	    if ($accessor{$name}) {
 		push @rslt, $accessor{$name}->($self, $name);
 	    } else {
@@ -2723,13 +2718,8 @@ sub set {
     my $action = 0;
     while (@args) {
 	my $name = shift @args;
-	unless( exists $mutator{$name} ) {
-	    # For code that, for whatever reason, can not override set()
-	    my $code = $self->can( "__mutate_$name" )
-		or croak "Error - Attribute '$name' does not exist.";
-	    $code->( $self, $name, shift @args );
-	    next;
-	}
+	exists $mutator{$name}
+	    or croak "Error - Attribute '$name' does not exist.";
 	CODE_REF eq ref $mutator{$name}
 	    or croak "Error - Attribute '$name' is read-only";
 	$action |= $mutator{$name}->($self, $name, shift @args);
