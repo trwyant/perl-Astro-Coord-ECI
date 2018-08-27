@@ -1,3 +1,8 @@
+0.100_006	2018-08-26	T. R. Wyant
+    NOT RELEASED TO CPAN
+
+    Strip out __init(), __accessor_xxxx(), and __mutator_xxxx() hooks.
+
 0.100_005	2018-08-17	T. R. Wyant
     NOT RELEASED TO CPAN
 
