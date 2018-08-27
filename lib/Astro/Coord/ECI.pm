@@ -151,19 +151,11 @@ sub new {
     @args and $self->set( @args );
     exists $self->{almanac_horizon}
 	or $self->set( almanac_horizon => 0 );
-    $self->__init();
     $self->{debug} and do {
 	local $Data::Dumper::Terse = 1;
 	print "Debug - Instantiated ", Dumper ($self);
     };
     return $self;
-}
-
-# Package private, kinda sorta. Subclasses can override this to do
-# whatever initialization they need. At this level of the hierarchy the
-# method MUST be empty so that subclasses are NOT required to call
-# SUPER::__init().
-sub __init {
 }
 
 
@@ -3747,28 +3739,12 @@ is, something like
      ...
  }
 
-From outside the subclass, these attributes can be made accessible in
-one of two ways:
+From outside the subclass, these attributes can be made accessible by
+overriding C<get()> and C<set()>.
 
-=over
-
-=item Override get() and set()
-
-=item Provide __access_xxxx and __mutate_xxxx methods named after the
-attribute
-
-=back
-
-The second method can be used anywhere, but is provided for cases where,
-for whatever reason, C<< $self->SUPER::... >> will not work. It is used
-as a fallback mechanism, so you can not override superclass attributes
-using this mechanism.
-
-Subclasses may (but need not) initialize themselves by providing an
-C<__init()> method. This is called in void context with no arguments as
-the last action of the C<new()> method. At this level of the hierarchy
-C<__init()> does nothing, so the subclass need not call
-C<< $self->SUPER::__init() >>.
+Subclasses B<must> initialize themselves by overriding the C<new()>
+method.  The override B<must> call C<< $class->SUPER::new() >>, passing
+it any arguments that were passed to the override.
 
 =head1 A NOTE ON VELOCITIES
 
