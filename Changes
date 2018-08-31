@@ -1,68 +1,19 @@
-0.100_006	2018-08-26	T. R. Wyant
-    NOT RELEASED TO CPAN
-
-    Strip out __init(), __accessor_xxxx(), and __mutator_xxxx() hooks.
-
-0.100_005	2018-08-17	T. R. Wyant
-    NOT RELEASED TO CPAN
-
+0.100_01	2018-08-31	T. R. Wyant
     Move nutation, obliquity, equation_of_time to Astro::Coord::ECI.
     They become methods rather than subroutines so that they can be
     overridden when higher accuracy is needed.
 
     Install @CARP_NOT in all modules.
 
-0.100_004	2018-08-14	T. R. Wyant
-    NOT RELEASED TO CPAN
-
     Have Moon and Star use correct Sun object for phase, aberration
 
-    Also have script/satpass set the 'sun' attribute for everything in the
-    sky when the 'sun' setting changes.
-
-0.100_003	2018-08-13	T. R. Wyant
-    NOT RELEASED TO CPAN
-
-    Provide hooks for mixin methods. The problem I am trying to solve
-    here is that SUPER:: is relative to the name space making the call,
-    not the class of the invocant. I am specifically addressing that
-    problem with new(), get(), and set().
-
-    The solution was to provide the following hooks:
-
-    * __init() is called by new(), last thing. It is empty, so the subclass
-      need not call SUPER::__init().
-
-    * __access_xxxx() to access attribute xxxx. This is only called after
-      the normal mechanism is exhausted, so you can not override superclass
-      attributes this way.
-
-    * __mutate_xxxx() to mutate attribute xxxx. This is only called after
-      the normal mechanism is exhausted, so you can not override superclass
-      attributes this way.
-
-0.100_002	2018-08-10	T. R. Wyant
-    NOT RELEASED TO CPAN
-
-    Have the Sun's 'sun' attribute be itself.
-
-    * get( 'sun' ) returns the invocant
-
-    * set( 'sun' => ... ) is ignored
-
-0.100_001	2018-08-09	T. R. Wyant
-    NOT RELEASED TO CPAN
+    Have the Sun's 'sun' attribute be itself. Access to it returns the
+    invocant, and mutations are ignored.
 
     Add Utils functions rad2dms() and rad2hms()
 
-    In the script/satpass script:
-
-    * Modify already-loaded bodies when the 'illum' or 'sun' settings are
-      changed.
-
-    * Modify the sky if appropriate when the 'sun' setting is changed.
-
-    * Use the 'sun' setting when adding the Sun to the sky.
+    In the script/satpass script, update all contained objects when the
+    'illum' or 'sun' settings are changed.
 
 0.100		2018-07-22	T. R. Wyant
     Add non-TLE attributes as optional hash reference to parse().
