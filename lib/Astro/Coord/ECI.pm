@@ -102,7 +102,7 @@ package Astro::Coord::ECI;
 use strict;
 use warnings;
 
-our $VERSION = '0.100_01';
+our $VERSION = '0.101';
 
 use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;

@@ -1,4 +1,4 @@
-0.100_01	2018-08-31	T. R. Wyant
+0.101		2018-09-07	T. R. Wyant
     Move nutation, obliquity, equation_of_time to Astro::Coord::ECI.
     They become methods rather than subroutines so that they can be
     overridden when higher accuracy is needed.
