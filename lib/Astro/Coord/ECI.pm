@@ -2809,8 +2809,9 @@ use constant SUN_CLASS => 'Astro::Coord::ECI::Sun';
 
 sub _set_sun {
     my ( $self, $name, $value ) = @_;
-    embodies( $value, SUN_CLASS() )
-	or croak 'The value of the sun attribute must represent the Sun';
+    embodies( $value, $self->SUN_CLASS() )
+	or croak sprintf 'The sun attribute must be a %s',
+	    $self->SUN_CLASS();
     ref $value
 	or $value = $value->new();
     $self->{$name} = $value;
@@ -3703,6 +3704,12 @@ this in general, I have decided to rely on just politely recommending
 that It Is Better Not. But specific pernicious cases B<will> throw
 exceptions, and I reserve the right to do the work and throw exceptions
 in all cases if it becomes a problem.
+
+=item sun (Astro::Coord::ECI::Sun class or object)
+
+This attribute represents the Sun. This is typically used to determine
+ambient lighting conditions and other Sun-related phenomena. Subclasses
+may place more stringent restrictions on this attribute.
 
 =item twilight (numeric, radians)
 
