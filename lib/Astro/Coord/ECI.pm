@@ -2924,6 +2924,56 @@ sub __clear_time {
     return;
 }
 
+sub __event_name {
+    my ( $self, $event, $tplt ) = @_;
+    ARRAY_REF eq ref $tplt
+	or confess 'Programming error - $tplt must be array ref';
+    return __sprintf( $tplt->[$event], $self->__object_name() );
+}
+
+sub __horizon_name {
+    my ( $self, $event, $tplt ) = @_;
+    return $self->__event_name(
+	$event,
+	$tplt || $self->__horizon_name_tplt(),
+    );
+}
+
+sub __horizon_name_tplt {
+    return [ '%s sets', '%s rises' ];
+}
+
+sub __transit_name {
+    my ( $self, $event, $tplt ) = @_;
+    return $self->__event_name(
+	$event,
+	$tplt || $self->__transit_name_tplt(),
+    );
+}
+
+sub __transit_name_tplt {
+    return [ undef, '%s transits meridian' ];
+}
+
+sub __object_name {
+    my ( $self ) = @_;
+    return $self->get( 'name' ) || $self->get( 'id' ) || (
+	$self->{_name} ||= do {
+	    ( my $name = ref $self || $self ) =~ s/ .* :: //smx;
+	    $name;
+	}
+    );
+}
+
+sub __object_is_self_named {
+    my ( $self ) = @_;
+    $self->{_name_re} ||= do {
+	( my $re = ref $self || $self ) =~ s/ .* :: //smx;
+	qr< \A \Q$re\E \z >smxi;
+    };
+    return $self->__object_name() =~ $self->{_name_re};
+}
+
 
 #######################################################################
 #
