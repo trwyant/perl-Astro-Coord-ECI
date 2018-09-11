@@ -502,7 +502,7 @@ sub __horizon_name_tplt {
 
 sub __quarter_name {
     my ( $self, $event, $tplt ) = @_;
-    $tplt ||= $self->__object_name() =~ m/ \A sun \z /smxi ?
+    $tplt ||= $self->__object_is_self_named() ?
     [
 	'Spring equinox', 'Summer solstice',
 	'Fall equinox', 'Winter solstice',
@@ -526,7 +526,7 @@ sub __transit_name_tplt {
 
 sub __twilight_name {
     my ( $self, $event, $tplt ) = @_;
-    $tplt ||= $self->__object_name() =~ m/ \A sun \z /smxi ?
+    $tplt ||= $self->__object_is_self_named() ?
 	[ 'end twilight', 'begin twilight' ] :
 	[ 'end %s twilight', 'begin %s twilight' ];
     return $self->__event_name( $event, $tplt );
