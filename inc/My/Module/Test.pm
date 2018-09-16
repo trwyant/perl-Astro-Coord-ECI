@@ -153,8 +153,8 @@ sub tolerance (@) {
    Tolerance: $tolerance
 EOD
     chomp $title;
-    @_ = ( $rslt, $title );
-    goto &ok;
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    return ok( $rslt, $title );
 }
 
 sub tolerance_frac (@) {
