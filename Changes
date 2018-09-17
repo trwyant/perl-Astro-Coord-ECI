@@ -1,20 +1,11 @@
-0.101_002	2018-09-16	T. R. Wyant
-    NOT RELEASED TO CPAN
-
-    Make more cperl-friendly. Still not supported, though.
-
-    Clean up almanac event descr code
-
-0.101_001	2018-09-10	T. R. Wyant
-    NOT RELEASED TO CPAN
-
+0.101_01	2018-09-17	T. R. Wyant
     Almanac descriptions are now sensitive to object name. That is to
     say, if for some reason you designate a different name for the Sun,
-    almanac names will reflect that.
+    almanac descriptions will reflect that.
 
-    The required class for the 'sun' attribute is no longer SUN_CLASS (a
-    constant) but $self->SUN_CLASS() (a method). This way a subclass can
-    place more stringent restrictions on it.
+    The mutator for the 'sun' attribute now requires the new value to be
+    a member of $self->SUN_CLASS(), rather than SUN_CLASS. This way a
+    subclass can place more stringent restrictions on it.
 
     Also it turns out that the 'sun' attribute was never documented. So it
     is now.
