@@ -1,3 +1,10 @@
+0.101_002	2018-09-16	T. R. Wyant
+    NOT RELEASED TO CPAN
+
+    Make more cperl-friendly. Still not supported, though.
+
+    Clean up almanac event descr code
+
 0.101_001	2018-09-10	T. R. Wyant
     NOT RELEASED TO CPAN
 
