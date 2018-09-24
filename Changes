@@ -1,4 +1,4 @@
-0.101_01	2018-09-17	T. R. Wyant
+0.102		2018-09-24	T. R. Wyant
     Almanac descriptions are now sensitive to object name. That is to
     say, if for some reason you designate a different name for the Sun,
     almanac descriptions will reflect that.
