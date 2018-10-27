@@ -1602,7 +1602,12 @@ See L</Attributes> for a list of the attributes you can get.
 	sun	=> sub {
 ##	    my ( $self, $name ) = @_;
 	    my ( $self ) = @_;		# Name unused
-	    return ( $self->{sun} ||= $self->SUN_CLASS()->new() );
+	    $self->{sun}
+		and return $self->{sun};
+	    my $sun_class = $self->SUN_CLASS();
+	    ( my $path = "$sun_class.pm" ) =~ s< :: ></>smxg;
+	    require $path;
+	    return( $self->{sun} ||= $sun_class->new() );
 	},
     );
 
