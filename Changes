@@ -1,4 +1,4 @@
-0.102_01	2018-10-27	T. R. Wyant
+0.103		2018-11-03	T. R. Wyant
     RT 127488: Load default Sun class before use
     
     This actually manifested in RT 127463 against SVG-Calendar. The smallest
