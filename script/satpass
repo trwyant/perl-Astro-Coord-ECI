@@ -10,7 +10,6 @@ use Astro::Coord::ECI::Moon;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Star;
 use Astro::Coord::ECI::TLE qw{ :constants };
-use Astro::Coord::ECI::TLE::Iridium;
 use Astro::Coord::ECI::TLE::Set;
 use Astro::Coord::ECI::Utils qw{ :mainstream };
 
@@ -24,6 +23,14 @@ use Pod::Usage;
 use POSIX qw{floor strftime};
 use Text::Abbrev;
 use Text::ParseWords;
+
+{
+    local $@ = undef;
+    use constant HAVE_TLE_IRIDIUM	=> eval {
+	require Astro::Coord::ECI::TLE::Iridium;
+	1;
+    } || 0;
+}
 
 my (
 	$clipboard_unavailable,
@@ -847,6 +854,10 @@ my $pass_end = _parse_time (shift || '+7');
 $pass_start >= $pass_end and die <<eod;
 Error - End time must be after start time.
 eod
+
+HAVE_TLE_IRIDIUM
+    or die "Astro::Coord::ECI::TLE::Iridium not available\n";
+
 my $sta = _get_station ();
 
 my $horizon = deg2rad ($parm{horizon});
@@ -1301,19 +1312,22 @@ use warnings qw{once};
 #
 
 my %help_module;
+
 BEGIN {
-%help_module = (
-    eci => 'Astro::Coord::ECI',
-    iridium => 'Astro::Coord::ECI::TLE::Iridium',
-    moon => 'Astro::Coord::ECI::Moon',
-    set => 'Astro::Coord::ECI::TLE::Set',
-    sun => SUN_CLASS_DEFAULT,
-    st => 'Astro::SpaceTrack',
-    star => 'Astro::Coord::ECI::Star',
-    tle => 'Astro::Coord::ECI::TLE',
-    utils => 'Astro::Coord::ECI::TLE::Utils',
+    %help_module = (
+	eci => 'Astro::Coord::ECI',
+	moon => 'Astro::Coord::ECI::Moon',
+	set => 'Astro::Coord::ECI::TLE::Set',
+	sun => SUN_CLASS_DEFAULT,
+	st => 'Astro::SpaceTrack',
+	star => 'Astro::Coord::ECI::Star',
+	tle => 'Astro::Coord::ECI::TLE',
+	utils => 'Astro::Coord::ECI::TLE::Utils',
     );
+    HAVE_TLE_IRIDIUM
+	and $help_module{iridium} = 'Astro::Coord::ECI::TLE::Iridium';
 }
+
 sub help {
 if ($parm{webcmd}) {
     CORE::system { $parm{webcmd} } $parm{webcmd},
@@ -2400,8 +2414,9 @@ if ($verb eq 'add' || $verb eq 'drop') {
   elsif ( $verb eq 'show' ) {
     my @data = Astro::Coord::ECI::TLE->status( 'show', @_ );
     @data = sort {$a->[3] cmp $b->[3]} @data if $cmdopt{name};
-    my $encoder = Astro::Coord::ECI::TLE::Iridium->can(
-	'__encode_operational_status' ) || sub { return $_[2] };
+    my $encoder = ( HAVE_TLE_IRIDIUM &&
+	Astro::Coord::ECI::TLE::Iridium->can(
+	    '__encode_operational_status' ) ) || sub { return $_[2] };
     foreach my $tle (@data) {
 	my $status = $encoder->( undef, status => $tle->[2] );
 	print <<"EOD";
