@@ -10,7 +10,7 @@ Astro::Coord::ECI::Utils - Utility routines for astronomical calculations
 
 =head1 DEPRECATION NOTICE
 
-As of release [% next_version %], subroutines C<equation_of_time()>,
+As of release 0.101, subroutines C<equation_of_time()>,
 C<nutation_in_longitude()>, C<nutation_in_obliquity()>, and
 C<obliquity()> are deprecated in favor of
 L<Astro::Coord::ECI|Asto::Coord::ECI> methods C<equation_of_time()>,
