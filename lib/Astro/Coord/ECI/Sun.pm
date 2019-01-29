@@ -710,14 +710,14 @@ sub time_set {
     $self->{debug} and print <<eod;
 Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime( $time )]}
     T  = $T
-    L0 = @{[_rad2deg ($L0)]} degrees
-    M  = @{[_rad2deg ($M)]} degrees
+    L0 = @{[rad2deg ($L0)]} degrees
+    M  = @{[rad2deg ($M)]} degrees
     e  = $e
-    C  = @{[_rad2deg ($C)]} degrees
-    O  = @{[_rad2deg ($O)]} degrees
+    C  = @{[rad2deg ($C)]} degrees
+    O  = @{[rad2deg ($O)]} degrees
     R  = @{[$R / AU]} AU
-    omega = @{[_rad2deg ($omega)]} degrees
-    lambda = @{[_rad2deg ($lambda)]} degrees
+    omega = @{[rad2deg ($omega)]} degrees
+    lambda = @{[rad2deg ($lambda)]} degrees
 eod
 
     $self->ecliptic (0, $lambda, $R);
