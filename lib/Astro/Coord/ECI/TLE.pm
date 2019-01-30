@@ -2318,7 +2318,7 @@ sub _pass_compute_brightest {
     $latest -= 1;
     @wrk > 1
 	or do {
-	carp 'No magnitude calculation done: only one illuminated position';
+	# carp 'No magnitude calculation done: only one illuminated position';
 	return;
     };
 
@@ -2344,7 +2344,7 @@ sub _pass_compute_brightest {
 
 	# The next interval becomes the brightest and second-brightest
 	# time found.
-	@wrk = sort { $a->[1] <=> $b->[1] } @wrk;
+	@wrk = sort { $a->[1] <=> $b->[1] } grep { defined $_->[1] } @wrk;
 	( $earliest, $latest ) = sort { $a <=> $b }
 	    map { $wrk[$_][0] } 0, 1;
     }
