@@ -2963,17 +2963,21 @@ sub __transit_name_tplt {
 sub __object_name {
     my ( $self ) = @_;
     return $self->get( 'name' ) || $self->get( 'id' ) || (
-	$self->{_name} ||= do {
-	    ( my $name = ref $self || $self ) =~ s/ .* :: //smx;
-	    $name;
-	}
+	$self->{_name} ||= $self->__object_name_from_class_name()
     );
+}
+
+sub __object_name_from_class_name {
+    my ( $self ) = @_;
+    ( my $name = ref $self || $self ) =~ s/ (?: :: | _ ) XS \z //smx;
+    $name =~ s/ .* :: //smx;
+    return $name;
 }
 
 sub __object_is_self_named {
     my ( $self ) = @_;
     $self->{_name_re} ||= do {
-	( my $re = ref $self || $self ) =~ s/ .* :: //smx;
+	my $re = $self->__object_name_from_class_name();
 	qr< \A \Q$re\E \z >smxi;
     };
     return $self->__object_name() =~ $self->{_name_re};
