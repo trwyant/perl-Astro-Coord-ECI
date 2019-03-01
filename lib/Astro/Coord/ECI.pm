@@ -106,7 +106,6 @@ our $VERSION = '0.103';
 
 use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
-use Data::Dumper;
 use POSIX qw{floor strftime};
 use Storable ();
 
@@ -152,8 +151,9 @@ sub new {
     exists $self->{almanac_horizon}
 	or $self->set( almanac_horizon => 0 );
     $self->{debug} and do {
+	require Data::Dumper;
 	local $Data::Dumper::Terse = 1;
-	print "Debug - Instantiated ", Dumper ($self);
+	print "Debug - Instantiated ", Data::Dumper::Dumper ($self);
     };
     return $self;
 }
@@ -357,8 +357,9 @@ the invocant is set.
 sub azel_offset {
     my ( $self, $trn2, $offset ) = _expand_args_default_station( @_ );
     $self->{debug} and do {
+	require Data::Dumper;
 	local $Data::Dumper::Terse = 1;
-	print "Debug azel_offset - ", Dumper ($self, $trn2, $offset);
+	print "Debug azel_offset - ", Data::Dumper::Dumper ($self, $trn2, $offset);
     };
 
     # _local_cartesian() returns NEU coordinates. Converting these to
@@ -1417,17 +1418,20 @@ sub geodetic {
 	return @{$self->{_ECI_cache}{fixed}{geodetic}}
 	    if $self->{_ECI_cache}{fixed}{geodetic} && !$elps;
 	$self->{debug} and do {
+	    require Data::Dumper;
 	    local $Data::Dumper::Terse = 1;
-	    print "Debug geodetic - explicit ellipsoid ", Dumper ($elps);
+	    print "Debug geodetic - explicit ellipsoid ",
+		Data::Dumper::Dumper( $elps );
 	};
 
 
 #	Get a reference to the ellipsoid data to use.
 
 	$elps = $elps ? $known_ellipsoid{$elps} : $self;
-	$self->{debug} and do {
+	$self->{debug} and do {  
+	    require Data::Dumper;
 	    local $Data::Dumper::Terse = 1;
-	    print "Debug geodetic - ellipsoid ", Dumper ($elps);
+	    print "Debug geodetic - ellipsoid ", Data::Dumper::Dumper( $elps );
 	};
 
 
@@ -1756,8 +1760,9 @@ sub heliocentric_ecliptic {
 sub _local_cartesian {
     my ( $self, $trn2 ) = @_;
     $self->{debug} and do {
+	require Data::Dumper;
 	local $Data::Dumper::Terse = 1;
-	print "Debug local_cartesian - ", Dumper( $self, $trn2 );
+	print "Debug local_cartesian - ", Data::Dumper::Dumper( $self, $trn2 );
     };
 
     my $time = $trn2->universal();
@@ -3039,18 +3044,22 @@ eod
     }
 
     $self->{debug} and do {
+	require Data::Dumper;
 	local $Data::Dumper::Terse = 1;
-	print "Debug $method (", Dumper (@$args, @extra), ")\n";
+	print "Debug $method (", Data::Dumper::Dumper (@$args, @extra), ")\n";
     };
 
     {
 	my $inx = 0;
-	local $Data::Dumper::Terse = 1;
 	foreach (@$args) {
+	    defined $_
+		and next;
+	    require Data::Dumper;
+	    local $Data::Dumper::Terse = 1;
 	    croak <<eod unless defined $_;
 Error - @{[ (caller (1))[3] ]} argument $inx is undefined.
         Arguments are (@{[ join ', ',
-	    map {my $x = Dumper $_; chomp $x; $x} @$args ]})
+	    map {my $x = Data::Dumper::Dumper $_; chomp $x; $x} @$args ]})
 eod
 	    $inx++;
 	}
