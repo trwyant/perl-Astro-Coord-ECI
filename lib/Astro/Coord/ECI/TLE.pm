@@ -1241,7 +1241,7 @@ side effect of calling $tle->universal ($time).
 
 =cut
 
-sub null {}
+sub null { return $_[0] }
 
 
 =item @elements = Astro::Coord::ECI::TLE->parse( @data );
