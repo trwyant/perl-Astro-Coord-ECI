@@ -5229,9 +5229,9 @@ use constant SGP4R_ERROR_1 => dualvar (1, SGP4R_ERROR_MEAN_ECCEN);
 use constant SGP4R_ERROR_MEAN_MOTION =>
     'Sgp4r 2: Mean motion < 0.0';
 use constant SGP4R_ERROR_2 => dualvar (2, SGP4R_ERROR_MEAN_MOTION);
-use constant SGP4R_INST_ECCEN =>
+use constant SGP4R_ERROR_INST_ECCEN =>
     'Sgp4r 3: Instantaneous eccentricity < 0 or > 1';
-use constant SGP4R_ERROR_3 => dualvar (3, SGP4R_INST_ECCEN);
+use constant SGP4R_ERROR_3 => dualvar (3, SGP4R_ERROR_INST_ECCEN);
 use constant SGP4R_ERROR_LATUSRECTUM =>
     'Sgp4r 4: Semi-latus rectum < 0';
 use constant SGP4R_ERROR_4 => dualvar (4, SGP4R_ERROR_LATUSRECTUM);
