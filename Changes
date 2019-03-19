@@ -1,4 +1,4 @@
-0.104_01	2019-03-10	T. R. Wyant
+0.105		2019-03-19	T. R. Wyant
     Require at least Scalar::Util 1.22. With profound thanks to Nigel
     Horne for testing on versions of Perl old enough to expose the need
     for this.
