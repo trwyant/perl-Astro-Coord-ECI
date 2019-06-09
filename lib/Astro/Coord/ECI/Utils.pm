@@ -13,7 +13,7 @@ Astro::Coord::ECI::Utils - Utility routines for astronomical calculations
 As of release 0.101, subroutines C<equation_of_time()>,
 C<nutation_in_longitude()>, C<nutation_in_obliquity()>, and
 C<obliquity()> are deprecated in favor of
-L<Astro::Coord::ECI|Asto::Coord::ECI> methods C<equation_of_time()>,
+L<Astro::Coord::ECI|Astro::Coord::ECI> methods C<equation_of_time()>,
 C<nutation_in_longitude()>, C<nutation_in_obliquity()>, and
 C<obliquity()>.
 
@@ -350,7 +350,7 @@ The algorithm comes from Daniel W. E. Green's article "Magnitude
 Corrections for Atmospheric Extinction", which was published in
 the July 1992 issue of "International Comet Quarterly", and is
 available online at
-L<http://www.cfa.harvard.edu/icq/ICQExtinct.html>. The text of
+L<http://www.icq.eps.harvard.edu/ICQExtinct.html>. The text of
 this article makes it clear that the actual value of the
 atmospheric extinction can vary greatly from the typical
 values given even in the absence of cloud cover.
@@ -1295,7 +1295,7 @@ This exportable subroutine is a wrapper for either
 C<Time::y2038::timelocal()> (if that module is installed) or
 C<Time::Local::timelocal()> (if not.)
 
-This wrapper is needed for the same reason L<time_gm()|/time_gm> is
+This wrapper is needed for the same reason C<time_gm()> is
 needed.
 
 =item $a = vector_cross_product( $b, $c );

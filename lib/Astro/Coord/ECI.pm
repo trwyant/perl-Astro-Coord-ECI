@@ -298,7 +298,7 @@ C<correct_for_refraction()> methods, the C<$coord> object's method is
 used.
 
 If you want to ignore atmospheric refraction (and not have a gap in your
-data), set the L<refraction|/refraction> attribute of the $coord object
+data), set the C<refraction> attribute of the $coord object
 to any value Perl considers false (e.g. 0).
 
 The algorithm for position is the author's, but he confesses to having
@@ -432,7 +432,7 @@ This method can also be called as a class method, in which case the
 correction is applied only if the uncorrected elevation is greater than
 minus two degrees. It is really only exposed for testing purposes (hence
 the cumbersome name). The azel() method calls it for you if the
-L<refraction|/refraction> attribute is true.
+C<refraction> attribute is true.
 
 The algorithm for atmospheric refraction comes from Thorfinn
 Saemundsson's article in "Sky and Telescope", volume 72, page 70
@@ -998,7 +998,7 @@ $coord.
 As a side effect, the time of the $coord object may be set from the
 $coord2 object.
 
-If the L<refraction|/refraction> attribute of the $coord object is
+If the C<refraction> attribute of the $coord object is
 true, the coordinates will be corrected for atmospheric refraction using
 the correct_for_refraction() method.
 
@@ -1375,7 +1375,7 @@ B<This is the method that should be used with map coordinates.>
 This method returns the geodetic latitude, longitude, and height
 above mean sea level.
 
-The ellipsoid argument is the name of a L</Reference ellipsoid> known
+The ellipsoid argument is the name of a L</Reference Ellipsoid> known
 to the class, and is optional. If not specified, the most-recently-set
 ellipsoid will be used.
 
@@ -3643,7 +3643,7 @@ cast by the illuminating body, in terms of the apparent radius of that
 body. That is, the edge of the umbra is specified by 1, the middle of
 the penumbra by 0, and the edge of the penumbra by -1. It was added for
 the benefit of the B<Astro::Coord::ECI::TLE> class, on the same dubious
-logic that the L<twilight|/twilight> attribute was added.
+logic that the C<twilight> attribute was added.
 
 The default is 1.
 
@@ -3700,7 +3700,7 @@ The default is C<undef>.
 This attribute represents the distance the effective horizon is above
 the geometric horizon. It was added for the
 L<Astro::Coord::ECI::TLE::Iridium|Astro::Coord::ECI::TLE::Iridium>
-class, on the same dubious logic that the L<twilight|/twilight>
+class, on the same dubious logic that the C<twilight>
 attribute was added.
 
 The default is the equivalent of 20 degrees.
@@ -3924,8 +3924,10 @@ Meeus' "Astronomical Algorithms" second edition, Chapter 10 (Dynamical
 Time and Universal Time) is used.
 
 Compare and contrast this to L</Universal time>. This explanation leans
-heavily on L<http://star-www.rl.ac.uk/star/docs/sun67.htx/node226.html>,
+heavily on C<http://star-www.rl.ac.uk/star/docs/sun67.htx/node226.html>,
 which contains a more fulsome but eminently readable explanation.
+Unfortunately that link has gone the way of the dodo, and I have been
+unable to find an adequate replacement.
 
 =head2 Earth-Centered, Earth-fixed (ECEF) coordinates
 
@@ -4023,7 +4025,8 @@ Geocentric latitude is input to and output from this module in radians.
 When referring to a coordinate system, this term means that the
 coordinate system assumes the Earth is an ellipsoid of revolution
 (or an oblate spheroid if you prefer). A number of standard
-L</Reference Ellipsoids> have been adopted over the years.
+L<Reference Ellipsoids|/Reference Ellipsoid> have been adopted over the
+years.
 
 =head3 Geodetic latitude
 
@@ -4116,7 +4119,9 @@ astronomical calculations, where the epoch is typically J2000.0, but the
 angular motions involved are smaller, so it all evens out. I hope.
 
 Compare and contrast L</Dynamical time>. This explanation leans heavily
-on L<http://star-www.rl.ac.uk/star/docs/sun67.htx/node224.html>.
+on C<http://star-www.rl.ac.uk/star/docs/sun67.htx/node224.html>.
+Unfortunately that link has gone the way of the dodo, and I have been
+unable to find an adequate replacement.
 
 =head2 XYZ coordinates
 
@@ -4186,7 +4191,7 @@ L<http://rt.cpan.org/>.
 
 =head1 SEE ALSO
 
-The L<Astro|Astro> package by Chris Phillips. This contains three
+The C<Astro> package by Chris Phillips. This contains three
 function-based modules: L<Astro::Coord|Astro::Coord>, which provides
 various astronomical coordinate conversions, plus the calculation of
 various ephemeris variables; L<Astro::Time|Astro::Time> contains time
@@ -4196,7 +4201,9 @@ calculations unrelated to position and time.
 The B<Astro-Coords> package by Tim Jenness. This contains various modules
 to do astronomical calculations, and includes coordinate conversion and
 calculation of planetary orbits based on orbital elements. Requires
-SLALIB from L<http://www.starlink.rl.ac.uk/Software/software_store.htm>.
+SLALIB from the Starlink Project. This was once a project of the Joint
+Astronomy Centre in the UK, but is no longer. The best link I have for
+it at the moment is L<http://starlink.eao.hawaii.edu/starlink>.
 
 The L<Astro::Nova|Astro::Nova> module by Steffen Mueller, which wraps
 (and bundles) the libnova celestial mechanics, astrometry and
