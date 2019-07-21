@@ -217,7 +217,6 @@ sub _angle_non_inertial {
 }
 
 
-
 =item $which = $coord->attribute ($name);
 
 This method returns the name of the class that implements the named
@@ -1054,11 +1053,12 @@ sub equatorial {
     }
 }
 
-=item ($rightasc, $declin, $range) = $coord->equatorial_apparent();
+=item ($ra, $decl, $rng) = $coord->equatorial_apparent( $sta );
 
 This method returns the apparent equatorial coordinates of the C<$coord>
-object as seen from the object in the C<station> attribute of the
-C<$coord> object.
+object as seen from the object specified by the C<$sta> argument, or by
+the object in the C<station> attribute of the C<$coord> object if no
+argument is specified.
 
 This method will return velocities if available, but I have no idea
 whether they are correct.
@@ -1066,8 +1066,8 @@ whether they are correct.
 =cut
 
 sub equatorial_apparent {
-    my ( $self ) = @_;
-    my $station = $self->get( 'station' )
+    my ( $self, $station ) = @_;
+    ( $station ||= $self->get( 'station' ) )
 	or croak 'Station attribute is required';
     return $station->_equatorial_reduced( $self );
 }
