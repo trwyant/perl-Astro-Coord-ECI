@@ -252,6 +252,7 @@ my @all_external = ( qw{
 	jcent2000 jd2date jd2datetime jday2000 julianday
 	keplers_equation load_module looks_like_number max min mod2pi
 	nutation_in_longitude nutation_in_obliquity obliquity omega
+	position_angle
 	rad2deg rad2dms rad2hms tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize __classisa
 	__default_station __instance __subroutine_deprecation
@@ -1142,6 +1143,38 @@ sub omega {
     my $T = jcent2000 (shift);	# Meeus (22.1)
     return mod2pi (deg2rad ((($T / 450000 + .0020708) * $T -
 	    1934.136261) * $T + 125.04452));
+}
+
+=item $pa = position_angle( $alpha1, $delta1, $alpha2, $delta2 );
+
+This low-level subroutine calculates the position angle in right
+ascension of the second body with respect to the first, given the first
+body's right ascension and declination and the second body's right
+ascension and declination in that order, B<in radians>.
+
+The return is the position angle B<in radians>, in the range
+C<< -PI <= $pa < PI >>.
+
+The algorithm comes from Jean Meeus' "Astronomical Algorithms", 2nd
+Edition, page 116, but his algorithm is for the position angle of the
+first body with respect to the second (i.e. the roles of the two bodies
+are reversed). The order of arguments for this subroutine is consistent
+with The IDL Astronomy User's Library at
+L<https://idlastro.gsfc.nasa.gov/>, function C<posang()>.
+
+This is exposed because in principal you could calculate the position
+angle in any spherical coordinate system, you would just need to get the
+order of arguments right (e.g. azimuth, elevation or longitude,
+latitude).
+
+=cut
+
+sub position_angle {
+    my ( $alpha1, $delta1, $alpha2, $delta2 ) = @_;
+    my $delta_alpha = $alpha2 - $alpha1;
+    return atan2( sin( $delta_alpha ),
+	cos( $delta1 ) * tan( $delta2 ) -
+	sin( $delta1 ) * cos( $delta_alpha ) );
 }
 
 
