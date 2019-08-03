@@ -1,4 +1,4 @@
-0.106_01	2019-07-21	T. R. Wyant
+0.107		2019-08-03	T. R. Wyant
     Fix broken POD links and add a test to ensure they stay fixed.
 
     Add low-level subroutine position_angle() to
