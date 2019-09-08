@@ -1,4 +1,4 @@
-0.108_01	2019-09-01	T. R. Wyant
+0.109		2019-09-08	T. R. Wyant
     Further deprecate nutation and obliquity subroutines in favor of the
     same-named methods. Subroutine calls now always result in a warning.
     In six months they will be fatal.

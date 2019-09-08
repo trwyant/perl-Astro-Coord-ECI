@@ -9,7 +9,7 @@ use base qw{ Astro::Coord::ECI::Sun };
 
 use Carp;
 
-our $VERSION = '0.108_01';
+our $VERSION = '0.109';
 
 
 1;
