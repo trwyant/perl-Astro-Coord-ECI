@@ -1,4 +1,4 @@
-0.109_01	2019-09-22	T. R. Wyant
+0.110		2019-10-04	T. R. Wyant
     Validate horizon and almanac_horizon. This is pretty much the same
     situation as twilight -- they were completely unvalidated, but are
     now restricted to the range - PI/2 to PI/2 radians, inclusive.
