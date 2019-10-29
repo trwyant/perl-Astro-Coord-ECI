@@ -103,8 +103,8 @@ control over the issue, since the workaround needs to be applied at the
 point the JSON C<encode()> method is called. See test F<t/tle_json.t>
 for the workaround that allows tests to pass in the affected locales.
 The relevant L<JSON::XS|JSON::XS> ticket is
-L<https://rt.cpan.org/Ticket/Display.html?id=93307>. The relevant Perl
-ticket is L<https://rt.perl.org/Ticket/Display.html?id=121317>.
+L<https://rt.cpan.org/Public/Bug/Display.html?id=93307>. The relevant Perl
+ticket is L<https://github.com/perl/perl5/issues/13620>.
 
 The C<pass_threshold> attribute has undergone a slight change in
 functionality from version 0.046, in which it was introduced. In the new
@@ -134,7 +134,7 @@ L<ACKNOWLEDGMENTS|/ACKNOWLEDGMENTS> section for details on these
 reports.
 
 In other words, this module turns the two- or three-line element sets
-available from such places as L<http://www.space-track.org/> or
+available from such places as L<https://www.space-track.org/> or
 L<http://celestrak.com/> into predictions of where the relevant orbiting
 bodies will be. Additionally, the pass() method implements an actual
 visibility prediction system.
@@ -988,7 +988,7 @@ Examples of Molczan-format data are contained in F<mcnames.zip> and
 F<vsnames.zip> available on Mike McCants' web site; these can be fetched
 using the L<Astro::SpaceTrack|Astro::SpaceTrack> C<mccants()> method. An
 example of Quicksat-format data is contained in F<qsmag.zip>. See Mike
-McCants' web site, L<http://www.prismnet.com/~mmccants/> for an
+McCants' web site, L<https://www.prismnet.com/~mmccants/> for an
 explanation of the differences.
 
 Note that if you have one of the reported pure Perl versions of
@@ -8936,8 +8936,8 @@ The default is 1 (i.e. true).
 
 The author wishes to acknowledge the following individuals.
 
-Dominik Brodowski (L<http://www.brodo.de/>), whose SGP C-lib
-(available at L<http://www.brodo.de/space/sgp/>) provided a
+Dominik Brodowski (L<https://www.brodo.de/>), whose SGP C-lib
+(available at L<https://www.brodo.de/space/sgp/>) provided a
 reference implementation that I could easily run, and pick
 apart to help get my own code working. Dominik based his work
 on Dr. Kelso's Pascal implementation.

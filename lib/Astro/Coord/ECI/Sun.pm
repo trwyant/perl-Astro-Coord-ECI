@@ -308,7 +308,7 @@ If the $theta argument is omitted or undefined, the method returns
 the average magnitude of the Sun, which is taken to be -26.8.
 
 The limb-darkening algorithm and the associated constants come from
-L<http://en.wikipedia.org/wiki/Limb_darkening>.
+L<https://en.wikipedia.org/wiki/Limb_darkening>.
 
 For consistency's sake, an observing station can optionally be passed as
 the first argument (i.e. before C<$theta>). This is currently ignored.

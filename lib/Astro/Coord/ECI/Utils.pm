@@ -1634,13 +1634,13 @@ __END__
 
 The author wishes to acknowledge Jean Meeus, whose book "Astronomical
 Algorithms" (second edition) published by Willmann-Bell Inc
-(L<http://www.willbell.com/>) provided several of the algorithms
+(L<https://www.willbell.com/>) provided several of the algorithms
 implemented herein.
 
 =head1 BUGS
 
 Bugs can be reported to the author by mail, or through
-L<http://rt.cpan.org/>.
+L<https://rt.cpan.org/>.
 
 =head1 AUTHOR
 
