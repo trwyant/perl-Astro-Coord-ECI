@@ -2778,7 +2778,7 @@ sub set {
 	if ( $special{$value} ) {
 	    $hash->{"_$attr"} = $special{$value};
 	} elsif ( looks_like_number( $value )
-	    && $value >= -PIOVER2
+	    && $value >= - PIOVER2 # Not -PIOVER2 to avoid warning under 5.10.1.
 	    && $value <= PIOVER2
 	) {
 	    $hash->{"_$attr"} = sub { return $_[0]->get( $attr ) };
@@ -2817,7 +2817,7 @@ sub _set_custom_ellipsoid {
 	defined $value
 	    or $value = ( $dflt{$name} || 0 );	# Default
 	looks_like_number( $value )
-	    and $value >= -PIOVER2
+	    and $value >= - PIOVER2 # Not -PIOVER2 to avoid warning under 5.10.1.
 	    and $value <= PIOVER2
 	    or croak "'$value' is an invalid value for '$name'";
 	$self->{$name} = $value;
