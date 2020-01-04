@@ -181,10 +181,12 @@ BEGIN {
 	require Time::Local;
 
 	# sub time_gm
-	*time_gm = Time::Local->can( 'timegm' );
+	*time_gm = Time::Local->can( 'timegm_modern' ) ||
+	    Time::Local->can( 'timegm' );
 
 	# sub time_local
-	*time_local = Time::Local->can( 'timelocal' );
+	*time_local = Time::Local->can( 'timelocal_modern' ) ||
+	    Time::Local->can( 'timelocal' );
 
 	@time_routines = ( qw{ time_gm time_local __tle_year_to_Gregorian_year } );
 
