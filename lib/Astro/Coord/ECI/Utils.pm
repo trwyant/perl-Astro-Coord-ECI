@@ -49,6 +49,11 @@ following export tags may be used:
 
 This imports everything exportable into your name space.
 
+=item :greg_time
+
+This imports all time routines except the discouraged routines
+C<time_gm()> and C<time_local()>.
+
 =item :mainstream
 
 This imports everything not deprecated into your name space.
@@ -145,7 +150,7 @@ use Carp;
 use POSIX qw{floor strftime};
 use Scalar::Util qw{ blessed };
 
-my @time_routines;
+my @greg_time_routines;
 
 BEGIN {
 
@@ -165,6 +170,12 @@ BEGIN {
 	    $date[5] = _year_adjust( $date[5] );
 	    return Time::y2038::timegm( @date );
 	};
+	# greg_time_local
+	*greg_time_gm = sub {
+	    my @date = @_;
+	    $date[5] -= 1900;
+	    return Time::y2038::timegm( @date );
+	};
 
 	# sub time_local
 	*time_local = sub {
@@ -172,9 +183,18 @@ BEGIN {
 	    $date[5] = _year_adjust( $date[5] );
 	    return Time::y2038::timelocal( @date );
 	};
+	# sub greg_time_local
+	*greg_time_local = sub {
+	    my @date = @_;
+	    $date[5] -= 1900;
+	    return Time::y2038::timelocal( @date );
+	};
 
-	@time_routines = ( qw{ gmtime localtime time_gm time_local
-	    __tle_year_to_Gregorian_year } );
+	@greg_time_routines = qw{
+	    gmtime localtime
+	    greg_time_gm greg_time_local
+	    __tle_year_to_Gregorian_year
+	};
 
 	1;
     } or do {
@@ -183,12 +203,29 @@ BEGIN {
 	# sub time_gm
 	*time_gm = Time::Local->can( 'timegm_modern' ) ||
 	    Time::Local->can( 'timegm' );
+	# sub greg_time_gm
+	*greg_time_gm = Time::Local->can( 'timegm_modern' ) || sub {
+	    $_[5] >= 0 and $_[5] < 1000
+		and croak "$_[5] not interpreted as Gregorian year ",
+		    'by Time::Local::timegm';
+	    goto &Time::Local::timegm;
+	};
 
 	# sub time_local
 	*time_local = Time::Local->can( 'timelocal_modern' ) ||
 	    Time::Local->can( 'timelocal' );
+	# sub greg_time_local
+	*greg_time_local = Time::Local->can( 'timelocal_modern' ) || sub {
+	    $_[5] >= 0 and $_[5] < 1000
+		and croak "$_[5] not interpreted as Gregorian year ",
+		    'by Time::Local::timelocal';
+	    goto &Time::Local::timelocal;
+	};
 
-	@time_routines = ( qw{ time_gm time_local __tle_year_to_Gregorian_year } );
+	@greg_time_routines = qw{
+	    greg_time_gm greg_time_local
+	    __tle_year_to_Gregorian_year
+	};
 
     };
 }
@@ -260,7 +297,7 @@ my @all_external = ( qw{
 	__default_station __instance __subroutine_deprecation
 	__sprintf
 	},
-	@time_routines );
+	qw{ time_gm time_local }, @greg_time_routines );
 our @EXPORT_OK = (
     qw{ @CARP_NOT },	# Package-private, undocumented
     @all_external,
@@ -273,10 +310,11 @@ my %deprecated_export = map { $_ => 1 } qw{
 
 our %EXPORT_TAGS = (
     all => \@all_external,
+    greg_time	=> \@greg_time_routines,
     mainstream => [ grep { ! $deprecated_export{$_} } @all_external ],
     params => [ qw{ __classisa __instance } ],
     ref	=> [ grep { m/ [[:upper:]]+ _REF \z /smx } @all_external ],
-    time => \@time_routines,
+    time => [ qw{ time_gm time_local }, @greg_time_routines ],
     vector => [ grep { m/ \A vector_ /smx } @all_external ],
 );
 
@@ -286,7 +324,7 @@ use constant LIGHTYEAR => 9.4607e12;	# 1 light-year, per Meeus,
 					# Appendix I pg 407.
 use constant PARSEC => 30.8568e12;	# 1 parsec, per Meeus,
 					# Appendix I pg 407.
-use constant PERL2000 => time_gm( 0, 0, 12, 1, 0, 2000 );
+use constant PERL2000 => greg_time_gm( 0, 0, 12, 1, 0, 2000 );
 use constant PI => atan2 (0, -1);
 use constant PIOVER2 => PI / 2;
 use constant SECSPERDAY => 86400;
@@ -481,7 +519,7 @@ sub decode_space_track_json_time {
     my $frac = $7;
     $time[0] = __tle_year_to_Gregorian_year( $time[0] );
     $time[1] -= 1;
-    my $rslt = time_gm( reverse @time );
+    my $rslt = greg_time_gm( reverse @time );
     defined $frac
 	and $frac ne '.'
 	and $rslt += $frac;
@@ -767,6 +805,48 @@ sub format_space_track_json_time {
     return sprintf '%04d-%02d-%02d %02d:%02d:%02d', reverse
 	@parts[ 0 .. 5 ];
 }
+
+=item $epoch = greg_time_gm( $yr, $mon, $day, $hr, $min, $sec );
+
+This exportable subroutine is a wrapper for either
+C<Time::y2038::timegm()> (if that module is installed),
+C<Time::Local::timegm_modern()> (if that is available), or
+C<Time::Local::timegm()> (if not.)
+
+This wrapper is needed because the routines have subtly different
+signatures. L<Time::y2038|Time::y2038> C<timegm()> interprets years
+strictly as Perl years. L<Time::Local|Time::Local> C<timegm_modern()>
+interprets them strictly as Gregorian years. L<Time::Local|Time::Local>
+C<timegm()> interprets them differently depending on the value of the
+year; greater than 999 as Gregorian years, but years between 100 and 999
+are Perl years, and years between 0 and 99 inclusive are within 50 years
+of the current year.
+
+l<time::local|time::local> is a core module, but you need at least
+version c<1.27> to get the c<timegm_modern()> functionality.
+
+the difference between this and c<time_gm()> is that this throws an
+exception if the code being wrapped will not interpret the year as
+Gregorian. for that reason, this subroutine is preferred over
+c<time_gm()>.
+
+=item $epoch = greg_time_local( $yr, $mon, $day, $hr, $min, $sec );
+
+This exportable subroutine is a wrapper for either
+C<Time::y2038::timelocal()> (if that module is installed),
+C<Time::Local::timelocal_modern()> (if that is available), or
+C<Time::Local::timelocal()> (if not.)
+
+This wrapper is needed for the same reason C<greg_time_gm()> is
+needed.
+
+l<time::local|time::local> is a core module, but you need at least
+version c<1.27> to get the c<timelocal_modern()> functionality.
+
+the difference between this and c<time_local()> is that this throws an
+exception if the code being wrapped will not interpret the year as
+Gregorian. for that reason, this subroutine is preferred over
+c<time_local()>.
 
 =item $difference = intensity_to_magnitude ($ratio)
 
@@ -1285,7 +1365,7 @@ sub theta0 {
     my ($time) = @_;
     my @t = gmtime $time;
     $t[5] += 1900;
-    return thetag( time_gm( 0, 0, 0, @t[3 .. 5] ) );
+    return thetag( greg_time_gm( 0, 0, 0, @t[3 .. 5] ) );
 }
 
 
@@ -1315,23 +1395,39 @@ sub thetag {
 =item $epoch = time_gm( $yr, $mon, $day, $hr, $min, $sec );
 
 This exportable subroutine is a wrapper for either
-C<Time::y2038::timegm()> (if that module is installed) or
+C<Time::y2038::timegm()> (if that module is installed),
+C<Time::Local::timegm_modern()> (if that is available), or
 C<Time::Local::timegm()> (if not.)
 
-This wrapper is needed because the two modules have subtly different
-signatures; L<Time::y2038|Time::y2038> interprets years strictly as Perl
-years, whereas L<Time::Local|Time::Local> interprets them differently
-depending on the value of the year, and in particular interprets years
-greater than 999 as Gregorian years.
+This wrapper is needed because the routines have subtly different
+signatures. L<Time::y2038|Time::y2038> C<timegm()> interprets years
+strictly as Perl years. L<Time::Local|Time::Local> C<timegm_modern()>
+interprets them strictly as Gregorian years. L<Time::Local|Time::Local>
+C<timegm()> interprets them differently depending on the value of the
+year; greater than 999 as Gregorian years, but years between 100 and 999
+are Perl years, and years between 0 and 99 inclusive are within 50 years
+of the current year.
+
+L<Time::Local|Time::Local> is a core module, but you need at least
+version C<1.27> to get the C<timegm_modern()> functionality.
+
+This subroutine is discouraged in favor of C<greg_time_gm()>, which
+throws an exception if the year can not be interpreted as a Gregorian
+year.
 
 =item $epoch = time_local( $yr, $mon, $day, $hr, $min, $sec );
 
 This exportable subroutine is a wrapper for either
-C<Time::y2038::timelocal()> (if that module is installed) or
+C<Time::y2038::timelocal()> (if that module is installed),
+C<Time::Local::timelocal_modern()> (if that is available), or
 C<Time::Local::timelocal()> (if not.)
 
 This wrapper is needed for the same reason C<time_gm()> is
 needed.
+
+This subroutine is discouraged in favor of C<greg_time_local()>, which
+throws an exception if the year can not be interpreted as a Gregorian
+year.
 
 =item $a = vector_cross_product( $b, $c );
 
@@ -1522,9 +1618,9 @@ sub __instance {
 
 	my $time;
 	if ( @zone ) {
-	    $time = time_gm( reverse @date );
+	    $time = greg_time_gm( reverse @date );
 	} else {
-	    $time = time_local( reverse @date );
+	    $time = greg_time_local( reverse @date );
 	}
 
 	if ( defined $frc  && $frc ne '') {
