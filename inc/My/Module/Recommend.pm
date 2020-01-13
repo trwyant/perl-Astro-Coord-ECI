@@ -7,6 +7,7 @@ use Carp;
 use Config;
 use My::Module::Recommend::Any qw{ __any };
 use My::Module::Recommend::All qw{ __all };
+use My::Module::Recommend::VersionOnly qw{ __version_only };
 
 my %misbehaving_os = map { $_ => 1 } qw{ MSWin32 cygwin };
 
@@ -61,6 +62,14 @@ EOD
       This module is required for Astro::Coord::ECI::TLE to parse
       orbital data in JSON format. If you do not intend to do this, this
       module is not needed.
+EOD
+    __version_only( [ 'Time::Local' => 1.27 ]	=> <<'EOD' ),
+      This package deals with times in terms of seconds since epoch.
+      But if you are using the support classes for doing astronomical
+      calculations for years before AD 1000 you may want an updated
+      version of Time::Local to do input time conversion using the
+      perhaps-badly-named timegm_modern() and timelocal_modern()
+      subroutines.
 EOD
     ( $] >= 5.012 ? () :
     __any( 'Time::y2038'			=> <<'EOD'
@@ -123,7 +132,7 @@ BEGIN {
     eval {
 	require Test::Without::Module;
 	Test::Without::Module->import(
-	    My::Module::Recommend->optionals() );
+	    My::Module::Recommend->test_without() );
 	1;
     } or plan skip_all => 'Test::Without::Module not available';
 }
@@ -167,6 +176,10 @@ later, this software will make use of them when it finds them.
 EOD
 
     return;
+}
+
+sub test_without {
+    return ( map { $_->test_without() } @optionals );
 }
 
 1;
@@ -223,6 +236,13 @@ This static method examines the current Perl to see which optional
 modules are installed. If any are not installed, a message is printed to
 standard error explaining the benefits to be gained from installing the
 module, and any possible problems with installing it.
+
+=head2 test_without
+
+ say for My::Module::Recommend->test_without();
+
+This static method simply returns the names of the modules to be tested
+without.
 
 =head1 SUPPORT
 
