@@ -516,6 +516,18 @@ sub __initial_inertial { return 1 }
 
 =back
 
+=head2 Historical Calculations
+
+This class was written for the purpose of calculating whether the Moon
+was visible from given point on the Earth (or in space) at a given time
+in or reasonably close to the present. I can not say how accurate it is
+at times far from the present.
+
+See
+L<Historical Calculations|Astro::Coord::ECI::Sun/Historical Calculations>
+in the L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> documentation
+for a discussion of input and output time conversion.
+
 =head1 ACKNOWLEDGMENTS
 
 The author wishes to acknowledge Jean Meeus, whose book "Astronomical

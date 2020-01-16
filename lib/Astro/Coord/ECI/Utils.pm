@@ -822,8 +822,13 @@ year; greater than 999 as Gregorian years, but years between 100 and 999
 are Perl years, and years between 0 and 99 inclusive are within 50 years
 of the current year.
 
-l<time::local|time::local> is a core module, but you need at least
+l<Time::Local|Time::Local> is a core module, but you need at least
 version c<1.27> to get the c<timegm_modern()> functionality.
+
+If you are doing historical calculations, see
+L<Historical Calculations|Astro::Coord::ECI::Sun/Historical Calculations>
+in the L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> documentation
+for a discussion of input and output time conversion.
 
 the difference between this and c<time_gm()> is that this throws an
 exception if the code being wrapped will not interpret the year as
@@ -842,6 +847,11 @@ needed.
 
 l<time::local|time::local> is a core module, but you need at least
 version c<1.27> to get the c<timelocal_modern()> functionality.
+
+If you are doing historical calculations, see
+L<Historical Calculations|Astro::Coord::ECI::Sun/Historical Calculations>
+in the L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> documentation
+for a discussion of input and output time conversion.
 
 the difference between this and c<time_local()> is that this throws an
 exception if the code being wrapped will not interpret the year as
