@@ -72,9 +72,10 @@ This imports all the C<*_REF> constants.
 This imports the time routines into your name space. If
 L<Time::y2038|Time::y2038> is available, it will be loaded, and both
 this tag and C<:all> will import C<gmtime>, C<localtime>, C<time_gm>,
-and C<time_local> into your name space. Otherwise,
-C<Time::Local|Time::Local> will be loaded, and both this tag and C<:all>
-will import C<time_gm> and C<time_local> into your name space.
+C<time_local>, C<greg_time_gm>, and C<greg_time_local> into your name
+space. Otherwise, C<Time::Local|Time::Local> will be loaded, and both
+this tag and C<:all> will import C<time_gm>, C<time_local>,
+C<greg_time_gm>, and C<greg_time_local> into your name space.
 
 =item :vector
 
@@ -167,7 +168,7 @@ BEGIN {
 	# sub time_gm
 	*time_gm = sub {
 	    my @date = @_;
-	    $date[5] = _year_adjust( $date[5] );
+	    $date[5] = _year_adjust_y2038( $date[5] );
 	    return Time::y2038::timegm( @date );
 	};
 	# greg_time_local
@@ -180,7 +181,7 @@ BEGIN {
 	# sub time_local
 	*time_local = sub {
 	    my @date = @_;
-	    $date[5] = _year_adjust( $date[5] );
+	    $date[5] = _year_adjust_y2038( $date[5] );
 	    return Time::y2038::timelocal( @date );
 	};
 	# sub greg_time_local
@@ -201,24 +202,18 @@ BEGIN {
 	require Time::Local;
 
 	# sub time_gm
-	*time_gm = Time::Local->can( 'timegm_modern' ) ||
-	    Time::Local->can( 'timegm' );
+	*time_gm = Time::Local->can( 'timegm' );
 	# sub greg_time_gm
 	*greg_time_gm = Time::Local->can( 'timegm_modern' ) || sub {
-	    $_[5] >= 0 and $_[5] < 1000
-		and croak "$_[5] not interpreted as Gregorian year ",
-		    'by Time::Local::timegm';
+	    $_[5] = _year_adjust_greg( $_[5] );
 	    goto &Time::Local::timegm;
 	};
 
 	# sub time_local
-	*time_local = Time::Local->can( 'timelocal_modern' ) ||
-	    Time::Local->can( 'timelocal' );
+	*time_local = Time::Local->can( 'timelocal' );
 	# sub greg_time_local
 	*greg_time_local = Time::Local->can( 'timelocal_modern' ) || sub {
-	    $_[5] >= 0 and $_[5] < 1000
-		and croak "$_[5] not interpreted as Gregorian year ",
-		    'by Time::Local::timelocal';
+	    $_[5] = _year_adjust_greg( $_[5] );
 	    goto &Time::Local::timelocal;
 	};
 
@@ -249,7 +244,13 @@ BEGIN {
 
     # The above code is lifted verbatim from Time::Local 1.25.
 
-    sub _year_adjust {
+    use constant NOT_GREG	=>
+	'%d not interpreted as Gregorian year by Time::Local::timegm';
+
+    # Adujst the year so that the Time::y2038 implementation of
+    # time_gm() and time_local() mirrors the Time::Local timegm() and
+    # timelocal() behavior. Kinda sorta.
+    sub _year_adjust_y2038 {
 	my ( $year ) = @_;
 
 	$year < 0
@@ -264,6 +265,13 @@ BEGIN {
 
 	return $year;
     }
+}
+
+# Adjust a Gregorian year so that Time::Local timegm() and timelocal()
+# return epochs in that year.
+sub _year_adjust_greg {
+    my ( $year ) = @_;
+    return $year >= 1000 ? $year : $year - 1900;
 }
 
 our @CARP_NOT = qw{
@@ -806,57 +814,53 @@ sub format_space_track_json_time {
 	@parts[ 0 .. 5 ];
 }
 
-=item $epoch = greg_time_gm( $yr, $mon, $day, $hr, $min, $sec );
+=item $epoch = greg_time_gm( $sec, $min, $hr, $day, $mon, $yr );
 
 This exportable subroutine is a wrapper for either
 C<Time::y2038::timegm()> (if that module is installed),
 C<Time::Local::timegm_modern()> (if that is available), or
 C<Time::Local::timegm()> (if not.)
 
+This subroutine interprets years as Gregorian years.
+
+The difference between this and c<time_gm()> is that C<time_gm()>
+interprets the year the way C<Time::Local::timegm()> does.  For that
+reason, this subroutine is preferred over c<time_gm()>.
+
 This wrapper is needed because the routines have subtly different
 signatures. L<Time::y2038|Time::y2038> C<timegm()> interprets years
 strictly as Perl years. L<Time::Local|Time::Local> C<timegm_modern()>
 interprets them strictly as Gregorian years. L<Time::Local|Time::Local>
 C<timegm()> interprets them differently depending on the value of the
-year; greater than 999 as Gregorian years, but years between 100 and 999
-are Perl years, and years between 0 and 99 inclusive are within 50 years
-of the current year.
-
-l<Time::Local|Time::Local> is a core module, but you need at least
-version c<1.27> to get the c<timegm_modern()> functionality.
+year. Years greater than or equal to 1000 are Gregorian years, but all
+others are Perl years, except for the range 0 to 99 inclusive, which are
+within 50 years of the current year.
 
 If you are doing historical calculations, see
 L<Historical Calculations|Astro::Coord::ECI::Sun/Historical Calculations>
 in the L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> documentation
 for a discussion of input and output time conversion.
 
-the difference between this and c<time_gm()> is that this throws an
-exception if the code being wrapped will not interpret the year as
-Gregorian. for that reason, this subroutine is preferred over
-c<time_gm()>.
-
-=item $epoch = greg_time_local( $yr, $mon, $day, $hr, $min, $sec );
+=item $epoch = greg_time_local( $sec, $min, $hr, $day, $mon, $yr );
 
 This exportable subroutine is a wrapper for either
 C<Time::y2038::timelocal()> (if that module is installed),
 C<Time::Local::timelocal_modern()> (if that is available), or
 C<Time::Local::timelocal()> (if not.)
 
+This subroutine interprets years as Gregorian years.
+
+The difference between this and c<time_local()> is that C<time_local()>
+interprets the year the way C<Time::Local::timelocal()> does.  For that
+reason, this subroutine is preferred over c<time_local()>.
+
 This wrapper is needed for the same reason C<greg_time_gm()> is
 needed.
-
-l<time::local|time::local> is a core module, but you need at least
-version c<1.27> to get the c<timelocal_modern()> functionality.
 
 If you are doing historical calculations, see
 L<Historical Calculations|Astro::Coord::ECI::Sun/Historical Calculations>
 in the L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> documentation
 for a discussion of input and output time conversion.
-
-the difference between this and c<time_local()> is that this throws an
-exception if the code being wrapped will not interpret the year as
-Gregorian. for that reason, this subroutine is preferred over
-c<time_local()>.
 
 =item $difference = intensity_to_magnitude ($ratio)
 
@@ -1402,42 +1406,40 @@ sub thetag {
 
 # time_gm and time_local are actually created at the top of the module.
 
-=item $epoch = time_gm( $yr, $mon, $day, $hr, $min, $sec );
+=item $epoch = time_gm( $sec, $min, $hr, $day, $mon, $yr );
 
 This exportable subroutine is a wrapper for either
-C<Time::y2038::timegm()> (if that module is installed),
-C<Time::Local::timegm_modern()> (if that is available), or
+C<Time::y2038::timegm()> (if that module is installed), or
 C<Time::Local::timegm()> (if not.)
+
+This subroutine interprets years the same way C<Time::Local::timegm()>
+does.
 
 This wrapper is needed because the routines have subtly different
 signatures. L<Time::y2038|Time::y2038> C<timegm()> interprets years
-strictly as Perl years. L<Time::Local|Time::Local> C<timegm_modern()>
-interprets them strictly as Gregorian years. L<Time::Local|Time::Local>
-C<timegm()> interprets them differently depending on the value of the
-year; greater than 999 as Gregorian years, but years between 100 and 999
-are Perl years, and years between 0 and 99 inclusive are within 50 years
-of the current year.
-
-L<Time::Local|Time::Local> is a core module, but you need at least
-version C<1.27> to get the C<timegm_modern()> functionality.
+strictly as Perl years. L<Time::Local|Time::Local> C<timegm()>
+interprets years differently depending on the value of the year; greater
+than 999 as Gregorian years, but other years are Perl years, except for
+the years 0 to 99 inclusive, which are interpreted as within 50 years of
+the current year.
 
 This subroutine is discouraged in favor of C<greg_time_gm()>, which
-throws an exception if the year can not be interpreted as a Gregorian
-year.
+always interprets years as Gregorian years.
 
-=item $epoch = time_local( $yr, $mon, $day, $hr, $min, $sec );
+=item $epoch = time_local( $sec, $min, $hr, $day, $mon, $yr );
 
 This exportable subroutine is a wrapper for either
-C<Time::y2038::timelocal()> (if that module is installed),
-C<Time::Local::timelocal_modern()> (if that is available), or
+C<Time::y2038::timelocal()> (if that module is installed), or
 C<Time::Local::timelocal()> (if not.)
+
+This subroutine interprets years the same way
+C<Time::Local::timelocal()> does.
 
 This wrapper is needed for the same reason C<time_gm()> is
 needed.
 
 This subroutine is discouraged in favor of C<greg_time_local()>, which
-throws an exception if the year can not be interpreted as a Gregorian
-year.
+always interprets years as Gregorian years.
 
 =item $a = vector_cross_product( $b, $c );
 
