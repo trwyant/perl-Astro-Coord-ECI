@@ -82,3 +82,4 @@ xt/author/satpass.t
 xt/author/satpass_geocode.t
 xt/author/tle_support.t
 xt/author/year_adjust_greg.t
+xt/author/year_adjust_y2038.t
