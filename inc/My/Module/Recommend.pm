@@ -7,7 +7,6 @@ use Carp;
 use Config;
 use My::Module::Recommend::Any qw{ __any };
 use My::Module::Recommend::All qw{ __all };
-use My::Module::Recommend::VersionOnly qw{ __version_only };
 
 my %misbehaving_os = map { $_ => 1 } qw{ MSWin32 cygwin };
 
@@ -62,14 +61,6 @@ EOD
       This module is required for Astro::Coord::ECI::TLE to parse
       orbital data in JSON format. If you do not intend to do this, this
       module is not needed.
-EOD
-    __version_only( [ 'Time::Local' => 1.27 ]	=> <<'EOD' ),
-      This package deals with times in terms of seconds since epoch.
-      But if you are using the support classes for doing astronomical
-      calculations for years before AD 1000 you may want an updated
-      version of Time::Local to do input time conversion using the
-      perhaps-badly-named timegm_modern() and timelocal_modern()
-      subroutines.
 EOD
     ( $] >= 5.012 ? () :
     __any( 'Time::y2038'			=> <<'EOD'

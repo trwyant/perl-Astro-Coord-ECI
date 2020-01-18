@@ -22,7 +22,6 @@ inc/My/Module/Meta.pm
 inc/My/Module/Recommend.pm
 inc/My/Module/Recommend/All.pm
 inc/My/Module/Recommend/Any.pm
-inc/My/Module/Recommend/VersionOnly.pm
 inc/My/Module/Satpass.pm
 inc/My/Module/SetDelegate.pm
 inc/My/Module/Sun.pm
