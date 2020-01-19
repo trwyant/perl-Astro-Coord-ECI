@@ -205,16 +205,18 @@ BEGIN {
 	*time_gm = Time::Local->can( 'timegm' );
 	# sub greg_time_gm
 	*greg_time_gm = Time::Local->can( 'timegm_modern' ) || sub {
-	    $_[5] = _year_adjust_greg( $_[5] );
-	    goto &Time::Local::timegm;
+	    my @date = @_;
+	    $date[5] = _year_adjust_greg( $date[5] );
+	    return Time::Local::timegm( @date );
 	};
 
 	# sub time_local
 	*time_local = Time::Local->can( 'timelocal' );
 	# sub greg_time_local
 	*greg_time_local = Time::Local->can( 'timelocal_modern' ) || sub {
-	    $_[5] = _year_adjust_greg( $_[5] );
-	    goto &Time::Local::timelocal;
+	    my @date = @_;
+	    $date[5] = _year_adjust_greg( $date[5] );
+	    return Time::Local::timelocal( @date );
 	};
 
 	@greg_time_routines = qw{
