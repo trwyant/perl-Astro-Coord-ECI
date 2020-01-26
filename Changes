@@ -1,11 +1,4 @@
-0.111_02	2020-01-19	T. R. Wyant
-    Tweak Astro::Coord::ECI::Util time_*() code to eliminate
-    modification of RO value. Thanks to Slaven Rezic (SREZIC), whose
-    tester picked this up. No idea why it did not fail on my setup; on
-    Slaven's t/basic.t failed to load Astro::Coord::ECI::Utils over
-    this.
-
-0.111_01	2020-01-18	T. R. Wyant
+0.112		2020-01-26	T. R. Wyant
     Add Astro::Coord::ECI::Utils subroutines greg_time_gm() and
     greg_time_local(), which convert date and time into epoch time.
     Unlike time_gm() and time_local() (which interpret the year however
