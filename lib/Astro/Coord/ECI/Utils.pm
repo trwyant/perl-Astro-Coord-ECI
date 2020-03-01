@@ -24,8 +24,8 @@ L<Astro::Coord::ECI|Astro::Coord::ECI> coordinate-transformation code.
 As of version 0.104 these warn on the first use, as will the first
 attempt to call C<equation_of_time()> and C<obliquity()> as a subroutine
 (i.e. with a first argument that looks like a number). As of version
-0.109 release after September 1 2019 all calls will result in a warning.
-As of the first release after December 1 2019 all calls will be fatal.
+0.109 all calls will result in a warning. As of version 0.113 all calls
+will be fatal.
 
 =head1 DESCRIPTION
 
@@ -704,6 +704,7 @@ Chapter 28, page 185.
 
 This subroutine is deprecated in favor of the
 L<Astro::Coord::ECI|Astro::Coord::ECI> C<equation_of_time()> method.
+As of version C<0.113> it produces a fatal error.
 
 =cut
 
@@ -1141,6 +1142,7 @@ Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 
 This subroutine is deprecated in favor of the
 L<Astro::Coord::ECI|Astro::Coord::ECI> C<nutation()> method.
+As of version C<0.113> it produces a fatal error.
 
 =cut
 
@@ -1174,6 +1176,7 @@ Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 
 This subroutine is deprecated in favor of the
 L<Astro::Coord::ECI|Astro::Coord::ECI> C<nutation()> method.
+As of version C<0.113> it produces a fatal error.
 
 =cut
 
@@ -1207,6 +1210,7 @@ dynamical time comes from chapter 10, equation 10.2  on page 78.
 
 This subroutine is deprecated in favor of the
 L<Astro::Coord::ECI|Astro::Coord::ECI> C<obliquity()> method.
+As of version C<0.113> it produces a fatal error.
 
 =cut
 
@@ -1658,18 +1662,18 @@ sub __sprintf($@) {		## no critic (ProhibitSubroutinePrototypes)
 {
     my %deprecate = (
 	equation_of_time	=> {
-	    level	=> 2,
+	    level	=> 3,
 	},
 	nutation_in_longitude	=> {
-	    level	=> 2,
+	    level	=> 3,
 	    method	=> 'nutation',
 	},
 	nutation_in_obliquity	=> {
-	    level	=> 2,
+	    level	=> 3,
 	    method	=> 'nutation',
 	},
 	obliquity	=> {
-	    level	=> 2,
+	    level	=> 3,
 	},
     );
 
