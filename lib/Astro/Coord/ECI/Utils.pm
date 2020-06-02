@@ -676,7 +676,7 @@ sub epoch2datetime {
     my ($time) = @_;
     my $day = floor ($time / SECSPERDAY);
     my $sec = $time - $day * SECSPERDAY;
-    ($day, my $mon, my $yr, my $greg, my $leap) = jd2date (
+    ($day, my $mon, my $yr, undef, my $leap) = jd2date (
 	my $jd = $day + JD_OF_EPOCH);
     $day = floor ($day + .5);
     my $min = floor ($sec / 60);
