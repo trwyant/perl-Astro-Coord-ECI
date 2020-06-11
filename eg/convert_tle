@@ -9,7 +9,7 @@ use Astro::Coord::ECI::TLE;
 use Getopt::Long 2.33;
 use Pod::Usage;
 
-our $VERSION = '0.113_001';
+our $VERSION = '0.113_01';
 
 my %opt;
 
