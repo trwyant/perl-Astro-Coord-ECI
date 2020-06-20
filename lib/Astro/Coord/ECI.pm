@@ -887,7 +887,7 @@ sub ecliptic_longitude {
 =item $seconds = $self->equation_of_time( $time );
 
 This method returns the equation of time at the given B<dynamical>
-time.
+time. If the time is C<undef>, the invocant's dynamical time is used.
 
 The algorithm is from W. S. Smart's "Text-Book on Spherical Astronomy",
 as reported in Jean Meeus' "Astronomical Algorithms", 2nd Edition,
