@@ -1,7 +1,6 @@
-0.113_02	2020-06-18	T. R. Wyant
-    Update canned magnitude table per Kelso.
+0.114		2020-06-25	T. R. Wyant
+    Document undef as argument to equation_of_time()
 
-0.113_01	2020-06-11	T. R. Wyant
     Update canned magnitude table per Kelso.
 
     Correct heliocentric_ecliptic*(), I hope. I don't have worked
