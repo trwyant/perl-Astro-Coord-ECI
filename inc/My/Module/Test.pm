@@ -284,6 +284,19 @@ are also provided, on a line after the event.
 This subroutine converts a given Perl time into an ISO-8601-ish GMT
 time. It is used by C<format_pass()>.
 
+=head2 magnitude
+
+ magnitude( $tle, $station, $time, $want, $name );
+ magnitude( $tle, $time, $want, $name );
+
+This subroutine tests whether the magnitude of the satellite specified
+by C<$tle>, seen from the given C<$station> at the given C<$time>, has
+the value C<$want> to one decimal place. Argument C<$name> is the name
+of the test.
+
+If argument C<$station> is omitted, the C<station> attribute of the TLE
+is used.
+
 =head2 tolerance
 
  tolerance $got, $want, $tolerance, $title, $formatter
