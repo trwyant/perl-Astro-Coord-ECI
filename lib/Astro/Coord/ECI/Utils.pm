@@ -1652,7 +1652,7 @@ sub __instance {
 
 }
 
-sub __sprintf($@) {		## no critic (ProhibitSubroutinePrototypes)
+sub __sprintf {
     my ( $tplt, @args ) = @_;
     defined $tplt
 	or return undef;	## no critic (ProhibitExplicitReturnUndef)
