@@ -1,4 +1,4 @@
-0.114_01	2020-08-12	T. R. Wyant
+0.115		2020-08-19	T. R. Wyant
     Remove prototypes from testing subroutines defined in t/*.t and
     inc/My/Module/Test/*.pm
 
