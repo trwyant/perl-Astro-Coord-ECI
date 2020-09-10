@@ -1,4 +1,4 @@
-0.115_01	2020-09-03	T. R. Wyant
+0.116		2020-09-10	T. R. Wyant
     Remove all mention of subs nutation_*, obliquity, and friends, which
     were defined in Astro::Coord::ECI::Utils. These were replaced by
     methods.
