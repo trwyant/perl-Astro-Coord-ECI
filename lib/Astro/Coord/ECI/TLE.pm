@@ -8262,12 +8262,12 @@ sub _next_elevation_screen {
 #
 #   $ eg/visual -merge
 #
-# Last-Modified: Wed, 11 Nov 2020 16:27:51 GMT
+# Last-Modified: Sat, 21 Nov 2020 01:34:13 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Wed, 11 Nov 2020 16:27:51 GMT';
+use constant _CELESTRAK_VISUAL => 'Sat, 21 Nov 2020 01:34:13 GMT';
 use constant _MCCANTS_VSNAMES  => 'Thu, 25 May 2017 00:30:11 GMT';
 use constant _MCCANTS_QUICKSAT => 'Mon, 14 Sep 2020 13:12:56 GMT';
 
@@ -8523,7 +8523,6 @@ use constant _MCCANTS_QUICKSAT => 'Mon, 14 Sep 2020 13:12:56 GMT';
   '40354' => 4.9,
   '40382' => 3.4,
   '41395' => 3.9,
-  '41765' => 3.9, # Assumed 3.9 (old Tiangong 1 value)
   '42689' => 4.9,
 );
 
