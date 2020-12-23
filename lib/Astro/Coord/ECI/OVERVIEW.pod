@@ -90,9 +90,9 @@ the page.
 
 =head1 BUGS
 
-Bugs should be reported to queue Astro-satpass at
-L<https://rt.cpan.org/>, or to the author via electronic mail at
-F<wyant at cpan dot org>.
+Bugs should be reported to
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues/>, or to the
+author via electronic mail at F<wyant at cpan dot org>.
 
 =head1 UNITS
 

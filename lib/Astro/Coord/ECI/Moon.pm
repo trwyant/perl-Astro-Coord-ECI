@@ -544,6 +544,12 @@ function-based module to compute the current phase, distance and angular
 diameter of the Moon, as well as the angular diameter and distance of
 the Sun.
 
+=head1 SUPPORT
+
+Support is by the author. Please file bug reports at
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+electronic mail to the author.
+
 =head1 AUTHOR
 
 Thomas R. Wyant, III (F<wyant at cpan dot org>)

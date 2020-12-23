@@ -6060,7 +6060,7 @@ script testing problem.
 =head1 BUGS
 
 Bugs can be reported to the author by mail, or through
-L<https://rt.cpan.org/>.
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues/>.
 
 The VMS- and MSWin32-specific code to find the initialization file and
 do tilde expansion is untested, since I do not currently have access to

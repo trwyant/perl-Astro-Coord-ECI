@@ -8972,6 +8972,12 @@ orbital element sets. The L<Astro::Coords|Astro::Coords> package by Tim
 Jenness provides calculations using orbital elements, but the NORAD
 elements are tweaked for use by the models implemented in this package.
 
+=head1 SUPPORT
+
+Support is by the author. Please file bug reports at
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+electronic mail to the author.
+
 =head1 AUTHOR
 
 Thomas R. Wyant, III (F<wyant at cpan dot org>)

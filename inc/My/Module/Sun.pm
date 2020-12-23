@@ -55,7 +55,8 @@ L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https://rt.cpan.org>, or in electronic mail to the author.
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+electronic mail to the author.
 
 =head1 AUTHOR
 

@@ -1551,7 +1551,7 @@ implemented herein.
 =head1 BUGS
 
 Bugs can be reported to the author by mail, or through
-L<https://rt.cpan.org/>.
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues/>.
 
 =head1 AUTHOR
 
