@@ -442,6 +442,12 @@ sub next_quarter {
 	# thereof) of the calculated longitude.
 	$quarter = ceil( ( rad2deg( $lon ) + 359 ) / 90 ) % 4;
 	$season = $self->season( $year, $quarter );
+	# The above calculation gives the wrong $season between the
+	# December equinox and the end of the year. We fix it up here:
+	if ( $time - $season > SECSPERDAY * 180 ) {
+	    $year++;
+	    $season = $self->season( $year, $quarter );
+	}
 	# If we're a quarter too early, add one and repeat the
 	# calculation. We shouldn't have to do this more than once,
 	# since our maximum error even with the fudge factor is a day.
