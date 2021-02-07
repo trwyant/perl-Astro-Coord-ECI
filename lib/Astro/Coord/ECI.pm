@@ -157,9 +157,9 @@ objects, as seen from $coord. The calculation uses the law of
 haversines, and does not take atmospheric refraction into account. The
 return is a number of radians between 0 and pi.
 
-The algorithm comes from "Ask Dr. Math" on Drexel's Math Forum,
-L<http://mathforum.org/library/drmath/view/51879.html>, which attributes
-it to the Geographic Information Systems FAQ,
+The algorithm comes from "Ask Dr. Math" on the Math Forum,
+L<https://www.nctm.org/tmf/library/drmath/view/51879.html>, which
+attributes it to the Geographic Information Systems FAQ,
 L<http://www.faqs.org/faqs/geography/infosystems-faq/>, which in turn
 attributes it to R. W. Sinnott, "Virtues of the Haversine," Sky and
 Telescope, volume 68, number 2, 1984, page 159.
