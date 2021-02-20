@@ -16,7 +16,7 @@ eval {
     1;
 } or plan skip_all => 'Test::Prereq::Meta not available';
 
-Test::Prereq::Meta->new(
+my $tpm = Test::Prereq::Meta->new(
     accept	=> [
 	do {
 	    local $] = My::Module::Meta->requires_perl();
@@ -30,7 +30,11 @@ Test::Prereq::Meta->new(
 	    Test::MockTime
 	}
     ],
-)->all_prereq_ok();
+);
+
+$tpm->all_prereq_ok();
+
+$tpm->all_prereqs_used();
 
 done_testing;
 
