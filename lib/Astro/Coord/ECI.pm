@@ -158,11 +158,18 @@ haversines, and does not take atmospheric refraction into account. The
 return is a number of radians between 0 and pi.
 
 The algorithm comes from "Ask Dr. Math" on the Math Forum,
-L<https://www.nctm.org/tmf/library/drmath/view/51879.html>, which
+C<https://www.nctm.org/tmf/library/drmath/view/51879.html>, which
 attributes it to the Geographic Information Systems FAQ,
 L<http://www.faqs.org/faqs/geography/infosystems-faq/>, which in turn
 attributes it to R. W. Sinnott, "Virtues of the Haversine," Sky and
 Telescope, volume 68, number 2, 1984, page 159.
+
+Unfortunately, as of early 2021 the National Council of Teachers of
+Mathematics restricted the Dr. Math content to their members. The Math
+Doctors (L<https://www.themathdoctors.org/>) are trying to recover and
+expand the archive, but they have not yet gotten to this. If you are
+trying to recover this using the Wayback Machine, the URL while Drexel
+hosted this was C<http://mathforum.org/library/drmath/view/51879.html>.
 
 Prior to version 0.011_03 the law of cosines was used, but this produced
 errors on extremely small angles. The haversine law was selected based

@@ -30,6 +30,7 @@ my $tpm = Test::Prereq::Meta->new(
 	    Test::MockTime
 	}
     ],
+    prune	=> [ qw{ blib/script } ],
 );
 
 $tpm->all_prereq_ok();
