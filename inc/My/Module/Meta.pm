@@ -22,7 +22,7 @@ sub abstract {
 }
 
 sub add_to_cleanup {
-    return [ qw{ cover_db xt/author/optionals } ];
+    return [ qw{ cover_db } ];
 }
 
 sub author {
