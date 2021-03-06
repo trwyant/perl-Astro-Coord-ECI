@@ -124,7 +124,6 @@ my %savatr;	# Attribs saved across "normal" operations. Set at end.
 my @kilatr =	# Attributes to purge when setting coordinates.
     qw{_need_purge _ECI_cache inertial local_mean_time specified}; #?
 
-
 =item $coord = Astro::Coord::ECI->new ();
 
 This method instantiates a coordinate object. Any arguments are passed
@@ -148,7 +147,6 @@ sub new {
     };
     return $self;
 }
-
 
 =item $angle = $coord->angle ($coord2, $coord3);
 
@@ -214,7 +212,6 @@ sub _angle_non_inertial {
     return ($lon, $lat);
 }
 
-
 =item $which = $coord->attribute ($name);
 
 This method returns the name of the class that implements the named
@@ -223,7 +220,6 @@ attribute, or undef if the attribute name is not valid.
 =cut
 
 sub attribute {return exists $mutator{$_[1]} ? __PACKAGE__ : undef}
-
 
 =item ($azimuth, $elevation, $range) = $coord->azel( $coord2 );
 
@@ -255,7 +251,6 @@ attribute is not set.
 
 =cut
 
-
 sub azel {	## no critic (RequireArgUnpacking)
     @_ > 2
 	and croak q{Too many arguments};
@@ -263,7 +258,6 @@ sub azel {	## no critic (RequireArgUnpacking)
     $_[2] = $_[2] ? 1 : 0;
     goto &azel_offset;
 }
-
 
 =item ($azimuth, $elevation, $range) = $coord->azel_offset($coord2, $offset);
 
@@ -399,7 +393,6 @@ sub azel_offset {
     return ( $azimuth, $elevation, $range, @velocity );
 }
 
-
 =item $coord2 = $coord->clone ();
 
 This method does a deep clone of an object, producing a different
@@ -443,22 +436,18 @@ sub correct_for_refraction {
     my $self = shift;
     my $elevation = shift;
 
-
     # If called as a static method, our effective horizon is zero. If
     # called as a normal method, our effective horizon is the lesser of
     # the 'horizon' setting or zero.
 
     my $horizon = ref $self ? min( 0, $self->get( 'horizon' ) ) : 0;
 
-
     # We exclude anything with an elevation <= 2 degrees below our
     # effective horizon; this is presumed to be not visible, since the
     # maximum deflection is about 35 minutes of arc. This is not
     # portable to (e.g.) Venus.
 
-
     if ( $elevation > $horizon - TWO_DEGREES ) {
-
 
 #	Thorsteinn Saemundsson's algorithm for refraction, as reported
 #	in Meeus, page 106, equation 16.4, and adjusted per the
@@ -492,7 +481,6 @@ eod
     return $elevation;
 }
 
-
 =item $angle = $coord->dip ();
 
 This method calculates the dip angle of the horizon due to the
@@ -512,7 +500,6 @@ sub dip {
 	- acos (($rho - $h) / $rho) :
 	acos ($rho / ($rho - $h));
 }
-
 
 =item $coord = $coord->dynamical ($time);
 
@@ -565,7 +552,6 @@ eod
 
     return $self;
 }
-
 
 =item $coord = $coord->ecef($x, $y, $z, $xdot, $ydot, $zdot)
 
@@ -643,7 +629,6 @@ eod
 
     return $self;
 }
-
 
 =item $coord = $coord->eci ($x, $y, $z, $xdot, $ydot, $zdot, $time)
 
@@ -812,7 +797,6 @@ EOD
 
 }
 
-
 =item $coord = $coord->ecliptic ($latitude, $longitude, $range, $time);
 
 This method sets the L</Ecliptic> coordinates represented by the object
@@ -875,7 +859,6 @@ sub ecliptic {
     }
 }
 
-
 =item $longitude = $coord->ecliptic_longitude();
 
 This method returns the ecliptic longitude of the body at its current
@@ -889,7 +872,6 @@ sub ecliptic_longitude {
     my ( $self ) = @_;
     return ( $self->ecliptic() )[1];
 }
-
 
 =item $seconds = $self->equation_of_time( $time );
 
@@ -917,7 +899,6 @@ sub equation_of_time {
     my $y = tan($epsilon / 2);
     $y *= $y;
 
-
 #	The following algorithm is from Meeus, chapter 25, page, 163 ff.
 
     my $T = jcent2000( $time );				# Meeus (25.1)
@@ -935,7 +916,6 @@ sub equation_of_time {
 
     return $E * SECSPERDAY / TWOPI;	# The formula gives radians.
 }
-
 
 =item $coord->equatorial ($rightasc, $declin, $range, $time);
 
@@ -1069,7 +1049,6 @@ sub equatorial_apparent {
 	or croak 'Station attribute is required';
     return $station->_equatorial_reduced( $self );
 }
-
 
 =item my ($rasc, $decl, $range, $v_rasc, $v_decl, $v_r) = $coord->equatorial_unreduced($body);
 
@@ -1242,7 +1221,6 @@ sub equinox_dynamical {
     }
 }
 
-
 =item $coord = $coord->geocentric($psiprime, $lambda, $rho);
 
 This method sets the L</Geocentric> coordinates represented by the
@@ -1341,7 +1319,6 @@ eod
     return $self;
 }
 
-
 =item $coord = $coord->geodetic($psi, $lambda, $h, $ellipsoid);
 
 This method sets the L</Geodetic> coordinates represented by the object
@@ -1388,27 +1365,22 @@ Symbol font.
 sub geodetic {
     my ($self, @args) = @_;
 
-
 #	Detect and acquire the optional ellipsoid name argument. We do
 #	this before the check, since the check expects the extra
 #	argument to be a time.
 
     my $elps = (@args == 1 || @args == 4) ? pop @args : undef;
 
-
     $self = $self->_check_coord (geodetic => \@args, $elps ? $elps : ());
-
 
 #	The following is just a sleazy way to get a consistent
 #	error message if the ellipsoid name is unknown.
 
     $elps && $self->reference_ellipsoid ($elps);
 
-
 #	If we're fetching the geodetic coordinates
     
     unless (@args) {
-
 
 #	Return cached coordinates if they exist and we did not
 #	override the default ellipsoid.
@@ -1422,7 +1394,6 @@ sub geodetic {
 		Data::Dumper::Dumper( $elps );
 	};
 
-
 #	Get a reference to the ellipsoid data to use.
 
 	$elps = $elps ? $known_ellipsoid{$elps} : $self;
@@ -1431,7 +1402,6 @@ sub geodetic {
 	    local $Data::Dumper::Terse = 1;
 	    print "Debug geodetic - ellipsoid ", Data::Dumper::Dumper( $elps );
 	};
-
 
 #	Calculate geodetic coordinates.
 
@@ -1445,7 +1415,6 @@ sub geodetic {
 	# is simply confused.
 	$b = - $b	## no critic (RequireLocalizedPunctuationVars)
 	    if $z < 0;	# Per Borkowski, for southern hemisphere.
-
 
 #	The following algorithm is due to Kazimierz Borkowski's
 #	paper "Accurate Algorithms to Transform Geocentric to Geodetic
@@ -1482,14 +1451,12 @@ sub geodetic {
 	my $h = ($r - $a * $t) * cos ($phi) +	# Borkowski (19)
 	    ($z - $b) * sin ($phi);
 
-
 #	End of Borkowski's algorthm.
 
 #	Cache the results of the calculation if they were done using
 #	the default ellipsoid.
 
 	$self->{_ECI_cache}{fixed}{geodetic} = [$phi, $lambda, $h] unless $elps;
-
 
 #	Return the results in any event.
 
@@ -1521,16 +1488,13 @@ eod
 	return ($phi, $lambda, $h);
     }
 
-
 #	If we're setting the geodetic coordinates.
 
     if (@args == 3) {
 
-
 #	Set the ellipsoid for the object if one was specified.
 
 	$self->set (ellipsoid => $elps) if $elps;
-
 
 #	Calculate the geocentric data.
 
@@ -1538,7 +1502,6 @@ eod
 	$phi = _check_latitude(latitude => $phi);
 	$lambda = _check_longitude(longitude => $lambda);
 	my $bovera = 1 - $self->{flattening};
-
 
 #	The following algorithm appears on page 82 of the second
 #	edition of Jean Meeus' "Astronomical Algorithms."
@@ -1553,7 +1516,6 @@ eod
 	    $rhocoslatprime / cos ($phiprime) :
 	    $rhosinlatprime / sin ($phiprime));
 
-
 #	End of Meeus' algorithm.
 
 #	Set the geocentric data as the coordinates.
@@ -1567,7 +1529,6 @@ eod
 	$self->{specified} = 'geodetic';
 	$self->{inertial} = 0;
 
-
 #	Else if the number of coordinates is bogus, croak.
 
     } else {
@@ -1578,13 +1539,11 @@ Error - Method geodetic() must be called with either zero arguments
 eod
     }
 
-
 #	Return the object, wherever it came from.
 
     return $self;
 
 }
-
 
 =item $value = $coord->get ($attrib);
 
@@ -2158,7 +2117,6 @@ eod
     return $end;
 }
 
-
 =item ($time, $rise) = $coord->next_elevation ($body, $elev, $upper)
 
 This method calculates the next time the given body passes above or
@@ -2375,7 +2333,6 @@ Edition, Chapter 22, pages 143ff. Meeus states that it is good to
 
 =cut
 
-
 sub nutation {
     my ( $self, $time ) = @_;
     defined $time
@@ -2400,7 +2357,6 @@ sub nutation {
 
     return ( $delta_psi, $delta_epsilon );
 }
-
 
 =item $epsilon = $self->obliquity( $time )
 
@@ -2436,7 +2392,6 @@ sub obliquity {
     return $epsilon0 + $delta_epsilon;
 }
 
-
 =item $coord = $coord->precess ($time);
 
 This method is a convenience wrapper for precess_dynamical(). The
@@ -2450,7 +2405,6 @@ sub precess {
 	and $_[1] += dynamical_delta( $_[1] );
     goto &precess_dynamical;
 }
-
 
 =item $coord = $coord->precess_dynamical ($time);
 
@@ -2541,7 +2495,6 @@ sub precess_dynamical {
 
     return $self;
 }
-
 
 =item Astro::Coord::ECI->reference_ellipsoid($semi, $flat, $name);
 
@@ -3023,7 +2976,6 @@ sub __object_is_self_named {
     };
     return $self->__object_name() =~ $self->{_name_re};
 }
-
 
 #######################################################################
 #
@@ -3537,7 +3489,6 @@ sub _rad2dms {
 =end comment
 
 =cut
-
 
 #######################################################################
 #
@@ -4160,8 +4111,10 @@ own ancient and rickety matrix math.
 Functionality involving velocities is B<untested>, and is quite likely
 to be wrong.
 
-Bugs can be reported to the author by mail, or through
-L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues/>.
+Support is by the author. Please file bug reports at
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass>,
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+electronic mail to the author.
 
 =head1 SEE ALSO
 

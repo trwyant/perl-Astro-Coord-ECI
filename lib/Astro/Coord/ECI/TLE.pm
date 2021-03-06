@@ -552,7 +552,6 @@ eod
 }
 __PACKAGE__->alias (tle => __PACKAGE__);
 
-
 =item $kilometers = $tle->apoapsis();
 
 This method returns the apoapsis of the orbit, in kilometers. Since
@@ -570,7 +569,6 @@ sub apoapsis {
 	(1 + $self->get('eccentricity')) * $self->semimajor();
 }
 
-
 =item $kilometers = $tle->apogee();
 
 This method is simply a synonym for apoapsis().
@@ -579,7 +577,6 @@ This method is simply a synonym for apoapsis().
 
 *apogee = \&apoapsis;
 
-
 #	See Astro::Coord::ECI for docs.
 
 sub attribute {
@@ -587,7 +584,6 @@ sub attribute {
 	__PACKAGE__ :
 	$_[0]->SUPER::attribute ($_[1])
 }
-
 
 =item $tle->before_reblessing ()
 
@@ -675,7 +671,6 @@ sub body_type {
     return BODY_TYPE_PAYLOAD;
 }
 
-
 =item $tle->can_flare ()
 
 This method returns true if the object is capable of generating flares
@@ -711,7 +706,6 @@ sub correct_for_refraction {
     return $elevation;
 }
 
-
 =item $value = $tle->ds50($time)
 
 This method converts the time to days since 1950 Jan 0, 0 h GMT.
@@ -746,7 +740,6 @@ eod
 	return $rslt;
     }
 }	# End local symbol block
-
 
 =item $value = $tle->get('attribute')
 
@@ -811,7 +804,6 @@ The order of the returned events is undefined.
 sub intrinsic_events {
     return;
 }
-
 
 =item $deep = $tle->is_deep();
 
@@ -997,7 +989,6 @@ functionality that would otherwise accept them.
 
 =cut
 
-
 {
     my $openhandle = Scalar::Util->can( 'openhandle' ) || sub { return };
 
@@ -1146,7 +1137,6 @@ sub max_effective_date {
     return max( grep {defined $_} @args );
 }
 
-
 =item $tle = $tle->members();
 
 This method simply returns the object it is called on. It exists for
@@ -1159,7 +1149,6 @@ L<Astro::Coord::ECI::TLE::Set|Astro::Coord::ECI::TLE::Set> objects.
 sub members {
     return shift;
 }
-
 
 =item $tle = $tle->model($time)
 
@@ -1242,7 +1231,6 @@ side effect of calling $tle->universal ($time).
 =cut
 
 sub null { return $_[0] }
-
 
 =item @elements = Astro::Coord::ECI::TLE->parse( @data );
 
@@ -1689,7 +1677,6 @@ eod
 		$pass_step, $sun, $twilight );
     }
 
-
 #	For each time to be covered
 
     my $step = $pass_step;
@@ -1703,7 +1690,6 @@ eod
     my $visible;
     for (my $time = $pass_start; $time <= $end; $time += $step) {
 
-
 #	If the current sun event has occurred, handle it and calculate
 #	the next one.
 
@@ -1712,7 +1698,6 @@ eod
 		_next_elevation_screen( $sta->universal( $suntim ),
 		    $pass_step, $sun, $twilight );
 	}
-
 
 #	Skip if the sun is up. We set the step size small, because we
 #	are not actually tracking the satellite so we do not know what
@@ -1727,17 +1712,14 @@ eod
 	    next;
 	};
 
-
 #	Calculate azimuth and elevation.
 
 	my ($azm, $elev, $rng) = $sta->azel ($tle->universal ($time));
-
 
 #	Adjust the step size based on how far the body is below the
 #	horizon.
 
 	$step = $elev < -.4 ? $bigstep : $littlestep;
-
 
 #	If the body is below the horizon, we check for accumulated data,
 #	handle it if any, clear it, and on to the next iteration. We
@@ -1781,7 +1763,6 @@ eod
 		};
 		redo;
 	    }
-
 
 	    # Compute the exact events.
 
@@ -1840,7 +1821,6 @@ eod
 		    });
 	    push @time, [ $culmination, PASS_EVENT_MAX ];
 
-
 	    # Compute exact rise and set.
 
 	    $truncate
@@ -1883,11 +1863,9 @@ eod
 		next;
 	    };
 
-
 	    # Clear the original data.
 
 	    @info = ();
-
 
 	    # Generate the full data for the exact events.
 
@@ -2195,7 +2173,6 @@ eod
 		$visible = $elev > $screening_horizon;
 	    }
 
-
 	    # Accumulate results.
 
 	    push @info, {
@@ -2371,7 +2348,6 @@ sub _pass_compute_brightest {
     };
 }
 
-
 =item $kilometers = $tle->periapsis();
 
 This method returns the periapsis of the orbit, in kilometers. Since
@@ -2389,7 +2365,6 @@ sub periapsis {
 	(1 - $self->get('eccentricity')) * $self->semimajor();
 }
 
-
 =item $kilometers = $tle->perigee();
 
 This method is simply a synonym for periapsis().
@@ -2397,7 +2372,6 @@ This method is simply a synonym for periapsis().
 =cut
 
 *perigee = \&periapsis;
-
 
 =item $seconds = $tle->period ($model);
 
@@ -2472,7 +2446,6 @@ sub _period_r {
     return &SGP_TWOPI/$parm->{meanmotion} * 60;
 }
 
-
 =item $tle = $tle->rebless ($class, \%possible_attributes)
 
 This method reblesses a TLE object. The class must be either
@@ -2541,7 +2514,6 @@ eod
     return $tle;
 }
 
-
 =item $kilometers = $tle->semimajor();
 
 This method calculates the semimajor axis of the orbit, using Kepler's
@@ -2556,7 +2528,6 @@ where
  pi is the circle ratio (3.14159 ...), and
  mu is the Earth's gravitational constant,
     3.986005e5 km ** 3 / sec ** 2
-
 
 The calculation is carried out using the period implied by the current
 model.
@@ -2573,7 +2544,6 @@ model.
 	};
     }
 }
-
 
 =item $kilometers = $tle->semiminor();
 
@@ -2593,7 +2563,6 @@ sub semiminor {
 	$self->semimajor() * sqrt(1 - $e * $e);
     };
 }
-
 
 =item $tle->set (attribute => value ...)
 
@@ -2789,7 +2758,6 @@ sub sgp {
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
-
 #*	Initialization.
 
 #>>>	Rather than use a separate indicator argument to trigger
@@ -2855,7 +2823,6 @@ eod
 	};
     };
 
-
 #*	Update for secular gravity and atmospheric drag.
 
     my $a = $self->{meanmotion} +
@@ -2884,7 +2851,6 @@ Debug sgp - atmospheric drag and gravity
         XLS = $xls
 eod
 
-
 #*	Long period periodics.
 
     my $axnsl = $e * cos ($omgas);
@@ -2896,7 +2862,6 @@ Debug sgp - long period periodics
         AYNSL = $aynsl
         XL = $xl
 eod
-
 
 #*	Solve Kepler's equation.
 
@@ -2920,7 +2885,6 @@ Debug sgp - solve equation of Kepler
         SINEO1 = $sineo1
         COSEO1 = $coseo1
 eod
-
 
 #*	Short period preliminary quantities.
 
@@ -2950,7 +2914,6 @@ Debug sgp - short period preliminary quantities
         SU = $su
 eod
 
-
 #*	Update for short periodics.
 
     my $sin2u = ($cosu + $cosu) * $sinu;
@@ -2959,7 +2922,6 @@ eod
     my $uk = $su - $parm->{d20} / $pl2 * $sin2u;
     my $xnodek = $xnodes + $parm->{d30} * $sin2u / $pl2;
     my $xinck = $self->{inclination} + $parm->{d40} / $pl2 * $cos2u;
-
 
 #* 	Orientation vectors.
 
@@ -2978,7 +2940,6 @@ eod
     my $vy = $xmy * $cosuk - $sinnok * $sinuk;
     my $vz = $sinik * $cosuk;
 
-
 #*	Position and velocity.
 
     my $x = $rk * $ux;
@@ -2993,7 +2954,6 @@ eod
 
     return _convert_out($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
-
 
 =item $tle = $tle->sgp4($time)
 
@@ -3016,7 +2976,6 @@ sub sgp4 {
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
-
 #>>>	Rather than use a separate indicator argument to trigger
 #>>>	initialization of the model, we use the Orcish maneuver to
 #>>>	retrieve the results of initialization, performing the
@@ -3027,7 +2986,6 @@ sub sgp4 {
 Error - The SGP4 model is not valid for deep space objects.
         Use the SDP4, SDP4R or SDP8 models instead.
 EOD
-
 
 #*	Recover original mean motion (XNODP) and semimajor axis (AODP)
 #*	from input elements.
@@ -3046,7 +3004,6 @@ EOD
 	my $xnodp = $self->{meanmotion} / (1 + $del0);
 	my $aodp = $a0 / (1 - $del0);
 
-
 #*	Initialization
 
 #*	For perigee less than 220 kilometers, the ISIMP flag is set and
@@ -3059,7 +3016,6 @@ EOD
 
 	my $isimp = ($aodp * (1 - $self->{eccentricity}) / SGP_AE) <
 	    (220 / SGP_XKMPER + SGP_AE);
-
 
 #*	For perigee below 156 KM, the values of
 #*	S and QOMS2T are altered.
@@ -3198,7 +3154,6 @@ eod
 	};
     };
 
-
 #*	Update for secular gravity and atmospheric drag.
 
     my $xmdf = $self->{meananomaly} + $parm->{xmdot} * $tsince;
@@ -3257,7 +3212,6 @@ Debug SGP4 - Before xn,
 eod
     my $xn = SGP_XKE / $a ** 1.5;
 
-
 #*	Long period periodics
 
     my $axn = $e * cos($omega);
@@ -3266,7 +3220,6 @@ eod
     my $aynl = $temp * $parm->{aycof};
     my $xlt = $xl + $xll;
     my $ayn = $e * sin($omega) + $aynl;
-
 
 #*	Solve Kepler's equation.
 
@@ -3285,7 +3238,6 @@ eod
 	abs ($epw - $temp2) <= SGP_E6A and last;
 	$temp2 = $epw;
     }
-
 
 #*	Short period preliminary quantities.
 
@@ -3310,7 +3262,6 @@ eod
     $temp1 = SGP_CK2 * $temp;
     $temp2 = $temp1 * $temp;
 
-
 #*	Update for short periodics
 
     my $rk = $r * (1 - 1.5 * $temp2 * $betal * $parm->{x3thm1}) + .5 *
@@ -3322,7 +3273,6 @@ eod
     my $rdotk = $rdot - $xn * $temp1 * $parm->{x1mth2} * $sin2u;
     my $rfdotk = $rfdot + $xn * $temp1 * ($parm->{x1mth2} * $cos2u + 1.5
 	* $parm->{x3thm1});
-
 
 #*	Orientation vectors
 
@@ -3341,7 +3291,6 @@ eod
     my $vy = $xmy * $cosuk - $sinnok * $sinuk;
     my $vz = $sinik * $cosuk;
 
-
 #*	Position and velocity
 
     my $x = $rk * $ux;
@@ -3353,9 +3302,6 @@ eod
 
     return _convert_out($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
-
-
-
 
 =item $tle = $tle->sdp4($time)
 
@@ -3378,7 +3324,6 @@ sub sdp4 {
     my $oid = $self->get('id');
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
-
 
 #>>>	Rather than use a separate indicator argument to trigger
 #>>>	initialization of the model, we use the Orcish maneuver to
@@ -3408,7 +3353,6 @@ EOD
 	my $xnodp = $self->{meanmotion} / (1 + $del0);
 # no problem here - we know this because AODP is returned.
 	my $aodp = $a0 / (1 - $del0);
-
 
 #*	Initialization
 
@@ -3528,7 +3472,6 @@ eod
     };
 #>>>trw    my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
-
 #* UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
 
     my $xmdf = $self->{meananomaly} + $parm->{xmdot} * $tsince;
@@ -3554,7 +3497,6 @@ eod
     my $beta = sqrt (1 - $e * $e);
     $xn = SGP_XKE / $a ** 1.5;
 
-
 #* LONG PERIOD PERIODICS
 
     my $axn = $e * cos ($omgadf);
@@ -3563,7 +3505,6 @@ eod
     my $aynl = $temp * $parm->{aycof};
     my $xlt = $xl + $xll;
     my $ayn = $e * sin ($omgadf) + $aynl;
-
 
 #* SOLVE KEPLERS EQUATION
 
@@ -3582,7 +3523,6 @@ eod
 	last if (abs ($epw - $temp2) <= SGP_E6A);
 	$temp2 = $epw;
     }
-
 
 #* SHORT PERIOD PRELIMINARY QUANTITIES
 
@@ -3607,7 +3547,6 @@ eod
     $temp1 = SGP_CK2 * $temp;
     $temp2 = $temp1 * $temp;
 
-
 #* UPDATE FOR SHORT PERIODICS
 
     my $rk = $r * (1 - 1.5 * $temp2 * $betal * $parm->{x3thm1}) + .5 *
@@ -3619,7 +3558,6 @@ eod
     my $rdotk = $rdot - $xn * $temp1 * $parm->{x1mth2} * $sin2u;
     my $rfdotk = $rfdot + $xn * $temp1 * ($parm->{x1mth2} * $cos2u + 1.5
 	* $parm->{x3thm1});
-
 
 #* ORIENTATION VECTORS
 
@@ -3638,7 +3576,6 @@ eod
     my $vy = $xmy * $cosuk - $sinnok * $sinuk;
     my $vz = $sinik * $cosuk;
 
-
 #* POSITION AND VELOCITY
 
     my $x = $rk * $ux;
@@ -3650,7 +3587,6 @@ eod
 
     return _convert_out($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
-
 
 =item $tle = $tle->sgp8($time)
 
@@ -3674,7 +3610,6 @@ sub sgp8 {
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
-
 #>>>	Rather than use a separate indicator argument to trigger
 #>>>	initialization of the model, we use the Orcish maneuver to
 #>>>	retrieve the results of initialization, performing the
@@ -3685,7 +3620,6 @@ sub sgp8 {
 Error - The SGP8 model is not valid for deep space objects.
         Use the SDP4, SGP4R, or SDP8 models instead.
 EOD
-
 
 #*	RECOVER ORIGINAL MEAN MOTION (XNODP) AND SEMIMAJOR AXIS (AODP)
 #*	FROM INPUT ELEMENTS --------- CALCULATE BALLISTIC COEFFICIENT
@@ -3705,7 +3639,6 @@ EOD
 	my $aodp = $a0 / (1 - $del0);
 	my $xnodp = $self->{meanmotion} / (1 + $del0);
 	my $b = 2 * $self->{bstardrag} / SGP_RHO;
-
 
 #*	INITIALIZATION
 
@@ -3758,7 +3691,6 @@ EOD
 	    5 * $eeta * (4 + $eta2) + 8.5 * $eosq) + $d1 * $d2 * $b1 +
 	    $c4 * $cos2g + $c5 * $sing);
 	my $xndtn = $xndt / $xnodp;
-
 
 #*	IF DRAG IS VERY SMALL, THE ISIMP FLAG IS SET AND THE
 #*	EQUATIONS ARE TRUNCATED TO LINEAR VARIATION IN MEAN
@@ -3921,7 +3853,6 @@ eod
 	};
     };
 
-
 #*	UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
 
     my $xmam = mod2pi ($self->{meananomaly} + $parm->{xlldot} * $tsince);
@@ -3947,7 +3878,6 @@ eod
     $omgasm = $omgasm + $z7 * $parm->{xgdt1};
     $xnodes = $xnodes + $z7 * $parm->{xhdt1};
 
-
 #*      SOLVE KEPLERS EQUATION
 
     my $zc2 = $xmam + $em * sin ($xmam) * (1 + $em * cos ($xmam));
@@ -3960,7 +3890,6 @@ eod
 	last if (abs ($cape - $zc2) <= SGP_E6A);
 	$zc2 = $cape;
     }
-
 
 #*      SHORT PERIOD PRELIMINARY QUANTITIES
 
@@ -3999,7 +3928,6 @@ eod
     my $diwc = 3 * $g3 * $parm->{sini} * $cs2f2g - $g5 * $aynm;
     my $di = $diwc * $parm->{cosi};
 
-
 #*      UPDATE FOR SHORT PERIOD PERIODICS
 
     my $sni2du = $parm->{sinio2} * ($g3 * (.5 * (1 - 7 * $parm->{theta2}) *
@@ -4021,7 +3949,6 @@ eod
     my $rvdot = $xn * $am ** 2 * $beta / $rm + $g14 * $dr +
 	    $am * $g13 * $parm->{sini} * $diwc;
 
-
 #*      ORIENTATION VECTORS
 
     my $snlamb = sin ($xlamb);
@@ -4036,7 +3963,6 @@ eod
     my $uz = $y4 * $temp;
     my $vz = $y5 * $temp;
 
-
 #*      POSITION AND VELOCITY
 
     my $x = $r * $ux;
@@ -4048,7 +3974,6 @@ eod
 
     return _convert_out ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
-
 
 =item $tle = $tle->sdp8($time)
 
@@ -4072,7 +3997,6 @@ sub sdp8 {
     $self->{model_error} = undef;
     my $tsince = ($time - $self->{epoch}) / 60;	# Calc. is in minutes.
 
-
 #>>>	Rather than use a separate indicator argument to trigger
 #>>>	initialization of the model, we use the Orcish maneuver to
 #>>>	retrieve the results of initialization, performing the
@@ -4083,7 +4007,6 @@ sub sdp8 {
 Error - The SDP8 model is not valid for near-earth objects.
         Use the SGP, SGP4, SGP4R, or SGP8 models instead.
 EOD
-
 
 #*      RECOVER ORIGINAL MEAN MOTION (XNODP) AND SEMIMAJOR AXIS (AODP)
 #*      FROM INPUT ELEMENTS --------- CALCULATE BALLISTIC COEFFICIENT
@@ -4103,7 +4026,6 @@ EOD
 	my $aodp = $a0 / (1 - $del0);
 	my $xnodp = $self->{meanmotion} / (1 + $del0);
 	my $b = 2 * $self->{bstardrag} / SGP_RHO;
-
 
 #*      INITIALIZATION
 
@@ -4189,7 +4111,6 @@ EOD
     };
 #>>>trw    my $dpsp = $self->{&TLE_INIT}{TLE_deep};
 
-
 #*	UPDATE FOR SECULAR GRAVITY AND ATMOSPHERIC DRAG
 
     my $z1 = .5 * $parm->{xndt} * $tsince * $tsince;
@@ -4208,7 +4129,6 @@ EOD
     $self->_dpper (\$em, \$xinc, \$omgasm, \$xnodes, \$xmam, $tsince);
     $xmam = mod2pi ($xmam);
 
-
 #*	SOLVE KEPLERS EQUATION
 
     my $zc2 = $xmam + $em * sin ($xmam) * (1 + $em * cos ($xmam));
@@ -4221,7 +4141,6 @@ EOD
 	last if (abs ($cape - $zc2) <= SGP_E6A);
 	$zc2 = $cape;
     }
-
 
 #*	SHORT PERIOD PRELIMINARY QUANTITIES
 
@@ -4261,7 +4180,6 @@ EOD
     my $di = $diwc * $parm->{cosi};
     my $sini2 = sin (.5 * $xinc);
 
-
 #*	UPDATE FOR SHORT PERIOD PERIODICS
 
     my $sni2du = $parm->{sinio2} * ($g3 * (.5 * (1 - 7 * $parm->{theta2}) *
@@ -4283,7 +4201,6 @@ EOD
     my $rvdot = $xn * $am ** 2 * $beta / $rm + $g14 * $dr +
 	    $am * $g13 * $parm->{sini} * $diwc;
 
-
 #*	ORIENTATION VECTORS
 
     my $snlamb = sin ($xlamb);
@@ -4298,7 +4215,6 @@ EOD
     my $uz = $y4 * $temp;
     my $vz = $y5 * $temp;
 
-
 #*	POSITION AND VELOCITY
 
     my $x = $r * $ux;
@@ -4310,7 +4226,6 @@ EOD
 
     return _convert_out ($self, $x, $y, $z, $xdot, $ydot, $zdot, $time);
 }
-
 
 =item $self->time_set();
 
@@ -4332,8 +4247,6 @@ sub time_set {
     $self->$model ($self->universal);
     return;
 }
-
-
 
 #######################################################################
 
@@ -4387,7 +4300,6 @@ sub _dpinit {
     my $xpidot = $omgdt + $xnodot;
     my $sinq  =  sin ($self->{ascendingnode});
     my $cosq  =  cos ($self->{ascendingnode});
-
 
 #*	Initialize lunar & solar terms
 
@@ -4450,7 +4362,6 @@ sub _dpinit {
 		    DS_ZEL, $zmol, 1],
 	    ) {
 
-
 #>>>	Pick off the terms specific to the body being covered by this
 #>>>	iteration. The $lunar flag was not in the original FORTRAN, but
 #>>>	was added to help convert the assigned GOTOs and associated
@@ -4460,7 +4371,6 @@ sub _dpinit {
 #>>>trw	    $zmo, $lunar) = @$inputs;
 	my ($zcosg, $zsing, $zcosi, $zsini, $zcosh, $zsinh, $cc, $zn, $ze,
 	    undef, $lunar) = @$inputs;
-
 
 #>>>	From here until the next comment of mine is essentialy
 #>>>	verbatim from the original FORTRAN - or as verbatim as
@@ -4528,7 +4438,6 @@ sub _dpinit {
 	$xh2 = - 2 * $s2 * $z22;
 	$xh3 = - 2 * $s2 * ($z23 - $z21);
 
-
 #>>>	The following intermediate values are used outside the loop.
 #>>>	We save off the Solar values. The Lunar values remain after
 #>>>	the second iteration, and are used in situ. -- TRW
@@ -4561,7 +4470,6 @@ sub _dpinit {
 
     }
 
-
 #>>>	The only substantial modification in the following is the
 #>>>	swapping of 24-hour and 12-hour calculations for clarity.
 #>>>	-- TRW
@@ -4574,7 +4482,6 @@ sub _dpinit {
 	    $del1, $del2, $del3, $fasx2, $fasx4, $fasx6);
 
     if ($xnq < .0052359877 && $xnq > .0034906585) {
-
 
 #*      Synchronous resonance terms initialization.
 
@@ -4600,7 +4507,6 @@ sub _dpinit {
 	$bfact = $xlldot + $xpidot - DS_THDT;
 	$bfact = $bfact + $ssl + $ssg + $ssh;
     } elsif ($xnq < 8.26E-3 || $xnq > 9.24E-3 || $eq < 0.5) {
-
 
 #>>>	Do nothing. The original code returned from this point,
 #>>>	leaving atime, step2, stepn, stepp, xfact, xli, and xni
@@ -4851,7 +4757,6 @@ eod
     );
 }
 
-
 #	_dpsec
 
 #	Compute deep space secular effects.
@@ -4935,7 +4840,6 @@ eod
     return;
 }
 
-
 #	_dps_dot
 
 #	Calculate the dot terms for the secular effects.
@@ -4997,7 +4901,6 @@ sub _dps_dot {
     my $xldot = $dpsp->{xni} + $dpsp->{xfact};
     $xnddt = $xnddt * $xldot;
 
-
 #C
 #C INTEGRATOR
 #C
@@ -5010,7 +4913,6 @@ sub _dps_dot {
 
     return ($xldot, $xndot, $xnddt);
 }
-
 
 #	_dpper
 
@@ -5129,7 +5031,6 @@ eod
 #######################################################################
 
 #	All "Revisiting Spacetrack Report #3" code
-
 
 =item $tle = $tle->sgp4r($time)
 
@@ -5279,7 +5180,6 @@ use constant SGP4R_ERROR_6 => dualvar (6,
 #*     *****************************************************************
 #*  Files         :
 #*    Unit 14     - sgp4test.dbg    debug output file
-
 
 #* -----------------------------------------------------------------------------
 #*
@@ -5829,7 +5729,6 @@ sub _r_dsinit {
 #>>>>trw	X2o3   = 2.0D0 / 3.0D0
     $znl= 0.00015835218;
 
-
     $zns= 1.19459e-05;
 
 #>>>>trw	CALL getgravconst( whichconst, tumin, mu, radiusearthkm, xke, j2, j3, j4, j3oj2 )
@@ -6344,7 +6243,6 @@ sub _r_initl {
     my $init = $parm->{init}
         or confess "Programming error - Sgp4r initialization not in progress";
 
-
 #* -------------------------- Local Variables --------------------------
 #cdav old way
 #c        integer ids70
@@ -6389,7 +6287,6 @@ sub _r_initl {
 
     my $temp= $self->{ds50}+ 2433281.5;
     my $tut1= ( int($temp-0.5) + 0.5 - 2451545 ) / 36525;
-
 
     $parm->{gsto}= 1.75336855923327 + 628.331970688841*$tut1+
         6.77071394490334e-06*$tut1*$tut1-
@@ -6519,7 +6416,6 @@ sub _r_sgp4init {
     my ($t);
 #>>>>trw	INCLUDE 'SGP4.CMN'
 
-
 #* -------------------------- Local Variables --------------------------
 
     my ($cc1sq, $cc2, $cc3, $coef, $coef1, $cosio4, $eeta, $etasq,
@@ -6544,7 +6440,6 @@ sub _r_sgp4init {
 #>>>>trw	inclo  = xinclo
 #>>>>trw	mo     = xmo
 #>>>>trw	no     = xno
-
 
 #>>>>trw	nodeo  = xnodeo
 
@@ -6698,7 +6593,6 @@ sub _r_sgp4init {
 
 #>>>>trw	RETURN
 
-
     delete $parm->{init};
     return $parm;
 }
@@ -6823,7 +6717,6 @@ sub sgp4r {
 #c     Keep compiler ok for warnings on uninitialized variables
     $mr= 0;
     $coseo1= 1;
-
 
     $sineo1= 0;
 #>>>>trw	CALL getgravconst( whichconst, tumin, mu, radiusearthkm, xke, j2, j3, j4, j3oj2 )
@@ -7100,12 +6993,9 @@ sub _r_gstime {
     my ($temp, $tut1);
 #>>>>trw	INCLUDE 'astmath.cmn'
 
-
-
     $tut1= ( $$jd- 2451545 ) / 36525;
     $temp= - 6.2e-06*$tut1*$tut1*$tut1+ 0.093104*$tut1*$tut1+
         (876600*3600 + 8640184.812866)*$tut1+ 67310.54841;
-
 
     $temp= fmod($temp*&SGP_DE2RA/240, &SGP_TWOPI);
     if ( $temp <  0 ) {
@@ -7718,7 +7608,6 @@ encoded with a four-digit year.
     }
 }
 
-
 =item $valid = $tle->validate($options, $time ...);
 
 This method checks to see if the currently-selected model can be run
@@ -7763,7 +7652,6 @@ sub validate {
     $opt->{quiet} or $@ and warn $@;
     return 0;
 }
-
 
 #######################################################################
 
@@ -8975,6 +8863,7 @@ elements are tweaked for use by the models implemented in this package.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass>,
 L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
 electronic mail to the author.
 

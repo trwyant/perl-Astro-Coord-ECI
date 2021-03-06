@@ -38,7 +38,6 @@ my (
     );
 $clipboard_unavailable = $IO::Clipboard::clipboard_unavailable;
 
-
 ########################################################################
 #
 #	Initialization
@@ -319,7 +318,6 @@ for details.
 eod
 $opt{version} and exit;
 
-
 ########################################################################
 #
 #	Main program loop.
@@ -341,11 +339,9 @@ $opt{version} and exit;
 
 while (1) {
 
-
 #	Select the default output
 
     select ($frame[$#frame]{stdout});
-
 
 #	Get the next command, wherever it comes from.
 
@@ -550,11 +546,9 @@ eod
 	}
 	warn $error if $error;
 
-
 #	Display timing information if desired.
 
     _display_timing ();
-
 
 #	Unwind frame stack if needed.
 
@@ -562,7 +556,6 @@ eod
 	$fh = _frame_pop () while @frame > 1;
 	last unless -t $fh;
     }
-
 
 #	End of command dispatching.
 
@@ -572,7 +565,6 @@ eod
 #	terminated on eof.
 
 print "\n";
-
 
 ########################################################################
 #
@@ -623,7 +615,6 @@ my $id = $parm{twilight} =~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/ 
 
 my @almanac;
 
-
 #	Display our location.
 
 print _format_location ();
@@ -671,7 +662,6 @@ foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
 
 }
 
-
 ########################################################################
 #
 #	cd ()  - Change Directory.
@@ -688,7 +678,6 @@ Error - Can not cd to home
         $!
 eod
 }
-
 
 ########################################################################
 #
@@ -752,7 +741,6 @@ $cmdopt{choose} = [@_];
 @bodies = _select_observing_list ();
 }
 
-
 ########################################################################
 #
 #	clear ()  - Clear the observing list.
@@ -761,7 +749,6 @@ $cmdopt{choose} = [@_];
 sub clear {
 @bodies = ();
 }
-
 
 ########################################################################
 #
@@ -781,7 +768,6 @@ foreach my $tle (@bodies) {
     }
 @bodies = @keep;
 }
-
 
 ########################################################################
 #
@@ -837,7 +823,6 @@ eod
     $ENV{$name} = shift;
     }
 }
-
 
 ########################################################################
 #
@@ -979,7 +964,6 @@ foreach my $fd (sort {$a->{time} <=> $b->{time}} @flares) {
 
 }
 
-
 ########################################################################
 #
 #	geocode () - Get latitude and longitude.
@@ -1069,7 +1053,6 @@ foreach my $url (qw{http://geocoder.ca/ http://backup-geocoder.ca/}) {
 	}
     }
 
-
     if (@rslt == 1) {
 	$parm{location} = $loc if $set_loc;
 	@parm{qw{latitude longitude}} = @{$rslt[0]};
@@ -1090,7 +1073,6 @@ eod
 	}
     }
 }
-
 
 ########################################################################
 #
@@ -1166,7 +1148,6 @@ sub _geocode_height {
     }
     return;
 }
-
 
 ########################################################################
 #
@@ -1305,7 +1286,6 @@ BEGIN {
 }
 use warnings qw{once};
 
-
 ########################################################################
 #
 #	help () - Display help to user
@@ -1372,7 +1352,6 @@ http://metacpan.org/release/Astro-satpass/
 eod
 }
 
-
 ########################################################################
 #
 #	list () - Display the observing list
@@ -1406,7 +1385,6 @@ if (@bodies) {
     }
 }
 
-
 ########################################################################
 #
 #	load () - Load a file of two- or three- line elements into the
@@ -1428,7 +1406,6 @@ eod
     push @bodies, Astro::Coord::ECI::TLE->parse ( $attrs, <$fh>);
     }
 }
-
 
 ########################################################################
 #
@@ -1524,7 +1501,6 @@ sub magnitude_table {
 #		the Astro::Coord::ECI::TLE->pass() method.
 #
 
-
 {	# Begin local symbol block
 
     my @event_name;
@@ -1573,7 +1549,6 @@ eod
 time@{[' ' x ($timlen - 4)]} @{[$lcfmt->()]} latitude longitude altitude
 
 eod
-
 
 #	Decide which model to use.
 
@@ -1711,7 +1686,6 @@ eod
     }
 }	# End local symbol block
 
-
 ########################################################################
 #
 #	phase () - Compute the phase of any relevant bodies in @sky at
@@ -1762,7 +1736,6 @@ my $dtfmt = "$parm{date_format} $parm{time_format}";
 my $lcfmt = \&{"_format_local_$parm{local_coord}"};
 my @lighting = qw{Shdw Lit Day};	# Duped from pass()
 my $twilight = $parm{_twilight};
-
 
 #	Define the observing station.
 
@@ -1862,7 +1835,6 @@ while ($time <= $endtm) {
 
 }
 
-
 ########################################################################
 #
 #	quarters () - Compute the quarters of any relevant bodies in
@@ -1915,7 +1887,6 @@ sub quarters {
 
 }
 
-
 ########################################################################
 #
 #	retrieve () - Reload the observing list using Storable::retrieve.
@@ -1924,7 +1895,6 @@ sub quarters {
 sub retrieve {
 @bodies = @{Storable::retrieve (_storable (@_))};
 }
-
 
 ########################################################################
 #
@@ -2006,7 +1976,6 @@ sub _set_illum_class {
     goto &_set_eci_class;
 }
 
-
 sub _set_local_coord {
 my $method = "_format_local_$_[1]";
 die <<eod unless __PACKAGE__->can ($method);
@@ -2051,7 +2020,6 @@ eod
 	}
     }
 }
-
 
 sub _set_sun_class {
     my ( $name, $val ) = @_;
@@ -2110,7 +2078,6 @@ my $st = _get_spacetrack (1);	# Get only if already instantiated.
 $st and $st->set (webcmd => $_[1]);
 }
 
-
 ########################################################################
 #
 #	show () - display the values of parameters
@@ -2133,7 +2100,6 @@ EOD
 sub _show_unmodified {
 defined $parm{$_[0]} ? $parm{$_[0]} : 'undef'
 }
-
 
 ########################################################################
 #
@@ -2184,7 +2150,6 @@ if (!$verb) {
     # special case, since we can have more than one, and we need to
     # specify position. No matter what we're adding we check for
     # duplicates first and silently no-op the request if one is found.
-
 
   elsif ($verb eq 'add') {
     my $name = shift or die <<eod;
@@ -2304,7 +2269,6 @@ push @frame, {
 	};
 $fh = $hdl;
 }
-
 
 ########################################################################
 #
@@ -2430,7 +2394,6 @@ EOD
 
 }
 
-
 ########################################################################
 #
 #	store () - Save the observing list using Storable nstore().
@@ -2553,7 +2516,6 @@ EOD
     $cmdlgl{tle} = [ 'choose=s@', keys %tle_formatter ];
 }
 
-
 sub tle {
     my @specified = grep { $cmdopt{$_} } keys %tle_formatter;
     @specified > 1
@@ -2572,7 +2534,6 @@ sub tle {
     }
     return;
 }
-
 
 ########################################################################
 #
@@ -2602,7 +2563,6 @@ eod
     return;
 
 }
-
 
 ########################################################################
 
@@ -2636,7 +2596,6 @@ eod
     delete $frame[$#frame]{timing};
     }
 }
-
 
 #	$subtree = _find_first_tag (\@tree, $tag, ...)
 #
@@ -2707,7 +2666,6 @@ use strict qw{refs};
 sort @rslt;
 }
 
-
 #	$hashref = _flatten ($hashref)
 #
 #	This subroutine implements 'event flattening'; the conversion
@@ -2743,7 +2701,6 @@ sub _flatten {
     $hash;
 }
 
-
 #	$string = _format_local_az_rng ($station, $body)
 
 #	This subroutine formats the azimuth and range of the body
@@ -2761,7 +2718,6 @@ sub _format_local_az_rng {
 	$rng;
 }
 
-
 #	$string = _format_local_azel ($station, $body)
 
 #	This subroutine formats the elevation and azimuth of the body
@@ -2777,7 +2733,6 @@ sub _format_local_azel {	## no critic (ProhibitUnusedPrivateSubroutines)
 	rad2deg ($el), rad2deg ($az),
 	$bearing[floor ($az/TWOPI * @bearing + .5) % @bearing];
 }
-
 
 #	$string = _format_local_azel_rng ($station, $body)
 
@@ -2825,7 +2780,6 @@ sub _format_local_equatorial_rng {	## no critic (ProhibitUnusedPrivateSubroutine
     return sprintf "%s %5.1f @{[$rng > 1e6 ? '%10.3e' : '%10.1f']}",
 	_rad2hms ($ra), rad2deg ($dec), $rng;
 }
-
 
 #	$location = _format_location ()
 
@@ -2888,7 +2842,6 @@ sub _get_equatorial_coordinates {
     return $body->equatorial();
 }
 
-
 #	$st = _get_spacetrack ($conditional)
 
 #	Gets the Astro::SpaceTrack object, instantiating it if
@@ -2936,7 +2889,6 @@ unless (@names) {
 }
 }	# end local symbol block;
 
-
 #	_get_station ();
 
 #	This subroutine manufactures and returns a station object
@@ -2961,7 +2913,6 @@ eod
 	    deg2rad ($parm{latitude}), deg2rad ($parm{longitude}),
 	    $parm{height} / 1000);
 }
-
 
 #	$suf = _get_suffix ($prefix, $backoff);
 
@@ -3201,13 +3152,11 @@ eod
 	return greg_time_local( @t );
     }
 
-
 #	Reset the last time set.
 
     sub _parse_time_reset {$last_time_set = $initial_time_set}
 
 }	# End local symbol block.
-
 
 #	$seconds_since_epoch = _parse_time_absolute( $string )
 
@@ -3348,7 +3297,6 @@ eod
     $psr->parse ($data);
 }
 
-
 #	$quoted = _quoter ($string)
 
 #	Quotes and escapes the input string if and as necessary for parser.
@@ -3482,7 +3430,6 @@ eod
     }
 }
 
-
 #	@coordinates = _simbad4 ($query)
 
 #	Look up the given star in the SIMBAD catalog. This assumes
@@ -3589,7 +3536,6 @@ sub _strip_empty_xml {
 	}
     }
 }
-
 
 #	$value = _sub_arg ($spec, $default, \@args)
 
@@ -3826,7 +3772,6 @@ unless ($] >= 5.008 && $Config{useperlio}) {
 	push @ISA, 'IO::String';
 	}
     }
-
 
 our $Hook;	# Code reference that we use to get data from.
 our $Handle;	# First argument to pass to hook when called.
@@ -4120,7 +4065,6 @@ arguments were given when the macro is expanded.
 
 The following commands are available:
 
-
 =over
 
 =item almanac
@@ -4158,8 +4102,6 @@ day after the start time.
 
 See L</SPECIFYING TIMES> below for how to specify times.
 
-
-
 =item cd
 
  satpass> cd directory
@@ -4170,7 +4112,6 @@ determined. This change affects this script, and any processes invoked
 by it, but B<not> the invoking process. In plainer English, it does not
 affect the directory in which you find yourself after exiting satpass.
 
-
 =item check_version
 
  satpass> check_version
@@ -4180,7 +4121,6 @@ parses out the version, and compares it to the version of this script,
 displaying both versions and the result of the comparison. The intent
 is to provide a mechanism for checking the currency of this script in
 the event it becomes a separate distribution from Astro::Coord::ECI.
-
 
 =item choose
 
@@ -4220,14 +4160,12 @@ command. So barring bugs, you may not need this option unless you are
 trying to assemble and save a set of elements relevant to a given time
 in the past.
 
-
 =item clear
 
  satpass> clear
 
 This command clears the observing list. It is not an error to issue it
 with the list already clear.
-
 
 =item drop
 
@@ -4239,7 +4177,6 @@ or a mixture may be given. Numeric items are matched against the NORAD
 IDs of the items in the observing list; non-numeric items are made into
 case-insensitive regular expressions and matched against the names of
 the items if any.
-
 
 =item echo
 
@@ -4253,7 +4190,6 @@ the tokens left after substitution and redirection.
 This was added on a whim, to prevent having to shell out to get some
 random text in the output.
 
-
 =item exit
 
  satpass> exit
@@ -4264,7 +4200,6 @@ user.
 
 'bye' and 'quit' are synonyms. End-of-file at the command prompt will
 also cause this script to terminate.
-
 
 =item export
 
@@ -4277,7 +4212,6 @@ we exit.
 If the name is the name of a parameter, the value is optional, but if
 supplied will be used to set the parameter. The environment variable
 is set from the value of the parameter, and will track changes in it.
-
 
 =item flare
 
@@ -4331,7 +4265,6 @@ can predict flares for the next two days as follows:
  satpass> # Finally, predict the flares. Include spares.
  satpass> flare -spare now +2
 
-
 =item geocode
 
  satpass> geocode location country_code
@@ -4373,13 +4306,11 @@ passed through to it.
 
 The above options are also available on all of the 'geocode_*' commands.
 
-
 =item geocode_as
 
  satpass> geocode_as location
 
 American Samoa is handled by L<geocode_us|/geocode_us>.
-
 
 =item geocode_ca
 
@@ -4406,7 +4337,6 @@ If the location contains whitespace, it must be quoted. Example:
 Because of restrictions on the use of the Geocoder.ca site, you may not
 use this command for commercial purposes.
 
-
 =item geocode_fm
 
  satpass> geocode_fm location
@@ -4414,13 +4344,11 @@ use this command for commercial purposes.
 The Federated States of Micronesia are handled by
 L<geocode_us|/geocode_us>.
 
-
 =item geocode_gu
 
  satpass> geocode_gu location
 
 Guam is handled by L<geocode_us|/geocode_us>.
-
 
 =item geocode_mh
 
@@ -4428,13 +4356,11 @@ Guam is handled by L<geocode_us|/geocode_us>.
 
 The Marshall Islands are handled by L<geocode_us|/geocode_us>.
 
-
 =item geocode_mp
 
  satpass> geocode_mp location
 
 The Northern Mariana Islands are handled by L<geocode_us|/geocode_us>.
-
 
 =item geocode_pr
 
@@ -4442,13 +4368,11 @@ The Northern Mariana Islands are handled by L<geocode_us|/geocode_us>.
 
 Puerto Rico is handled by L<geocode_us|/geocode_us>.
 
-
 =item geocode_pw
 
  satpass> geocode_pw location
 
 Palau is handled by L<geocode_us|/geocode_us>.
-
 
 =item geocode_us
 
@@ -4480,13 +4404,11 @@ use this command for commercial purposes.
 If you wish to use this command, you must install the
 B<Geo::Coder::OSM> module.
 
-
 =item geocode_vi
 
  satpass> geocode_vi location
 
 The U.S. Virgin Islands are handled by L<geocode_us|/geocode_us>.
-
 
 =item height
 
@@ -4526,7 +4448,6 @@ unless -all is asserted, and you can probably ignore it too.
 
 These options are also available on all of the 'height_*' commands.
 
-
 =item height_af
 
  satpass> height_af latitude longitude
@@ -4535,13 +4456,11 @@ Afghanistan is handled by L<height_us|/height_us>, since this is
 (supposedly) covered by the U.S. Geological Survey's Afghanistan
 Digital Elevation Model.
 
-
 =item height_as
 
  satpass> height_as latitude longitude
 
 American Samoa is handled by L<height_us|/height_us>.
-
 
 =item height_ca
 
@@ -4553,13 +4472,11 @@ North America. But in order to cover some observed weirdness in the
 data returned, -source_layer is defaulted to 'SRTM.C_1TO19_3' and
 -retry_on_zero is defaulted to 3.
 
-
 =item height_fm
 
  satpass> height_fm latitude longitude
 
 The Federated States of Micronesia are handled by L<height_us|/height_us>.
-
 
 =item height_gu
 
@@ -4567,13 +4484,11 @@ The Federated States of Micronesia are handled by L<height_us|/height_us>.
 
 Guam is handled by L<height_us|/height_us>.
 
-
 =item height_mh
 
  satpass> height_mh latitude longitude
 
 The Marshall Islands are handled by L<height_us|/height_us>.
-
 
 =item height_mp
 
@@ -4581,20 +4496,17 @@ The Marshall Islands are handled by L<height_us|/height_us>.
 
 The Northern Mariana Islands are handled by L<height_us|/height_us>.
 
-
 =item height_pr
 
  satpass> height_pr latitude longitude
 
 Puerto Rico is handled by L<height_us|/height_us>.
 
-
 =item height_pw
 
  satpass> height_pw latitude longitude
 
 Palau is handled by L<height_us|/height_us>.
-
 
 =item height_us
 
@@ -4618,13 +4530,11 @@ and put its latitude, longitude and height in the initialization
 file. You can use macros to define alternate locations if you
 want.
 
-
 =item height_vi
 
  satpass> height_vi latitude longitude
 
 The U.S. Virgin Islands are handled by L<height_us|/height_us>.
-
 
 =item help
 
@@ -4650,7 +4560,6 @@ If you set the L<webcmd|/webcmd> parameter properly, this
 command will launch the L<https://metacpan.org/> page for this
 package, and any arguments will be ignored.
 
-
 =item list
 
  satpass> list
@@ -4668,7 +4577,6 @@ list. You can specify multiple bodies by specifying -choose multiple
 times, or by separating your choices with commas. If -choose is not
 specified, the whole observing list is displayed.
 
-
 =item load
 
  satpass> load file ...
@@ -4676,7 +4584,6 @@ specified, the whole observing list is displayed.
 This command loads the contents of one or more files into the
 observing list. The files must contain NORAD two- or three- line
 element sets.
-
 
 =item localize
 
@@ -4688,7 +4595,6 @@ restored when the macro or source file exits.
 
 If you localize a parameter more than once in a given macro or source
 file, the duplicate localizations are ignored.
-
 
 =item macro
 
@@ -4749,7 +4655,6 @@ Be aware that there is no syntax checking done when the macro is
 defined. You only find out if your macro definition is good by
 trying to execute it.
 
-
 =item magnitude_table
 
  satpass> magnitude_table ...
@@ -4783,7 +4688,6 @@ to be added to the magnitudes read.
 C<show> displays the contents of the magnitude table, as a series of
 C<'magnitude_table add'> commands. If arguments are passed, only those
 OIDs specified in the arguments are displayed.
-
 
 =item pass
 
@@ -4827,7 +4731,6 @@ C<-quiet> suppresses any errors generated by running the orbital model.
 These are typically from obsolete data, and/or decayed satellites.
 Bodies that produce errors will not be included in the output.
 
-
 =item phase
 
  satpass> phase time
@@ -4845,7 +4748,6 @@ hours for the Moon) of 0, 90, 180, or 270 degrees. Otherwise you get
 waxing|waning crescent|gibbous.
 
 The default time is the time the command was issued.
-
 
 =item position
 
@@ -4898,7 +4800,6 @@ in which case the default end_time is ten days after the start time.
 The default interval is 60 (seconds) unless -realtime is specified, in
 which case the default interval is 10 (seconds).
 
-
 =item quarters
 
  satpass> quarters start_time end_time
@@ -4913,7 +4814,6 @@ See the L</SPECIFYING TIMES> topic below for how to specify times.
 
 The defaults are 'today noon' and 30 days after the start time.
 
-
 =item retrieve
 
  satpass> retrieve filename
@@ -4921,7 +4821,6 @@ The defaults are 'today noon' and 30 days after the start time.
 This command is one half of the interface to the Storable module.
 It uses the retrieve() subroutine to read the observing list from
 the given file.
-
 
 =item set
 
@@ -4931,7 +4830,6 @@ This command sets operating parameters. See L</PARAMETERS> below for
 the list, and what they are used for.
 
 You can specify more than one name-value pair on the same command.
-
 
 =item show
 
@@ -4943,7 +4841,6 @@ given, it displays the complete list.
 
 The display format is in terms of the 'set' commands used to set
 the given values.
-
 
 =item sky
 
@@ -5017,7 +4914,6 @@ which appears to be a work in progress, so I am not sure how stable it
 will be. Since SIMBAD 3 is being phased out, B<The 'lookup' function
 should be considered experimental.>
 
-
 =item source
 
  satpass> source file_name
@@ -5035,7 +4931,6 @@ The file name must be quoted if it contains whitespace.
 
 The one legal option is -optional, which means that no error is reported
 if the file cannot be opened.
-
 
 =item st
 
@@ -5113,7 +5008,6 @@ impending (or in progress) you will get an error.
  satpass> # Get the data
  satpass> st spaceflight shuttle -all
 
-
 =item status
 
  satpass> status ...
@@ -5164,7 +5058,6 @@ expressions. For example:
 
 to display the status of Iridium 36 and 97.
 
-
 =item store
 
  satpass> store filename
@@ -5172,7 +5065,6 @@ to display the status of Iridium 36 and 97.
 This command is one half of the interface to the Storable module.
 It uses the nstore() subroutine to write the observing list to
 the given file.
-
 
 =item system
 
@@ -5205,7 +5097,6 @@ That is to say the satpass script handles the -c. But
 displays the status change time of the file, with output going to
 standard out. That is to say the ls command handles the -c.
 
-
 =item times
 
  satpass> times time
@@ -5214,7 +5105,6 @@ This command displays the universal, dynamical, local standard,
 local mean, and local time for the given input time.
 
 The time defaults to the current time.
-
 
 =item tle
 
@@ -5269,7 +5159,6 @@ true, or 0 for false. The evaluation rules are those of Perl itself:
 
 The parameters are:
 
-
 =over
 
 =item almanac_horizon
@@ -5287,7 +5176,6 @@ almanac calculations also.
 
 The default is C<0>.
 
-
 =item appulse
 
 This numeric parameter specifies the maximum reportable angle between the
@@ -5303,7 +5191,6 @@ is displayed in decimal degrees.
 
 The initial setting is 0.
 
-
 =item autoheight
 
 This Boolean parameter determines whether the L<geocode|/geocode>
@@ -5312,7 +5199,6 @@ It does this only if the parameter is true. You may wish to turn this
 off (i.e. set it to 0) if the USGS elevation service is being balky.
 
 The default is 1 (i.e. true).
-
 
 =item backdate
 
@@ -5330,7 +5216,6 @@ L<https://spaceflight.nasa.gov/>.
 The default is 1 (i.e. true), which is consistent with the behavior of
 the code before this parameter was added.
 
-
 =item background
 
 This Boolean parameter determines whether the location of the background body
@@ -5338,7 +5223,6 @@ is displayed when the L<appulse|/appulse> logic detects an
 appulse.
 
 The default is 1 (i.e. true).
-
 
 =item country
 
@@ -5358,7 +5242,6 @@ lower case for use.
 
 The default is 'us'.
 
-
 =item date_format
 
 This string parameter specifies the strftime(3) format used to display dates.
@@ -5373,7 +5256,6 @@ needs to be taken out to make the URL good. I<Caveat user.>
 The default is '%a %d-%b-%Y', which produces (e.g.)
 'Mon 01-Jan-2001' for the first day of the current millennium. 
 
-
 =item debug
 
 This numeric parameter turns on debugging output. The only supported value
@@ -5383,7 +5265,6 @@ that the behavior for a given non-zero value will not change from
 release to release.
 
 The default is 0.
-
 
 =item desired_equinox_dynamical
 
@@ -5406,7 +5287,6 @@ and want the coordinates for a given epoch.
 
 The default is 0.
 
-
 =item echo
 
 This Boolean parameter causes commands that did not come from the keyboard to
@@ -5415,7 +5295,6 @@ debug your macros, since the echo takes place B<after> parameter
 substitution has occurred.
 
 The default is 0.
-
 
 =item edge_of_earths_shadow
 
@@ -5430,7 +5309,6 @@ parameter.
 
 The default is 1 (i.e. edge of umbra).
 
-
 =item ellipsoid
 
 This string parameter specifies the name of the reference ellipsoid to be used
@@ -5439,7 +5317,6 @@ Astro::Coord::ECI may be used. For details,
 see L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 The default is 'WGS84'.
-
 
 =item error_out
 
@@ -5450,7 +5327,6 @@ false, we ignore the error.
 
 The default is 0 (i.e. false).
 
-
 =item exact_event
 
 This Boolean parameter specifies whether visibility events (rise, set, max, 
@@ -5459,7 +5335,6 @@ to the nearest second. If false, such events are reported to the step
 size specified when the 'pass' command was issued.
 
 The default is 1 (i.e. true).
-
 
 =item explicit_macro_delete
 
@@ -5470,7 +5345,6 @@ to delete a macro. If false, 'macro foo' deletes macro foo. If true,
 The default is 0 (i.e. false). B<This will change>, as deletion without
 an explicit -delete is deprecated.
 
-
 =item extinction
 
 This Boolean parameter specifies whether magnitude estimates take atmospheric
@@ -5479,7 +5353,6 @@ in measured brightness, and false if you are interested in estimating
 magnitudes versus nearby stars.
 
 The default is 1 (i.e. true).
-
 
 =item flare_mag_day
 
@@ -5490,7 +5363,6 @@ Sun is above the L<twilight|/twilight> parameter.
 
 The default is -6.
 
-
 =item flare_mag_night
 
 This numeric parameter specifies the limiting magnitude for the flare
@@ -5499,7 +5371,6 @@ purpose, it is considered to be night if the elevation of the
 Sun is below the L<twilight|/twilight> parameter.
 
 The default is 0.
-
 
 =item geometric
 
@@ -5511,7 +5382,6 @@ is versus whatever the 'horizon' parameter specifies.
 
 The default is 1 (i.e. true).
 
-
 =item gmt
 
 This Boolean parameter specifies whether output times are local (if false) or
@@ -5519,14 +5389,12 @@ GMT (if true).
 
 The default is 0 (i.e. false).
 
-
 =item height
 
 This numeric parameter specifies the height of the observer above mean sea
 level, in meters.
 
 There is no default; you must specify a value.
-
 
 =item horizon
 
@@ -5540,7 +5408,6 @@ is displayed in decimal degrees.
 
 The default is 20 degrees.
 
-
 =item illum
 
 This string parameter specifies the name of the class to set as the 'illum'
@@ -5549,7 +5416,6 @@ Iridium flares, and potentially other things. The value must be the name
 of a subclass of C<Astro::Coord::ECI>.
 
 The default is C<'Astro::Coord::ECI::Sun>.
-
 
 =item latitude
 
@@ -5561,7 +5427,6 @@ See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
 
 There is no default; you must specify a value.
-
 
 =item local_coord
 
@@ -5584,7 +5449,6 @@ The default is 'azel_rng'.
 B<Note that prior to version 0.005_04, the 'azel' and 'equatorial'
 formats included range.>
 
-
 =item location
 
 This string parameter contains a text description of the observer's location.
@@ -5593,7 +5457,6 @@ displayed wherever the observer's latitude, longitude, and height are.
 
 There is no default; the parameter is undefined unless you supply a
 value.
-
 
 =item longitude
 
@@ -5606,7 +5469,6 @@ See L</SPECIFYING ANGLES> for ways to specify an angle. This parameter
 is displayed in decimal degrees.
 
 There is no default; you must specify a value.
-
 
 =item model
 
@@ -5656,14 +5518,12 @@ model8 - Use either sgp8 or sdp8 as appropriate.
 
 The default is 'model'.
 
-
 =item pass_threshold
 
 This angle or undef parameter corresponds to the
 L<Astro::Coord::ECI::TLE|Astro::Coord::ECI::TLE> C<pass_threshold>
 attribute.  It is set in degrees. It can also be set to the C<undef>
 value by specifying the string C<'undef'> (unquoted) as its value.
-
 
 =item perltime
 
@@ -5699,13 +5559,11 @@ until this script itself starts requiring Perl 5.010.
 
 The default is 0 (i.e. false).
 
-
 =item prompt
 
 This string parameter specifies the string used to prompt for commands.
 
 The default is 'satpass>'.
-
 
 =item refraction
 
@@ -5713,7 +5571,6 @@ This Boolean parameter specifies whether atmospheric refraction should be taken
 into account in the azel() calculation.
 
 The default is 1 (i.e. true).
-
 
 =item simbad_url
 
@@ -5734,7 +5591,6 @@ no-oped.
 Also note that the version of SIMBAD used to access the site is
 controlled by the L<simbad_version|/simbad_version> parameter.
 
-
 =item simbad_version
 
 This integer parameter specifies the version of the SIMBAD application being
@@ -5746,7 +5602,6 @@ out. 'Simbad.harvard.edu' appears to me to be phasing out, and
 redirected to simbad.u-strasbg.fr.
 
 B<As of satpass 0.013_09,> the default is 4.
-
 
 =item singleton
 
@@ -5760,7 +5615,6 @@ take about 15% longer.
 
 The default is 0 (i.e. false).
 
-
 =item sun
 
 This string parameter specifies the name of the class to set as the 'sun'
@@ -5768,7 +5622,6 @@ attribute for any bodies that require it. The value must be the name of
 a subclass of C<Astro::Coord::ECI::Sun>.
 
 The default is C<'Astro::Coord::ECI::Sun>.
-
 
 =item time_format
 
@@ -5782,7 +5635,6 @@ L<http://man.openbsd.org/i386/strftime>.
 The above is a long URL, and may be split across multiple lines. More
 than that, the formatter may have inserted a hyphen at the break, which
 needs to be taken out to make the URL good. I<Caveat user.>
-
 
 =item twilight
 
@@ -5798,7 +5650,6 @@ is displayed in decimal degrees, unless 'civil', 'nautical', or
 
 The default is 'civil'.
 
-
 =item tz
 
 This string parameter specifies the time zone for Date::Manip. You probably
@@ -5813,7 +5664,6 @@ L<Date::Manip|Date::Manip> for more information.
 This parameter is not set at all by default, and will not appear
 in the 'show' output until it has been set.
 
-
 =item verbose
 
 This Boolean parameter specifies whether the 'pass' command should give the
@@ -5822,7 +5672,6 @@ If false, only rise, set, max, into or out of shadow, and the
 beginning or end of twilight are displayed.
 
 The default is 0 (i.e. false).
-
 
 =item visible
 
@@ -5836,7 +5685,6 @@ observer (i.e. "it's dark"), but the satellite is illuminated by the
 sun.
 
 The default is 1 (i.e. true).
-
 
 =item webcmd
 
@@ -6071,8 +5919,10 @@ script testing problem.
 
 =head1 BUGS
 
-Bugs can be reported to the author by mail, or through
-L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues/>.
+Support is by the author. Please file bug reports at
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass>,
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+electronic mail to the author.
 
 The VMS- and MSWin32-specific code to find the initialization file and
 do tilde expansion is untested, since I do not currently have access to

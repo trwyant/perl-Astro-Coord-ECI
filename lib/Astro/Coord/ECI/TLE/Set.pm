@@ -147,7 +147,6 @@ Error - Can not call %s because there is no current member. Be
         sure you called add() after instantiating or calling clear().
 eod
 
-
 =item $set = Astro::Coord::ECI::TLE::Set->new ()
 
 This method instantiates a new set. Any arguments are passed to the
@@ -166,7 +165,6 @@ sub new {
     $self->add (@args) if @args;
     return $self;
 }
-
 
 =item $set->add ($member ...);
 
@@ -227,7 +225,6 @@ eod
     return $self;
 }
 
-
 =item @sets = Astro::Coord::ECI::TLE::Set->aggregate ($tle ...);
 
 This method aggregates the given Astro::Coord::ECI::TLE objects into
@@ -286,7 +283,6 @@ sub aggregate {
     return @rslt;
 }
 
-
 =item $set->can ($method);
 
 This method checks to see if the object can execute the given method.
@@ -309,7 +305,6 @@ sub can {
 	$self->{current}->can($method)
     };
 }
-
 
 =item $set->clear ();
 
@@ -416,7 +411,6 @@ sub represents {
     return $self->{current}->represents($class);
 }
 
-
 =item $set->select ($time);
 
 This method selects the member object that best represents the given
@@ -453,7 +447,6 @@ eod
     return $self->{current};
 }
 
-
 =item $set->set ($name => $value ...);
 
 This method iterates over the individual name-value pairs. If the name
@@ -477,7 +470,6 @@ sub set {
     }
     return $self;
 }
-
 
 =item $set->set_all ($name => $value ...);
 
@@ -576,7 +568,6 @@ sub validate {
     return $self->validate($opt, @args);
 }
 
-
 #	The AUTOLOAD routine does not define methods, it simply
 #	simulates them. This is because there is no good way to
 #	get rid of the routines if we end up representing a
@@ -623,8 +614,10 @@ __END__
 
 =head1 BUGS
 
-Bugs can be reported to the author by mail, or through
-L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues/>.
+Support is by the author. Please file bug reports at
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass>,
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+electronic mail to the author.
 
 =head1 AUTHOR
 
