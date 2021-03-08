@@ -29,26 +29,24 @@ indicated.
     deg2rad ($your_east_longitude_in_degrees),
     $your_height_above_sea_level_in_meters/1000);
  
- # Get all the Space Station data from NASA's human
- # spaceflight page, with the optional effective date.
+ # Get the 'stations' catalog from Celestrak. This includes
+ # all space stations and related bodies.
  # The data are all direct-fetched, so no password is
- # needed. Note that the -effective option requires
- # Astro::SpaceTrack 0.40_01 or above. If you do not have
- # this option available, set the 'backdate' attribute
- # false on all the elements in @sats, below.
+ # needed.
  
- my $st = Astro::SpaceTrack->new (direct => 1);
- my $data = $st->spaceflight ('-all', '-effective');
+ my $st = Astro::SpaceTrack->new( direct => 1 );
+ my $data = $st->celestrak( 'stations' );
  $data->is_success or die $data->status_line;
  
  # Parse the fetched data, yielding TLE objects. Aggregate
- # them into Set objects where this is warranted, since the
- # Manned Spaceflight website gives multiple sets of
- # orbital elements for each object, and aggregation lets
- # us use whichever one is best for the time.
+ # them into Set objects where this is warranted. We grep
+ # the data because the Celestrak catalog we fetched
+ # contains other stuff than the International Space
+ # Station.
  
- my @sats = Astro::Coord::ECI::TLE::Set->aggregate(
-     Astro::Coord::ECI::TLE->parse ($data->content));
+ my @sats = grep { '25544' eq $_->get( 'id' ) }
+     Astro::Coord::ECI::TLE::Set->aggregate(
+     Astro::Coord::ECI::TLE->parse( $data->content() ) );
  
  # We want passes for the next 7 days.
   

@@ -11,14 +11,17 @@ Astro::Coord::ECI::TLE::Set - Represent a set of data for the same ID.
 
  # Get orbital data on the International Space Station and
  # related NASA stuff. 
- my $st = Astro::SpaceTrack->new();
- my $rslt = $st->spaceflight('-all');
+ my $st = Astro::SpaceTrack->new(
+     username => $me,
+     password => $secret,
+ );
+ my $rslt = $st->retrieve( qw{ -last5 25544 } );
  $rslt->is_success
      or die "Unable to get data: ", $rslt->status_line;
  
- # We aggregate the data because NASA provides multiple sets
- # of orbital elements for each body. The Set object will
- # select the correct one for the given time.
+ # We aggregate the data because we retrieved the last five orbital
+ # elements for the body. The Set object will select the correct one for
+ # the given time.
  my @sats = Astro::Coord::ECI::TLE::Set->aggregate (
      Astro::Coord::ECI::TLE->parse ($rslt->content));
  my $now = time ();
