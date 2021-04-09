@@ -96,8 +96,8 @@ our $VERSION = '0.118';
 
 use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
+use Clone ();
 use POSIX qw{floor strftime};
-use Storable ();
 
 use constant NO_CASCADING_STATIONS =>
     q{Cascading 'station' attributes are not supported};
@@ -398,13 +398,13 @@ sub azel_offset {
 This method does a deep clone of an object, producing a different
 but identical object.
 
-At the moment, it's really just a wrapper for Storable::dclone.
+At the moment, it's really just a wrapper for Clone::clone.
 
 =cut
 
 sub clone {
     my ( $self ) = @_;
-    return Storable::dclone( $self );
+    return Clone::clone( $self );
 }
 
 =item $elevation = $coord->correct_for_refraction ($elevation);
