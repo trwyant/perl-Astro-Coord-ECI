@@ -1,3 +1,8 @@
+0.118_01	2021-04-09	T. R. Wyant
+    Update haversine link to point to "The Math Doctors" site
+
+    Fix clone(), and test to ensure it stays fixed.
+
 0.118		2021-04-01	T. R. Wyant
     Add rt.cpan.org back to bug reporting methods. Long live RT!
 
