@@ -1,5 +1,5 @@
-0.118_01	2021-04-09	T. R. Wyant
-    Update haversine link to point to "The Math Doctors" site
+0.119		2021-04-16	T. R. Wyant
+    Update haversine link to point to "The Math Doctors" web site
 
     Fix clone(), and test to ensure it stays fixed.
 
