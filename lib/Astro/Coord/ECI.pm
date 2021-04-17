@@ -165,7 +165,8 @@ Telescope, volume 68, number 2, 1984, page 159.
 Unfortunately, as of early 2021 the National Council of Teachers of
 Mathematics restricted the Dr. Math content to their members. The Math
 Doctors (L<https://www.themathdoctors.org/>) are trying to recover and
-expand the archive, and a recovered article on haversines is at
+expand the archive, and an annotated and expanded version of the article
+on haversines is available at
 L<https://www.themathdoctors.org/distances-on-earth-2-the-haversine-formula/>.
 If you want the original article, you can feed the URL
 C<http://mathforum.org/library/drmath/view/51879.html> to the Wayback
