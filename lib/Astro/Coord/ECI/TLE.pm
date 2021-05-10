@@ -8410,6 +8410,7 @@ use constant _MCCANTS_QUICKSAT => 'Mon, 14 Sep 2020 13:12:56 GMT';
   '40382' => 3.4,
   '41395' => 3.9,
   '42689' => 4.9,
+  '48274' => 3.3, # Back-calculated from Heavens-Above
 );
 
 1;
