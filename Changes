@@ -1,3 +1,9 @@
+0.119_01	2021-05-13	T. R. Wyant
+    Add Tianhe to canned magnitude table. Intrinsic magnitude
+    back-calculated from Heavens-Above value.
+
+    Tweak Math Doctors acknowledgement for haversine article recovery.
+
 0.119		2021-04-16	T. R. Wyant
     Update haversine link to point to "The Math Doctors" web site
 
