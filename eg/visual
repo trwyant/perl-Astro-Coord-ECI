@@ -87,14 +87,16 @@ if ( $opt{merge} ) {
     # Unless we have numbers for selected bodies, make them the value
     # back-calculated from Heavens-Above
     my %heavens_above_mag = (
-	48274	=> 3.3,
+	25544	=> -1.8,
+	48274	=> 3.2,
     );
+    delete $found{25544};	# Override the old value.
     my %oid_comment;
     foreach my $oid ( keys %heavens_above_mag ) {
 	defined $found{$oid}
 	    and next;
 	$found{$oid} = $heavens_above_mag{$oid};
-	$oid_comment{$oid} = 'Back-calculated from Heavens-Above';
+	$oid_comment{$oid} = 'From Heavens-Above';
     }
     $opt{decayed}
 	and decayed( \%found );
