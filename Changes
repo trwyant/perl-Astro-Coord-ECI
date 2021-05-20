@@ -1,6 +1,5 @@
-0.119_01	2021-05-13	T. R. Wyant
-    Add Tianhe to canned magnitude table. Intrinsic magnitude
-    back-calculated from Heavens-Above value.
+0.120		2021-05-20	T. R. Wyant
+    Use Heavens-Above intrinsic magnitude for Tianhe and the ISS.
 
     Tweak Math Doctors acknowledgement for haversine article recovery.
 
