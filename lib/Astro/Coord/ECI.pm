@@ -1453,8 +1453,16 @@ sub geodetic {
 		+ $E) / 2;
 	my $t = sqrt ($G * $G + ($F - $v * $G)	# Borkowski (12)
 		/ (2 * $G - $E)) - $G;
-	my $phi = atan2 (($a * (1 - $t * $t)) /	# Borkowski (18)
-	    (2 * $b * $t), 1);			# equivalent to atan (arg1)
+
+	# Borkowski (18)
+	# equivalent to atan (arg1)
+	my $phi = do {
+	    my $Y = $a * ( 1 - $t * $t );
+	    my $X = 2 * $b * $t;
+	    ( $Y, $X ) = ( -$Y, -$X ) if $X < 0;
+	    atan2 $Y, $X;
+	};
+
 	my $h = ($r - $a * $t) * cos ($phi) +	# Borkowski (19)
 	    ($z - $b) * sin ($phi);
 
