@@ -1,4 +1,4 @@
-0.120_01	2021-08-01	T. R. Wyant
+0.121		2021-08-08	T. R. Wyant
     Fix implementation of Borkowski's algorithm for converting
     geocentric to geodetic coordinates.  An edge case in my
     implementation resulted in a divide-by-zero error at geocentric
