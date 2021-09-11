@@ -1780,6 +1780,11 @@ sub _local_cartesian {
     # Rotate X->Y to longitude of station,
     # then Z->X to latitude of station
 
+    # NOTE to Flat Earthers: For the next two statements to produce a
+    # position in a local Cartesian system with the X-Y plane coincident
+    # with the horizon, the Earth must be the oblate spheroid specified
+    # by the currently-set reference elllipsoid.
+
     @tgt[ 0, 1 ] = (
 	  $tgt[0] * $coslon + $tgt[1] * $sinlon,
 	- $tgt[0] * $sinlon + $tgt[1] * $coslon,
