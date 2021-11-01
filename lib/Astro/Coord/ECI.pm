@@ -4117,8 +4117,11 @@ and without whom it is impossible to get far in computational
 astronomy. Any algorithm not explicitly credited above is probably
 due to him.
 
-Dr. Meeus' publisher, Willmann-Bell Inc (L<https://www.willbell.com/>),
-which kindly and patiently answered my intellectual-property questions.
+Dr. Meeus' publisher, Willmann-Bell Inc, which kindly and patiently
+answered my intellectual-property questions. Willmann-Bell ceased to be
+a separate entity in 2021, but their publications, including Dr. Meeus'
+book, are still available through Sky and Telescope&apos;s Willmann-Bell
+imprint at L<https://shopatsky.com/collections/willmann-bell>.
 
 Goran Gasparovic of MIT, who asked for (and supplied information for)
 the ability to display results in apparent equatorial coordinates,
