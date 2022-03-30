@@ -1169,22 +1169,24 @@ sub rad2hms {
 	or return $rad;
     defined $dp
 	or $dp = 3;
-    # FIXME this has the same problem as rad2dms() did.
-    my $sec = $rad * 12 / PI * 3600;
-    ( $sec, my $sgn ) = $sec < 0 ? ( - $sec, '-' ) : ( $sec, '' );
-    my $frc = sprintf "%.${dp}f", $sec;
-    $frc =~ s/ [^.]* //smx;
-    $sec = floor( $sec );
-    my $min = floor( $sec / 60 );
-    $sec %= 60;
-    my $hr = floor( $min / 60 );
-    $min %= 60;
-    $hr or $min
-	or return sprintf q<%s%ds%s>, $sgn, $sec, $frc;
-    $hr
-	or return sprintf q<%s%dm%02ds%s>, $sgn, $sec, $frc;
-    return sprintf qq<%s%dh%02dm%02ds%s>,
-	$sgn, $hr, $min, $sec, $frc;
+
+    my $wid = $dp + 3;
+    ( $rad, my $sgn ) = $rad < 0 ? ( -$rad, '-' ) : ( $rad, '' );
+    my $sec = $rad * 12 / PI;
+    ( $sec, my $hr ) = modf( $sec );
+    ( $sec, my $min ) = modf( $sec * 60 );
+    $sec *= 60;
+    my $rslt;
+    if ( $hr ) {
+	$rslt = sprintf "%dh%02dm%$wid.${dp}f", $hr, $min, $sec;
+    } elsif ( $min ) {
+	$rslt = sprintf "%dm%$wid.${dp}f", $min, $sec;
+    } else {
+	$rslt = sprintf "%.${dp}f", $sec;
+    }
+    $rslt =~ s/ [.] /s./smx
+	or $rslt .= 's';
+    return "$sgn$rslt";
 }
 
 =item $value = tan ($angle)
