@@ -10,7 +10,7 @@ use HTML::TreeBuilder;
 use LWP::UserAgent;
 use Pod::Usage;
 
-our $VERSION = '0.122';
+our $VERSION = '0.122_01';
 
 my %opt;
 
