@@ -141,8 +141,8 @@ sub process_parse {
 	# default display is English.
 	my $mag = find_td_by_content( $tree,
 	    qr< \b at \s+ 1000 \s* km \s+ distance \b >smxi );
-	die "Debug - $oid ($name) '$mag'";
-
+	# die "Debug - $oid ($name) '$mag'";
+	say "$oid ($name) $mag";
     }
     return;
 }
