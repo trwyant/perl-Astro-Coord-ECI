@@ -87,8 +87,8 @@ if ( $opt{merge} ) {
     # Unless we have numbers for selected bodies, make them the value
     # back-calculated from Heavens-Above
     my %heavens_above_mag = (
-	25544	=> -1.8,
-	48274	=> 3.2,
+	25544	=> -1.8,	# ISS (Zarya)
+	48274	=> 3.2,		# Tiangong 3 (Tianhe)
     );
     delete $found{25544};	# Override the old value.
     my %oid_comment;
