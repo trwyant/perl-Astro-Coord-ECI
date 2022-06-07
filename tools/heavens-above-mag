@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+package heavens_above_mag;
+
 use 5.010;
 
 use strict;
@@ -16,27 +18,29 @@ use constant REF_CODE	=> sub {};
 
 my %opt;
 
-GetOptions( \%opt,
-    qw{ celestrak! open! },
-    help => sub { pod2usage( { -verbose => 2 } ) },
-) or pod2usage( { -verbose => 0 } );
+unless ( caller ) {	# We're a modulino.
+    GetOptions( \%opt,
+	qw{ celestrak! open! },
+	help => sub { pod2usage( { -verbose => 2 } ) },
+    ) or pod2usage( { -verbose => 0 } );
 
-if ( $opt{celestrak} ) {
-    @ARGV and pod2usage( {
-	    -message	=> 'Arguments forbidden with --celestrak',
-	    -verbose	=> 0,
-	} );
-    process_celestrak();
-} else {
-    @ARGV or pod2usage( {
-	    -message	=> 'Arguments required unless --celestrak specified',
-	    -verbose	=> 0,
-	} );
-
-    if ( $opt{open} ) {
-	process_open( @ARGV );
+    if ( $opt{celestrak} ) {
+	@ARGV and pod2usage( {
+		-message	=> 'Arguments forbidden with --celestrak',
+		-verbose	=> 0,
+	    } );
+	process_celestrak();
     } else {
-	process_parse( @ARGV );
+	@ARGV or pod2usage( {
+		-message	=> 'Arguments required unless --celestrak specified',
+		-verbose	=> 0,
+	    } );
+
+	if ( $opt{open} ) {
+	    process_open( @ARGV );
+	} else {
+	    process_perl( @ARGV );
+	}
     }
 }
 
@@ -146,9 +150,22 @@ EOD
 	push @arg, unpack 'A5';
     }
     close $fh;
-    process_parse( @arg );
+    process_perl( @arg );
     say ');';
     return;
+}
+
+sub process_get {
+    my ( $spec ) = @_;
+    my @rslt;
+    process_parse(
+	sub {
+	    push @rslt, [ @_ ];
+	    return;
+	},
+	$spec,
+    );
+    return @rslt;
 }
 
 sub process_open {
@@ -163,9 +180,7 @@ sub process_open {
 }
 
 sub process_parse {
-    my @arg = @_;
-    my $handler = ref $arg[0] eq REF_CODE ? shift @arg : \&print_perl;
-    my @rslt;
+    my ( $handler, @arg ) = @_;
     foreach my $spec ( @arg ) {
 	my $get = $spec =~ m/ \A [0-9]+ \z /smx ? \&get_html : \&get_file;
 	my $tree = HTML::TreeBuilder->new_from_content( $get->( $spec ) );
@@ -183,8 +198,16 @@ sub process_parse {
 	    $tree, qr< \b at \s+ 1000 \s* km \s+ distance \b >smxi );
 	$handler->( $oid, $name, $mag );
     }
-    return @rslt;
+    return;
 }
+
+sub process_perl {
+    my ( @arg ) = @_;
+    process_parse( \&print_perl, @arg );
+    return;
+}
+
+1;
 
 __END__
 
