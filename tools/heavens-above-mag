@@ -121,7 +121,7 @@ sub print_perl {
 
 sub process_celestrak {
     state $ua = LWP::UserAgent->new();
-    my $resp = $ua->get( 'https://celestrak.com/SpaceTrack/query/visual.txt' );
+    my $resp = $ua->get( 'https://celestrak.org/SpaceTrack/query/visual.txt' );
     $resp->is_success()
 	or die $resp->status_line();
     my ( $last_modified ) = $resp->header( 'Last-Modified' );

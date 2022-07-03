@@ -37,7 +37,7 @@ foreach my $code (
     sub {
 	return (
 	    'Celestrak visual',
-	    $ua->get( 'http://celestrak.com/SpaceTrack/query/visual.txt'),
+	    $ua->get( 'http://celestrak.org/SpaceTrack/query/visual.txt'),
 	);
     },
     sub {

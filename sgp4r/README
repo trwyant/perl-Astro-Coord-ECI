@@ -5,7 +5,7 @@ directory are as follows:
 FOR - the Fortran code from Revisiting Spacetrack Report #3. The .exe
     file is deleted, but the rest is in CVS so that we can track
     changes. The original is available in
-    http://celestrak.com/publications/AIAA/2006-6753/AIAA-2006-6753.zip
+    http://celestrak.org/publications/AIAA/2006-6753/AIAA-2006-6753.zip
     as is sgp4-ver.tle, which is used to test.
 
 Makefile - Make various things:
