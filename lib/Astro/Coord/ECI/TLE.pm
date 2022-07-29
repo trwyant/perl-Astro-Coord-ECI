@@ -8145,12 +8145,12 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Mon, 04 Jul 2022 20:59:59 GMT
+# Last-Modified: Mon, 25 Jul 2022 08:14:42 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Mon, 04 Jul 2022 20:59:59 GMT';
+use constant _CELESTRAK_VISUAL => 'Mon, 25 Jul 2022 08:14:42 GMT';
 use constant _MCCANTS_VSNAMES  => undef;
 use constant _MCCANTS_QUICKSAT => undef;
 
@@ -8305,6 +8305,7 @@ use constant _MCCANTS_QUICKSAT => undef;
   '33504' =>   5.3, # KORONAS-FOTON
   '38341' =>   3.2, # H-2A R/B
 # '39271' => undef, # CUSAT 2/FALCON 9 has no recorded magnitude
+# '39358' => undef, # SJ-16 has no recorded magnitude
 # '39364' => undef, # CZ-2C R/B has no recorded magnitude
   '39679' =>   3.4, # SL-4 R/B
   '39766' =>   3.7, # ALOS 2
