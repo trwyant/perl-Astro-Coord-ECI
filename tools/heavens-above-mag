@@ -146,6 +146,7 @@ EOD
     my @arg;
     my $content = $resp->decoded_content();
     open my $fh, '<', \$content;
+    local $_ = undef;	# while (<>) ... does not localize $_.
     while ( <$fh> ) {
 	push @arg, unpack 'A5';
     }
