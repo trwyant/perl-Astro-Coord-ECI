@@ -4161,7 +4161,7 @@ it at the moment is L<http://starlink.eao.hawaii.edu/starlink>.
 
 The L<Astro::Nova|Astro::Nova> module by Steffen Mueller, which wraps
 (and bundles) the libnova celestial mechanics, astrometry and
-astrodynamics library found at L<http://libnova.sourceforge.net/>.
+astrodynamics library found at L<https://libnova.sourceforge.net/>.
 
 The L<https://www.heavens-above.com/> web site, which does B<not> use
 this code, but does provide similar functionality.
