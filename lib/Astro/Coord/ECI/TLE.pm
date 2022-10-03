@@ -235,6 +235,7 @@ use base qw{ Astro::Coord::ECI Exporter };
 
 use Astro::Coord::ECI::Utils qw{ :params :ref :greg_time deg2rad distsq
     dynamical_delta embodies find_first_true fold_case
+    __format_epoch_time_usec
     format_space_track_json_time load_module looks_like_number max min
     mod2pi PI PIOVER2 rad2deg SECSPERDAY TWOPI thetag __default_station
     @CARP_NOT
@@ -243,7 +244,7 @@ use Astro::Coord::ECI::Utils qw{ :params :ref :greg_time deg2rad distsq
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use IO::File;
-use POSIX qw{ ceil floor fmod strftime };
+use POSIX qw{ ceil floor fmod modf strftime };
 use Scalar::Util ();
 
 BEGIN {
@@ -7231,13 +7232,14 @@ moment is
 sub tle_verbose {
     my ($self, %args) = @_;
     my $dtfmt = $args{date_format} || '%d-%b-%Y %H:%M:%S';
+    my $epoch = __format_epoch_time_usec( $self->get( 'epoch' ), $dtfmt );
     my $semimajor = $self->get('semimajor');	# Of reference ellipsoid.
 
     my $result = <<EOD;
 NORAD ID: @{[$self->get ('id')]}
     Name: @{[$self->get ('name') || 'unspecified']}
     International launch designator: @{[$self->get ('international')]}
-    Epoch of data: @{[strftime $dtfmt, gmtime $self->get ('epoch')]} GMT
+    Epoch of data: $epoch GMT
 EOD
     if (defined (my $effective = $self->get('effective'))) {
 	$result .= <<EOD;
@@ -7313,7 +7315,7 @@ encoded with a four-digit year.
 	EPHEMERIS_TYPE	=> 'ephemeristype',
 	EPOCH		=> sub {
 	    my ( $self ) = @_;
-	    return format_space_track_json_time( floor(  $self->get( 'epoch' ) ) );
+	    return format_space_track_json_time( $self->get( 'epoch' ) );
 	},
 	EPOCH_MICROSECONDS	=> sub {
 	    my ( $self ) = @_;
@@ -7365,6 +7367,18 @@ encoded with a four-digit year.
 	    ) * SGP_XMNPDA * SGP_XMNPDA / TWOPI;
 	},
 	NORAD_CAT_ID	=> 'id',
+	OBJECT_ID	=> sub {
+	    my ( $self ) = @_;
+	    my $year = $self->get( 'launch_year' );
+	    my $num = $self->get( 'launch_num' );
+	    my $part = $self->get( 'launch_piece' );
+	    foreach ( $year, $num, $part ) {
+		defined $_
+		    and $_ =~ m/ \S /smx
+		    or return;
+	    }
+	    return sprintf '%04d-%03d%s', $year, $num, $part;
+	},
 	OBJECT_NAME	=> 'name',
 	OBJECT_NUMBER	=> 'id',
 	OBJECT_TYPE	=> sub {
@@ -7379,13 +7393,14 @@ encoded with a four-digit year.
 	},
 	RCSVALUE	=> 'rcs',
 	REV_AT_EPOCH	=> 'revolutionsatepoch',
-	TLE_LINE0	=> sub {
-	    my ( $self ) = @_;
-	    my $name = $self->get( 'name' );
-	    defined $name
-		and $name = "0 $name";
-	    return $name;
-	},
+#	TLE_LINE0	=> sub {
+#	    my ( $self ) = @_;
+#	    my $name = $self->get( 'name' );
+#	    defined $name
+#		and $name = "0 $name";
+#	    return $name;
+#	},
+	# TLE_LINE0 is handled programmatically
 	# TLE_LINE1 is handled programmatically
 	# TLE_LINE2 is handled programmatically
 	effective_date	=> sub {
@@ -7421,25 +7436,27 @@ encoded with a four-digit year.
 		and $val ne ''
 		and $rslt->{$key} = $val;
 	}
-	return $rslt;
-    }
-
-    sub TO_JSON {
-	my ( $self ) = @_;
-	my $rslt = $self->__to_json( \%json_map );
 
 	if ( defined ( my $tle = $self->get( 'tle' ) ) ) {
 	    chomp $tle;
 	    my @lines = split "\n", $tle;
 	    unshift @lines, '' while @lines < 3;
-	    foreach my $line ( 1, 2 ) {
+	    foreach my $line ( 1 .. 2 ) {
 		defined $lines[$line]
 		    and $lines[$line] =~ m/ \S /smx
 		    and $rslt->{"TLE_LINE$line"} = $lines[$line];
 	    }
+	    if ( defined( my $name = $self->get( 'name' ) ) ) {
+		$rslt->{TLE_LINE0} = "0 $name";
+	    }
 	}
 
 	return $rslt;
+    }
+
+    sub TO_JSON {
+	my ( $self ) = @_;
+	return $self->__to_json( \%json_map );
     }
 
 }
@@ -7464,9 +7481,10 @@ encoded with a four-digit year.
 	MEAN_MOTION_DDOT
     };
     my %json_map = (
-	INTLDES		=> 'international',
+#	INTLDES		=> 'international',
 	NORAD_CAT_ID	=> 'id',
 	OBJECT_NAME	=> 'name',
+#	OBJECT_ID	=> 'international',
 	RCSVALUE	=> 'rcs',
 #	LAUNCH_YEAR	=> 'launch_year',
 #	LAUNCH_NUM	=> 'launch_num',
@@ -7603,7 +7621,16 @@ encoded with a four-digit year.
 	    $tle{$attr} = $value;
 	}
 
-	return $class->new( %tle );
+	my $obj = $class->new( %tle );
+
+	foreach my $key ( qw{ OBJECT_ID INTLDES } ) {
+	    defined $hash->{$key}
+		or next;
+	    $obj->_set_intldes( international => $hash->{$key} );
+	    last;
+	}
+
+	return $obj;
     }
 }
 
@@ -7974,7 +8001,7 @@ sub _set_intldes {
 	    $self->{launch_num} = $num;
 	    $self->{launch_piece} = $piece;
 
-	    $self->{$name} = $val;
+	    $self->{$name} = sprintf '%02d%03d%s', $year % 100, $num, $piece;
 
 	    return 0;
 	}
