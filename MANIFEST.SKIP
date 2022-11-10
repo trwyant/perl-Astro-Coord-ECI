@@ -12,6 +12,7 @@ CVS/
 ^data/
 ^foo
 ^.git/
+^.github/
 ^.gitignore$
 ^html/
 ^iridium\.dat$
