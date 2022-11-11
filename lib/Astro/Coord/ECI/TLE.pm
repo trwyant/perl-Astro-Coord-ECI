@@ -8173,12 +8173,12 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Thu, 04 Aug 2022 07:58:53 GMT
+# Last-Modified: Sat, 05 Nov 2022 02:10:29 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Thu, 04 Aug 2022 07:58:53 GMT';
+use constant _CELESTRAK_VISUAL => 'Sat, 05 Nov 2022 02:10:29 GMT';
 use constant _MCCANTS_VSNAMES  => undef;
 use constant _MCCANTS_QUICKSAT => undef;
 
@@ -8346,6 +8346,7 @@ use constant _MCCANTS_QUICKSAT => undef;
 # '43521' => undef, # CZ-2C R/B has no recorded magnitude
 # '43600' => undef, # AEOLUS has no recorded magnitude
 # '43641' => undef, # SAOCOM 1-A has no recorded magnitude
+# '43682' => undef, # H-2A R/B has no recorded magnitude
 # '46265' => undef, # SAOCOM 1-B has no recorded magnitude
   '48274' =>   0.0, # CSS (TIANHE-1)
 # '51842' => undef, # OBJECT U has no recorded magnitude
