@@ -756,9 +756,17 @@ with seconds expressed to the nearest microsecond.
 =cut
 
 {
+    # The test of this (which uses format '%F %T') failed under Windows,
+    # at least undef Strawberry, returning the empty string. Expanding
+    # %F fixed this, so I decided to expand all the 'equivalent to'
+    # format strings I could find.
     my %equiv = (
+	'D'	=> 'm/%d/%y',
+	'F'	=> 'Y-%m-%d',
 	'r'	=> 'I:%M:%S %p',
+	'R'	=> 'H:%M',
 	'T'	=> 'H:%M:%S',
+	'V'	=> 'e-%b-%Y',
     );
 
     sub __format_epoch_time_usec {
@@ -767,11 +775,11 @@ with seconds expressed to the nearest microsecond.
 	my @parts = gmtime $seconds;
 	my $string_us = sprintf '%.6f', $parts[0] + $microseconds;
 	$string_us =~ s/ [^.]* //smx;
-	$date_format =~ s{ ( %+ ) ( [rT] ) }
+	$date_format =~ s{ ( %+ ) ( [DFrRTV] ) }
 	    { length( $1 ) % 2 ?  "$1$equiv{$2}" : "$1$2" }smxge;
 	$date_format =~ s{ ( %+ ) S }
 	    { length( $1 ) % 2 ?  "${1}S$string_us" : "$1$2" }smxge;
-	return strftime $date_format, @parts;
+	return strftime( $date_format, @parts );
     }
 }
 
