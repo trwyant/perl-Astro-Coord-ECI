@@ -118,7 +118,7 @@ jobs:
     # requires Perl 5.10. If we are on Perl 5.8 we need to pre-emptively
     # install the next-older version of podlators.
     - name: Install old podlators distro if on old Perl
-      if: ! env.MY_PERL_IS_5_10
+      if: "! env.MY_PERL_IS_5_10"
       run: cpanm RRA/podlators-4.14.tar.gz
 
     - name: Install module dependencies
