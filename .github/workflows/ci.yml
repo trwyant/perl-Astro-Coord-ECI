@@ -85,6 +85,7 @@ jobs:
         cpanm -v
         cpanm File::HomeDir
         perl -MFile::HomeDir -le 'print q<MY_HOME=>, File::HomeDir->my_home();' >>$GITHUB_ENV
+        perl -le 'print q<MY_PERL_IS_5_10=>, qq<$]> >= 5.010 ? 1 : q<>;' >>$GITHUB_ENV
         echo 'MY_IS_UNIX=1' >>$GITHUB_ENV
         echo 'MY_IS_WINDOWS=' >>$GITHUB_ENV
         echo "MY_SHELL='$SHELL'" >>$GITHUB_ENV
@@ -98,6 +99,7 @@ jobs:
         cpanm -v
         cpanm File::HomeDir
         perl -MFile::HomeDir -le "print q<MY_HOME=>, File::HomeDir->my_home();" >>$env:GITHUB_ENV
+        perl -le "print q<MY_PERL_IS_5_10=>, qq<$]> >= 5.010 ? 1 : q<>;" >>$GITHUB_ENV
         echo "MY_IS_UNIX=" >>$env:GITHUB_ENV
         echo "MY_IS_WINDOWS=1" >>$env:GITHUB_ENV
         echo "MY_SHELL=pwsh" >>$env:GITHUB_ENV
@@ -110,6 +112,14 @@ jobs:
         echo MY_IS_UNIX=${{ env.MY_IS_UNIX }}
         echo MY_IS_WINDOWS=${{ env.MY_IS_WINDOWS }}
         echo MY_SHELL=${{ env.MY_SHELL }}
+
+    # Non-core toolchain Module::Build needs Pod::Man, which is in
+    # distro RRA/podlators. As of podlators-5.00 (2022-11-25) this
+    # requires Perl 5.10. If we are on Perl 5.8 we need to pre-emptively
+    # install the next-older version of podlators.
+    - name: Install old podlators distro if on old Perl
+      if: ! env.MY_PERL_IS_5_10
+      run: cpanm RRA/podlators-4.14.tar.gz
 
     - name: Install module dependencies
       run: |
