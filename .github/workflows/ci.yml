@@ -79,32 +79,11 @@ jobs:
       run: |
         perl -v
 
-    - name: Create local environment variables under Unix
-      if: startsWith( matrix.runner, 'ubuntu-' ) || startsWith( matrix.runner, 'macos-' )
+    - name: Customize environment
       run: |
         cpanm -v
         cpanm File::HomeDir
-        perl -MFile::HomeDir -le 'print q<MY_HOME=>, File::HomeDir->my_home();' >>$GITHUB_ENV
-        perl -le 'print q<MY_PERL_IS_5_10=>, qq<$]> >= 5.010 ? 1 : q<>;' >>$GITHUB_ENV
-        echo 'MY_IS_UNIX=1' >>$GITHUB_ENV
-        echo 'MY_IS_WINDOWS=' >>$GITHUB_ENV
-        echo "MY_SHELL='$SHELL'" >>$GITHUB_ENV
-
-    # Because we have PowerShell 7.1 we can use Unix-style redirect. For
-    # 5.1 or earlier that produces UTF16-LE, so we would have to pipe
-    # into Out-File -Encoding utf8 -Append -FilePath $env:GITHUB_ENV
-    - name: Create local environment variables under Windows
-      if: startsWith( matrix.runner, 'windows-' )
-      run: |
-        cpanm -v
-        cpanm File::HomeDir
-        perl -MFile::HomeDir -le "print q<MY_HOME=>, File::HomeDir->my_home();" >>$env:GITHUB_ENV
-        perl -le "print q<MY_PERL_IS_5_10=>, qq<$]> >= 5.010 ? 1 : q<>;" >>$GITHUB_ENV
-        echo "MY_IS_UNIX=" >>$env:GITHUB_ENV
-        echo "MY_IS_WINDOWS=1" >>$env:GITHUB_ENV
-        echo "MY_SHELL=pwsh" >>$env:GITHUB_ENV
-        echo "PowerShell version:"
-        $PSVersionTable.PSVersion
+        perl .github/workflows/environment.PL
 
     - name: Display local envoronment variables
       run: |
@@ -112,14 +91,13 @@ jobs:
         echo MY_PERL_IS_5_10=${{ env.MY_PERL_IS_5_10 }}
         echo MY_IS_UNIX=${{ env.MY_IS_UNIX }}
         echo MY_IS_WINDOWS=${{ env.MY_IS_WINDOWS }}
-        echo MY_SHELL=${{ env.MY_SHELL }}
 
     # Non-core toolchain Module::Build needs Pod::Man, which is in
     # distro RRA/podlators. As of podlators-5.00 (2022-11-25) this
     # requires Perl 5.10. If we are on Perl 5.8 we need to pre-emptively
     # install the next-older version of podlators.
     - name: Install old podlators distro if on old Perl
-      if: "env.MY_PERL_IS_5_10 == ''"
+      if: "! env.MY_PERL_IS_5_10"
       run: cpanm RRA/podlators-4.14.tar.gz
 
     - name: Install module dependencies
