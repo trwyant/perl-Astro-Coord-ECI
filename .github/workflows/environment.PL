@@ -3,6 +3,9 @@ use warnings;
 
 use File::HomeDir;
 
+defined $ENV{GITHUB_ENV}
+    and $ENV{GITHUB_ENV} ne ''
+    or die "Environment variable GITHUB_ENV undefined or empty\n";
 open my $fh, '>>:encoding(utf-8)', $ENV{GITHUB_ENV}
     or die "Can not open $ENV{GITHUB_ENV}: $!\n";
 
@@ -13,7 +16,6 @@ my $is_windows = {
     dos		=> 1,
 }->{$^O} || '';
 my $is_unix = $is_windows ? '' : 1;
-my $shell = defined $ENV{SHELL} ? $ENV{SHELL} : 'unknown';
 
 print $fh <<"EOD";
 MY_HOME=$home
