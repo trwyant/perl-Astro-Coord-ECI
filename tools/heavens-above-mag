@@ -148,7 +148,14 @@ EOD
     open my $fh, '<', \$content;
     local $_ = undef;	# while (<>) ... does not localize $_.
     while ( <$fh> ) {
-	push @arg, unpack 'A5';
+	push @arg, unpack 'A5';	# NOTE the presence of leading zeroes.
+	state $decayed = {
+	    15354	=> '2022-01-09',
+	};
+	if ( my $date = $decayed->{$arg[-1]} ) {
+	    my $oid = pop @arg;
+	    warn "$oid decaued $date\n";
+	}
     }
     close $fh;
     process_perl( @arg );
