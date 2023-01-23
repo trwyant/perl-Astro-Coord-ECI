@@ -2,6 +2,7 @@
 /blib
 /Build
 /_build
+/cache
 /cover_db
 /data
 /Debian_CPANTS.txt

@@ -6,6 +6,7 @@
 ^_build/
 ^blib/
 ^Build$
+^cache/
 ^Changes_Development$
 ^cover_db/
 CVS/
