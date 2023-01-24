@@ -82,24 +82,7 @@ sub find_span {
     return $val;
 }
 
-sub get_file {
-    my ( $fn ) = @_;
-    local $/ = undef;
-    open my $fh, '<:encoding(utf-8)', $fn
-	or die "Unable to open $fn: $!\n";
-    my $content = <$fh>;
-    close $fh;
-    return $content;
-}
-
-sub get_html {
-    my ( $oid ) = @_;
-    my $url = heavens_above_url( $oid );
-    my $resp = get_yaml( "oid-$oid", $url );
-    return $resp->decoded_content();
-}
-
-sub get_yaml {
+sub get_cached {
     my ( $file, $uri ) = @_;
 
     my $path = "cache/$file";
@@ -137,6 +120,23 @@ sub get_yaml {
     return $resp;
 }
 
+sub get_file {
+    my ( $fn ) = @_;
+    local $/ = undef;
+    open my $fh, '<:encoding(utf-8)', $fn
+	or die "Unable to open $fn: $!\n";
+    my $content = <$fh>;
+    close $fh;
+    return $content;
+}
+
+sub get_html {
+    my ( $oid ) = @_;
+    my $url = heavens_above_url( $oid );
+    my $resp = get_cached( "oid-$oid", $url );
+    return $resp->decoded_content();
+}
+
 sub heavens_above_url {
     my ( $oid ) = @_;
     $oid =~ m/ \A [0-9]+ \z /smx
@@ -156,7 +156,7 @@ sub print_perl {
 }
 
 sub process_celestrak {
-    my $visual = get_yaml( VISUAL_YML, VISUAL_URL );
+    my $visual = get_cached( VISUAL_YML, VISUAL_URL );
     my ( $last_modified ) = $visual->header( 'Last-Modified' );
     print <<"EOD";
 # The following is all the Celestrak visual list that have magnitudes in
