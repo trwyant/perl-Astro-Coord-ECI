@@ -8173,12 +8173,12 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Thu, 19 Jan 2023 04:05:34 GMT
+# Last-Modified: Mon, 27 Feb 2023 21:40:21 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Thu, 19 Jan 2023 04:05:34 GMT';
+use constant _CELESTRAK_VISUAL => 'Mon, 27 Feb 2023 21:40:21 GMT';
 use constant _MCCANTS_VSNAMES  => undef;
 use constant _MCCANTS_QUICKSAT => undef;
 
@@ -8338,7 +8338,6 @@ use constant _MCCANTS_QUICKSAT => undef;
 # '39364' => undef, # CZ-2C R/B has no recorded magnitude
   '39679' =>   3.4, # SL-4 R/B
   '39766' =>   3.7, # ALOS 2
-# '40306' => undef, # CZ-2C R/B has no recorded magnitude
   '40354' =>   4.2, # SL-27 R/B
 # '41038' => undef, # YAOGAN 29 has no recorded magnitude
 # '41337' => undef, # ASTRO H has no recorded magnitude
@@ -8353,6 +8352,7 @@ use constant _MCCANTS_QUICKSAT => undef;
 # '52260' => undef, # SZ-13 MODULE has no recorded magnitude
 # '52794' => undef, # CZ-2C R/B has no recorded magnitude
 # '53131' => undef, # CZ-2C R/B has no recorded magnitude
+  '53807' =>   3.5, # BLUEWALKER 3
 # '54047' => undef, # DRAGON FREEDOM DEB has no recorded magnitude
 );
 

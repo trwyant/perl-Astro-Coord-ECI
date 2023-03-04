@@ -9,6 +9,7 @@ use warnings;
 
 use Getopt::Long 2.33 qw{ :config auto_version };
 use HTML::TreeBuilder;
+use List::Util 1.55 qw{ uniqint };
 use LWP::UserAgent;
 use Pod::Usage;
 use YAML 1.25 qw{ Dump Load };
@@ -20,7 +21,7 @@ use constant VISUAL_URL	=> 'https://celestrak.org/SpaceTrack/query/visual.txt';
 use constant VISUAL_YML	=> 'visual.yml';
 
 my %opt = (
-    age	=> 85400,	# One day, in seconds
+    age	=> 86400,	# One day, in seconds
 );
 
 unless ( caller ) {	# We're a modulino.
@@ -183,6 +184,9 @@ EOD
     local $_ = undef;	# while (<>) ... does not localize $_.
     while ( <$fh> ) {
 	push @arg, unpack 'A5';	# NOTE the presence of leading zeroes.
+
+=begin comment
+
 	state $decayed = {
 	    15354	=> '2022-01-09',
 	};
@@ -190,7 +194,15 @@ EOD
 	    my $oid = pop @arg;
 	    warn "$oid decaued $date\n";
 	}
+
+=end comment
+
+=cut
+
     }
+    @arg = sort { $a <=> $b } uniqint( @arg,
+	'53807',	# Bluewalker 3
+    );
     close $fh;
     process_perl( @arg );
     say ');';
