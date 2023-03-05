@@ -9,7 +9,6 @@ use warnings;
 
 use Getopt::Long 2.33 qw{ :config auto_version };
 use HTML::TreeBuilder;
-use List::Util 1.55 qw{ uniqint };
 use LWP::UserAgent;
 use Pod::Usage;
 use YAML 1.25 qw{ Dump Load };
@@ -26,7 +25,7 @@ my %opt = (
 
 unless ( caller ) {	# We're a modulino.
     GetOptions( \%opt,
-	qw{ age=i celestrak! open! },
+	qw{ age=i celestrak! open! verbose! },
 	help => sub { pod2usage( { -verbose => 2 } ) },
     ) or pod2usage( { -verbose => 0 } );
 
@@ -178,33 +177,25 @@ use constant _MCCANTS_QUICKSAT => undef;
 %magnitude_table = (
 EOD
 
-    my @arg;
+    my %oid;
     my $content = $visual->decoded_content();
     open my $fh, '<', \$content;
     local $_ = undef;	# while (<>) ... does not localize $_.
     while ( <$fh> ) {
-	push @arg, unpack 'A5';	# NOTE the presence of leading zeroes.
-
-=begin comment
-
-	state $decayed = {
-	    15354	=> '2022-01-09',
-	};
-	if ( my $date = $decayed->{$arg[-1]} ) {
-	    my $oid = pop @arg;
-	    warn "$oid decaued $date\n";
-	}
-
-=end comment
-
-=cut
-
+	$oid{ unpack 'A5' } = 1; # NOTE the presence of leading zeroes.
     }
-    @arg = sort { $a <=> $b } uniqint( @arg,
+    foreach my $extra (
 	'53807',	# Bluewalker 3
-    );
+    ) {
+	if ( defined $oid{$extra} ) {
+	    warn "OID $extra is already in visual.txt\n";
+	} else {
+	    $opt{verbose} and warn "Adding OID $extra\n";
+	    $oid{$extra} = 1;
+	}
+    }
     close $fh;
-    process_perl( @arg );
+    process_perl( sort { $a <=> $b } keys %oid );
     say ');';
     return;
 }
@@ -306,6 +297,13 @@ exits.
 If this Boolean option is asserted, a web browser is spawned, displaying
 the Heavens-Above web page of the OIDs specified. You cannot specify
 file names if you specify this option.
+
+=head2 --verbose
+
+If this Boolean option is asserted, whatever information the author
+deems useful is displayed on C<STDERR>.
+
+The default is C<--no-verbose>.
 
 =head2 --version
 
