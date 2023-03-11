@@ -1,4 +1,4 @@
-0.128_01	2023-03-03	T. R. Wyant
+0.129		2023-03-11	T. R. Wyant
     Add 53807 Bluewalker 3 to canned magnitudes.
 
     Conditionalize canned magnitude test on environment variable so it
