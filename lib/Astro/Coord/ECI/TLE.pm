@@ -979,7 +979,7 @@ Examples of Molczan-format data are contained in F<mcnames.zip> and
 F<vsnames.zip> available on Mike McCants' web site; these can be fetched
 using the L<Astro::SpaceTrack|Astro::SpaceTrack> C<mccants()> method. An
 example of Quicksat-format data is contained in F<qsmag.zip>. See Mike
-McCants' web site, L<https://www.prismnet.com/~mmccants/> for an
+McCants' web site, L<https://www.mmccants.org//> for an
 explanation of the differences.
 
 Note that if you have one of the reported pure Perl versions of
