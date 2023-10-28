@@ -46,7 +46,6 @@ jobs:
           - runner: windows-latest
             # v5.26.8 is the earliest known to work
             perl: '5.26.0'
-
     # Define where the job runs.
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ${{matrix.runner}}
@@ -81,34 +80,41 @@ jobs:
 
     - name: Customize environment
       run: |
+        perl -V:make
         cpanm -v
-        cpanm File::HomeDir
+        cpanm File::Spec Getopt::Long version
         perl .github/workflows/environment.PL
 
     - name: Display local envoronment variables
       run: |
         echo MY_HOME=${{ env.MY_HOME }}
-        echo MY_PERL_IS_5_10=${{ env.MY_PERL_IS_5_10 }}
+        echo MY_IS_GITHUB_ACTION=${{ env.MY_IS_GITHUB_ACTION }}
         echo MY_IS_UNIX=${{ env.MY_IS_UNIX }}
         echo MY_IS_WINDOWS=${{ env.MY_IS_WINDOWS }}
+        echo MY_MAKE=${{ env.MY_MAKE }}
+        echo MY_WANT_POD_MAN=${{ env.MY_WANT_POD_MAN }}
 
     # Non-core toolchain Module::Build needs Pod::Man, which is in
     # distro RRA/podlators. As of podlators-5.00 (2022-11-25) this
-    # requires Perl 5.10. If we are on Perl 5.8 we need to pre-emptively
-    # install the next-older version of podlators.
+    # requires Perl 5.10. As of Module::Build 0.4232 (2022-12-08)
+    # the dependency on Pod::Man has been dropped to deal with 5.8,
+    # presumably since it's a core module. But we need at least
+    # Pod::Man 2.16 to cope with t/manifypods_with_utf8.t, and
+    # Perl 5.10 only comes with 2.16. So ..
     - name: Install old podlators distro if on old Perl
-      if: "! env.MY_PERL_IS_5_10"
-      run: cpanm RRA/podlators-4.14.tar.gz
+      if: env.MY_WANT_POD_MAN
+      run: cpanm ${{ env.MY_WANT_POD_MAN }}
 
     - name: Install module dependencies
       run: |
+        cpanm Module::Build
         cpanm --with-configure --notest --installdeps .
 
     - name: Run ExtUtils::MakeMaker tests
       run: |
         perl Makefile.PL
-        make
-        make test
+        ${{ env.MY_MAKE }}
+        ${{ env.MY_MAKE }} test
 
     - name: Run Module::Build tests
       run: |
@@ -125,9 +131,9 @@ jobs:
     - name: Show cpanm install log under Windows
       if: failure() && env.MY_IS_WINDOWS
       run: |
-        $dirs = Get-ChildItem "$env:MY_HOME\.cpanm\work\"
+        $dirs = Get-ChildItem "$env:MY_HOME\\.cpanm\\work\\"
         foreach ( $d in $dirs ) {
-            $file = $d.FullName + "\build.log"
+            $file = $d.FullName + "\\build.log"
             echo ""
             echo $file
             type $file
