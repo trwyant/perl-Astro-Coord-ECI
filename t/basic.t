@@ -40,6 +40,15 @@ require_ok 'Astro::Coord::ECI'
 instantiate( 'Astro::Coord::ECI' )
     or BAIL_OUT 'Can not instantiate Astro::Coord::ECI';
 
+{
+    local $@ = undef;
+
+    ok eval {
+	get_object()->get( 'sun' );
+    }, q/Can get the default 'sun' attribute/
+	or BAIL_OUT q/Can not get the default 'sun' attribute'/;
+}
+
 require_ok 'Astro::Coord::ECI::Moon'
     or BAIL_OUT 'Can not continue without Astro::Coord::ECI::Moon';
 
@@ -359,13 +368,21 @@ EOD
 
 done_testing;
 
-sub instantiate {
-    my ( $class ) = @_;
-    my $pass = eval {
-	$class->new();
-    };
-    @_ = ( $pass, "Instantiate $class" );
-    goto &ok;
+{
+    my $obj;
+
+    sub instantiate {
+	my ( $class ) = @_;
+	$obj = eval {
+	    $class->new();
+	};
+	@_ = ( $obj, "Instantiate $class" );
+	goto &ok;
+    }
+
+    sub get_object {
+	return $obj;
+    }
 }
 
 sub deg_to_rad {
