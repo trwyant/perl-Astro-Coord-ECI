@@ -8173,12 +8173,12 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Tue, 26 Sep 2023 01:23:57 GMT
+# Last-Modified: Wed, 14 Feb 2024 17:56:43 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Tue, 26 Sep 2023 01:23:57 GMT';
+use constant _CELESTRAK_VISUAL => 'Wed, 14 Feb 2024 17:56:43 GMT';
 use constant _MCCANTS_VSNAMES  => undef;
 use constant _MCCANTS_QUICKSAT => undef;
 
@@ -8251,7 +8251,6 @@ use constant _MCCANTS_QUICKSAT => undef;
   '19650' =>   2.7, # SL-16 R/B
   '20261' =>   5.2, # INTERCOSMOS 24
   '20262' =>   5.7, # SL-14 R/B
-# '20303' => undef, # DELTA 2 R/B(1) has no recorded magnitude
   '20323' =>   4.7, # DELTA 1 R/B
   '20443' =>   4.2, # ARIANE 40 R/B
   '20453' =>   4.7, # DELTA 2 R/B(1)
