@@ -1118,7 +1118,9 @@ Edition, page 116, but his algorithm is for the position angle of the
 first body with respect to the second (i.e. the roles of the two bodies
 are reversed). The order of arguments for this subroutine is consistent
 with The IDL Astronomy User's Library at
-L<https://idlastro.gsfc.nasa.gov/>, function C<posang()>.
+L<https://github.com/wlandsman/IDLAstro>, function C<posang()>. The NASA
+page for this, L<https://asd.gsfc.nasa.gov/archive/idlastro/>, is
+obsolete and no longer updated, but also more descriptive.
 
 This is exposed because in principal you could calculate the position
 angle in any spherical coordinate system, you would just need to get the
