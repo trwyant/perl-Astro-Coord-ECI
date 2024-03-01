@@ -1,3 +1,10 @@
+0.130_01	2024-03-01	T. R. Wyant
+    Update canned magnitude table for Heavens Above changes.
+
+    Kelso updates his table of bright satellites.
+
+    Move all tests that BAIL_OUT() into t/basic.t.
+
 0.130		2023-10-07	T. R. Wyant
     Update magnitude table to track Kelso visual.txt.
 
