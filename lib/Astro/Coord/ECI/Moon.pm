@@ -50,7 +50,6 @@ use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
-use POSIX qw{floor strftime};
 
 #	Load the periodic terms from the table.
 

@@ -97,7 +97,7 @@ our $VERSION = '0.130_01';
 use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
 use Clone ();
-use POSIX qw{floor strftime};
+use POSIX qw{ floor };
 
 use constant NO_CASCADING_STATIONS =>
     q{Cascading 'station' attributes are not supported};

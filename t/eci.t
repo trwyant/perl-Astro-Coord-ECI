@@ -8,7 +8,7 @@ use lib qw{ inc };
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Utils qw{ :greg_time deg2rad PERL2000 PI rad2deg };
 use My::Module::Test qw{ :tolerance velocity_sanity };
-use POSIX qw{strftime floor};
+use POSIX qw{ floor };
 use Test::More 0.88;
 use Time::Local;
 

@@ -56,8 +56,6 @@ use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
-use Data::Dumper;
-use POSIX qw{floor strftime};
 
 =item $star = Astro::Coord::ECI::Star->new();
 

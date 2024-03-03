@@ -237,14 +237,15 @@ use Astro::Coord::ECI::Utils qw{ :params :ref :greg_time deg2rad distsq
     dynamical_delta embodies find_first_true fold_case
     __format_epoch_time_usec
     format_space_track_json_time load_module looks_like_number max min
-    mod2pi PI PIOVER2 rad2deg SECSPERDAY TWOPI thetag __default_station
+    mod2pi my_strftime PI PIOVER2 rad2deg SECSPERDAY TWOPI thetag
+    __default_station
     @CARP_NOT
     };
 
 use Carp qw{carp croak confess};
 use Data::Dumper;
 use IO::File;
-use POSIX qw{ ceil floor fmod modf strftime };
+use POSIX qw{ ceil floor fmod modf };
 use Scalar::Util ();
 
 BEGIN {
@@ -1845,11 +1846,11 @@ eod
 
 	    warn <<eod if $debug;	## no critic (RequireCarping)
 
-Debug - Computed @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
+Debug - Computed @{[my_strftime '%d-%b-%Y %H:%M:%S', localtime $time[0][0]
 		    ]} $time[0][1]
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[1][0]
+                 @{[my_strftime '%d-%b-%Y %H:%M:%S', localtime $time[1][0]
 		    ]} $time[1][1]
-                 @{[strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]
+                 @{[my_strftime '%d-%b-%Y %H:%M:%S', localtime $time[2][0]
 		    ]} $time[2][1]
 eod
 
@@ -2079,7 +2080,7 @@ eod
 		};
 
 		warn <<"EOD" if $debug;	## no critic (RequireCarping)
-	    $time[$#time][1] @{[strftime '%d-%b-%Y %H:%M:%S',
+	    $time[$#time][1] @{[my_strftime '%d-%b-%Y %H:%M:%S',
 		localtime $time[$#time][0]]}
 EOD
 	    }
@@ -6786,7 +6787,7 @@ sub sgp4r {
 		    $self->get($thing))) {
 		local $@ = undef;
 		my $diag = eval {
-		    strftime( "$thing = $tfmt", gmtime $value ) };
+		    my_strftime( "$thing = $tfmt", gmtime $value ) };
 		defined $diag or $diag = "$thing = $value";
 		push @data, $diag;
 	    } else {
@@ -7243,7 +7244,7 @@ NORAD ID: @{[$self->get ('id')]}
 EOD
     if (defined (my $effective = $self->get('effective'))) {
 	$result .= <<EOD;
-    Effective date: @{[strftime $dtfmt, gmtime $effective]} GMT
+    Effective date: @{[ my_strftime $dtfmt, gmtime $effective]} GMT
 EOD
     }
     $result .= <<EOD;

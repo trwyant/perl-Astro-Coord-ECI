@@ -6,12 +6,11 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::Sun;
-use Astro::Coord::ECI::Utils qw{ rad2deg };
+use Astro::Coord::ECI::Utils qw{ my_strftime rad2deg };
 use Getopt::Long 2.33 qw{ :config auto_version };
 use JSON;
 use LWP::UserAgent;
 use Pod::Usage;
-use POSIX qw{ strftime };
 use Time::Local;
 
 our $VERSION = '0.130_01';
@@ -38,7 +37,7 @@ if ( defined $ARGV[0] ) {
     or die "Year must be in range 1700 to 2100, inclusive\n";
 
 my $ua = LWP::UserAgent->new();
-my $resp = $ua->get( "http://api.usno.navy.mil/seasons?year=$year" );
+my $resp = $ua->get( "https://aa.usno.navy.mil/api/seasons?year=$year" );
 $resp->is_success()
     or die "Failed to get Naval Observatory data: ", $resp->status_line();
 
@@ -75,7 +74,7 @@ sub format_lon {
 
 sub format_time {
     my ( $time ) = @_;
-    return strftime( '%Y-%m-%dT%H:%M:%SZ', gmtime $time );
+    return my_strftime( '%Y-%m-%dT%H:%M:%SZ', gmtime $time );
 }
 
 sub sayx {

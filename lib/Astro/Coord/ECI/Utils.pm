@@ -282,7 +282,7 @@ my @all_external = ( qw{
 	format_space_track_json_time intensity_to_magnitude
 	jcent2000 jd2date jd2datetime jday2000 julianday
 	keplers_equation load_module looks_like_number max min mod2pi
-	omega
+	my_strftime omega
 	position_angle
 	rad2deg rad2dms rad2hms tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize __classisa
@@ -304,7 +304,7 @@ our %EXPORT_TAGS = (
     mainstream => [ grep { ! $deprecated_export{$_} } @all_external ],
     params => [ qw{ __classisa __instance } ],
     ref	=> [ grep { m/ [[:upper:]]+ _REF \z /smx } @all_external ],
-    time => [ qw{ time_gm time_local }, @greg_time_routines ],
+    time => [ qw{ my_strftime time_gm time_local }, @greg_time_routines ],
     vector => [ grep { m/ \A vector_ /smx } @all_external ],
 );
 
@@ -659,7 +659,7 @@ sub epoch2datetime {
 	10) / 12) + $day - 31;
     wantarray and return ($sec, $min, $hr, $day, $mon, $yr, $wday, $yd,
 	0);
-    return strftime ($DATETIMEFORMAT, $sec, $min, $hr, $day, $mon, $yr,
+    return my_strftime ($DATETIMEFORMAT, $sec, $min, $hr, $day, $mon, $yr,
 	$wday, $yd, 0);
 }
 
@@ -771,7 +771,8 @@ with seconds expressed to the nearest microsecond.
 
     sub __format_epoch_time_usec {
 	my ( $epoch, $date_format ) = @_;
-	my ( $microseconds, $seconds ) = modf( $epoch );
+	my $seconds = floor $epoch;
+	my $microseconds = $epoch - $seconds;
 	my @parts = gmtime $seconds;
 	my $string_us = sprintf '%.6f', $parts[0] + $microseconds;
 	$string_us =~ s/ [^.]* //smx;
@@ -779,7 +780,10 @@ with seconds expressed to the nearest microsecond.
 	    { length( $1 ) % 2 ?  "$1$equiv{$2}" : "$1$2" }smxge;
 	$date_format =~ s{ ( %+ ) S }
 	    { length( $1 ) % 2 ?  "${1}S$string_us" : "$1$2" }smxge;
-	return strftime( $date_format, @parts );
+	# FIXME this seems to be needed under Perl 5.39.8, but not under
+	# earlier Perls.
+	local $ENV{TZ} = 'UTC';
+	return my_strftime( $date_format, @parts );
     }
 }
 
@@ -1086,6 +1090,21 @@ $theta < TWOPI.
 =cut
 
 sub mod2pi {return $_[0] - floor ($_[0] / TWOPI) * TWOPI}
+
+=item print my_strftime( $format, localtime $epoch );
+
+This is a wrapper for whatever F<strftime()> implementation we use.
+Currently this is POSIX, and the interface will conform to that.
+
+=cut
+
+*my_strftime = "$]" >= 5.039008 ? sub {
+    my ( $format, @time ) = @_;
+    # FIXME this seems to be needed under Perl 5.39.8, but not under
+    # earlier Perls.
+    local $ENV{TZ} = 'UTC';
+    return strftime $format, @time;
+} : \&POSIX::strftime;
 
 =item $radians = omega ($time);
 

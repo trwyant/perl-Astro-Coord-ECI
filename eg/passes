@@ -8,11 +8,10 @@ use 5.006002;
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::TLE qw{ :constants };
 use Astro::Coord::ECI::TLE::Set;
-use Astro::Coord::ECI::Utils qw{ deg2rad rad2deg };
+use Astro::Coord::ECI::Utils qw{ deg2rad my_strftime rad2deg };
 use Astro::SpaceTrack 0.052;
 use Getopt::Long 2.32;
 use Pod::Usage;
-use POSIX qw{ strftime };
 use Time::Local;
 
 our $VERSION = '0.130_01';
@@ -212,7 +211,7 @@ foreach my $data ( sort { $a->{time} <=> $b->{time} } @events_found ) {
 # Format the time appropriately.
 sub format_time {
     my ( $time ) = @_;
-    return strftime( $opt{'time-format'},
+    return my_strftime( $opt{'time-format'},
 	( $opt{gmt} ? gmtime $time : localtime $time ) );
 }
 

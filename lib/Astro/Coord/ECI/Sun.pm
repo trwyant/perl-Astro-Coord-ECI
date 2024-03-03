@@ -55,7 +55,7 @@ use base qw{Astro::Coord::ECI};
 
 use Astro::Coord::ECI::Utils qw{ @CARP_NOT :mainstream };
 use Carp;
-use POSIX qw{ ceil floor strftime };
+use POSIX qw{ ceil };
 
 use constant MEAN_MAGNITUDE => -26.8;
 
@@ -709,7 +709,7 @@ sub time_set {
     my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
 	    * AU;
     $self->{debug} and print <<eod;
-Debug sun - @{[strftime '%d-%b-%Y %H:%M:%S', gmtime( $time )]}
+Debug sun - @{[my_strftime '%d-%b-%Y %H:%M:%S', gmtime( $time )]}
     T  = $T
     L0 = @{[rad2deg ($L0)]} degrees
     M  = @{[rad2deg ($M)]} degrees

@@ -3,7 +3,6 @@ package main;
 use strict;
 use warnings;
 
-use POSIX qw{strftime floor};
 use Test::More 0.88;	# Because of done_testing()
 use Time::Local;
 
@@ -30,6 +29,8 @@ if ( HAS_UNICODE_SUPPORT ) {
 =end comment
 
 =cut
+
+note "Perl $]";
 
 require_ok 'Astro::Coord::ECI::Utils'
     or BAIL_OUT 'Can not continue without Astro::Coord::ECI::Utils';
