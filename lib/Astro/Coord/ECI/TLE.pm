@@ -7910,11 +7910,14 @@ sub _looks_like_real {
 
 sub __make_tle_epoch {
     my ( $self ) = @_;
-    my $epoch = $self->get('epoch');
-    my $epoch_dayfrac = sprintf '%.8f', ($epoch / SECSPERDAY);
-    $epoch_dayfrac =~ s/.*?\././;
-    my $epoch_daynum = strftime '%y%j', gmtime ($epoch);
-    return $epoch_daynum . $epoch_dayfrac;
+    my $raw_epoch = $self->get( 'epoch' );
+    my $cooked_epoch = floor( $raw_epoch );
+    my ( $sec, $min, $hr, undef, undef, $year, undef, $yday ) =
+	gmtime $cooked_epoch;
+    my $epoch_dayfrac = ( ( $hr * 60 + $min ) * 60 + $sec + $raw_epoch -
+	$cooked_epoch ) / SECSPERDAY;
+    return sprintf '%02d%03d.%08d', $year % 100, $yday + 1,
+	$epoch_dayfrac * 100_000_000 + 0.5;
 }
 
 #	$output = _make_tle_checksum($fmt ...);
