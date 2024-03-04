@@ -13,7 +13,7 @@ use LWP::UserAgent;
 use Pod::Usage;
 use Time::Local;
 
-our $VERSION = '0.130_01';
+our $VERSION = '0.130_02';
 
 local $Astro::Coord::ECI::Sun::Singleton = 0;
 

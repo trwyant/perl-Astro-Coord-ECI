@@ -1,3 +1,12 @@
+0.130_02	2024-03-03	T. R. Wyant
+    Cemtralize POSIX::strftime calls to ::Utils::my_strftime
+
+    Refurbish some of the eg/* scripts which have not kept track with
+    API changes of various sorts.
+
+    Correct bug in ::TLE->__make_tle_epoch(). The fractional part was
+    wrong for negative epochs.
+
 0.130_01	2024-03-01	T. R. Wyant
     Update canned magnitude table for Heavens Above changes.
 
