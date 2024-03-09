@@ -8,6 +8,18 @@ Astro::Coord::ECI::Utils - Utility routines for astronomical calculations
  my $now = time ();
  print "The current Julian day is ", julianday ($now);
 
+=head2 DEPRECATION NOTICE
+
+As of version 0.131, subroutines C<date2epoch()> and C<epoch2datetime()>
+are deprecated. These are not used internally. Under Perl 5.12 and
+later, C<Time::Local::timegm_posix()> and core C<gmtime()> are
+recommended over these subroutines. For earlier Perls, you can try
+L<Time::y2038|Time::y2038>.
+
+Six months after the release of version 0.131, these subroutines will
+warn on first use. Six months after that, they will warn on every use.
+After a further six months, use of them will be fatal.
+
 =head1 DESCRIPTION
 
 This module was written to provide a home for all the constants and
@@ -20,7 +32,7 @@ become complicated, this module is also responsible for figuring out how
 that is done, and exporting whatever is needful to export. See C<:time>
 below for the gory details.
 
-This package exports nothing by default. But all the constants,
+This module exports nothing by default. But all the constants,
 variables, and subroutines documented below are exportable, and the
 following export tags may be used:
 
@@ -464,6 +476,10 @@ use constant JD_OF_EPOCH => date2jd (gmtime (0));
 
 =item $epoch = date2epoch ($sec, $min, $hr, $day, $mon, $yr)
 
+This subroutine is B<deprecated> as of version 0.131. It will be put
+through my usual deprecation cycle (warn on first use after six months,
+and so on) and removed.
+
 This is a convenience routine that converts the given date to seconds
 since the epoch, going through date2jd() to do so. The arguments are the
 same as those of date2jd().
@@ -481,6 +497,7 @@ Perl, L<Time::y2038|Time::y2038> C<timegm()> may do what you want.
 
 sub date2epoch {
     my @args = @_;
+    __subroutine_deprecation();
     unshift @args, 0 while @args < 6;
     my ($sec, $min, $hr, $day, $mon, $yr) = @args;
     return (date2jd ($day, $mon, $yr) - JD_OF_EPOCH) * SECSPERDAY +
@@ -616,6 +633,10 @@ sub embodies {
 
 =item ($sec, $min, $hr, $day, $mon, $yr, $wday, $yday, 0) = epoch2datetime ($epoch)
 
+This subroutine is B<deprecated> as of version 0.131. It will be put
+through my usual deprecation cycle (warn on first use after six months,
+and so on) and removed.
+
 This convenience subroutine converts the given time in seconds from the
 system epoch to the corresponding date and time. It is implemented in
 terms of jd2date (), with the year and month returned from that
@@ -646,6 +667,7 @@ page 65.
 
 sub epoch2datetime {
     my ($time) = @_;
+    __subroutine_deprecation();
     my $day = floor ($time / SECSPERDAY);
     my $sec = $time - $day * SECSPERDAY;
     ($day, my $mon, my $yr, undef, my $leap) = jd2date (
@@ -1596,6 +1618,14 @@ sub __sprintf {
 
 {
     my %deprecate = (
+	epoch2datetime	=> {
+	    level	=> 0,
+	    method	=> 'core subroutine gmtime',
+	},
+	date2epoch	=> {
+	    level	=> 0,
+	    method	=> 'subroutine Time::Local::timegm_posix',
+	},
     );
 
     sub __subroutine_deprecation {
@@ -1604,7 +1634,7 @@ sub __sprintf {
 	$info->{level}
 	    or return;
 	my $msg = "Subroutine $sub() deprecated in favor of @{[
-	    $info->{method} || $sub ]}() method";
+	    $info->{method} || $sub ]}()";
 	$info->{level} >= 3
 	    and croak $msg;
 	carp $msg;

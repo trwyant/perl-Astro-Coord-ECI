@@ -896,8 +896,6 @@ sub equation_of_time {
 
     if ( looks_like_number( $self ) ) {
 	( $self, $time ) = ( __PACKAGE__, $self );
-	__subroutine_deprecation();
-##	Carp::cluck( 'Subroutine call to equation_of_time() is deprecated' );
     }
     defined $time
 	or $time = $self->dynamical();
@@ -2397,8 +2395,6 @@ sub obliquity {
 
     if ( looks_like_number( $self ) ) {
 	( $self, $time ) = ( __PACKAGE__, $self );
-	__subroutine_deprecation();
-##	Carp::cluck( 'Subroutine call to obliquity() is deprecated' );
     }
     defined $time
 	or $time = $self->dynamical();
