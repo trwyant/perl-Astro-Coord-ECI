@@ -1,3 +1,10 @@
+0.130_03	2024-03-09	T. R. Wyant
+    Deprecate date2epoch() and epoch2datetime().
+
+    Replace my_strftime() with gm_strftime() and local_strftime().
+
+    Celestrak drops magnitude for 11251 Meteor 1-29
+
 0.130_02	2024-03-03	T. R. Wyant
     Cemtralize POSIX::strftime calls to ::Utils::my_strftime
 
