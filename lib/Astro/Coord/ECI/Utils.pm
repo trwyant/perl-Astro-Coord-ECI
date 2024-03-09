@@ -279,11 +279,11 @@ my @all_external = ( qw{
 	decode_space_track_json_time deg2rad distsq dynamical_delta
 	embodies epoch2datetime find_first_true
 	fold_case __format_epoch_time_usec
-	format_space_track_json_time intensity_to_magnitude
+	format_space_track_json_time gm_strftime intensity_to_magnitude
 	jcent2000 jd2date jd2datetime jday2000 julianday
-	keplers_equation load_module looks_like_number max min mod2pi
-	my_strftime omega
-	position_angle
+	keplers_equation load_module local_strftime
+	looks_like_number max min mod2pi
+	omega position_angle
 	rad2deg rad2dms rad2hms tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize __classisa
 	__default_station __instance __subroutine_deprecation
@@ -304,7 +304,8 @@ our %EXPORT_TAGS = (
     mainstream => [ grep { ! $deprecated_export{$_} } @all_external ],
     params => [ qw{ __classisa __instance } ],
     ref	=> [ grep { m/ [[:upper:]]+ _REF \z /smx } @all_external ],
-    time => [ qw{ my_strftime time_gm time_local }, @greg_time_routines ],
+    time => [ qw{ gm_strftime local_strftime time_gm time_local },
+	@greg_time_routines ],
     vector => [ grep { m/ \A vector_ /smx } @all_external ],
 );
 
@@ -659,8 +660,11 @@ sub epoch2datetime {
 	10) / 12) + $day - 31;
     wantarray and return ($sec, $min, $hr, $day, $mon, $yr, $wday, $yd,
 	0);
-    return my_strftime ($DATETIMEFORMAT, $sec, $min, $hr, $day, $mon, $yr,
-	$wday, $yd, 0);
+    # FIXME this seems to be needed under Perl 5.39.8, but not under
+    # earlier Perls.
+    local $ENV{TZ} = 'UTC';
+    return POSIX::strftime( $DATETIMEFORMAT, $sec, $min, $hr, $day,
+	$mon, $yr, $wday, $yd );
 }
 
 =item $time = find_first_true ($start, $end, \&test, $limit);
@@ -755,36 +759,34 @@ with seconds expressed to the nearest microsecond.
 
 =cut
 
-{
-    # The test of this (which uses format '%F %T') failed under Windows,
-    # at least undef Strawberry, returning the empty string. Expanding
-    # %F fixed this, so I decided to expand all the 'equivalent to'
-    # format strings I could find.
-    my %equiv = (
-	'D'	=> 'm/%d/%y',
-	'F'	=> 'Y-%m-%d',
-	'r'	=> 'I:%M:%S %p',
-	'R'	=> 'H:%M',
-	'T'	=> 'H:%M:%S',
-	'V'	=> 'e-%b-%Y',
-    );
+sub __format_epoch_time_usec {
+    my ( $epoch, $date_format ) = @_;
+    return gm_strftime( $date_format, $epoch, 6 );
+}
 
-    sub __format_epoch_time_usec {
-	my ( $epoch, $date_format ) = @_;
-	my $seconds = floor $epoch;
-	my $microseconds = $epoch - $seconds;
-	my @parts = gmtime $seconds;
-	my $string_us = sprintf '%.6f', $parts[0] + $microseconds;
-	$string_us =~ s/ [^.]* //smx;
-	$date_format =~ s{ ( %+ ) ( [DFrRTV] ) }
-	    { length( $1 ) % 2 ?  "$1$equiv{$2}" : "$1$2" }smxge;
-	$date_format =~ s{ ( %+ ) S }
-	    { length( $1 ) % 2 ?  "${1}S$string_us" : "$1$2" }smxge;
-	# FIXME this seems to be needed under Perl 5.39.8, but not under
-	# earlier Perls.
-	local $ENV{TZ} = 'UTC';
-	return my_strftime( $date_format, @parts );
-    }
+=item print gm_strftime( $format, $epoch, $places )
+
+This subroutine takes as input a strftime-compatible format and an
+epoch, and returns the GMT, formatted per the format.
+
+Optional argument C<$places> is the default number of decimal places for
+seconds. If defined, it must be either C<''> or an unsigned integer.
+
+You can also specify an optional C<'.d'> (where the 'd' is one or more
+decimal digits) before any format specification that generates seconds.
+Examples include C<'%.3S'> or C<'%.6T'>. Such a specification overrides
+the C<$places> argument, if any.
+
+=cut
+
+sub gm_strftime {
+    my ( $format, $epoch ) = _pre_strftime( @_ );
+    my @gmt = gmtime $epoch;
+    pop @gmt;
+    # FIXME this seems to be needed under Perl 5.39.8, but not under
+    # earlier Perls.
+    local $ENV{TZ} = 'UTC';
+    return POSIX::strftime( $format, @gmt );
 }
 
 =item $epoch = greg_time_gm( $sec, $min, $hr, $day, $mon, $yr );
@@ -1012,6 +1014,26 @@ to load the same module simply give the cached results.
     }
 }	# End local symbol block.
 
+=item print local_strftime( $format, $epoch, $places )
+
+This subroutine takes as input a strftime-compatible format and an
+epoch, and returns the local time, formatted per the format.
+
+Optional argument C<$places> is the default number of decimal places for
+seconds. If defined, it must be either C<''> or an unsigned integer.
+
+You can also specify an optional C<'.d'> (where the 'd' is one or more
+decimal digits) before any format specification that generates seconds.
+Examples include C<'%.3S'> or C<'%.6T'>. Such a specification overrides
+the C<$places> argument, if any.
+
+=cut
+
+sub local_strftime {
+    my ( $format, $epoch ) = _pre_strftime( @_ );
+    return POSIX::strftime( $format, localtime $epoch );
+}
+
 =item $boolean = looks_like_number ($string);
 
 This subroutine returns true if the input looks like a number. It uses
@@ -1090,21 +1112,6 @@ $theta < TWOPI.
 =cut
 
 sub mod2pi {return $_[0] - floor ($_[0] / TWOPI) * TWOPI}
-
-=item print my_strftime( $format, localtime $epoch );
-
-This is a wrapper for whatever F<strftime()> implementation we use.
-Currently this is POSIX, and the interface will conform to that.
-
-=cut
-
-*my_strftime = "$]" >= 5.039008 ? sub {
-    my ( $format, @time ) = @_;
-    # FIXME this seems to be needed under Perl 5.39.8, but not under
-    # earlier Perls.
-    local $ENV{TZ} = 'UTC';
-    return strftime $format, @time;
-} : \&POSIX::strftime;
 
 =item $radians = omega ($time);
 
@@ -1532,6 +1539,51 @@ sub __instance {
 	return $time + $offset;
     }
 
+}
+
+sub _pre_strftime {
+    my ( $format, $epoch, $places ) = @_;
+    my $seconds = POSIX::floor( $epoch );
+    my $frac = $epoch - $seconds;
+    $format =~ s( ( %+ ) ( [.] [0-9]* )? ( [DFrRSTV] ) )
+    ( _pre_strftime_mung_fmt( $1, $2, $3, $frac, $places ) )smxge;
+    return ( $format, $seconds );
+};
+
+{
+    # The test of __format_epoch_time_usec() (which uses format '%F %T')
+    # failed under Windows, at least undef Strawberry, returning the
+    # empty string. Expanding %F fixed this, so I decided to expand all
+    # the 'equivalent to' format strings I could find.
+
+    my %mung = (
+	'D'	=> 'm/%%d/%%y',
+	'F'	=> 'Y-%%m-%%d',
+	'r'	=> 'I:%%M:%%S%s %%p',
+	'R'	=> 'H:%%M',
+	'S'	=> 'S%s',
+	'T'	=> 'H:%%M:%%S%s',
+	'V'	=> 'e-%%b-%%Y',
+    );
+
+    sub _pre_strftime_mung_fmt {
+	my ( $percent, $places, $fmt, $frac, $dflt_places ) = @_;
+	length( $percent ) % 2
+	    and $mung{$fmt}
+	    or return "$percent$places$fmt";
+	my $f = '';
+	defined $places
+	    or $places = $dflt_places;
+	if ( defined $places ) {
+	    index( $places, '.' ) == 0
+		or substr $places, 0, 0, '.';
+	    $places eq '.'
+		and $places = '';
+	    $f = sprintf "%${places}f", $frac;
+	    $f =~ s/ \A 0+ //smx;
+	}
+	return $percent . __sprintf( $mung{$fmt}, $f );
+    }
 }
 
 sub __sprintf {

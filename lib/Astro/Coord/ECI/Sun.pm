@@ -709,7 +709,7 @@ sub time_set {
     my $R = (1.000_001_018 * (1 - $e * $e)) / (1 + $e * cos ($nu))
 	    * AU;
     $self->{debug} and print <<eod;
-Debug sun - @{[my_strftime '%d-%b-%Y %H:%M:%S', gmtime( $time )]}
+Debug sun - @{[ gm_strftime '%d-%b-%Y %H:%M:%S', $time ]}
     T  = $T
     L0 = @{[rad2deg ($L0)]} degrees
     M  = @{[rad2deg ($M)]} degrees

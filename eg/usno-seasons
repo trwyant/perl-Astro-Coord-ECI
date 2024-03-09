@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::Sun;
-use Astro::Coord::ECI::Utils qw{ my_strftime rad2deg };
+use Astro::Coord::ECI::Utils qw{ gm_strftime rad2deg };
 use Getopt::Long 2.33 qw{ :config auto_version };
 use JSON;
 use LWP::UserAgent;
@@ -74,7 +74,7 @@ sub format_lon {
 
 sub format_time {
     my ( $time ) = @_;
-    return my_strftime( '%Y-%m-%dT%H:%M:%SZ', gmtime $time );
+    return gm_strftime( '%Y-%m-%dT%H:%M:%SZ', $time );
 }
 
 sub sayx {

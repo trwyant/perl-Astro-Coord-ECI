@@ -11,7 +11,7 @@ use warnings;
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Sun;
 use Astro::Coord::ECI::Moon;
-use Astro::Coord::ECI::Utils qw{ deg2rad my_strftime };
+use Astro::Coord::ECI::Utils qw{ deg2rad local_strftime };
 use Getopt::Long 2.33;
 use Pod::Usage;
 use Time::Local;
@@ -84,7 +84,7 @@ foreach my $luminary ( qw{ sun moon } ) {
 #	order of increasing time.
 
 foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
-    print my_strftime ($opt{format}, localtime $_->[0]), '  ',
+    print local_strftime( $opt{format}, $_->[0]), '  ',
 	ucfirst ($_->[3]), "\n";
 }
 
