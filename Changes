@@ -1,12 +1,9 @@
-0.130_03	2024-03-09	T. R. Wyant
-    Deprecate date2epoch() and epoch2datetime().
+0.131		2024-03-16	T. R. Wyant
+    Deprecate Astro::Coord::ECI::Utils subroutines  date2epoch() and
+    epoch2datetime().
 
-    Replace my_strftime() with gm_strftime() and local_strftime().
-
-    Celestrak drops magnitude for 11251 Meteor 1-29
-
-0.130_02	2024-03-03	T. R. Wyant
-    Cemtralize POSIX::strftime calls to ::Utils::my_strftime
+    Deal with POSIX::strftime() behavior change in Perl 5.38.9, which
+    made formatting GMT times problematic.
 
     Refurbish some of the eg/* scripts which have not kept track with
     API changes of various sorts.
@@ -14,10 +11,7 @@
     Correct bug in ::TLE->__make_tle_epoch(). The fractional part was
     wrong for negative epochs.
 
-0.130_01	2024-03-01	T. R. Wyant
-    Update canned magnitude table for Heavens Above changes.
-
-    Kelso updates his table of bright satellites.
+    Updates to canned magnitude table.
 
     Move all tests that BAIL_OUT() into t/basic.t.
 
