@@ -214,6 +214,33 @@ sub _angle_non_inertial {
     return ($lon, $lat);
 }
 
+=item $angle = $coord->angular_radius();
+
+This method computes the angular radius of the C<$coord> body in
+radians, as of the currently-set time. If the C<station> attribute is
+set, the range will be computed from it via C<< $self->azel() >>. If
+not, the range from the center of the earth will be computed via
+C<< $self->ecliptic() >>. If the C<diameter> attribute is not set,
+C<undef> is returned.
+
+This method is not supported for terrestrial objects.
+
+=cut
+
+sub angular_radius {
+    my ( $self ) = @_;
+    defined( my $diameter = $self->get( 'diameter' ) )
+	or return undef;	## no critic (ProhibitExplicitReturnUndef)
+    my $range;
+    if ( $self->get( 'station' ) ) {
+	( undef, undef, $range ) = $self->azel();
+    } else {
+	( undef, undef, $range ) = $self->ecliptic();
+    }
+    return atan2 $diameter / 2, $range;
+}
+
+
 =item $which = $coord->attribute ($name);
 
 This method returns the name of the class that implements the named
