@@ -8178,12 +8178,12 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Wed, 14 Feb 2024 17:56:43 GMT
+# Last-Modified: Thu, 18 Apr 2024 04:08:05 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Wed, 14 Feb 2024 17:56:43 GMT';
+use constant _CELESTRAK_VISUAL => 'Thu, 18 Apr 2024 04:08:05 GMT';
 use constant _MCCANTS_VSNAMES  => undef;
 use constant _MCCANTS_QUICKSAT => undef;
 
@@ -8196,7 +8196,6 @@ use constant _MCCANTS_QUICKSAT => undef;
   '03597' =>   5.7, # OAO 2
   '03669' =>   8.2, # ISIS 1
   '04327' =>   5.7, # SERT 2
-# '04814' => undef, # SL-3 R/B has no recorded magnitude
   '05118' =>   4.2, # SL-3 R/B
   '05560' =>   4.2, # ASTEX 1
   '05730' =>   4.2, # SL-8 R/B
@@ -8206,7 +8205,6 @@ use constant _MCCANTS_QUICKSAT => undef;
   '08459' =>   5.2, # SL-8 R/B
   '10114' =>   4.7, # SL-3 R/B
   '10967' =>   3.2, # SEASAT 1
-# '11251' => undef, # METEOR 1-29 has no recorded magnitude
   '11267' =>   4.7, # SL-14 R/B
   '11574' =>   4.2, # SL-8 R/B
   '11672' =>   4.2, # SL-14 R/B
@@ -8290,7 +8288,6 @@ use constant _MCCANTS_QUICKSAT => undef;
   '23088' =>   2.7, # SL-16 R/B
   '23343' =>   2.7, # SL-16 R/B
   '23405' =>   2.7, # SL-16 R/B
-# '23560' => undef, # ERS 2 has no recorded magnitude
   '23561' =>   3.7, # ARIANE 40+ R/B
   '23705' =>   2.7, # SL-16 R/B
   '24298' =>   2.7, # SL-16 R/B
