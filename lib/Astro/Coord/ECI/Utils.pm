@@ -294,7 +294,7 @@ my @all_external = ( qw{
 	format_space_track_json_time gm_strftime intensity_to_magnitude
 	jcent2000 jd2date jd2datetime jday2000 julianday
 	keplers_equation load_module local_strftime
-	looks_like_number max min mod2pi
+	looks_like_number max min mod2pi mod360
 	omega position_angle
 	rad2deg rad2dms rad2hms tan theta0 thetag vector_cross_product
 	vector_dot_product vector_magnitude vector_unitize __classisa
@@ -1134,6 +1134,18 @@ $theta < TWOPI.
 =cut
 
 sub mod2pi {return $_[0] - floor ($_[0] / TWOPI) * TWOPI}
+
+=item $theta = mod360( $theta )
+
+This subroutine reduces the given angle in degrees to the range 0 <=
+$theta < 360. This is B<not> equivalent to C<$theta % 360> because the
+latter loses the fractional part of $theta. It is B<not> equivalent to
+C<fmod( $theta, 360 )> because the result of this subroutine is never
+negative.
+
+=cut
+
+sub mod360 { return $_[0] - floor( $_[0] / 360 ) * 360 }
 
 =item $radians = omega ($time);
 
