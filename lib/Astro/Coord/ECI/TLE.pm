@@ -8178,12 +8178,12 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Thu, 02 May 2024 22:35:22 GMT
+# Last-Modified: Fri, 10 May 2024 01:22:26 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Thu, 02 May 2024 22:35:22 GMT';
+use constant _CELESTRAK_VISUAL => 'Fri, 10 May 2024 01:22:26 GMT';
 use constant _MCCANTS_VSNAMES  => undef;
 use constant _MCCANTS_QUICKSAT => undef;
 
