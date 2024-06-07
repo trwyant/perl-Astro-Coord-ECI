@@ -8178,12 +8178,12 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Fri, 31 May 2024 01:10:18 GMT
+# Last-Modified: Fri, 07 Jun 2024 06:54:36 GMT
 
 # The following constants are unsupported, and may be modified or
 # revoked at any time. They exist to support
 # xt/author/magnitude_status.t
-use constant _CELESTRAK_VISUAL => 'Fri, 31 May 2024 01:10:18 GMT';
+use constant _CELESTRAK_VISUAL => 'Fri, 07 Jun 2024 06:54:36 GMT';
 use constant _MCCANTS_VSNAMES  => undef;
 use constant _MCCANTS_QUICKSAT => undef;
 
@@ -8351,6 +8351,7 @@ use constant _MCCANTS_QUICKSAT => undef;
 # '52794' => undef, # CZ-2C R/B has no recorded magnitude
   '53807' =>   3.5, # BLUEWALKER 3
 # '57800' => undef, # XRISM has no recorded magnitude
+# '59624' => undef, # SZ-17 MODULE has no recorded magnitude
 );
 
 1;
