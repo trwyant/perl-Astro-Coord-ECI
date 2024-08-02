@@ -8178,7 +8178,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Fri, 26 Jul 2024 02:43:15 GMT
+# Last-Modified: Thu, 01 Aug 2024 22:46:42 GMT
 
 %magnitude_table = (
   '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8338,7 +8338,6 @@ sub _next_elevation_screen {
   '46265' => undef, # SAOCOM 1-B has no recorded magnitude
   '48274' =>   0.0, # CSS (TIANHE-1)
   '48865' => undef, # COSMOS 2550 has no recorded magnitude
-  '51842' => undef, # OBJECT U has no recorded magnitude
   '52794' => undef, # CZ-2C R/B has no recorded magnitude
   '53807' =>   3.5, # BLUEWALKER 3
   '57800' => undef, # XRISM has no recorded magnitude
