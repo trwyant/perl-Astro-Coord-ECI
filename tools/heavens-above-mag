@@ -15,6 +15,7 @@ use YAML 1.25 qw{ Dump Load };
 
 our $VERSION = '0.131';
 
+use constant CACHE_DIR	=> 'cache';
 use constant REF_CODE	=> sub {};
 use constant VISUAL_URL	=> 'https://celestrak.org/SpaceTrack/query/visual.txt';
 use constant VISUAL_YML	=> 'visual.yml';
@@ -25,9 +26,21 @@ my %opt = (
 
 unless ( caller ) {	# We're a modulino.
     GetOptions( \%opt,
-	qw{ age=i celestrak! open! verbose! },
-	help => sub { pod2usage( { -verbose => 2 } ) },
+	qw{ age=i celestrak! open! purge! verbose! },
+	help	=> sub { pod2usage( { -verbose => 2 } ) },
     ) or pod2usage( { -verbose => 0 } );
+
+    if ( $opt{purge} ) {
+	require File::Glob;
+	my $glob = join '/', CACHE_DIR, '*';
+	foreach ( File::Glob::bsd_glob( $glob ) ) {
+	    unlink
+		or warn "Failed to remove $_: $!\n";
+	}
+	@ARGV
+	    or $opt{celestrak}
+	    or exit;
+    }
 
     if ( $opt{celestrak} ) {
 	@ARGV and pod2usage( {
@@ -37,7 +50,7 @@ unless ( caller ) {	# We're a modulino.
 	process_celestrak();
     } else {
 	@ARGV or pod2usage( {
-		-message	=> 'Arguments required unless --celestrak specified',
+		-message	=> 'Arguments required unless --celestrak or --purge specified',
 		-verbose	=> 0,
 	    } );
 
@@ -85,10 +98,10 @@ sub find_span {
 sub get_cached {
     my ( $file, $uri ) = @_;
 
-    my $path = "cache/$file";
-    -d 'cache'
-	or mkdir 'cache'
-	or die "Failed to create directory cache/: $!\n";
+    my $path = join '/', CACHE_DIR, $file;
+    -d CACHE_DIR
+	or mkdir CACHE_DIR
+	or die "Failed to create directory @{[ CACHE_DIR ]}/: $!\n";
 
     {
 	my @stat;
@@ -298,6 +311,12 @@ exits.
 If this Boolean option is asserted, a web browser is spawned, displaying
 the Heavens-Above web page of the OIDs specified. You cannot specify
 file names if you specify this option.
+
+=head2 --purge
+
+This option causes the cache to be purged before any magnitudes are
+retrieved. The script will exit afterwards unless either arguments or
+L<--celestrak|/--celestrak> were specified.
 
 =head2 --verbose
 
