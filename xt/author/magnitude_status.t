@@ -16,13 +16,10 @@ use constant VISUAL_URL		=>
 note <<'EOD';
 
 This test checks to see if the canned magnitude data may need updating.
-It checks the file dates of relevant files, and scrapes Heavens Above
-for current magnitudes.
+It scrapes Heavens Above for current magnitudes. NOTE that the Heavens
+Above data are cached for up to a day by default.
 
 EOD
-
-$ENV{TLE_DO_MAGNITUDE_STATUS}
-    or plan skip_all => 'TLE_DO_MAGNITUDE_STATUS not set';
 
 do './tools/heavens-above-mag'
     or plan skip_all => "Failed to execute ./tools/heavens-above-mag";
@@ -39,9 +36,9 @@ foreach my $oid (
     uniqint( keys %visual, keys %canned)
 ) {
     if ( ! exists $canned{$oid} ) {
-	fail "OID $oid in canned magnitudes";
+	fail "OID $oid is in canned magnitudes";
     } elsif ( ! exists $visual{$oid} ) {
-	fail "OID $oid in current @{[ VISUAL_NAME ]}";
+	fail "OID $oid is in current @{[ VISUAL_NAME ]}";
     } else {
 	my @rslt = heavens_above_mag::process_get( $oid );
 	my $want = format_mag( $rslt[0][2] );
