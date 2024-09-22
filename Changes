@@ -1,5 +1,4 @@
-0.131_01	2024-09-15	T. R. Wyant
-
+0.132		2024-09-22	T. R. Wyant
     Update canned magnitudes.
 
     Retract deprecation of date2epoch() and epoch2datetime(). When I
