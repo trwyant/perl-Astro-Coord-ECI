@@ -8178,7 +8178,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Thu, 12 Sep 2024 22:47:57 GMT
+# Last-Modified: Thu, 17 Oct 2024 20:02:44 GMT
 
 %magnitude_table = (
   '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8328,7 +8328,6 @@ sub _next_elevation_screen {
   '39358' => undef, # SJ-16 has no recorded magnitude
   '39679' =>   3.4, # SL-4 R/B
   '39766' =>   3.7, # ALOS 2
-  '40354' =>   4.2, # SL-27 R/B
   '41038' => undef, # YAOGAN 29 has no recorded magnitude
   '41337' => undef, # ASTRO H has no recorded magnitude
   '42758' => undef, # HXMT has no recorded magnitude
