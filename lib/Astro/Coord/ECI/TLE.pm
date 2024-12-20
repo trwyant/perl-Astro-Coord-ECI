@@ -8178,7 +8178,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Sun, 24 Nov 2024 08:17:14 GMT
+# Last-Modified: Fri, 20 Dec 2024 02:02:39 GMT
 
 %magnitude_table = (
   '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8216,7 +8216,6 @@ sub _next_elevation_screen {
   '14699' =>   4.2, # COSMOS 1536
   '14820' =>   4.7, # SL-14 R/B
   '15483' =>   4.7, # SL-8 R/B
-  '15494' =>   3.7, # COSMOS 1626
   '15772' =>   4.2, # SL-12 R/B(2)
   '15945' =>   4.7, # SL-14 R/B
   '16182' =>   3.2, # SL-16 R/B
@@ -8341,7 +8340,6 @@ sub _next_elevation_screen {
   '57800' => undef, # XRISM has no recorded magnitude
   '58556' => undef, # OBJECT D has no recorded magnitude
   '59588' =>   2.0, # ACS 3
-  '59624' => undef, # SZ-17 MODULE has no recorded magnitude
 );
 
 1;
