@@ -8178,7 +8178,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak
 #
-# Last-Modified: Fri, 20 Dec 2024 02:02:39 GMT
+# Last-Modified: Thu, 09 Jan 2025 01:45:19 GMT
 
 %magnitude_table = (
   '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8308,7 +8308,6 @@ sub _next_elevation_screen {
   '28480' =>   3.7, # CZ-2C R/B
   '28499' => undef, # ARIANE 5 R/B has no recorded magnitude
   '28738' =>   4.7, # CZ-2D R/B
-  '28773' =>   4.2, # ASTRO E2
   '28931' =>   3.2, # ALOS
   '28932' =>   3.7, # H-2A R/B
   '29228' =>   3.7, # RESURS DK-1
