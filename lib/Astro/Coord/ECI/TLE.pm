@@ -8180,7 +8180,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak --update
 #
-# Last-Modified: Sat, 11 Jan 2025 04:15:40 GMT
+# Last-Modified: Tue, 18 Feb 2025 04:19:03 GMT
 
 %magnitude_table = (
   '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8323,7 +8323,6 @@ sub _next_elevation_screen {
   '33504' =>   5.3, # KORONAS-FOTON
   '37731' => undef, # CZ-2C R/B has no recorded magnitude
   '38341' =>   3.2, # H-2A R/B
-  '39271' => undef, # CUSAT 2/FALCON 9 has no recorded magnitude
   '39358' => undef, # SJ-16 has no recorded magnitude
   '39679' =>   3.4, # SL-4 R/B
   '39766' =>   3.7, # ALOS 2
@@ -8339,7 +8338,6 @@ sub _next_elevation_screen {
   '52794' => undef, # CZ-2C R/B has no recorded magnitude
   '53807' =>   3.5, # BLUEWALKER 3
   '57800' => undef, # XRISM has no recorded magnitude
-  '58556' => undef, # OBJECT D has no recorded magnitude
   '59588' =>   2.0, # ACS 3
 );
 
