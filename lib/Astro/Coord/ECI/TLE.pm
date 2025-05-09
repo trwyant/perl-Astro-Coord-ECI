@@ -8180,7 +8180,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak --update
 #
-# Last-Modified: Thu, 13 Mar 2025 22:27:37 GMT
+# Last-Modified: Thu, 08 May 2025 21:26:45 GMT
 
 %magnitude_table = (
   '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8194,7 +8194,6 @@ sub _next_elevation_screen {
   '05118' =>   4.2, # SL-3 R/B
   '05560' =>   4.2, # ASTEX 1
   '05730' =>   4.2, # SL-8 R/B
-  '06073' =>   5.7, # COSMOS 482 DESCENT CRAFT
   '06153' =>   5.2, # OAO 3 (COPERNICUS)
   '06155' =>   4.2, # ATLAS CENTAUR R/B
   '08459' =>   5.2, # SL-8 R/B
