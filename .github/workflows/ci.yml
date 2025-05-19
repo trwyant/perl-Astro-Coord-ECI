@@ -57,7 +57,7 @@ jobs:
     steps:
 
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up perl
       # Specify the action performed by this step. In this case it is a
@@ -78,11 +78,14 @@ jobs:
       run: |
         perl -v
 
+    - name: Install support modules
+      continue-on-error: true
+      run: |
+        cpanm -v
+        cpanm File::HomeDir Getopt::Long version
+
     - name: Customize environment
       run: |
-        perl -V:make
-        cpanm -v
-        cpanm File::Spec Getopt::Long version
         perl .github/workflows/environment.PL
 
     - name: Display local envoronment variables
@@ -91,19 +94,14 @@ jobs:
         echo MY_IS_GITHUB_ACTION=${{ env.MY_IS_GITHUB_ACTION }}
         echo MY_IS_UNIX=${{ env.MY_IS_UNIX }}
         echo MY_IS_WINDOWS=${{ env.MY_IS_WINDOWS }}
-        echo MY_MAKE=${{ env.MY_MAKE }}
-        echo MY_WANT_POD_MAN=${{ env.MY_WANT_POD_MAN }}
+        echo MY_WANT_MODULES=${{ env.MY_WANT_MODULES }}
 
-    # Non-core toolchain Module::Build needs Pod::Man, which is in
-    # distro RRA/podlators. As of podlators-5.00 (2022-11-25) this
-    # requires Perl 5.10. As of Module::Build 0.4232 (2022-12-08)
-    # the dependency on Pod::Man has been dropped to deal with 5.8,
-    # presumably since it's a core module. But we need at least
-    # Pod::Man 2.16 to cope with t/manifypods_with_utf8.t, and
-    # Perl 5.10 only comes with 2.16. So ..
-    - name: Install old podlators distro if on old Perl
-      if: env.MY_WANT_POD_MAN
-      run: cpanm ${{ env.MY_WANT_POD_MAN }}
+    # The current versions of various non-core toolchain modules have
+    # problems under older Perls. We make use of this step to get older
+    # versions installed if needed.
+    - name: Install old versions of modules if on old Perl
+      if: env.MY_WANT_MODULES
+      run: cpanm ${{ env.MY_WANT_MODULES }}
 
     - name: Install module dependencies
       run: |
@@ -113,8 +111,8 @@ jobs:
     - name: Run ExtUtils::MakeMaker tests
       run: |
         perl Makefile.PL
-        ${{ env.MY_MAKE }}
-        ${{ env.MY_MAKE }} test
+        perl .github/workflows/make.PL
+        perl .github/workflows/make.PL test
 
     - name: Run Module::Build tests
       run: |
