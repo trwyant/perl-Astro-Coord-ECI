@@ -82,7 +82,9 @@ sub want_modules {
     if ( $perl_ver >= PERL_5_12 ) {
         return;
     } elsif ( $perl_ver >= PERL_5_10 ) {
-        return 'POD::Man';
+        return qw{
+            RRA/podlators-4.14.tar.gz
+        };
     } else {
         return qw{
             SMUELLER/ExtUtils-ParseXS-3.30.tar.gz
