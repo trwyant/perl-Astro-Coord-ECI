@@ -2850,7 +2850,6 @@ sub _get_equatorial_coordinates {
 	    Astro::SpaceTrack->new (
 		webcmd => $parm{webcmd},
 		filter => 1,
-		iridium_status_format => 'kelso',
 	    );
     }
 }	# End local symbol block.
