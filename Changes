@@ -1,4 +1,4 @@
-0.132_01	2025-05-26	T. R. Wyant
+0.133		2025-06-02	T. R. Wyant
     Add method next_elevation_extreme_tod(). This is analogous to
     next_elevation(), but returns the earliest (or latest) time the body
     passes the given elevation after the currentlt-set time -- or
@@ -9,7 +9,6 @@
 
     Don't set iridium_status_format when instantiating an
     Astro::SpaceTrack object in script/satpass.
-
 
     Uppdates ro canned magnitude table.
 
