@@ -8180,7 +8180,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak --update
 #
-# Last-Modified: Fri, 13 Jun 2025 00:03:00 GMT
+# Last-Modified: Thu, 10 Jul 2025 22:02:55 GMT
 
 %magnitude_table = (
   '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8311,7 +8311,6 @@ sub _next_elevation_screen {
   '28931' =>   3.2, # ALOS
   '28932' =>   3.7, # H-2A R/B
   '29228' =>   3.7, # RESURS DK-1
-  '29252' =>   4.7, # GENESIS 1
   '29507' =>   2.7, # CZ-4B R/B
   '31114' =>   3.2, # CZ-2C R/B
   '31598' =>   3.7, # SKYMED 1
