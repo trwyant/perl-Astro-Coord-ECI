@@ -1,6 +1,6 @@
 # Explicit name of workflow. This is optional.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#name
-name: Perl CI v2.000
+name: Perl CI v2.0.1
 
 # Specify the events that trigger this workflow.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
@@ -120,3 +120,19 @@ jobs:
         perl Build.PL
         ./Build
         ./Build test
+
+    # The following technique inspired by Gabor Szabo. Thanks:
+    # https://perlmaven.com/install-developer-dependencies-first-test-css
+    # But rewritten in powershell since that is the only usable shell
+    # available to all runners.
+    - name: Show cpanm install log
+      if: failure()
+      shell: pwsh
+      run: |
+        $dirs = Get-ChildItem "$HOME\\.cpanm\\work\\"
+        foreach ( $d in $dirs ) {
+            $file = $d.FullName + "\\build.log"
+            echo ""
+            echo $file
+            type $file
+        }
