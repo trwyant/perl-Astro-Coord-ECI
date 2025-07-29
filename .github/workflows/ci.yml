@@ -1,6 +1,6 @@
 # Explicit name of workflow. This is optional.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#name
-name: Perl CI
+name: Perl CI v2.000
 
 # Specify the events that trigger this workflow.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
@@ -8,6 +8,11 @@ name: Perl CI
 on:
   push:
   pull_request:
+
+# Define environment variables for all jobs
+env:
+  MY_IS_GITHUB_ACTION: 1
+  PERL_CPANM_OPT: '--mirror https://cpan.metacpan.org'
 
 
 # Define the jobs that make up the workflow.
@@ -44,7 +49,7 @@ jobs:
             # v5.8.8 is the earliest known to work
             perl: '5.8.8'
           - runner: windows-latest
-            # v5.26.8 is the earliest known to work
+            # v5.26.0 is the earliest known to work
             perl: '5.26.0'
     # Define where the job runs.
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idruns-on
@@ -73,16 +78,11 @@ jobs:
           perl-version: ${{ matrix.perl }}
           distribution: ${{ ( startsWith( matrix.runner, 'windows-' ) && 'strawberry' ) || 'default' }}
 
-    - name: Show Perl Version
+    - name: Show Perl and Cpanm versions
       # Run a command to display the version of Perl being used.
       run: |
         perl -v
-
-    - name: Install support modules
-      continue-on-error: true
-      run: |
         cpanm -v
-        cpanm File::HomeDir Getopt::Long version
 
     - name: Customize environment
       run: |
@@ -90,10 +90,7 @@ jobs:
 
     - name: Display local envoronment variables
       run: |
-        echo MY_HOME=${{ env.MY_HOME }}
-        echo MY_IS_GITHUB_ACTION=${{ env.MY_IS_GITHUB_ACTION }}
-        echo MY_IS_UNIX=${{ env.MY_IS_UNIX }}
-        echo MY_IS_WINDOWS=${{ env.MY_IS_WINDOWS }}
+        echo MY_MAKE=${{ env.MY_MAKE }}
         echo MY_WANT_MODULES=${{ env.MY_WANT_MODULES }}
 
     # The current versions of various non-core toolchain modules have
@@ -101,7 +98,7 @@ jobs:
     # versions installed if needed.
     - name: Install old versions of modules if on old Perl
       if: env.MY_WANT_MODULES
-      run: cpanm ${{ env.MY_WANT_MODULES }}
+      run: cpanm --notest ${{ env.MY_WANT_MODULES }}
 
     - name: Install module dependencies
       run: |
@@ -109,30 +106,17 @@ jobs:
         cpanm --with-configure --notest --installdeps .
 
     - name: Run ExtUtils::MakeMaker tests
+      # Abuse the hashFiles() built-in to see if file exists. From
+      # https://stackoverflow.com/questions/71336204/github-action-check-if-a-file-already-exists
+      if: ${{ hashFiles( 'Makefile.PL' ) != '' }}
       run: |
         perl Makefile.PL
-        perl .github/workflows/make.PL
-        perl .github/workflows/make.PL test
+        ${{ env.MY_MAKE }}
+        ${{ env.MY_MAKE }} test
 
     - name: Run Module::Build tests
+      if: ${{ hashFiles( 'Build.PL' ) != '' }}
       run: |
         perl Build.PL
         ./Build
         ./Build test
-
-    # The following technique from Gabor Szabo. Thanks:
-    # https://perlmaven.com/install-developer-dependencies-first-test-css
-    - name: Show cpanm install log under Unix
-      if: failure() && env.MY_IS_UNIX
-      run: cat $MY_HOME/.cpanm/work/*/build.log
-
-    - name: Show cpanm install log under Windows
-      if: failure() && env.MY_IS_WINDOWS
-      run: |
-        $dirs = Get-ChildItem "$env:MY_HOME\\.cpanm\\work\\"
-        foreach ( $d in $dirs ) {
-            $file = $d.FullName + "\\build.log"
-            echo ""
-            echo $file
-            type $file
-        }
