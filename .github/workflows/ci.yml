@@ -1,6 +1,6 @@
 # Explicit name of workflow. This is optional.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#name
-name: Perl CI v2.0.1
+name: Perl CI v2.0.4
 
 # Specify the events that trigger this workflow.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
@@ -33,24 +33,19 @@ jobs:
 
       # The actual matrix
       matrix:
-
-        # OS environments under which the job runs.
-        runner: [ubuntu-latest, macos-latest, windows-latest]
-        # Version of Perl to run. This specifies the most-recent Perl 5.
-        perl: [ '5' ]
-
-        # Add minimum Perl versions, which differ among operating
-        # systems
         include:
-          - runner: ubuntu-latest
-            # v5.8.8 is the earliest known to work
-            perl: '5.8.8'
-          - runner: macos-latest
-            # v5.8.8 is the earliest known to work
-            perl: '5.8.8'
-          - runner: windows-latest
-            # v5.26.0 is the earliest known to work
-            perl: '5.26.0'
+          - perl: 5.8.8
+            runner: macos-latest
+          - perl: 5.8.8
+            runner: ubuntu-latest
+          - perl: 5.26.0
+            runner: windows-latest
+        perl:
+          - 5
+        runner:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
     # Define where the job runs.
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ${{matrix.runner}}
@@ -86,11 +81,13 @@ jobs:
 
     - name: Customize environment
       run: |
+        cpanm --notest File::HomeDir
         perl .github/workflows/environment.PL
 
     - name: Display local envoronment variables
       run: |
         echo MY_MAKE=${{ env.MY_MAKE }}
+        echo MY_PORTABLE_HOME=${{ env.MY_PORTABLE_HOME }}
         echo MY_WANT_MODULES=${{ env.MY_WANT_MODULES }}
 
     # The current versions of various non-core toolchain modules have
@@ -102,7 +99,6 @@ jobs:
 
     - name: Install module dependencies
       run: |
-        cpanm Module::Build
         cpanm --with-configure --notest --installdeps .
 
     - name: Run ExtUtils::MakeMaker tests
@@ -117,22 +113,18 @@ jobs:
     - name: Run Module::Build tests
       if: ${{ hashFiles( 'Build.PL' ) != '' }}
       run: |
+        cpanm --notest Module::Build
         perl Build.PL
         ./Build
         ./Build test
 
-    # The following technique inspired by Gabor Szabo. Thanks:
+    # The following technique from Gabor Szabo. Thanks:
     # https://perlmaven.com/install-developer-dependencies-first-test-css
-    # But rewritten in powershell since that is the only usable shell
-    # available to all runners.
+    # I had to change the home directory because $HOME doesn't find the
+    # logs under Windows. See .github/workflows/environment.PL for more
+    # information.
     - name: Show cpanm install log
       if: failure()
-      shell: pwsh
+      shell: bash
       run: |
-        $dirs = Get-ChildItem "$HOME\\.cpanm\\work\\"
-        foreach ( $d in $dirs ) {
-            $file = $d.FullName + "\\build.log"
-            echo ""
-            echo $file
-            type $file
-        }
+        cat $MY_PORTABLE_HOME/.cpanm/work/*/build.log
