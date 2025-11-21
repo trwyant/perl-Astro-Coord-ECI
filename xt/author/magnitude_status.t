@@ -52,7 +52,9 @@ passing()
 
 
 The canned magnitude table in lib/Astro/Coord/ECI/TLE.pm needs to be
-regenerated.
+regenerated. Run
+
+   $ tools/heavens-above-mag --celestrak --update
 
 EOD
 
