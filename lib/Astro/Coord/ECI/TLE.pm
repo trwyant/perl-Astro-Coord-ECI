@@ -8180,23 +8180,23 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak --update
 #
-# Last-Modified: Fri, 10 Apr 2026 01:37:02 GMT
+# Last-Modified: Wed, 10 Jun 2026 12:43:29 GMT
 
 %magnitude_table = (
-  '00694' =>   2.7, # ATLAS CENTAUR 2 R/B
-  '00733' =>   4.2, # THOR AGENA D R/B
-  '00877' =>   4.2, # SL-3 R/B
-  '02802' =>   4.7, # SL-8 R/B
-  '03230' =>   5.2, # SL-8 R/B
-  '03597' =>   5.7, # OAO 2
-  '03669' =>   8.2, # ISIS 1
-  '04327' =>   5.7, # SERT 2
-  '05118' =>   4.2, # SL-3 R/B
-  '05560' =>   4.2, # ASTEX 1
-  '05730' =>   4.2, # SL-8 R/B
-  '06153' =>   5.2, # OAO 3 (COPERNICUS)
-  '06155' =>   4.2, # ATLAS CENTAUR R/B
-  '08459' =>   5.2, # SL-8 R/B
+  '694' =>   2.7, # ATLAS CENTAUR 2 R/B
+  '733' =>   4.2, # THOR AGENA D R/B
+  '877' =>   4.2, # SL-3 R/B
+  '2802' =>   4.7, # SL-8 R/B
+  '3230' =>   5.2, # SL-8 R/B
+  '3597' =>   5.7, # OAO 2
+  '3669' =>   8.2, # ISIS 1
+  '4327' =>   5.7, # SERT 2
+  '5118' =>   4.2, # SL-3 R/B
+  '5560' =>   4.2, # ASTEX 1
+  '5730' =>   4.2, # SL-8 R/B
+  '6153' =>   5.2, # OAO 3 (COPERNICUS)
+  '6155' =>   4.2, # ATLAS CENTAUR R/B
+  '8459' =>   5.2, # SL-8 R/B
   '10114' =>   4.7, # SL-3 R/B
   '10967' =>   3.2, # SEASAT 1
   '11267' =>   4.7, # SL-14 R/B
@@ -8289,8 +8289,6 @@ sub _next_elevation_screen {
   '25994' =>   2.7, # TERRA
   '26070' =>   2.7, # SL-16 R/B
   '26474' =>   2.7, # TITAN 4B R/B
-  '26905' =>   3.7, # USA 160
-  '26907' =>   3.7, # USA 160 DEB
   '27386' =>   3.7, # ENVISAT
   '27422' =>   3.2, # IDEFIX/ARIANE 42P
   '27424' =>   4.7, # AQUA
@@ -8332,7 +8330,7 @@ sub _next_elevation_screen {
   '54149' => undef, # GSLV R/B has no recorded magnitude
   '57800' => undef, # XRISM has no recorded magnitude
   '59588' =>   2.0, # ACS 3
-  '66174' => undef, # HTV-X1 has no recorded magnitude
+  '66004' => undef, # CZ-8A R/B has no recorded magnitude
   '66515' => undef, # SZ-21 MODULE has no recorded magnitude
 );
 
