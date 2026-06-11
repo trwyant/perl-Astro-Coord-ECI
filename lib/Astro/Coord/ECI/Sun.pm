@@ -598,7 +598,7 @@ Edition, Chapter 27 ("Equinoxes and Solstices), pages 278ff.
 
 THIS METHOD IS UNSUPPORTED. I understand the temptation to call it if
 all you want are the seasons, but if possible I would like to be able to
-remove it if its use in next_quarter() turns out to e a bad idea. I am
+remove it if its use in next_quarter() turns out to be a bad idea. I am
 not unwilling to support it; if you want me to, please contact me.
 
 Because it is unsupported, its name may change without warning if
@@ -864,8 +864,7 @@ functionality similar to B<Astro-Sunrise>.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass>,
-L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues> or in
 electronic mail to the author.
 
 =head1 AUTHOR

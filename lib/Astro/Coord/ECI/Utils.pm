@@ -1684,11 +1684,10 @@ a separate entity in 2021, but their publications, including Dr. Meeus'
 book, are still available through Sky and Telescope's Willmann-Bell
 imprint at L<https://shopatsky.com/collections/willmann-bell>.
 
-=head1 BUGS
+=head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass>,
-L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues> or in
 electronic mail to the author.
 
 =head1 AUTHOR

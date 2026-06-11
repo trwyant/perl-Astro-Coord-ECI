@@ -4242,14 +4242,13 @@ Dr. Kevin Cornelius of Ouachita Baptist University, whose handout
 velocity conversion from spherical to Cartesian (and vice versa) than my
 own ancient and rickety matrix math.
 
-=head1 BUGS
+=head1 SUPPORT
 
 Functionality involving velocities is B<untested>, and is quite likely
 to be wrong.
 
 Support is by the author. Please file bug reports at
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-satpass>,
-L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues>, or in
+L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues> or in
 electronic mail to the author.
 
 =head1 SEE ALSO
