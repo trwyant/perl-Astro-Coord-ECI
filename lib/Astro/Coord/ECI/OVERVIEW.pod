@@ -92,7 +92,7 @@ the page.
 
 Bugs should be reported to
 L<https://github.com/trwyant/perl-Astro-Coord-ECI/issues/>, or to the
-author via electronic mail at F<wyant at cpan dot org>.
+author via electronic mail at F<harryfmudd at comcast dot net>.
 
 =head1 UNITS
 
@@ -661,7 +661,7 @@ from the Royal Observatory in Greenwich England.
 
 =head1 AUTHOR
 
-Thomas R. Wyant, III F<wyant@cpan.org>
+Thomas R. Wyant, III F<harryfmudd@comcast.net>
 
 =head1 COPYRIGHT AND LICENSE
 

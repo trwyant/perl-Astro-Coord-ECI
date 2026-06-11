@@ -208,7 +208,7 @@ and dates less than C<1000AD> are not supported.
 
 =head1 AUTHOR
 
-Tom Wyant (wyant at cpan dot org)
+Tom Wyant (harryfmudd at comcast dot net)
 
 =head1 COPYRIGHT AND LICENSE
 
