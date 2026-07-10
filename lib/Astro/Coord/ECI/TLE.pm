@@ -8180,7 +8180,7 @@ sub _next_elevation_screen {
 #
 #   $ tools/heavens-above-mag --celestrak --update
 #
-# Last-Modified: Wed, 10 Jun 2026 12:43:29 GMT
+# Last-Modified: Fri, 10 Jul 2026 16:17:50 GMT
 
 %magnitude_table = (
   '694' =>   2.7, # ATLAS CENTAUR 2 R/B
@@ -8330,8 +8330,17 @@ sub _next_elevation_screen {
   '54149' => undef, # GSLV R/B has no recorded magnitude
   '57800' => undef, # XRISM has no recorded magnitude
   '59588' =>   2.0, # ACS 3
+  '61045' => undef, # SPACEMOBILE-003 has no recorded magnitude
+  '61046' => undef, # SPACEMOBILE-005 has no recorded magnitude
+  '61047' => undef, # SPACEMOBILE-001 has no recorded magnitude
+  '61048' => undef, # SPACEMOBILE-002 has no recorded magnitude
+  '61049' => undef, # SPACEMOBILE-004 has no recorded magnitude
   '66004' => undef, # CZ-8A R/B has no recorded magnitude
   '66515' => undef, # SZ-21 MODULE has no recorded magnitude
+  '67232' => undef, # SPACEMOBILE-006 has no recorded magnitude
+  '69589' => undef, # TBA - TO BE ASSIGNED has no recorded magnitude
+  '69590' => undef, # TBA - TO BE ASSIGNED has no recorded magnitude
+  '69591' => undef, # TBA - TO BE ASSIGNED has no recorded magnitude
 );
 
 # $$ END
