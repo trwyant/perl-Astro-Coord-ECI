@@ -1617,7 +1617,7 @@ sub __sprintf {
     my ( $tplt, @args ) = @_;
     defined $tplt
 	or return undef;	## no critic (ProhibitExplicitReturnUndef)
-    no if $] gt '5.021002', qw{ warnings redundant };
+    no if $] > 5.021002, qw{ warnings redundant };
     return sprintf $tplt, @args;
 }
 
