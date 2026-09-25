@@ -531,7 +531,7 @@ like a static method.
 
 =cut
 
-my %type_map = ();
+my %type_map;
 
 sub alias {
     my ($self, @args) = @_;
