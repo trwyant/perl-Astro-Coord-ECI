@@ -8,8 +8,6 @@ use Cwd;
 use File::Spec;
 use Test;
 
-
-
 #	We may need IO::String for the test. If we do, make sure it
 #	is available. If it is not, skip everything.
 
@@ -33,7 +31,7 @@ my $failure;		# Notes to output if the next test fails.
 my $home = getcwd;	# Directory test runs in.
 my $skip;		# Skip indicator
 my $test = 0;		# Test number;
-my @todo = ();		# Tests expected to fail.
+my @todo;		# Tests expected to fail.
 my %h_todo;		# Hash of tests expected to fail.
 
 sub satpass {
