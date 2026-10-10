@@ -111,6 +111,7 @@ if ( $mmv >= 6.4501 ) {
 	$meta->provides(),
     };
     $args{META_MERGE} = $meta->meta_merge();
+    $args{META_MERGE}{release_status} = $meta->release_status();
 }
 
 $mmv >= 6.4701
