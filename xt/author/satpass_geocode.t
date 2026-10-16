@@ -16,13 +16,8 @@ eval {
     exit;
 };
 
-eval {
-    require LWP::UserAgent;
-    1;
-} or plan skip_all => 'LWP::UserAgent not available';
-
 {
-    my $ua = LWP::UserAgent->new ();
+    my $ua = Geo::Coder::OSM->new()->ua();
     no warnings qw{ once };
     my $src = $Geo::Coder::OSM::SOURCES{osm}
 	or plan skip_all => 'Can not determine OSM URL';
