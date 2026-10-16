@@ -39,6 +39,7 @@ require_ok 'Test::CPAN::Changes';
 require_ok 'Test::MockTime';
 require_ok 'Test::Perl::Critic';
 require_ok 'Test::Without::Module';
+require_ok 'Time::HiRes';
 require_ok 'Time::Local';
 
 done_testing;

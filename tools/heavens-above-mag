@@ -32,11 +32,12 @@ use constant VISUAL_YML	=> 'visual.yml';
 
 my %opt = (
     age	=> 86400,	# One day, in seconds
+    delay	=> 5,	# Seconds
 );
 
 unless ( caller ) {	# We're a modulino.
     GetOptions( \%opt,
-	qw{ age=i celestrak! open! purge! update! verbose! },
+	qw{ age=i celestrak! delay=i open! purge! update! verbose! },
 	help	=> sub { pod2usage( { -verbose => 2 } ) },
     ) or pod2usage( { -verbose => 0 } );
 
@@ -97,6 +98,15 @@ sub find_td_by_content {
     return $val;
 }
 
+sub delay {
+    state $next_time = 0;
+    my $time = time;
+    $time < $next_time
+	and sleep( $next_time - $time );
+    $next_time = time() + $opt{delay};
+    return;
+}
+
 sub find_span {
     my ( $tree, $id ) = @_;
     my $ele = $tree->look_down( _tag => 'span', id => $id )
@@ -128,6 +138,7 @@ sub get_cached {
 	};
     }
 
+    delay();
     state $ua = LWP::UserAgent->new();
     my $resp = $ua->get( $uri );
     $resp->is_success()
@@ -353,6 +364,12 @@ asserted, no non-option arguments may be specified, and
 L<--open|/--open> is ignored.
 
 The default is the value of L<--update|/--update>.
+
+=head2 --delay
+
+This option specifies the number of seconds between web fetches.
+
+The default is C<--delay 5>.
 
 =head2 --help
 
