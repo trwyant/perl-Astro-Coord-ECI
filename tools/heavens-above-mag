@@ -7,6 +7,7 @@ use 5.010;
 use strict;
 use warnings;
 
+use Cache::FileCache;
 use Getopt::Long 2.33 qw{ :config auto_version };
 use HTML::TreeBuilder;
 use HTTP::Date qw{ time2str };
@@ -17,7 +18,7 @@ use YAML 1.25 qw{ Dump Load };
 
 our $VERSION = '0.135';
 
-use constant CACHE_DIR	=> 'cache';
+use constant CACHE_DIR	=> 'meta/cache';
 
 use constant MARK	=> '# $$';
 use constant MARK_BEGIN	=> join ' ', MARK, 'BEGIN';
@@ -27,34 +28,28 @@ use constant MODIFY_FILE	=> 'lib/Astro/Coord/ECI/TLE.pm';
 
 use constant REF_HASH	=> ref {};
 
-use constant AST_DATA	=> 'ast.json';
-use constant AST_URL	=> 'url" : "https://celestrak.org/NORAD/elements/gp.php?GROUP=ast&FORMAT=JSON';
+use constant AST_URL	=> 'https://celestrak.org/NORAD/elements/gp.php?GROUP=ast&FORMAT=JSON';
 use constant VISUAL_URL	=> 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=JSON';
-use constant VISUAL_YML	=> 'visual.yml';
 
 my %opt = (
-    age	=> 86400,	# One day, in seconds
+    age	=> 86_400,	# One day, in seconds
     delay	=> 5,	# Seconds
 );
 
 unless ( caller ) {	# We're a modulino.
     GetOptions( \%opt,
-	qw{ age=i celestrak! delay=i open! purge! update! verbose! },
+	qw{ age=i celestrak! clear! delay=i open! purge! update! verbose! },
 	help	=> sub { pod2usage( { -verbose => 2 } ) },
     ) or pod2usage( { -verbose => 0 } );
 
     $opt{celestrak} //= $opt{update};
 
-    if ( $opt{purge} ) {
-	require File::Glob;
-	my $glob = join '/', CACHE_DIR, '*';
-	foreach ( File::Glob::bsd_glob( $glob ) ) {
-	    unlink
-		or warn "Failed to remove $_: $!\n";
-	}
-	@ARGV
-	    or $opt{celestrak}
-	    or exit;
+    if ( $opt{clear} ) {
+	get_cache_object()->clear();
+	maybe_exit();
+    } elsif ( $opt{purge} ) {
+	get_cache_object()->purge();
+	maybe_exit();
     }
 
     if ( $opt{celestrak} ) {
@@ -65,7 +60,7 @@ unless ( caller ) {	# We're a modulino.
 	process_celestrak();
     } else {
 	@ARGV or pod2usage( {
-		-message	=> 'Arguments required unless --celestrak or --purge specified',
+		-message	=> 'Arguments required unless --celestrak, --clear, or --purge specified',
 		-verbose	=> 0,
 	    } );
 
@@ -119,42 +114,36 @@ sub find_span {
     return $val;
 }
 
+sub get_cache_object {
+    state $cache = Cache::FileCache->new( {
+	    auto_purge_interval	=> $opt{age},
+	    cache_root		=> CACHE_DIR,
+	    default_expires_in	=> $opt{age},
+	} );
+    return $cache;
+}
+
 sub get_cached {
-    my ( $file, $uri ) = @_;
+    my ( $url ) = @_;
 
-    my $path = join '/', CACHE_DIR, $file;
-    -d CACHE_DIR
-	or mkdir CACHE_DIR
-	or die "Failed to create directory @{[ CACHE_DIR ]}/: $!\n";
+    state $cache = get_cache_object();
 
-    {
-	my @stat;
-	@stat = stat $path
-	    and $stat[9] + $opt{age} > time
-	    and do {
-	    open my $fh, '<:encoding(utf-8)', $path
-		or die "Failed to open $path for input: $!\n";
-	    local $/ = undef;
-	    local $YAML::LoadBlessed = 1;
-	    return Load( <$fh> );
-	};
+    my $resp;
+    unless ( $resp = $cache->get( $url ) ) {
+	delay();
+	state $ua = LWP::UserAgent->new();
+	$resp = $ua->get( $url );
+	$resp->is_success()
+	    or die "Failed to fetch $url: ", $resp->status_line();
+	my ( $last_modified ) = $resp->header( 'Last-Modified' );
+	unless ( defined $last_modified ) {
+	    # The Celestrak API does not provide this, so we do the best
+	    # we can.
+	    $last_modified = time2str( time );
+	    $resp->header( 'Last-Modified' => $last_modified );
+	}
+	$cache->set( $url, $resp );
     }
-
-    delay();
-    state $ua = LWP::UserAgent->new();
-    my $resp = $ua->get( $uri );
-    $resp->is_success()
-	or die "Failed to fetch $uri: ", $resp->status_line();
-    my ( $last_modified ) = $resp->header( 'Last-Modified' );
-    unless ( defined $last_modified ) {
-	# The Celestrak API does not provide this, so we do the best we
-	# can.
-	$last_modified = time2str( time );
-	$resp->header( 'Last-Modified' => $last_modified );
-    }
-    open my $fh, '>:encoding(utf-8)', $path
-	or die "Failed to open $path for output: $!\n";
-    print { $fh } Dump( $resp );
     return $resp;
 }
 
@@ -171,7 +160,7 @@ sub get_file {
 sub get_html {
     my ( $oid ) = @_;
     my $url = heavens_above_url( $oid );
-    my $resp = get_cached( "oid-$oid", $url );
+    my $resp = get_cached( $url );
     return $resp->decoded_content();
 }
 
@@ -180,6 +169,13 @@ sub heavens_above_url {
     $oid =~ m/ \A [0-9]+ \z /smx
 	or die "OID '$oid' not numeric\n";
     return sprintf 'https://www.heavens-above.com/SatInfo.aspx?satid=%05d', $oid;
+}
+
+sub maybe_exit {
+    @ARGV
+	or $opt{celestrak}
+	or exit;
+    return;
 }
 
 sub open_file_for_output {
@@ -201,8 +197,8 @@ sub print_perl {
 }
 
 sub process_celestrak {
-    my $visual = get_cached( VISUAL_YML, VISUAL_URL );
-    my $ast = get_cached( AST_DATA, AST_URL );
+    my $visual = get_cached( VISUAL_URL );
+    my $ast = get_cached( AST_URL );
     my ( $last_modified ) = $visual->header( 'Last-Modified' );
     my ( @preamble, @postamble );
     my @options = qw{ --celestrak };
@@ -360,6 +356,15 @@ L<--open|/--open> is ignored.
 
 The default is the value of L<--update|/--update>.
 
+=head2 --clear
+
+If this Boolean option is asserted, the cache will be cleared before any
+magnitudes are retrieved. The script will exit afterwards unless either
+arguments or L<--celestrak|/--celestrak> were specified.
+
+If both C<--clear> and L<--purge|/--purge> are asserted, C<--clear>
+wins.
+
 =head2 --delay
 
 This option specifies the number of seconds between web fetches.
@@ -379,9 +384,12 @@ file names if you specify this option.
 
 =head2 --purge
 
-This option causes the cache to be purged before any magnitudes are
-retrieved. The script will exit afterwards unless either arguments or
-L<--celestrak|/--celestrak> were specified.
+If this Boolean option is asserted, the cache will be purged before any
+magnitudes are retrieved. The script will exit afterwards unless either
+arguments or L<--celestrak|/--celestrak> were specified.
+
+Of both L<--clear|/--clear> and C<--purge> are asserted,
+L<--clear|/--clear> wins.
 
 =head2 --update
 
