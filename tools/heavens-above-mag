@@ -37,7 +37,7 @@ my %opt = (
 );
 {
     my $config = get_config();
-    foreach ( qw{ age delay } ) {
+    foreach ( qw{ age delay user_agent } ) {
 	defined $config->{$_}
 	    and $opt{$_} = $config->{$_};
     }
@@ -46,7 +46,7 @@ my %opt = (
 unless ( caller ) {	# We're a modulino.
     GetOptions( \%opt,
 	qw{ age=i celestrak! config=s clear! delay=i open! purge!
-	update! verbose! },
+	update! user_agent|user-agent=s verbose! },
 	help	=> sub { pod2usage( { -verbose => 2 } ) },
     ) or pod2usage( { -verbose => 0 } );
 
@@ -138,8 +138,9 @@ sub get_config {
 
     my $path = $opt{config} // 'meta/magnituderc';
     if ( open my $fh, '<:encoding(utf-8)', $path ) {
-	$config = {};
-	my $source = $path;
+	$config = {
+	    source	=> $path,
+	};
 	local $_ = undef;	# while(<>) does not localize
 	while ( <$fh> ) {
 	    s/ \s+ \z //smx;
@@ -147,19 +148,23 @@ sub get_config {
 	    s/ \A \s+ //smx;
 	    length $_
 		or next;
+	    state $valid_name = { map { $_ => 1 } qw{
+		age delay source user_agent
+	    } };
 	    my ( $name, $value ) = split /\s*=\s*/, $_, 2;
-	    if ( $name eq 'source' ) {
-		$source = $value;
+	    if ( $valid_name->{$name} ) {
+		$config->{$name} = $value;
 	    } elsif ( $name =~ m/ \A [0-9]+ \z /smx ) {
 		$config->{$name} = {
 		    mag		=> $value,
-		    source	=> $source,
+		    source	=> $config->{source},
 		};
 	    } else {
 		warn "Ignoring '$_'\n";
 	    }
 	}
 	close $fh;
+	delete $config->{source};
 	return $config;
     } elsif ( defined $opt{config} ) {
 	die "Failed to open $path: $!\n";
@@ -174,7 +179,12 @@ sub get_cached {
     my $resp;
     unless ( $resp = $cache->get( $url ) ) {
 	delay();
-	state $ua = LWP::UserAgent->new();
+	state $ua = do {
+	    my @arg;
+	    defined $opt{user_agent}
+		and push @arg, agent => $opt{user_agent};
+	    LWP::UserAgent->new( @arg );
+	};
 	$resp = $ua->get( $url );
 	$resp->is_success()
 	    or die "Failed to fetch $url: ", $resp->status_line();
@@ -485,6 +495,13 @@ file can not be opened, or if the markers are not found.
 
 The default is C<--no-update>.
 
+=head2 --user-agent
+
+ --user-agent Wget/1.25.0
+
+This option specifies the user agent string for web queries. The default
+is the default L<LWP::UserAgent|LWP::UserAgent> string.
+
 =head2 --verbose
 
 If this Boolean option is asserted, whatever information the author
@@ -545,6 +562,11 @@ must be an unsigned integer number of seconds.
 This specifies the name of the source for all subsequent magnitudes
 until the next C<source> specification. The default is the name of the
 configuration file.
+
+=item * C<user_agent>
+
+This specifies the user agent string for all web requests. The default
+is the default L<LWP::UserAgent|LWP::UserAgent> string.
 
 =back
 
