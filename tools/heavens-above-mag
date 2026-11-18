@@ -49,19 +49,33 @@ my %opt = (
 
 unless ( caller ) {	# We're a modulino.
     GetOptions( \%opt,
-	qw{ age=i celestrak! config=s clear! delay=i open! purge!
+	qw{ age=i celestrak! config=s delay=i open!
 	update! user_agent|user-agent=s verbose! },
+	clear	=> sub { $opt{_cache_action} = sub {
+		get_cache_object()->clear();
+	    } },
+	purge	=> sub { $opt{_cache_action} = sub {
+		get_cache_object()->purge();
+	    } },
+	touch	=> sub { $opt{_cache_action} = sub {
+		my $cache = get_cache_object();
+		foreach my $key ( $cache->get_keys() ) {
+		    my $obj = $cache->get_object( $key )
+			or next;
+		    $cache->set( $key, $obj->get_data() );
+		}
+		return;
+	    } },
 	help	=> sub { pod2usage( { -verbose => 2 } ) },
     ) or pod2usage( { -verbose => 0 } );
 
     $opt{celestrak} //= $opt{update};
 
-    if ( $opt{clear} ) {
-	get_cache_object()->clear();
-	maybe_exit();
-    } elsif ( $opt{purge} ) {
-	get_cache_object()->purge();
-	maybe_exit();
+    if ( my $code = $opt{_cache_action} ) {
+	$code->();
+	@ARGV
+	    or $opt{celestrak}
+	    or exit;
     }
 
     if ( $opt{celestrak} ) {
@@ -228,13 +242,6 @@ sub heavens_above_url {
     return sprintf 'https://www.heavens-above.com/SatInfo.aspx?satid=%05d', $oid;
 }
 
-sub maybe_exit {
-    @ARGV
-	or $opt{celestrak}
-	or exit;
-    return;
-}
-
 sub open_file_for_output {
     my ( $path ) = @_;
     open my $fh, '>:encoding(utf-8)', $path
@@ -295,7 +302,6 @@ sub process_celestrak {
 	    and local *STDOUT = $fh = File::Temp->new( DIR => MODIFY_DIR );
 	binmode STDOUT, ':encoding(utf-8)';
 	print @preamble;
-	die "Debug - See whether we clobber the output";
 	print <<"EOD";
 # The following is all the Celestrak visual list plus all the Celestrak
 # ast satellites that have magnitudes in Heavens Above. These data are
@@ -457,12 +463,12 @@ The default is the value of L<--update|/--update>.
 
 =head2 --clear
 
-If this Boolean option is asserted, the cache will be cleared before any
-magnitudes are retrieved. The script will exit afterwards unless either
-arguments or L<--celestrak|/--celestrak> were specified.
+This option causes the cache to be cleared before any magnitudes are
+retrieved. The script will exit afterwards unless either arguments or
+L<--celestrak|/--celestrak> were specified.
 
-If both C<--clear> and L<--purge|/--purge> are asserted, C<--clear>
-wins.
+If more than one of C<--clear>, L<--purge|/--purge>, or
+L<--touch|/--touch> is specified, the last-specified wins.
 
 =head2 --config
 
@@ -492,12 +498,22 @@ file names if you specify this option.
 
 =head2 --purge
 
-If this Boolean option is asserted, the cache will be purged before any
-magnitudes are retrieved. The script will exit afterwards unless either
-arguments or L<--celestrak|/--celestrak> were specified.
+This option causes the cache to be purged before any magnitudes are
+retrieved. The script will exit afterwards unless either arguments or
+L<--celestrak|/--celestrak> were specified.
 
-Of both L<--clear|/--clear> and C<--purge> are asserted,
-L<--clear|/--clear> wins.
+If more than one of L<--clear|/--clear>, C<--purge>, or
+L<--touch|/--touch> is specified, the last-specified wins.
+
+=head2 --touch
+
+This option causes the creation time of all objects in the cache to be
+reset to the current time before any magnitudes are retrieved. The
+script will exit afterwards unless either arguments or
+L<--celestrak|/--celestrak> were specified.
+
+If more than one of L<--clear|/--clear>, L<--purge|/--purge>, or
+C<--touch> is specified, the last-specified wins.
 
 =head2 --update
 
