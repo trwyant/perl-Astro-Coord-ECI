@@ -35,10 +35,18 @@ my %opt = (
     age	=> 86_400,	# One day, in seconds
     delay	=> 5,	# Seconds
 );
+{
+    my $config = get_config();
+    foreach ( qw{ age delay } ) {
+	defined $config->{$_}
+	    and $opt{$_} = $config->{$_};
+    }
+}
 
 unless ( caller ) {	# We're a modulino.
     GetOptions( \%opt,
-	qw{ age=i celestrak! clear! delay=i open! purge! update! verbose! },
+	qw{ age=i celestrak! config=s clear! delay=i open! purge!
+	update! verbose! },
 	help	=> sub { pod2usage( { -verbose => 2 } ) },
     ) or pod2usage( { -verbose => 0 } );
 
@@ -123,6 +131,41 @@ sub get_cache_object {
     return $cache;
 }
 
+sub get_config {
+    state $config;
+    $config
+	and return $config;
+
+    my $path = $opt{config} // 'meta/magnituderc';
+    if ( open my $fh, '<:encoding(utf-8)', $path ) {
+	$config = {};
+	my $source = $path;
+	local $_ = undef;	# while(<>) does not localize
+	while ( <$fh> ) {
+	    s/ \s+ \z //smx;
+	    s/ \# .* //smx;
+	    s/ \A \s+ //smx;
+	    length $_
+		or next;
+	    my ( $name, $value ) = split /\s*=\s*/, $_, 2;
+	    if ( $name eq 'source' ) {
+		$source = $value;
+	    } elsif ( $name =~ m/ \A [0-9]+ \z /smx ) {
+		$config->{$name} = {
+		    mag		=> $value,
+		    source	=> $source,
+		};
+	    } else {
+		warn "Ignoring '$_'\n";
+	    }
+	}
+	close $fh;
+	return $config;
+    } elsif ( defined $opt{config} ) {
+	die "Failed to open $path: $!\n";
+    }
+}
+
 sub get_cached {
     my ( $url ) = @_;
 
@@ -186,12 +229,14 @@ sub open_file_for_output {
 }
 
 sub print_perl {
-    my ( $oid, $name, $mag ) = @_;
-    if ( defined $mag ) {
-	# die "Debug - $oid ($name) '$mag'";
-	printf "  '%d' => %5.1f, # %s\n", $oid, $mag, $name;
+    # my ( $oid, $name, $mag ) = @_;
+    my ( $sat ) = @_;
+    if ( defined $sat->{mag} ) {
+	printf "  '%d' => %5.1f, # %s\n", $sat->{id}, $sat->{mag},
+	    "$sat->{name}, from $sat->{source}";
     } else {
-	printf "  '%d' => undef, # %s has no recorded magnitude\n", $oid, $name;
+	printf "  '%d' => undef, # %s has no recorded magnitude\n",
+	    $sat->{id}, $sat->{name};
     }
     return;
 }
@@ -267,6 +312,10 @@ sub parse_visual {
     return $oid;
 }
 
+=begin comment
+
+# I think this is dead code
+
 sub process_get {
     my ( $spec ) = @_;
     my @rslt;
@@ -279,6 +328,10 @@ sub process_get {
     );
     return @rslt;
 }
+
+=end comment
+
+=cut
 
 sub process_open {
     my @arg = @_;
@@ -310,7 +363,23 @@ sub process_parse {
 	# default display is English.
 	my $mag = find_td_by_content(
 	    $tree, qr< \b at \s+ 1000 \s* km \s+ distance \b >smxi );
-	$handler->( $oid, $name, $mag );
+
+	my $source;
+	state $config = get_config();
+
+	if ( defined $mag ) {
+	    $source = 'Heavens Above';
+	} elsif ( $mag = $config->{$oid} ) {
+	    $source = $mag->{source};
+	    $mag = $mag->{mag};
+	}
+	$handler->( {
+		id	=> $oid,
+		name	=> $name,
+		mag	=> $mag,
+		source	=> $source,
+	    }
+	);
     }
     return;
 }
@@ -364,6 +433,15 @@ arguments or L<--celestrak|/--celestrak> were specified.
 
 If both C<--clear> and L<--purge|/--purge> are asserted, C<--clear>
 wins.
+
+=head2 --config
+
+This option specifies the location of a magnitude configuration file.
+The default is F<mets/magnituderc>. See L<CONFIGURATION|/CONFIGURATION>
+below for more.
+
+The default configuration file need not exist, but an
+explicitly-specified configuration file must exist.
 
 =head2 --delay
 
@@ -431,6 +509,44 @@ All web I/O goes through a cache in top-level project directory
 F<cache/>. Data will come from the cache rather than the web if the file
 in the cache is newer than the value of the L<--age|/--age> option. The
 cache directory will be created if necessary.
+
+=head1 CONFIGURATION
+
+Besides scraping Heavens Above, magnitudes can come from a configuration
+file. By default this is L<meta/magnituderc>, but a different one can be
+specified using the L<--config|/--config> option.
+
+The configuration file allows comments beginning with C<#>, either
+full-line or end-of-line. These are stripped. Any line containing no
+non-white-space characters after this operation is ignored.
+
+Configuration lines are of the form C<name = value>. The following names
+are allowed:
+
+=over
+
+=item * An unsigned integer
+
+This is interpreted as an OID. The value is the default magnitude for
+that object, assuming one can not be obtained from Heavens Above.
+
+=item * C<age>
+
+This specifies a value for the L<--age|/--age> option. The value must be
+an unsigned integer number of seconds.
+
+=item * C<delay>
+
+This specifies a value for the L<--delay|/--delay> option. The value
+must be an unsigned integer number of seconds.
+
+=item * C<source>
+
+This specifies the name of the source for all subsequent magnitudes
+until the next C<source> specification. The default is the name of the
+configuration file.
+
+=back
 
 =head1 AUTHOR
 
