@@ -2587,6 +2587,13 @@ sub set {
     } else {
 	$self = $extant = \%static;
     }
+    # A subclass after_reblessing() can populate this rather than call
+    # $self->set() directly. This ensures that the new attribute values
+    # override any that have not yet been set by the current call to
+    # set(). We can not simply make $self->{__args} a reference to @args
+    # because if $self gets reblessed we need to pass them to the new
+    # class' set() method.
+    local $self->{__args} = undef;
     while (@args) {
 	my $name = shift @args;
 	my $val = shift @args;
@@ -2602,6 +2609,10 @@ sub set {
 	    $clear ||= $attrib{$name};
 	}
     }
+    # If $self->{__args} has been populated we need to call set() again
+    # to handle its contents.
+    $self->{__args}
+	and $self->set( @{ delete $self->{__args} } );
     $clear and delete $self->{&TLE_INIT};
     return $self;
 }
