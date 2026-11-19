@@ -2610,6 +2610,23 @@ sub precess_dynamical {
     return $self;
 }
 
+=begin comment
+
+=item $tle = $tle->rebless ($class, \%possible_attributes)
+
+This method does nothing. It is only here for O-O convenience. See
+F<lib/Astro/Coord/ECI/TLE.pm> for the topmost version that does
+something useful.
+
+This POD is here just to satisfy F<xt/author/pod_coverage.t>, which is
+too stupid to realize that it is commented out.
+
+=end comment
+
+=cut
+
+sub rebless {}
+
 =item Astro::Coord::ECI->reference_ellipsoid($semi, $flat, $name);
 
 This class method can be used to define or redefine reference
@@ -2935,8 +2952,9 @@ sub _set_sun {
 #	the ID changes. So much for factoring. Sigh.
 
 sub _set_id {
-    $_[0]{$_[1]} = $_[2];
-    $_[0]->rebless () if $_[0]->can ('rebless');
+    my ( $self, $name, $value ) = @_;
+    $self->{$name} = $value;
+    $self->rebless();
     return SET_ACTION_NONE;
 }
 
