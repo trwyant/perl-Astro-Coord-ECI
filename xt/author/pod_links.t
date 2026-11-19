@@ -20,6 +20,7 @@ Test::Pod::LinkCheck::Lite->new(
     ignore_url	=> [
 	qr<\Ahttps://www\.amsat\.org/>,	# Humans only.
 	qr<\Ahttps?://www.faqs.org/>,	# Really flaky
+	qr<\Ahttps?://shopatsky.com/>,	# Humans only.
     ],
     prohibit_redirect	=> ALLOW_REDIRECT_TO_INDEX,
 )->all_pod_files_ok(
