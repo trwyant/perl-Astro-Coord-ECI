@@ -348,26 +348,19 @@ sub parse_visual {
     return $oid;
 }
 
-=begin comment
-
-# I think this is dead code
-
+# Used by xt/author/magnitude_status
 sub process_get {
     my ( $spec ) = @_;
     my @rslt;
     process_parse(
 	sub {
-	    push @rslt, [ @_ ];
+	    push @rslt, @_;
 	    return;
 	},
 	$spec,
     );
     return @rslt;
 }
-
-=end comment
-
-=cut
 
 sub process_open {
     my @arg = @_;

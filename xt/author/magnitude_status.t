@@ -24,12 +24,15 @@ do './tools/heavens-above-mag'
 
 my %canned = Astro::Coord::ECI::TLE->magnitude_table( 'show' );
 
-my $resp = heavens_above_mag::get_cached(
-    VISUAL_NAME,
+my %visual;
+foreach my $url (
     heavens_above_mag::VISUAL_URL(),
-);
+    heavens_above_mag::AST_URL(),
+) {
+    my $resp = heavens_above_mag::get_cached( $url );
+    heavens_above_mag::parse_visual( $resp, \%visual );
+}
 
-my %visual = heavens_above_mag::parse_visual( $resp );
 
 foreach my $oid (
     map { sprintf '%d', $_ }
@@ -37,12 +40,12 @@ foreach my $oid (
     uniqint( keys %visual, keys %canned)
 ) {
     if ( ! exists $canned{$oid} ) {
-	fail "OID $oid is in canned magnitudes";
+	fail "OID $oid is only in canned magnitudes";
     } elsif ( ! exists $visual{$oid} ) {
-	fail "OID $oid is in current Celestrak 'visual' data set}";
+	fail "OID $oid is only in current Celestrak 'visual' data set}";
     } else {
 	my @rslt = heavens_above_mag::process_get( $oid );
-	my $want = format_mag( $rslt[0][2] );
+	my $want = format_mag( $rslt[0]{mag} );
 	my $got = format_mag( $canned{$oid} );
 	is $got, $want, "OID $oid canned magnitude";
     }
